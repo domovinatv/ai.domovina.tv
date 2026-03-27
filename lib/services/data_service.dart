@@ -53,18 +53,12 @@ class DataService {
   Future<String?> resolveVideoUri(PodcastInfo info) async {
     final assetPath = _dataPath('video.mp4');
 
-    // Na webu: koristi relativni path — Flutter web servira assete iz assets/
+    // Na webu: preferiraj video_url (R2 ili CDN) koji podržava HTTP 206 range
+    // requeste neophodne za seeking. Bundlani asset vraća 200 pa seek ne radi.
     if (kIsWeb) {
-      // Provjeri postoji li asset (bez učitavanja cijelog fajla)
-      try {
-        final manifestJson =
-            await rootBundle.loadString('AssetManifest.bin.json');
-        if (manifestJson.contains(assetPath)) {
-          return 'assets/$assetPath';
-        }
-      } catch (_) {}
-      // Fallback: pretpostavi da postoji
-      return 'assets/$assetPath';
+      if (info.videoUrl != null) return info.videoUrl;
+      // Fallback na bundlani asset (seeking neće raditi bez range support)
+      return assetPath;
     }
 
     // Native: provjeri AssetManifest.json

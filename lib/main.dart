@@ -11,9 +11,7 @@ import 'screens/episode_screen.dart';
 ///   assets/images/{youtubeId}/thumbnail.webp
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  if (!kIsWeb) {
-    MediaKit.ensureInitialized();
-  }
+  MediaKit.ensureInitialized();
   runApp(const DominovinaApp());
 }
 

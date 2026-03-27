@@ -201,12 +201,12 @@ class _VideoPanelState extends State<VideoPanel> {
                   totalMs: totalMs,
                   onChangeStart: (_) => setState(() => _seeking = true),
                   onChanged: (v) => setState(() => _sliderValue = v),
-                  onChangeEnd: (v) {
+                  onChangeEnd: (v) async {
                     final ms = (v * totalMs).round();
                     final dur = Duration(milliseconds: ms);
-                    widget.player.seek(dur);
+                    await widget.player.seek(dur);
                     widget.onSeek?.call(dur);
-                    setState(() => _seeking = false);
+                    if (mounted) setState(() => _seeking = false);
                   },
                 ),
 

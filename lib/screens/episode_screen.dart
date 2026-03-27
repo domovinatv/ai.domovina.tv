@@ -287,8 +287,16 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       if (seekTo < Duration.zero) seekTo = Duration.zero;
       _seekLock = DateTime.now();
     }
-    await _player?.seek(seekTo);
-    await _player?.play();
+    // Na webu, HTML5 video element zahtijeva da je video u playing stanju
+    // prije nego što seek (currentTime) postavi poziciju ispravno.
+    // Ako seek pozovemo na pauziranom/neučitanom videu, bude ignoriran.
+    if (kIsWeb) {
+      await _player?.play();
+      await _player?.seek(seekTo);
+    } else {
+      await _player?.seek(seekTo);
+      await _player?.play();
+    }
     setState(() => _activeTimestamp = timestamp);
     _scrollToSection(timestamp);
   }

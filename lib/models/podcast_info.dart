@@ -25,6 +25,10 @@ class PodcastInfo {
   /// Putanja video-only MP4 streama (bez audio, samo za referencu)
   final String? localVideoPathMp4;
 
+  /// Javni URL videa (npr. Cloudflare R2) koji podržava range requeste (HTTP 206).
+  /// Koristi se na webu za seeking — bundlani asseti ne podržavaju 206.
+  final String? videoUrl;
+
   const PodcastInfo({
     required this.id,
     required this.title,
@@ -46,6 +50,7 @@ class PodcastInfo {
     required this.thumbnails,
     this.localVideoPath,
     this.localVideoPathMp4,
+    this.videoUrl,
   });
 
   factory PodcastInfo.fromJson(Map<String, dynamic> json) {
@@ -76,6 +81,7 @@ class PodcastInfo {
           [],
       localVideoPath: json['local_video_path'] as String?,
       localVideoPathMp4: json['local_video_path_mp4'] as String?,
+      videoUrl: json['video_url'] as String?,
     );
   }
 
