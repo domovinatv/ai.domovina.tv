@@ -1,0 +1,2276 @@
+1
+00:00:10,400 --> 00:00:13,679
+[SPEAKER_01] Dragi prijatelji, dobrodošli u novi podcast Udruge Mladi za domovinu.
+
+2
+00:00:13,839 --> 00:00:22,399
+[SPEAKER_01] Ja sam Gabrijel Lukić, a danas je sa mnom u studiju jedna predivna gošća, vama svima jako poznata ravnateljica Laudato televizije Ksenija Abramović.
+
+3
+00:00:22,640 --> 00:00:33,520
+[SPEAKER_01] Prije nego krenem ovaj podcast, naravno potičem vas da lajkate ovaj video kako bi došao do što većeg broja ljudi i naravno da se pretplatite na naš YouTube kanal kako bi što više ljudi moglo doći do ovakvog sadržaja.
+
+4
+00:00:33,679 --> 00:00:38,240
+[SPEAKER_01] A i naravno da vi možete vidjeti mnogi drugi sadržaj koji ovdje imamo za vas.
+
+5
+00:00:38,640 --> 00:00:58,960
+[SPEAKER_01] Prije nego krenemo u podcast također još ću vas samo potaknuti na to da ako nas želite podržati, kratko ću samo predstaviti firmu koja je u vlasništvu Udruge Mladi za domovinu, to je Crowbike, to je tvrtka koja se bavi prodajom i promocijom autohtonih hrvatskih proizvoda, a ti proizvodi su otprilike ovakvi, dakle od bračkog kamena, ima i drvenih proizvoda, majica i sl.
+
+6
+00:00:59,280 --> 00:01:14,719
+[SPEAKER_01] pa ako želite podržati ono što radimo možete to slobodno učiniti, u opisu ovog videa nalaze se podaci za firmu i stranicu i također ako želite samo donirati, slobodni se to učiniti, jako smo vam zahvalni na tome kako bismo mogli održati ovaj naš neovisan rad.
+
+7
+00:01:15,200 --> 00:01:18,239
+[SPEAKER_01] A sada idemo u onaj važniji dio kad je ovaj marketinški gotov.
+
+8
+00:01:18,640 --> 00:01:22,480
+[SPEAKER_01] Ksenija, drago mi je da ste kod nas napokon u mladima za domovinu.
+
+9
+00:01:22,799 --> 00:01:24,719
+[SPEAKER_00] Stvarno moram reći napokon.
+
+10
+00:01:25,840 --> 00:01:32,239
+[SPEAKER_00] Toliko puta smo već planirali taj moj dolazak i svaki put se nešto ispriječilo pa i danas.
+
+11
+00:01:33,280 --> 00:01:37,359
+[SPEAKER_00] I danas i rekla sam, idem, doći ću i moram i evo me.
+
+12
+00:01:37,760 --> 00:01:49,280
+[SPEAKER_01] Hvala vam na tome, stvarno vidim da je bio, evo mobitel je zvonio dvanaest puta otkad smo došli tako da znam da je stiska sa vremenom, ali baš se veselim podcastu i evo, probat ćemo ovih sat vremena stvarno izvući maksimalno.
+
+13
+00:01:49,439 --> 00:01:50,879
+[SPEAKER_01] Hvala što ste našli vrijeme za to.
+
+14
+00:01:51,680 --> 00:02:01,599
+[SPEAKER_01] Inače, ideja Udruge Mladi za domovinu je nadahnjivati mlade ljude katoličkim vrijednostima i ljubavlju prema domovini kako bismo revolučno poticali društveno djelovanje.
+
+15
+00:02:02,000 --> 00:02:14,560
+[SPEAKER_01] I nadahnjujemo se socijalnim naukom Crkve i učenjima Blaženog Ivana Merca i to sve radimo tako da mladi ljudi koji dolaze u našu udrugu rade na trive procesu odnosno trive modelu što se zove Vrline, Vrednote, Vještine.
+
+16
+00:02:14,719 --> 00:02:21,680
+[SPEAKER_01] Mi kažemo da svaka mlada osoba koja želi društveno djelovati mora prije svega imati vrline, mora imati vrednote i mora imati vještine.
+
+17
+00:02:22,240 --> 00:02:31,439
+[SPEAKER_01] Tako da mislim da ste vi odlična osoba koja može objediniti sve te tri stvari, a posebno iz ove perspektive što je na mladima za domovinu zanimljivo, iz ove treće, a to su vještine.
+
+18
+00:02:31,520 --> 00:03:01,280
+[SPEAKER_01] Jer ipak imate ovaj, dolazite iz poslovnog svijeta, uspjeli ste stvoriti stvarno jednu respektabilnu televiziju sa preko pedeset zaposlenih ako se ne varam, evo vi ćete me ispraviti, ali to je jedan ozbiljni poduhvat za koji znam da ne ide bez vrlina, bez potpunog predanja Božje milosti, ali isto tako ne ide ako nema nekih organizacijskih menadžerskih sposobnosti, financijskih sposobnosti, pa možda ne bi bilo loše malo i da naučimo i kroz ovaj podcast nešto i o tome.
+
+19
+00:03:01,439 --> 00:03:03,520
+[SPEAKER_01] Pa evo nadam se da će biti prilike za to.
+
+20
+00:03:04,319 --> 00:03:14,000
+[SPEAKER_00] Mislim nisu to formule, znate, to je zapravo iskustvo i moram reći djelomično za to liderstvo mora se čovjek roditi.
+
+21
+00:03:14,479 --> 00:03:16,159
+[SPEAKER_00] Jednostavno morate biti rođeni.
+
+22
+00:03:16,319 --> 00:03:17,360
+[SPEAKER_01] Ja se isto slažem sa tim.
+
+23
+00:03:18,080 --> 00:03:18,960
+[SPEAKER_01] Ja se slažem sa tim.
+
+24
+00:03:19,120 --> 00:03:29,120
+[SPEAKER_01] Mislim da oni koji su prepoznati kao broj jedan da je to kako bi rekao, oni sad moraju to otkriti i raditi to što ste vi rekli kroz iskustvo će se to ispeglati.
+
+25
+00:03:29,280 --> 00:03:36,159
+[SPEAKER_00] Da, evo ja vam mogu reći koliko, mislim, jesam li imala sedam godina, krenula sam u prvi razred osnovne škole.
+
+26
+00:03:36,879 --> 00:03:46,560
+[SPEAKER_00] I sjećam se i u Slavoniji, i u Slavonskom Brodu, išli smo na izlet u Ljeskove vode i cijeli razred, još jedan razred, dakle cijeli autobus.
+
+27
+00:03:49,439 --> 00:03:50,479
+[SPEAKER_00] Što sam ja napravila?
+
+28
+00:03:50,800 --> 00:04:07,199
+[SPEAKER_00] Učiteljica je rekla dajte ponesite si nešto za jesti i meni nije bilo to dovoljno nešto za jesti i da se stvari ne ponavljaju, da neko ne ponese ne znam pet štapića ili ne znam pet smokija.
+
+29
+00:04:08,000 --> 00:04:17,439
+[SPEAKER_00] Ja sam sve rasporedila i svako dijete u razredu dobilo je što treba ponijeti sa sobom naravno onog zajedničkog dijela osim sendviča.
+
+30
+00:04:17,600 --> 00:04:20,480
+[SPEAKER_00] Evo to sam napravila sa svojih sedam godina.
+
+31
+00:04:21,360 --> 00:04:34,879
+[SPEAKER_00] Dakle stvari i dobre organizacije, to moram priznati, dobra organizacija puno, puno, puno pomogne, jako puno pomogne da ne lutate i da ne gubite vrijeme.
+
+32
+00:04:35,279 --> 00:04:40,079
+[SPEAKER_01] Mogu misliti, posebno u vašem svijetu sad ovako ozbiljnom, kad ste bili tako mali, vjerujem da niste pomogli.
+
+33
+00:04:41,120 --> 00:04:44,319
+[SPEAKER_00] To mi je nedavno palo na pamet, to je ono poštak sedati ovdje.
+
+34
+00:04:44,639 --> 00:04:46,800
+[SPEAKER_01] Ali dobra indikacija upravo tih lidarskih sposobnosti.
+
+35
+00:04:47,600 --> 00:04:50,000
+[SPEAKER_00] Svi su me poslušali, pazite., to je isto umješnost.
+
+36
+00:04:50,240 --> 00:04:56,399
+[SPEAKER_00] Što ćeš ti reći ono djetetu, donesi ono štapiće sa sobom ili keksi od tog i tog.
+
+37
+00:04:57,839 --> 00:05:00,240
+[SPEAKER_00] Da nemamo, ne znam, 15 pa šteta recimo.
+
+38
+00:05:00,480 --> 00:05:01,600
+[SPEAKER_00] Svako, točno smo.
+
+39
+00:05:02,240 --> 00:05:06,079
+[SPEAKER_01] Da, lider nije samo prepoznat, nego ga ljudi jednostavno.
+
+40
+00:05:06,639 --> 00:05:09,680
+[SPEAKER_00] I uvijek je bila predsjednica razreda, uvijek je bila.
+
+41
+00:05:10,399 --> 00:05:11,920
+[SPEAKER_01] Znači, očito ima neki smjer.
+
+42
+00:05:12,240 --> 00:05:26,480
+[SPEAKER_01] Ali baš sad kad, krenuli smo baš u te rane godine, ali ajmo se vratiti prije nekih 15 godina, baš me zanima kada ste počinjali laudato, jer ste opće imali percepciju koliko će ovo danas činiti utjecaj na crnkvu i na ljude, na obitelji?
+
+43
+00:05:27,680 --> 00:05:33,040
+[SPEAKER_00] Ja sam znala da će to biti dobro, ali nisam znala da će biti tako dobro.
+
+44
+00:05:33,360 --> 00:05:35,519
+[SPEAKER_00] Evo, to moram iskreno priznat.
+
+45
+00:05:36,399 --> 00:05:42,160
+[SPEAKER_00] I nisam znala što me sve čeka, to sam tek saznala sa vremenom.
+
+46
+00:05:42,639 --> 00:05:59,600
+[SPEAKER_00] Nisam znala da će biti nekad ponekad toliko teško, ali da me pitate da sam znala sve što sada znam, a da ne znam koliko će to donijeti dobra, svejedno bih rekla, gospodine, evo me.
+
+47
+00:06:00,240 --> 00:06:00,639
+[SPEAKER_00] Kao što sam.
+
+48
+00:06:01,920 --> 00:06:10,319
+[SPEAKER_01] Dajte mi tih nekoliko situacija gdje stvarno je bilo baš teško, možda ako se možete sjetiti te prve godine ili tih prvih nekoliko godina, kako je to bilo?
+
+49
+00:06:10,720 --> 00:06:36,800
+[SPEAKER_00] Pa vidite, ja sam magistrirala ekonomiju i kao dobra poslovna žena, kod mene je sve moralo imati planove, pogotovo u XL mi je ono tipi topi, kratkoročno, srednjoročno, dugoročno, u milijun boja i sve sam ja to lijepo napisala, konkretno što se i financija tiče, no međutim vrlo brzo je to sve nekako palo u vodu.
+
+50
+00:06:38,560 --> 00:06:46,800
+[SPEAKER_00] Za razliku od poslovnog svijeta u kojem sam ja živjela, laudato svijet je sasvim neki drugačiji svijet, to je svijet Božje providnosti.
+
+51
+00:06:48,959 --> 00:07:12,399
+[SPEAKER_00] Bilo je teško, pogotovo u toj prvoj godini, ja sam kako sam bila uspješna vlasnica informatičke tvrtke, radili smo odličan software, smo napravili imeno moneta za praćenje platnog prometa, biznis akonta, koje su imale sve nekoliko većih banaka.
+
+52
+00:07:13,439 --> 00:07:17,199
+[SPEAKER_00] Bilo je ono, novaca na računu, novaca u nekretninama.
+
+53
+00:07:17,759 --> 00:07:33,600
+[SPEAKER_00] I sad ja imala i jesam te nekretnine i sad sam odlučila prodavat jednu po jednu kako bi taj novac iskoristila za laudatu televiziju obzirom da mi se biznis plan urušio na način na koji sam ja o njemu razmišljala.
+
+54
+00:07:34,240 --> 00:07:45,199
+[SPEAKER_00] Samo nije to prodat, znate, prodat zemlju, nije to sad ono preko noći, a tebi treba novac ono preko noći.
+
+55
+00:07:45,920 --> 00:07:48,800
+[SPEAKER_00] Ne samo zaplatiti račune nego za osnovnu egzistenciju.
+
+56
+00:07:50,160 --> 00:08:15,680
+[SPEAKER_00] Zapravo moram reći, Bog je napravio jedno i čudo u mom životu jer ja sam jako navikla, naravno s godinama nije uvijek bilo sve sigurno, ali na tu jednu sigurnost da vi možete uzeti potegnutu košaricu koliko god vam treba iz firme i uzeti koliko god treba i onda dođete u situaciju da nema.
+
+57
+00:08:17,040 --> 00:08:20,560
+[SPEAKER_00] Da nema, možeš samo gledati gore prema nebu, sklopiti oči i molit.
+
+58
+00:08:20,959 --> 00:08:26,240
+[SPEAKER_01] Od kud toliko povjerenja da ste spremni prodati nekretninu, jel toliko vjerujete u tu ideju?
+
+59
+00:08:27,199 --> 00:08:30,800
+[SPEAKER_00] Zato što je ovo, ali stvarno bio Božji poziv.
+
+60
+00:08:31,040 --> 00:09:26,960
+[SPEAKER_00] Prije dvadeset godina te dvije tisuće šest godine ja sam čula u srcu prvo ksenija treba nam katolička televizija reko isto što to ima veze sa mnom pa veli ima zato što ju hrvati nemaju pa rekao dobro opet šta to ima veze sa mnom ja sam završila ekonomiju imam uspješnu informatičku firmu imam svoje galerije laudato koje su mi ljubav prema umjetnosti, galerije su puno i pomagale, radile likovne kolonije, izložbe, aukcije za djecu itede Imala sam jedan svoj organiziran život, svoju duhovnu djecu, svoju apostole Mira za koje sam pisala pjesme, oni su ih pjevali, išli smo na duhovne obnove, super, sve pet šta sad, kakav medij, ja o mediju nemam nikakvu spoznaju, nikad nisam radila u mediju.
+
+61
+00:09:28,159 --> 00:09:40,799
+[SPEAKER_00] To su bili moji prvi razgovori, vrlo brzo je došlo ovako, Ksenija, nisi prva koju sam zvao, ali si prva koja se odazvala mome pozivu.
+
+62
+00:09:41,840 --> 00:09:43,679
+[SPEAKER_00] Kad sam to čula, bilo je ozbiljno.
+
+63
+00:09:48,080 --> 00:09:54,799
+[SPEAKER_00] Znala sam da to nije moje, da to nije od mene, znala sam da je to taj jedan Božji glas koji me zove.
+
+64
+00:09:55,600 --> 00:10:04,480
+[SPEAKER_00] Moje je samo bilo reći evo me da gospodin od tog mog maloga, da prvoga, da može činiti djela čudesna.
+
+65
+00:10:05,200 --> 00:10:08,480
+[SPEAKER_00] I to je ono što je mene u svemu nosilo.
+
+66
+00:10:09,039 --> 00:10:12,799
+[SPEAKER_00] Znala sam da nisam sama, znala sam da nije moj projekt nego njezin.
+
+67
+00:10:12,799 --> 00:10:18,559
+[SPEAKER_00] nego njegov, a Gospodin neće dopustiti da propadne djelo ruku njegov.
+
+68
+00:10:19,519 --> 00:10:26,480
+[SPEAKER_01] Sigurno pitanje koje mi se nameća kad razmišljam da se ja sastavljam u tu situaciju, teških problema bi imao sa strpljivošću u smislu da.
+
+69
+00:10:27,039 --> 00:10:28,240
+[SPEAKER_01] Kako ste se borili sa time?
+
+70
+00:10:28,960 --> 00:10:41,120
+[SPEAKER_00] A svakako i suzama i molitvom i klečanjem i pitanjem i u početku puno više nego sada.
+
+71
+00:10:41,440 --> 00:10:48,720
+[SPEAKER_00] Sad to nekako sve drugačije prihvaćam, iako nikad nije jednostavno, ali puno jednostavnije u početku.
+
+72
+00:10:49,120 --> 00:10:51,759
+[SPEAKER_00] Mogu vam samo ispričati jedan svoj put.
+
+73
+00:10:53,200 --> 00:10:58,399
+[SPEAKER_00] Jako je bilo važno, imaš televiziju, a nemaš programa, nemaš novaca za programe.
+
+74
+00:11:00,399 --> 00:11:01,440
+[SPEAKER_00] Ništa nije slučajno.
+
+75
+00:11:01,600 --> 00:11:09,440
+[SPEAKER_00] Ja sam doma vrtila na svom televizoru programe i na jedan put ukazala mi se jedna časna.
+
+76
+00:11:09,519 --> 00:11:13,200
+[SPEAKER_00] Ja sam malo bolje zagledala, piše i Dublu Tian, Maduro Angelika.
+
+77
+00:11:13,840 --> 00:11:22,960
+[SPEAKER_00] I nekako sam shvatila da ja moram doći do te časne, do te televizije u Americi i apropos strpljivosti.
+
+78
+00:11:23,360 --> 00:11:34,080
+[SPEAKER_00] Ja mislim da sam ja u jednoj godini i možda i više, možda skoro dvije napisala ne znam koliko pisama sa preporukom od biskupa, sa svim, ali odgovor nije dolazio.
+
+79
+00:11:34,960 --> 00:11:46,879
+[SPEAKER_00] I onda jednom prilikom u Hrvatsku je došla Tajči, našli smo se na jednom ručku, i rekla je meni Tajči, Ksenija, dođi u Ameriku da vidiš moj koncert, kako to sve skupa izgleda.
+
+80
+00:11:47,679 --> 00:11:51,200
+[SPEAKER_00] Ona je pjevala i pjeva još uvijek duhovnu glazbu.
+
+81
+00:11:51,279 --> 00:11:56,720
+[SPEAKER_00] Ja sam rekla može Tajči, ali imam samo jedan uvjet, da me dovedeš do i W.
+
+82
+00:11:57,039 --> 00:12:07,919
+[SPEAKER_00] Tijena jer je ona često tamo nastupala i I njena menadžerica je to uspjela napraviti u toj korist mi, u kojoj je to godine bilo od 2014.
+
+83
+00:12:08,320 --> 00:12:08,799
+[SPEAKER_00] mi se čini.
+
+84
+00:12:11,679 --> 00:12:22,879
+[SPEAKER_00] Ja sam se zaputila prema toj Americi samo što je Tajči imala koncert u Sjevernoj Dakoti i Davor Jotanj u Alabami, dakle na jugu Amerike.
+
+85
+00:12:23,120 --> 00:12:24,159
+[SPEAKER_00] Nije to meni bio problem.
+
+86
+00:12:25,200 --> 00:12:25,840
+[SPEAKER_00] To stvarno.
+
+87
+00:12:26,559 --> 00:12:27,360
+[SPEAKER_01] Zagreb, Cipa.
+
+88
+00:12:28,480 --> 00:12:29,519
+[SPEAKER_01] Po tri rekli.
+
+89
+00:12:29,759 --> 00:12:35,600
+[SPEAKER_00] Da, tu u svemu tome moram dodati još jedan faktor koji se zove upornost.
+
+90
+00:12:36,960 --> 00:12:41,440
+[SPEAKER_00] To je nešto što bi nas trebalo sve oblikovati, upornost.
+
+91
+00:12:42,320 --> 00:12:48,480
+[SPEAKER_00] Tako sam ja uporno došla nakon te dvije godine do tog aviona i šta se događa?
+
+92
+00:12:48,559 --> 00:12:58,720
+[SPEAKER_00] Od samog jutra kreću problematike, putujem prema aerodromu i na jedan put mi kroz glavu prostruji da su mijenjali vrijeme leta na ranije.
+
+93
+00:12:59,039 --> 00:13:12,720
+[SPEAKER_00] Dakle, avioni uvijek samo kasne, a meni je, ja reko pa ja neću stići i brzo nagasiti, a danas sam sva u goloj vodi došla, uspjela sam mučavion, izađem u Frankfutu, bila sam jedini.
+
+94
+00:13:14,159 --> 00:13:17,519
+[SPEAKER_00] passenger u tranzitu, jedini putnik.
+
+95
+00:13:18,240 --> 00:13:21,360
+[SPEAKER_00] I sad ja vidim na jedan put psi, policija.
+
+96
+00:13:23,759 --> 00:13:24,639
+[SPEAKER_00] Šta se događa?
+
+97
+00:13:26,399 --> 00:13:28,639
+[SPEAKER_00] Ne možemo vam reći što se događa, ali se događa.
+
+98
+00:13:29,279 --> 00:13:30,480
+[SPEAKER_00] Pa koliko će to trajati?
+
+99
+00:13:31,120 --> 00:13:32,320
+[SPEAKER_00] Pa veli, trajat će.
+
+100
+00:13:33,440 --> 00:13:35,360
+[SPEAKER_00] Ali ja imam za 20 minuta, ja moram.
+
+101
+00:13:35,919 --> 00:13:37,039
+[SPEAKER_00] Veli, pa idite okolo.
+
+102
+00:13:37,200 --> 00:13:39,200
+[SPEAKER_00] A okolo znači 40 minuta.
+
+103
+00:13:39,679 --> 00:13:40,960
+[SPEAKER_00] Ne stižem, kako god.
+
+104
+00:13:42,080 --> 00:13:44,000
+[SPEAKER_00] I ja se sjećam što sam tad napravila.
+
+105
+00:13:44,000 --> 00:13:46,879
+[SPEAKER_00] Slonila sam se na zid i rekla sam, dobro, i su se.
+
+106
+00:13:47,039 --> 00:13:50,000
+[SPEAKER_00] Ja već vidim da to od jutra ne ide.
+
+107
+00:13:50,240 --> 00:13:59,279
+[SPEAKER_00] Prvo to što mi je ostalo setirano u set mini je bilo da mi je on ide tad, dobro da si se dosjetila da ide ranije pa sad ovo.
+
+108
+00:13:59,919 --> 00:14:02,080
+[SPEAKER_00] Ajde ti mene lijepo pošalji kući.
+
+109
+00:14:02,320 --> 00:14:07,600
+[SPEAKER_00] Ako ovo nije tvoja volja, ako ovo je bila moja volja, ja ne mogu više ovako, ja idem kući.
+
+110
+00:14:07,759 --> 00:14:11,759
+[SPEAKER_00] I dok sam ja to zatvorenih očiju molila, sve se raščistilo.
+
+111
+00:14:12,799 --> 00:14:24,639
+[SPEAKER_00] I ja da prema avionu i ta mandat ću ući tek ono ogroman, jedan policajac mislim da je imao dva metra, on meni meli, mam, give me your passport, ja mu dam putovnicu i on...
+
+112
+00:14:24,799 --> 00:14:26,960
+[SPEAKER_00] I on ve li meni, you cannot pass.
+
+113
+00:14:28,480 --> 00:14:28,879
+[SPEAKER_00] Zašto?
+
+114
+00:14:29,759 --> 00:14:34,960
+[SPEAKER_00] Zato što mi je viza trajala dulje od putovnice.
+
+115
+00:14:36,960 --> 00:14:40,799
+[SPEAKER_00] Potovnica je trajala 28 dana, a vize se obično dobijalo na 30 dana.
+
+116
+00:14:41,360 --> 00:14:46,480
+[SPEAKER_00] A ja mu dajem povratnu kartu i vidim, pogledajte, 14 dana ostajem.
+
+117
+00:14:47,039 --> 00:14:49,600
+[SPEAKER_00] U svakom slučaju ulazim u sve rokove povratka.
+
+118
+00:14:49,919 --> 00:14:50,639
+[SPEAKER_00] Ne, ne i ne.
+
+119
+00:14:51,200 --> 00:14:57,200
+[SPEAKER_00] I što sam ja napravila, kao tipično žensko, jako sam se rasplakala.
+
+120
+00:14:58,399 --> 00:15:00,399
+[SPEAKER_00] Jako sam se rasplakala, ja sam vam toliko plakala.
+
+121
+00:15:00,399 --> 00:15:05,440
+[SPEAKER_00] Oko plaka, ali to nije bio plač, to je bilo ono, vapa je.
+
+122
+00:15:05,840 --> 00:15:06,240
+[SPEAKER_01] Da vidimo.
+
+123
+00:15:06,720 --> 00:15:15,039
+[SPEAKER_00] I onda su poslali ženu policajku koja me umirila i uspjela sam ja s tom ženom ući u taj avion.
+
+124
+00:15:16,480 --> 00:15:22,639
+[SPEAKER_00] Posila me, došla sam, mislim da sam preko New Yorka letila dole za Alabamu.
+
+125
+00:15:22,879 --> 00:15:24,720
+[SPEAKER_00] Prvo je bila Alabama, pa onda Dakota.
+
+126
+00:15:26,000 --> 00:15:34,159
+[SPEAKER_00] I kad sam došla u Alabamu, izgubili su mi prtljagu na tom lokalnom letu iz New Yorka prema Birminghamu.
+
+127
+00:15:35,519 --> 00:15:36,480
+[SPEAKER_00] Došla sam tamo.
+
+128
+00:15:37,120 --> 00:15:41,519
+[SPEAKER_00] na Davoretijanu televiziji, postoje te gostinske kuće, tu sam se smjestila.
+
+129
+00:15:42,159 --> 00:15:43,840
+[SPEAKER_00] Umorna, mrtva, nikakva.
+
+130
+00:15:44,000 --> 00:15:51,360
+[SPEAKER_00] Uspjela sam ono jet lag, dva spukne, uspjela sam malo i odmoriti na neko doba noći kuca prtljaga.
+
+131
+00:15:53,519 --> 00:16:00,399
+[SPEAKER_00] Znala sam da je sve ta misa u 8 ujutro, više nisam niti zaspala i rekli sam, dragi Bože, u 9 sati taj sasnak.
+
+132
+00:16:00,559 --> 00:16:10,000
+[SPEAKER_00] Ponovo sam ponovila ono rečenicu iz Frankfurta, ako nije tvoja volja, te molim da me vratiš natrag, ako je, pomozim i da idemo prema naprijed.
+
+133
+00:16:10,720 --> 00:16:12,799
+[SPEAKER_00] I nakon te mise i u 9 sati.
+
+134
+00:16:13,279 --> 00:16:17,840
+[SPEAKER_00] kad je krenuo sastanak, svi su bili laici, dakle nije bio niko od klera.
+
+135
+00:16:19,519 --> 00:16:25,919
+[SPEAKER_00] Ali je sastanak počeo in the name of the Father, and the Son, and the Holy Spirit, dakle sa znakom križa.
+
+136
+00:16:26,480 --> 00:16:30,080
+[SPEAKER_00] Meni je to kao poslovnoj ženi bilo čudesno.
+
+137
+00:16:30,639 --> 00:16:40,960
+[SPEAKER_00] Ja sam rekla Isuse, mi ako jednog dana budemo imali televiziju, svi naši sastanci i snimanja počinat će sa znakom križa.
+
+138
+00:16:41,679 --> 00:16:42,240
+[SPEAKER_01] Fenomenalno.
+
+139
+00:16:42,399 --> 00:16:43,039
+[SPEAKER_00] I tako je.
+
+140
+00:16:43,200 --> 00:16:47,600
+[SPEAKER_00] I onda nekako gospodin je dao da se stvari i otvore i da idemo dalje.
+
+141
+00:16:47,919 --> 00:16:49,679
+[SPEAKER_00] Ubrzo smo potpisali ugovor.
+
+142
+00:16:51,120 --> 00:16:54,240
+[SPEAKER_01] Da, ova priča zvuči kao dolazak na podcast, ali zadovoljno je.
+
+143
+00:16:55,759 --> 00:16:57,600
+[SPEAKER_00] Tako je bilo i danas, nismo se stvarili.
+
+144
+00:16:57,679 --> 00:16:58,879
+[SPEAKER_01] Znači, neki, ono.
+
+145
+00:17:00,320 --> 00:17:01,440
+[SPEAKER_01] Ima neki ritam svoj.
+
+146
+00:17:02,000 --> 00:17:04,240
+[SPEAKER_01] Tako da, kad budete zvali kseniju, pazite.
+
+147
+00:17:05,519 --> 00:17:10,799
+[SPEAKER_00] Ne, zadeš, često mi onda dođu ljudi i kažu to znači da si ti na super putu.
+
+148
+00:17:11,440 --> 00:17:16,480
+[SPEAKER_00] Ali je ok, ali nekad čovjek se i umori od tog super putu.
+
+149
+00:17:16,559 --> 00:17:16,799
+[SPEAKER_01] Je, je.
+
+150
+00:17:17,200 --> 00:17:18,640
+[SPEAKER_00] Na pravom putu, ne super putu.
+
+151
+00:17:18,720 --> 00:17:24,240
+[SPEAKER_01] I sad ono kad pratite sve te stvari i pitate se, Bože, pa mora biti tako teško, ali mora biti stvarno, očito mora.
+
+152
+00:17:25,119 --> 00:17:26,079
+[SPEAKER_01] Ali baš me zanima, evo.
+
+153
+00:17:26,240 --> 00:17:27,680
+[SPEAKER_00] Uskrs sa bez križa, ne.
+
+154
+00:17:28,400 --> 00:17:39,519
+[SPEAKER_01] Kako idete prema ljudima, sada novim ljudima i kada vas netko pita što mislite da je najveći doprinos Laudato televiziji od kada postoji i ono što će napraviti, što biste im rekli?
+
+155
+00:17:40,319 --> 00:17:52,079
+[SPEAKER_00] Pa vidite, kad je ikad ikko mogao pomisliti da će doći nešto što se zove korona, da će se crkve zatvoriti, da neće biti svetih misa.
+
+156
+00:17:52,960 --> 00:17:55,839
+[SPEAKER_00] Mislim, Bog je znao ono što mi nismo znali.
+
+157
+00:17:56,319 --> 00:18:00,400
+[SPEAKER_00] Ja mislim da je to apsolutno najveći doprinos.
+
+158
+00:18:00,960 --> 00:18:07,200
+[SPEAKER_00] laudata jer smo mi imali dvije svete mi se uživo, jednu jutro, jednu na večer.
+
+159
+00:18:09,200 --> 00:18:13,519
+[SPEAKER_00] A da ne govorimo o krunici Božjeg milosrđa koja nam ide u 15 sati.
+
+160
+00:18:14,960 --> 00:18:19,519
+[SPEAKER_00] Ja mislim jedina televizija u Hrvatskoj koja prime time ima u 15 sati.
+
+161
+00:18:21,759 --> 00:18:23,440
+[SPEAKER_01] Povjeramo granice, fenomenalno.
+
+162
+00:18:23,680 --> 00:18:30,640
+[SPEAKER_00] Da, jer sjedaju obitelji, sjedaju muževi, žene, to je nevjerojatno.
+
+163
+00:18:30,960 --> 00:18:36,640
+[SPEAKER_00] Čak jedna gospođa mi je nedavno rekla ispred crkve: Znate, gospođa Abramović.
+
+164
+00:18:36,640 --> 00:18:42,480
+[SPEAKER_00] Moji paskat po ludi, ja jednostavno upalim televiziju, on se umiri.
+
+165
+00:18:44,640 --> 00:18:49,599
+[SPEAKER_00] Ja bih rekla, mi smo jedna televizija mira, nade, vjere.
+
+166
+00:18:50,960 --> 00:19:12,880
+[SPEAKER_00] Nema kod nas senzacija, nema strke i frke za svijetom, nema buke, nego u tišini koliko god možemo želimo tu Božju riječ donijeti, pogotovo starima, usamljenima, bolesnima i onima koji ne mogu fizički izaći iz svog doma, donosimo im crkvu.
+
+167
+00:19:13,839 --> 00:19:17,759
+[SPEAKER_01] I možda najbolja tema želja je donijeti to u cijelu Hrvatsku.
+
+168
+00:19:19,599 --> 00:19:20,559
+[SPEAKER_01] Što se događa s tim?
+
+169
+00:19:20,720 --> 00:19:24,640
+[SPEAKER_01] Znači zašto je toliko teško dobiti nacionalnu koncesiju?
+
+170
+00:19:25,359 --> 00:19:28,000
+[SPEAKER_00] Morate nam i pitati.
+
+171
+00:19:28,240 --> 00:19:39,279
+[SPEAKER_00] Ali ja vam mogu reći da potičem i vas i sve koji gledaju ovaj podcast da mi po toj nakani molimo i da vjerujemo da će se to dogoditi u Božje vrijeme.
+
+172
+00:19:40,000 --> 00:19:41,119
+[SPEAKER_01] Je li to stvar novaca?
+
+173
+00:19:41,599 --> 00:19:43,359
+[SPEAKER_01] Je li to stvar diplomacije?
+
+174
+00:19:43,519 --> 00:19:44,640
+[SPEAKER_01] Je li to stvar lobiranja?
+
+175
+00:19:44,720 --> 00:19:47,039
+[SPEAKER_01] Je li to stvar ključne osobe, lidera?
+
+176
+00:19:47,359 --> 00:19:48,400
+[SPEAKER_01] Možete malo razložiti to?
+
+177
+00:19:48,400 --> 00:19:49,039
+[SPEAKER_00] Svega.
+
+178
+00:19:51,599 --> 00:19:53,200
+[SPEAKER_01] Barem rangirat nekakve te stvari.
+
+179
+00:19:54,799 --> 00:20:06,799
+[SPEAKER_00] Ja sam nekako financijsku konstrukciju opet to kao dobar ekonomista zatvorila, a čak šta više mi bi imali puno veći doseg što bi nam opet više omogućilo da dođemo do većeg broja ljudi.
+
+180
+00:20:07,119 --> 00:20:22,400
+[SPEAKER_00] Vi znate da se mi financiramo uglavnom donacijama i to skoro 50% prihoda mala kućanstva nam donose, a troškovi su, mi sad već idemo blizu 200 tisuća eura mjesečno.
+
+181
+00:20:25,920 --> 00:20:30,960
+[SPEAKER_00] samo molim ljude da nas ne pitaju zašto imate toliko repriza ili zašto nemate novih filmova.
+
+182
+00:20:31,119 --> 00:20:31,839
+[SPEAKER_00] Evo to je odgovor.
+
+183
+00:20:32,559 --> 00:20:33,200
+[SPEAKER_00] Mi bi voljeli.
+
+184
+00:20:33,279 --> 00:20:38,640
+[SPEAKER_00] Evo i sad nam je, imali smo lijepih šest sezona serije Neka nam Bog pomogne.
+
+185
+00:20:38,799 --> 00:20:45,680
+[SPEAKER_00] To je odlična serija produkcije Raiuna u Lux Video, produkcijska kuća koju radi.
+
+186
+00:20:46,240 --> 00:20:48,319
+[SPEAKER_00] Mi za sedmu sezonu nemamo novaca.
+
+187
+00:20:48,559 --> 00:21:00,240
+[SPEAKER_00] Ako neko gleda ovaj podcast, ne mislim od mladih, nego od uspješnih poduzetnika, evo 25.000 eura je ta serija, 20 nastavaka.
+
+188
+00:21:00,960 --> 00:21:02,720
+[SPEAKER_00] Pa dobro, ne znam sad kako smo došli do tu.
+
+189
+00:21:02,799 --> 00:21:03,839
+[SPEAKER_00] Idemo se sa vratima na nacionalnu koncesiju.
+
+190
+00:21:03,920 --> 00:21:05,039
+[SPEAKER_01] Sigurno ćemo doći i do toga.
+
+191
+00:21:05,759 --> 00:21:08,720
+[SPEAKER_00] Idemo se sad malo vratiti na nacionalnu koncesiju.
+
+192
+00:21:09,359 --> 00:21:11,839
+[SPEAKER_00] Mi se zaista za tu koncesiju molimo.
+
+193
+00:21:13,200 --> 00:21:26,079
+[SPEAKER_00] Ja vjerujem da će Bog otvoriti ta vrata jer kad god su vrata zatvorena, onda Bog nama otvori neki prozor i onda mi prođemo kroz te prozore i onda otvorimo velika, velika, velika vrata.
+
+194
+00:21:26,799 --> 00:21:28,400
+[SPEAKER_00] Tako da vjerujem da će to biti tu.
+
+195
+00:21:29,920 --> 00:21:32,160
+[SPEAKER_01] Koliki je doseg sada bez nacionalne koncesije?
+
+196
+00:21:32,880 --> 00:21:35,359
+[SPEAKER_00] Jo, to je jako lijepo pitanje.
+
+197
+00:21:36,319 --> 00:21:49,279
+[SPEAKER_00] I tu se sad nešto pomiče, evo tu moram priznat, mi smo vam jedina televizija koja sad emitira svoj signal sa odašiljača koji se zove Tusti vrh.
+
+198
+00:21:50,240 --> 00:22:00,079
+[SPEAKER_00] I tu je doseg s tog Tustog vrha po papirima administrativno osamsto tisuća gledatelja ako govorimo o zemaljskoj anteni.
+
+199
+00:22:02,480 --> 00:22:22,400
+[SPEAKER_00] Mnogi rubni dijelovi mi onako procjenjujemo po svemu što nam dolazi od gledatelja u zamolbama, u pitanjima da taj broj nije više od pola milijuna, a sve druge lokalne televizije u Zagrebu koje su smještene na Sljemenu, na odašiljaču Sljemena dopiru do milijuna i četiristo tisuća.
+
+200
+00:22:24,480 --> 00:22:41,759
+[SPEAKER_00] Sad, evo, sad smo počeli ponovo razgovarati, zvali su nas sami za odašiljača i veza jer oni su institucija koja je zadužena za distribuciju signala, a Vijeće za medije, za elektronske medije odobrava koncesije.
+
+201
+00:22:42,400 --> 00:22:53,039
+[SPEAKER_00] Sad su oni pokrenuli proceduru jer tu su bile još dvije televizije s nama, a mi smo se dostavili sami njima je preskupo održavanje jednog odašiljača samo za nas.
+
+202
+00:22:53,680 --> 00:23:04,240
+[SPEAKER_00] Pa evo ja se uzdam da obzirom da i jedno i drugo su državne firme da će se naći, dakle sad netko drugi radi za nas, ne mi.
+
+203
+00:23:04,799 --> 00:23:12,400
+[SPEAKER_00] Ako bi se to dogodilo, to bi bilo odlično i mi bi mogli uskoro se preseliti na Sljeme.
+
+204
+00:23:12,559 --> 00:23:16,240
+[SPEAKER_00] Što se nas tiče, nama je to jedan gumb.
+
+205
+00:23:17,119 --> 00:23:25,359
+[SPEAKER_00] Dakle nemamo mi nikakvih dodatnih dorada ili investicija ili bilo čega, samo ćemo biti sa većim dosegom.
+
+206
+00:23:26,000 --> 00:23:28,000
+[SPEAKER_01] Je li njima isto jedan gumb ili je.
+
+207
+00:23:28,480 --> 00:23:28,799
+[SPEAKER_01] Isto.
+
+208
+00:23:29,440 --> 00:23:30,880
+[SPEAKER_01] Znači, da, da, ok.
+
+209
+00:23:32,640 --> 00:23:39,039
+[SPEAKER_01] Pa mislim, ono što, pričali smo kratko o tome prije koji dan, malo mi je to neshvatljivo.
+
+210
+00:23:39,759 --> 00:23:46,319
+[SPEAKER_01] U smislu pokušam naći interes neki u tome, ne želim vjerovati da je sve tako neki prljavi interes da se treba ugasiti ta cijela priča.
+
+211
+00:23:46,960 --> 00:23:55,039
+[SPEAKER_00] Uglavnom, ja mislim da je to bojazan da laudato televizija nema novaca i da se neće moći uspjeti nositi sa tim velikim troškom.
+
+212
+00:23:56,160 --> 00:24:00,720
+[SPEAKER_00] Ali evo sad ova stvar seljenja s tu stog vrha.
+
+213
+00:24:01,119 --> 00:24:18,000
+[SPEAKER_00] na slijeme, čak ćemo plaćati jedna tisuća eura manje a imati veći doseg pa evo svi oni koji tvrde da nemamo novaca sad neka nam pomognu da mi plaćamo manje ali koncesiju koju imamo.
+
+214
+00:24:18,640 --> 00:24:52,960
+[SPEAKER_01] Frapantan je podatak, blizu dvjesto tisuća eura mjesečno i stvarno čestitam vam na tome što uspjevate i dalje gurati tu priču mislim da možda ljudi kada čuju tako neku veliku brojku kažu ajme šta ja sad mogu svaka čas ko god tim velikim poduzetnicima koji rade tako nešto ali evo kako idemo i u neki mini fundraising tu mladima za domovinu onda možemo vidjeti da da imamo karikiram sad pedeset ili stotinu ljudi koji mogu donirati mjesečno pet ili deset eura odreknuti se dvije tri svoje kave ili ne znam čega šta se događa da mogu učiniti da ova priča bude puno puno puno ozbiljnija.
+
+215
+00:24:53,279 --> 00:25:49,119
+[SPEAKER_00] Ja mogu misliti koliko je sa vašim brojkama jer ja vjerujem da vas pratio ono karikiram da klub prijatelja da sad ima trideset i četrdeset tisuća manje od trideset tisuća manje od trideset tisuća manje ali to je stvarno ozbiljna brojka ljudi koja kada bi se još malo povisila to su minimalni izdaci koji se mogu dati da priča ide dalje pa evo ja ovdje apeliram na sve one koji ne razumiju i koji se boje i koji misli u šta ćemo, ajde čak tri eura, mi idemo minimalno tri eura, ja garantiram da velike brojke kad množite tri eura, ajde idemo pomnožiti tri eura sa pedeset tisuća to je to, to je klub prijatelja skoro za sve, ali ok imamo nešto još malo od marketinga, nekih petnaest posto prihoda nešto malo dobijemo od države ali govorimo o tri eura ja bi volio da to stavimo u naglasak da ne ode dalje znači govorimo o jednoj kavi danas koju ćemo se odreć da bi priča išla dalje da da to je to.
+
+216
+00:25:50,000 --> 00:26:05,759
+[SPEAKER_00] I zaista, evo, mi, velim, mala kućanstva, baš smo radili sad podatke za prošlu godinu, negdje oko milijuna eura u prošloj godini došlo nam je od malih kućanstva.
+
+217
+00:26:05,920 --> 00:26:12,319
+[SPEAKER_01] Fenomenalno, čestitam vam na tome, da, to je znak da to ide stvarno organski i nadam se da će se taj broj sve više i više povećavati.
+
+218
+00:26:12,400 --> 00:26:17,119
+[SPEAKER_01] Pogotovo što smatram da u Hrvatskoj stvarno treba zažive ta kultura, da ne može ti sve država dati.
+
+219
+00:26:17,440 --> 00:26:18,880
+[SPEAKER_01] Sistem je kriv, država je kriva.
+
+220
+00:26:18,960 --> 00:26:35,839
+[SPEAKER_00] A kultura koja živi već odavno u Americi, oni tamo znaju da je fundraising, da se stvari događaju sa skupljanjem novaca i to je, mislim, ne bi čovjek rekao, ali je to zakon brojki.
+
+221
+00:26:36,160 --> 00:26:41,119
+[SPEAKER_00] Što nas je više, zamislite, ja sam rekla 50 tisuća, mislim mi stvarno imamo i veliku gledanost.
+
+222
+00:26:41,279 --> 00:26:44,880
+[SPEAKER_00] Najgledanija smo nenacionalna televizija u Hrvatskoj.
+
+223
+00:26:45,039 --> 00:26:49,839
+[SPEAKER_00] Gledaju nas u BiH, gledaju nas u Europi, gledaju nas u Americi, u Australiji.
+
+224
+00:26:50,400 --> 00:26:58,799
+[SPEAKER_00] Dakle, ono, povezujemo, ja osjećam laudatu televiziju kao jedan most među Hrvatima u cijelome svijetu.
+
+225
+00:26:59,039 --> 00:27:07,279
+[SPEAKER_00] I sad zamislite, ako ako je to most među Hrvatima u cijelom svijetu, zamislite da je nas sto tisuća i da imamo ta tri eura.
+
+226
+00:27:09,279 --> 00:27:12,160
+[SPEAKER_01] Da, da i to na mjesečnoj bazi tri eura što je surudo.
+
+227
+00:27:12,240 --> 00:27:14,559
+[SPEAKER_00] Ali, okej, vjerujem da se to može složiti.
+
+228
+00:27:14,880 --> 00:27:33,680
+[SPEAKER_00] Ja mislim i ovu televiziju i gradi u hrvatski narod i nekoj nastavi graditi dalje i neka nas bude što više, ne samo za televiziju, pa evo i vi imate sigurno svoj nekakav fundraising mladi za domovinu, ima tu toliko predivnih udruga u Hrvatskoj koje upravo mladi pokreću.
+
+229
+00:27:34,880 --> 00:27:45,359
+[SPEAKER_00] Evo zaista potičem sve koji mogu samo se uključite i ne bojte se ta tri eura će se pretvoriti u trideset tisuća u tristo tisuća u tri milijuna.
+
+230
+00:27:45,759 --> 00:27:46,400
+[SPEAKER_01] Da, da, da.
+
+231
+00:27:46,880 --> 00:28:06,880
+[SPEAKER_01] Sad kad razmišljamo moram vas još malo ipak sudjelujem u menadžment nismo se s toga ni dotaknuli pa me jako zanima ova dimenzija ekonomska kako sada izgleda neko stvaranje nekog strateškog plana za laudaciju televiziju u sljedećih nekih pet ili deset godina i evo to pišite mi kako izgleda proces.
+
+232
+00:28:07,599 --> 00:28:19,599
+[SPEAKER_00] Pa ja vama moram reći da strateški planovi da Da moj život kao postoji do laudata i onda za vrijeme laudata još nije nakon.
+
+233
+00:28:21,119 --> 00:28:22,880
+[SPEAKER_00] I da je to sasvim različito.
+
+234
+00:28:25,039 --> 00:28:31,839
+[SPEAKER_00] U školi, na fakultetu uči se kako se uči i sve pet i sve je to primjenjivo i Bogu hvala da sam to naučila.
+
+235
+00:28:32,480 --> 00:28:36,000
+[SPEAKER_00] Ali laudato televizija je sasvim nešto drugo.
+
+236
+00:28:36,160 --> 00:28:43,759
+[SPEAKER_00] Ja mogu planirati koliko god hoću, ali ako to nije Božja volja, to se jednostavno dogoditi neće.
+
+237
+00:28:44,000 --> 00:28:47,680
+[SPEAKER_00] Naš plan, moj plan, moj plan Bože, me čuješ.
+
+238
+00:28:48,960 --> 00:28:53,440
+[SPEAKER_00] je nacionalna koncesija sigurno u idućih pet godina.
+
+239
+00:28:54,240 --> 00:28:59,119
+[SPEAKER_00] Zašto toliko želimo nacionalnu koncesiju da možda to pojasnimo?
+
+240
+00:28:59,599 --> 00:29:16,319
+[SPEAKER_00] Iako Laudato televizija se može gledati u cijeloj Hrvatskoj, postoje kablovski operatori da ih sad ne nabrajamo imenom preko kojih vi možete uz određenu mjesečnu pretplatu dobit Laudato televiziju u osnovnom paketu.
+
+241
+00:29:16,880 --> 00:29:26,960
+[SPEAKER_00] Mi od toga, samo da pojasnim, nemamo ništa, ali jednog dana kad budemo nacionalna televizija onda bi i mi sudjelovali u dijelu toga kolača.
+
+242
+00:29:27,599 --> 00:29:48,400
+[SPEAKER_00] Dakle, laudato, mnogi gledaju, mnogi su si kupili ove i one uređaje i gledaju i u Hrvatskoj, ali što sam htjela reći, koncesiju u smislu ako bi se ona dobila, mislim baš u tom smjeru strateško kako izgleda taj proces ili taj dio.
+
+243
+00:29:48,799 --> 00:30:17,440
+[SPEAKER_00] Da, to sam htjela reći da nama su najveći ono što bismo mi željeli, željeli bismo doći do ljudi koji si ne mogu priuštiti, dakle svi moraju plat plaćati pretplatu javnoj televiziji, a ako želite gledati laudato, ako ste izvan ruba Zagreba, baš i doslovno izvan ruba Zagreba pa u cijeloj zemlji, morate ići nekog kavlovskog operatora, a mnogim ljudima je puno.
+
+244
+00:30:17,759 --> 00:30:24,559
+[SPEAKER_00] Puno im je dati još ne znam, petnaest, dvadeset, trideset eura ili već koliko se plaća mjesečno zova i onaj paket.
+
+245
+00:30:25,279 --> 00:30:32,960
+[SPEAKER_00] Želimo doći do svakog čovjeka u Hrvatskoj, do onog siromašnog u Slavoniji, u Zagori, u Lici.
+
+246
+00:30:34,160 --> 00:30:38,720
+[SPEAKER_00] Želimo doći u bolnice., želimo doći u staračke domove.
+
+247
+00:30:39,200 --> 00:30:46,799
+[SPEAKER_00] Bolnica ako i kupi Max TV, ali to će biti jedan zajednički, neće doći u svaku sobu.
+
+248
+00:30:49,440 --> 00:30:53,839
+[SPEAKER_00] To je nama cilj, zato je nama toliko važna ta nacionalna koncesija.
+
+249
+00:30:54,240 --> 00:31:00,799
+[SPEAKER_00] Tu nismo toliko, dakle mladi ljudi nas mogu i prate nas i na YouTube-u i na internetu.
+
+250
+00:31:01,440 --> 00:31:12,720
+[SPEAKER_00] Mi čak imamo i naš Vimeo paket, naši prijatelji koji su nam zlatni prijatelji mogu gledati neke serije i više od onoga što mogu gledati obični.
+
+251
+00:31:13,119 --> 00:31:18,319
+[SPEAKER_00] prijatelji i više od onoga što je free na našem YouTube računu.
+
+252
+00:31:18,640 --> 00:31:25,039
+[SPEAKER_00] Mislim da sad mi imamo negdje oko sto pedeset tisuća subskribera skoro na našem kanalu.
+
+253
+00:31:25,680 --> 00:31:50,000
+[SPEAKER_00] Dakle ovdje nam nisu toliko cilj mladi jer kažu televizija je mali ekran i je stvar koja odumire sve više se gleda i emisije na zahtjev ali postoje i dalje još jedna određena generacija ljudi koja vam neće gledati na zahtjev koja će vam točno sjesti u sedam sati gledati vijesti.
+
+254
+00:31:51,119 --> 00:32:05,599
+[SPEAKER_00] I mi bi voljeli doći upravo do takvih ljudi zato što znam, javljuju nam, toliki su prešli ono što se kaže sa ovog svijeta sa daljinskim u ruci, a na malom ekranu je bila laudatelja.
+
+255
+00:32:06,240 --> 00:32:18,319
+[SPEAKER_01] Sad vjerujem da promišljate o postupama, baš zanima osim te nacionalne koncesije, je li ima još neka stvar koja, neki mali zubičak ili neki level koji se treba preći da bi se priča trebala na još većini?
+
+256
+00:32:18,640 --> 00:32:19,599
+[SPEAKER_00] Prijatelj, doseg.
+
+257
+00:32:20,720 --> 00:32:24,400
+[SPEAKER_00] Pričali smo malo prije, sad nam je cilj doći do 30.
+
+258
+00:32:24,400 --> 00:32:31,839
+[SPEAKER_00] trideset kad bi došli do pedeset pa u pet godina kad bi bili na sto tisuća ova televizija bi bila wow.
+
+259
+00:32:33,119 --> 00:32:40,960
+[SPEAKER_01] Recimo da imamo sto tisuća da imate sto tisuća u klubu prijatelja moramo tako početi priču.
+
+260
+00:32:42,400 --> 00:33:12,640
+[SPEAKER_00] U tom slučaju što je ona stvar u koju ćete više ulagati u organizacijski programski, apsolutno, prije svega programski imali bi više dobrih serija dobrih filmova razmišljali smo čak o tome to sam sa gospodinom robotom kurbašom razgovarala na tu temu već godinama, mi to maštamo o tome kako bi bilo lijepo da mi napravimo jednu kršćansku sapunicu, da se manje gledaju turske serije, da se više gledaju.
+
+261
+00:33:12,799 --> 00:33:23,599
+[SPEAKER_00] Zamislite kršćanska sapunica sa vrijednostima moralnim, ako se i dogodi neki zaplet, da rasplet budu naše vrijednosti, dakle vjera, ljubav i domovina.
+
+262
+00:33:23,759 --> 00:33:26,640
+[SPEAKER_00] Evo, to bi jako željeli.
+
+263
+00:33:26,799 --> 00:33:36,000
+[SPEAKER_00] Željeli bi puno više dobrih crtića za djecu koje bi mi sinkronizirali, dakle, djeca teško da mogu čitati titlove, pogotovo ona manja.
+
+264
+00:33:36,799 --> 00:33:40,880
+[SPEAKER_00] Dakle, to bismo voljeli, ima odličnih, ali sve to košta.
+
+265
+00:33:42,079 --> 00:33:47,039
+[SPEAKER_00] Koštaju nabavljanja prava, a pogotovo ako se ide na sinkronizaciju, tu su i glumci.
+
+266
+00:33:47,519 --> 00:33:49,920
+[SPEAKER_00] Svaki taj projekt je ono veliki projekt.
+
+267
+00:33:51,119 --> 00:34:11,599
+[SPEAKER_00] Ali, oprostite što upravo, samo da ovo, sjetila sam se danas gdje sam se čula sa Simonom, mi vam sad na televiziji pokrećemo jednu opet novu priču, toliko koliko možemo, u granicama financija koje možemo, ona će biti voditeljica te emisije, evo ovo je ekskluzivno.
+
+268
+00:34:12,079 --> 00:34:14,239
+[SPEAKER_00] Evo da nije Simona rekla to ujutro.
+
+269
+00:34:16,880 --> 00:34:21,760
+[SPEAKER_00] Evo ekskluzivno, emisija se zove Novi život, kreće na Uskrs.
+
+270
+00:34:22,320 --> 00:34:25,599
+[SPEAKER_00] To će biti prva emisija sa gledateljima u našem studiju.
+
+271
+00:34:25,840 --> 00:34:27,440
+[SPEAKER_00] Biće oko 30 gledatelja.
+
+272
+00:34:28,079 --> 00:34:32,719
+[SPEAKER_00] Biće Simona koja će voditi, ona je voditeljica, bit će uvijek jedan svećenik.
+
+273
+00:34:33,440 --> 00:34:41,920
+[SPEAKER_00] Imaćemo gosta nekoga od obraćenika sa estrade, recimo kao što je Žaža, kao što je Albina.
+
+274
+00:34:42,480 --> 00:34:47,039
+[SPEAKER_00] Evo uskoro će nam doći u tu emisiju, čini mi se da nam jedan od prvih goći, Ivana Kovač.
+
+275
+00:34:48,480 --> 00:35:03,920
+[SPEAKER_00] I u emisiji ćemo i pjevati i ukoliko nam taj obraćenik nije pjevač jer ima obraćenika i glumaca i književnika, onda će biti u gostima u studiju još neko ko lijepo pjevač.
+
+276
+00:35:04,079 --> 00:35:08,239
+[SPEAKER_01] I kako postati gledatelj, kako biti u ovih 30, jel mogu li?
+
+277
+00:35:09,440 --> 00:35:10,239
+[SPEAKER_00] Da, da, da.
+
+278
+00:35:12,880 --> 00:35:27,840
+[SPEAKER_00] Vrlo jednostavno možete pratiti ili našu televiziju ili otići na naš portal, a u dato.hr ili na stranicu kluba prijatelja, tamo možete skenirati kod za one koji su malo više skeniranju.
+
+279
+00:35:28,880 --> 00:35:39,920
+[SPEAKER_00] Ukoliko imate svoju bankarsku aplikaciju, otvorite bankarsku aplikaciju, skenirate kod i uplatite tri ili više eura, mi uvijek kažemo minimalno tri eura.
+
+280
+00:35:42,320 --> 00:35:42,800
+[SPEAKER_00] To je način.
+
+281
+00:35:43,599 --> 00:35:59,679
+[SPEAKER_00] Ili nazovite naše telefone, naši telefoni su također isto na stranicama, na internetu, gdje god, pa će vam naše djevojke izdiktirati IBAN za one koji tome nisu više ni elektronskim putem.
+
+282
+00:36:00,480 --> 00:36:14,159
+[SPEAKER_00] Uglavnom mi imamo uredno tri žene su zaposlene koje se javljaju na telefone naših prijatelja i koje odgovaraju na pitanja jer mora biti ta interaktivna komunikacija.
+
+283
+00:36:14,719 --> 00:36:33,519
+[SPEAKER_00] es tim, evo ja se samo ispričavam što smo mi morali ograničiti razgovore te maksimalno na petnaest minuta jer ove naše sucure super, s njima jako se voli razgovarati i onda je tu, to onda priča ode kroz cijeli život, nije samo ono, priča o IBAN-u.
+
+284
+00:36:33,920 --> 00:36:44,800
+[SPEAKER_00] Evo ispričavam se ovim putem svima koji misle da su naši razgovori prekratki, ali mi uvijek savjetujemo da se savjetuje i sa duhovnikom i sa župnikom, mi možemo koliko možemo.
+
+285
+00:36:45,599 --> 00:36:46,079
+[SPEAKER_01] Zanimljivo.
+
+286
+00:36:46,639 --> 00:36:50,159
+[SPEAKER_01] Kad ste spomenuli sad ovu Božju providnost, to mi je jedna zanimljiva tema.
+
+287
+00:36:50,320 --> 00:36:52,480
+[SPEAKER_00] Evo, moja briga je o tome.
+
+288
+00:36:52,960 --> 00:37:14,559
+[SPEAKER_01] Da, baš me, evo, možemo kratko možda i o knjizi kasnije, ali sad recimo nalazite se na ekonomskom fakultetu, dolazite kao gostujući predavač i tamo na jednom satu radimo o tome da firma da bi bila u potpunosti zdrava, ona mora imati, karikiram sa dva, tri puta veći prihod nego što su troškovi, ovo, ono i sad ima tu neka ekonomska dimenzija iz toga.
+
+289
+00:37:14,960 --> 00:37:23,760
+[SPEAKER_01] I uopće se ne uzima ova dimenzija da je firma zdrava ako je stvarno ovaj koji iskreno vjeruje u tu Božju providnost da se može dogoditi čuda.
+
+290
+00:37:23,920 --> 00:37:25,440
+[SPEAKER_01] Pa dajte mi taj dio pojasnite.
+
+291
+00:37:25,679 --> 00:37:33,679
+[SPEAKER_00] Pa ja bih samo rekla ako gospodin Kuću ne gradi, uzaluda nam je trud ili uzaluda nam je trud svirači.
+
+292
+00:37:35,199 --> 00:37:36,719
+[SPEAKER_00] Doslovno bi tako rekao.
+
+293
+00:37:39,199 --> 00:37:47,199
+[SPEAKER_00] Apsolutno moramo imati znanje, moramo se educirati, moramo završavati fakultete, što smo obrazovani, to smo bolji.
+
+294
+00:37:47,679 --> 00:38:01,119
+[SPEAKER_00] Ali osim razvoja, osim talenta, osim upornosti, morali bi, pogotovo mi koji smo vjernici, trebamo se i moramo se osloniti i na tu Božju volju.
+
+295
+00:38:03,119 --> 00:38:07,360
+[SPEAKER_00] Često puta ljudi pitaju što je Božja volja za mene.
+
+296
+00:38:08,159 --> 00:38:11,360
+[SPEAKER_00] Zapravo odgovor na to je naša svetost.
+
+297
+00:38:12,000 --> 00:38:23,920
+[SPEAKER_00] Što god radili, u kojem god staležu bili, bili profesor na ekonomskom fakultetu ili bili poduzetnik ili bili čistačica ili medicinska sestra.
+
+298
+00:38:25,039 --> 00:38:34,800
+[SPEAKER_00] što god radimo mi koji vjerujemo trebali bi voditi računa da radimo to zaista na posvećenje i na veću slavu Božju.
+
+299
+00:38:35,119 --> 00:38:42,000
+[SPEAKER_00] I onda dođe uvijek taj trenutak Božje intervencije koji nikad nije naš trenutak.
+
+300
+00:38:42,800 --> 00:38:49,280
+[SPEAKER_00] Ja to zovem providnost u svoje vrijeme, ne u moje, u svoje, u njegovo.
+
+301
+00:38:50,559 --> 00:38:52,800
+[SPEAKER_00] I to onda taj faktor strpljenja, znate?
+
+302
+00:38:53,599 --> 00:38:54,880
+[SPEAKER_00] Strpljenja i trpljenja.
+
+303
+00:38:56,000 --> 00:38:56,960
+[SPEAKER_01] S utrupljenjem, da.
+
+304
+00:38:57,840 --> 00:38:58,880
+[SPEAKER_01] S utrupljenjem, točno.
+
+305
+00:38:59,519 --> 00:39:05,519
+[SPEAKER_01] Vi ste u podcastu Mladi za domovinu, tako da ne možemo izbjeći temu domovine u ovom razgovoru, pa ću vas morati pitati o tome.
+
+306
+00:39:05,840 --> 00:39:12,000
+[SPEAKER_01] Ne treba biti vaš bliski suradnik da se vidi da volite Hrvatsku, to se može vidjeti, ali odakle ta ljubav?
+
+307
+00:39:12,480 --> 00:39:15,199
+[SPEAKER_01] Zašto želite i kroz taj profesionalni rad proširiti to?
+
+308
+00:39:16,239 --> 00:39:29,440
+[SPEAKER_00] Svim srcem, svom dušom svojom ja volim našu Hrvatsku i to je jednostavno nedjeljivo, ljubav prema Bogu, prema domovini, prema obitelji, svima nama koji vjerujemo.
+
+309
+00:39:30,960 --> 00:39:36,480
+[SPEAKER_00] Nije to mastu, to je najstudu, to je.
+
+310
+00:39:36,480 --> 00:39:46,800
+[SPEAKER_00] To je, od tud je i došla ideja o domoljubnom koncertu, domu MOM, kod prvog smo napravili tog 13.
+
+311
+00:39:47,119 --> 00:39:48,960
+[SPEAKER_00] sječnja 2024.
+
+312
+00:39:49,440 --> 00:39:49,519
+[SPEAKER_00] godine.
+
+313
+00:39:50,159 --> 00:39:57,199
+[SPEAKER_00] To je bilo na dan kada, 32 godine, kada nas je Vatikan prvi priznao kao državu.
+
+314
+00:39:57,679 --> 00:40:04,079
+[SPEAKER_00] I što je poruka svih tih naših koncerata, naše ljubavi prema domovini?
+
+315
+00:40:04,719 --> 00:40:31,679
+[SPEAKER_00] Idemo zagrli domovinu pjesmom, idemo pokazati da se domovina može voljeti svaki dan, ali svaki dan, ne samo kad su određeni praznici, blagdani, ne samo kad nam, ne znam, rukometaši, nogometaši donesu srebro, zlato, broncu, zlato, nego da domovinu volimo svaki dan i da ju volimo odgovorno.
+
+316
+00:40:32,159 --> 00:40:36,639
+[SPEAKER_00] I tu se sad opet vraćamo na onu svetost o kojoj smo malo prije pričali.
+
+317
+00:40:37,280 --> 00:40:50,880
+[SPEAKER_00] Dakle, sve što radimo raditi odgovorno, savjesno, ne manipulativno, naravno u koordinaciji sa gospodinom Ora et Labora.
+
+318
+00:40:51,039 --> 00:40:53,840
+[SPEAKER_00] Dakle, trebamo raditi i trebamo moliti.
+
+319
+00:40:54,719 --> 00:40:57,920
+[SPEAKER_00] Željeli smo potaknuti mlade ljude, mlade generacije.
+
+320
+00:40:58,079 --> 00:41:16,719
+[SPEAKER_00] Bilo je jedno vrijeme kada Marka Petkovića Thompsona nije bilo na sceni jer je bio vezan uz boli svoga sina, kao da je domoljublje utihnulo, kao da se u tom glazbenom svijetu, kao da se stavilo u neki, ne znam, pod stol.
+
+321
+00:41:18,400 --> 00:41:23,199
+[SPEAKER_00] I moram priznati za taj prvi koncert bilo nam je jako teško naći mlade pjevače.
+
+322
+00:41:23,599 --> 00:41:29,519
+[SPEAKER_00] A iza toga koncerteta Jure Brkljača je napisao predivnu pjesmu Zadru za uvijek.
+
+323
+00:41:29,840 --> 00:41:31,679
+[SPEAKER_00] I sad evo piše novu pjesmu.
+
+324
+00:41:31,840 --> 00:41:37,199
+[SPEAKER_00] Dakle, mladi ljudi su počeli stvarati i pisati pjesme domovini.
+
+325
+00:41:37,840 --> 00:41:46,480
+[SPEAKER_00] Kad sam ono vidjela, Gražan Žanko, Mericetinić, sve to ovrši, ovrši 60, ovrši 70, mislim.
+
+326
+00:41:47,440 --> 00:42:00,559
+[SPEAKER_00] Ali mi sad smo i djecu uključili u ove naše projekte, imamo predivnih ideja, idemo sa djecom da djeca pjevaju domovini, da od malih mnogo, mi smo imali jednu audiciju baš.
+
+327
+00:42:01,519 --> 00:42:32,559
+[SPEAKER_00] za klince nedavno i to toliko osjećaja, toliko ljubavi, bilo ih je dvadeset kod nas u studiju, ja sam izašla pred roditelje i onda sam im zahvalila, rekla sam dragi roditelji, djeca mogu naučiti intonativno pjevati bilo koju pjesmu ali sa toliko osjećaja, sa toliko ljubavi pjevati domovini to mogu jedino ako su sjeme to dobili od vas u svome vlastitom domu, prema domovini, prema Bogu.
+
+328
+00:42:33,599 --> 00:42:49,679
+[SPEAKER_01] Slažem se tu s vama i nadovezat ću se kratko, dakle upravo je taj kulturološki rad koji vi radite, medijsko-kulturološki rad je jako, nije on sam sebi svrha nego upravo potiče jednu ljubav prema Domovini koji nakon toga se mora pokazati na nekim drugim mjestima.
+
+329
+00:42:49,840 --> 00:42:57,039
+[SPEAKER_01] Dakle samo to stalno oživljavanje tog osjećaja identiteta onoga iza čega stojimo da bismo mogli to živjeti na drugim mjestima.
+
+330
+00:42:57,280 --> 00:43:04,559
+[SPEAKER_00] Da, i samo bih htjela iz ovog podkasta se zapamti ta rečenica da se Domoljublje živi odgovorno.
+
+331
+00:43:04,960 --> 00:43:05,920
+[SPEAKER_01] Da, da, da, pa je.
+
+332
+00:43:06,480 --> 00:43:10,400
+[SPEAKER_00] U svakom danu, u svakom satu u bilo čemu što radimo.
+
+333
+00:43:10,960 --> 00:43:17,440
+[SPEAKER_00] I da ne čekamo ono što ja uvijek govorim, nećemo čekati da tamo neko drugi mijenja svijet za nas.
+
+334
+00:43:18,159 --> 00:43:25,599
+[SPEAKER_00] Idemo mi biti ti, svako od nas, prvo promijeniti svoje srce i onda mijenjajući sebe mijenjaju se i ljudi.
+
+335
+00:43:26,960 --> 00:43:31,199
+[SPEAKER_01] Ako nema te osobne obnove ne možemo očekivati da će se dogoditi neka društvena obnova.
+
+336
+00:43:32,480 --> 00:43:34,880
+[SPEAKER_01] Ajde, morat ću vas pitati onda baš za tu viziju Hrvatske.
+
+337
+00:43:35,039 --> 00:43:41,199
+[SPEAKER_01] Znam da je teško pitanje, veliko pitanje, ali vizionar ste i liderica i mogu vas to pitati.
+
+338
+00:43:41,840 --> 00:43:48,159
+[SPEAKER_01] Što vidite da bi se u Hrvatskoj možda to trebalo promijeniti ili taj jedan mali zubičak koji bi bio dovoljan?
+
+339
+00:43:49,280 --> 00:43:56,400
+[SPEAKER_01] da bi vizija Hrvatske bila onako potpunjena, zanimljiva, strateška, jedna prava, da bi bili neka prava zemlja.
+
+340
+00:43:56,639 --> 00:44:02,079
+[SPEAKER_01] Pitat ću vas, dakle, što je onda vaša vizija Hrvatske za nekih dvadeset godina, kako biste Hrvatsku željeli imati?
+
+341
+00:44:02,239 --> 00:44:06,639
+[SPEAKER_01] I s druge strane, šta je ono što se mora dogoditi, koji je taj zubićak koji se mora preokrenuti?
+
+342
+00:44:06,960 --> 00:44:14,639
+[SPEAKER_00] Da bismo pričali o Hrvatskoj za dvadeset godina, mi već prije svega danas, jučer smo trebali početi na tome raditi, to je demografija.
+
+343
+00:44:15,280 --> 00:44:28,559
+[SPEAKER_00] Dakle, moraju se donositi raznorazne popularne mjere, mislim da su sad i neki gradonačelnici, načelnici počeli ići u tom smislu financiranja, rođenja drugog, trećeg djeteta i više.
+
+344
+00:44:29,199 --> 00:44:52,159
+[SPEAKER_00] Mislim da bi zaista demografija je prevažna i mislim da sada novi ministar Šipić radi jako dobro i da radi u tom smjeru i iako smo mi na Laudatu televiziji apsolutno apolitični, ali ja u ovoj emisiji želim zaista dati svaku podršku za takvu vrstu demografije.
+
+345
+00:44:52,800 --> 00:45:06,000
+[SPEAKER_00] Dakle, Hrvatska koja moli, Hrvatska koja se ne odjeljuje gospodina i donosi stalno ponavljam, ništa nas neće od Gospodina odvojiti, ni čast ni vlast, ništa mi.
+
+346
+00:45:06,559 --> 00:45:16,159
+[SPEAKER_00] Ukoliko ostanemo, a na dobrom smo putu da ostanemo uz Isusa, onda će ova naša domovina imati budućnost.
+
+347
+00:45:16,320 --> 00:45:19,119
+[SPEAKER_00] I to bi poručila i svakom mladom čovjeku.
+
+348
+00:45:19,360 --> 00:45:44,079
+[SPEAKER_00] Toliko je, ja osjećam jedan duhovni zanos i duhovni polet, toliko je divnih udruga, toliko je molitvenih zajednica, toliko se lijepo moli, toliko se događaju predivne stvari, rade se filmovi o Domovinskom ratu, rade se duhovne obnove, obnavljaju se srca.
+
+349
+00:45:47,119 --> 00:46:04,400
+[SPEAKER_00] Dok narod ima ono što je meni predivno, evo gledam sad i vas u emisiji, kolegicu koja realizira program, ja sam presretna da postoje takvi mladi ljudi poput vas jer onda znam i sigurna sam moja domovina ima budućnost.
+
+350
+00:46:04,800 --> 00:46:09,920
+[SPEAKER_00] A ja ću tamo negdje gore, nadam se, zagovarati da idete samo prema naprijed.
+
+351
+00:46:10,559 --> 00:46:26,800
+[SPEAKER_00] Pozitivno, pozitivan stav je jako važan jer negativne misli, koliko god je teško, uvijek se treba, to je ono što ja osobno radim, izdići se iznad težine trenutnog problema, probat se izdići i gledati pozitivno.
+
+352
+00:46:27,199 --> 00:46:28,159
+[SPEAKER_00] To je jako važno.
+
+353
+00:46:28,480 --> 00:46:30,159
+[SPEAKER_00] Ići prema naprijed.
+
+354
+00:46:30,480 --> 00:46:36,639
+[SPEAKER_01] I po meni i osobe koje su kapacitete, koji su lideri da prepoznaju takve mlade ljude i da ulažu u njih.
+
+355
+00:46:36,880 --> 00:46:44,719
+[SPEAKER_01] Recimo, baš mi je bilo interesantno, evo prije koji tjedan sam bio na onom filmu o monsignoru Nikolij Jeteroviću na kojem su, šta mi je bilo interesantno?
+
+356
+00:46:45,039 --> 00:46:50,079
+[SPEAKER_01] Interesantno mi je kako je Crkva kao organizacija prepoznala njegov intelekt, sposobnosti i slično.
+
+357
+00:46:50,400 --> 00:47:01,920
+[SPEAKER_01] I oni su prvo njega poslali evo na doktorat u Rim, bilo bi sjajno da si tamo, nakon toga bilo bi dobro da odeš u Nika Rag u obalu Bjelokosti i slično, pa nakon toga su mu rekli, odlično da postaneš unci u Ukrajini, tamo sjajno ti je.
+
+358
+00:47:02,079 --> 00:47:13,519
+[SPEAKER_01] I on je bio poslušan jednoj organizaciji koja procjenjuje njegove sposobnosti kvalitete i on vjeruje da oni razmišljaju pozitivno o njemu i da će se njemu to na kraju isplatiti.
+
+359
+00:47:13,760 --> 00:47:23,199
+[SPEAKER_01] I evo praktički je čovjek ono bio treća četvrta osoba države Vatikan što je ogromna stvar što pokazuje koliko Crkva ozbiljno radi sa ljudima koji pokazuju neki kapacitet.
+
+360
+00:47:23,599 --> 00:47:43,280
+[SPEAKER_01] Baš sam dojma, s druge strane da možda u Hrvatskoj nije taj neki, pogotovo institucije, da toliko i ne gledaju tog mladog čovjeka da žele da bude uspješan, da žele da, kako bi rekao, da se gradi kroz taj isti sustav, kao da imam osjećaj da svi tu nekako gramzljivo traže neko svoje mjesto, da ne bi se slučajno netko ugrozio.
+
+361
+00:47:43,519 --> 00:47:59,360
+[SPEAKER_01] Pa baš onda iz te perspektive želim i vas pitat za vašu televiziju, koliki je taj prostor možda za mlade ljude, da možda vidite studente novinarstva ili slično, da se možda njima otvori neki prostor, da se s njima možda radi, jer mislite možda da na tom polju trebamo organizacijski još dodatno ulagati.
+
+362
+00:47:59,360 --> 00:48:00,880
+[SPEAKER_01] Evo baš me zanima vaše mišljenje.ju.
+
+363
+00:48:00,960 --> 00:48:05,119
+[SPEAKER_00] Evo samo da se vratim na Nikola Terovića i na tu tihu moć.
+
+364
+00:48:06,719 --> 00:48:17,440
+[SPEAKER_00] Mene je film stvarno dirnuo, oduševio i zapravo gledajući film sam spoznala koliko je taj čovjek učinio za našu zemlju u toj tihoj diplomaciji.
+
+365
+00:48:18,400 --> 00:48:20,719
+[SPEAKER_00] Ko zna je li to bio taj 13.
+
+366
+00:48:20,960 --> 00:48:23,440
+[SPEAKER_00] sječnja da on sa Ivanom Pavlom II.
+
+367
+00:48:23,599 --> 00:48:27,760
+[SPEAKER_00] nije odradio sve što je odradio i beskrenomo svi trebamo na tome biti zahvalni.
+
+368
+00:48:28,079 --> 00:48:41,199
+[SPEAKER_00] Ali ono što ste u pravu, njegovi pretpostavljeni, dakle crkvena hijerarhija prepoznala je u njemu lidera, prepoznala je u njemu nekoga u koga se treba uložiti, školovati itd.
+
+369
+00:48:42,559 --> 00:49:01,039
+[SPEAKER_00] Ako to danas, to crkva danas radi i dalje, ali ako to ne rade institucije, možda je apel da to rade privatni poduzetnici koji ulažu u mladog čovjeka, jer iskustvo se stiče s godinama.
+
+370
+00:49:01,440 --> 00:49:06,559
+[SPEAKER_00] Vi možete imati predivnog i predobrog mentora, ali opet neke dodatne edukacije.
+
+371
+00:49:07,039 --> 00:49:12,000
+[SPEAKER_00] Ja bih na to uvijek potaknula i mi na Laudato televiziji i sami šaljemo.
+
+372
+00:49:13,599 --> 00:49:16,960
+[SPEAKER_00] svoje mlade djelatnike na različite vrste edukacije.
+
+373
+00:49:17,039 --> 00:49:20,480
+[SPEAKER_00] Evo i sad jedan kolega ide u Međugorje na ovaj IT seminar.
+
+374
+00:49:21,760 --> 00:49:28,159
+[SPEAKER_00] Prošle godine je bio u IWTN-u na jednoj edukaciji za komunikaciju na društvenim mrežama.
+
+375
+00:49:29,519 --> 00:49:39,280
+[SPEAKER_00] Mi imamo lijepu suradnju sa Hrvatskim katoličkim sveučilištem upravo i sada se jedna kolegica kod nas nalazi na studentskoj praksi.
+
+376
+00:49:40,639 --> 00:49:50,639
+[SPEAKER_00] I trebamo otvoriti vrata mladim ljudima i trebamo se boriti za mlade ljude i dati maksimalno što možemo od sebe.
+
+377
+00:49:51,280 --> 00:50:12,960
+[SPEAKER_00] Ja sam presretna kad vidim da moji žele učiti pogotovo ono koliko god ja mogu, maksimum organizacijski i šta god, metodično, što god, ali kad vidim da usvajaju i kad vidim da krenu ono misliti kako, nekako ja mislim nego kako mislim da je dobro da misle, presretna sam.
+
+378
+00:50:13,280 --> 00:50:19,679
+[SPEAKER_01] Da, da, mislim da je zapravo možda najveća radost kada vidite nekoga da je poučljiv, da je sposoban, da je spreman ili spreman.
+
+379
+00:50:19,760 --> 00:50:22,000
+[SPEAKER_00] A kad vidiš to sjeme posijano koje jednostavno radi.
+
+380
+00:50:22,400 --> 00:50:25,199
+[SPEAKER_01] Ali dobro, vi stvarno imate većinu mlade ljude koliko sam uspio vidjeti.
+
+381
+00:50:25,360 --> 00:50:27,760
+[SPEAKER_00] Da, i Bogu hvala, ja sam presretan.
+
+382
+00:50:28,000 --> 00:50:29,039
+[SPEAKER_01] To je dobra dinamika, Virun.
+
+383
+00:50:29,440 --> 00:50:32,079
+[SPEAKER_00] Definitivno, ja sam naj, naj, naj, naj, najstariji.
+
+384
+00:50:35,280 --> 00:50:35,760
+[SPEAKER_01] Genialno.
+
+385
+00:50:38,079 --> 00:50:43,679
+[SPEAKER_01] Dajte da vas pitam, ne možemo proći ovaj potkaz, vas ne pitam za progreser, moramo nešto o tome reći.
+
+386
+00:50:44,880 --> 00:50:51,039
+[SPEAKER_01] I dalje zvoni onih 50 tisuća na Maksimiru, ogromna priča prije koju godinu 2022.
+
+387
+00:50:52,559 --> 00:51:00,880
+[SPEAKER_01] Čestitam vam na tome i na ovaj način, osobno hvala što ste to napravili za Hrvatsku, znam da nije bilo ni malo teško, točnije ne znam, evo ispričate mi, je li bilo bilo to?
+
+388
+00:51:01,039 --> 00:51:01,679
+[SPEAKER_00] To je bilo teško, je bilo.
+
+389
+00:51:01,840 --> 00:51:02,880
+[SPEAKER_01] Imamo lagara, imamo lagara.
+
+390
+00:51:05,039 --> 00:51:06,960
+[SPEAKER_01] Poslušam vas, možete sjetiti toga?
+
+391
+00:51:07,440 --> 00:51:12,960
+[SPEAKER_00] Sve se mogu sjetiti, ima zapravo svaka ta priča je za cijelu jednu knjigu.
+
+392
+00:51:13,119 --> 00:51:23,920
+[SPEAKER_00] Ja sad, samo digresiju malu, pokušavam svoju knjigu dovesti do kraja koja bi trebala izaći početkom svibnja, koja se zove Evo me, evo to isto mala ekskluziva, to još nisam opće rekla javno.
+
+393
+00:51:25,199 --> 00:51:33,039
+[SPEAKER_00] I toliko je tih događaja da imam osjećaj da svaki zaslužuje posebnu, ne samo poglavlje, nego cijelu knjižicu.
+
+394
+00:51:33,840 --> 00:51:37,840
+[SPEAKER_00] Ali dobro, progledaj srce mi je krenuo 2014.
+
+395
+00:51:38,239 --> 00:52:10,559
+[SPEAKER_00] godine, prvi put u Hipocentru, samo sa 2000 ljudi, kao ideja da se kroz glazbu poruči hrvatskom narodu, ljudi doći će i dobit ćemo laudatu televiziju, katoličku televiziju, odnosno obiteljsku televiziju sa kršćanskim vrijednostima, jer sam nekako bila uvjerenja da se glazbom može puno bolje prenijeti ta poruka, još kad uključimo srce, kako mali princ veli, srcem se najbolje vidi, to je bilo to.
+
+396
+00:52:11,199 --> 00:52:14,159
+[SPEAKER_00] Sjećam se jedne od televizijeija te 2014.
+
+397
+00:52:14,960 --> 00:52:24,880
+[SPEAKER_00] pitala me voditeljica kako ja sad vidim razvoj te duhovne glazbe u Hrvatskoj, a ja sam samo rekla, pa čujte, uopće nisam razmišljala, samo je izašli iz mene.
+
+398
+00:52:25,119 --> 00:52:32,079
+[SPEAKER_00] Pa evo, sad smo u Hipocentru, pa Dom Spotova, pa Cibona, pa Arena, pa Stadion Maksimir i biti tako.
+
+399
+00:52:34,320 --> 00:52:36,800
+[SPEAKER_00] 2022.
+
+400
+00:52:37,360 --> 00:52:39,760
+[SPEAKER_00] godine, mi 2021.
+
+401
+00:52:39,920 --> 00:52:40,800
+[SPEAKER_00] i 2020.
+
+402
+00:52:41,039 --> 00:52:46,320
+[SPEAKER_00] smo morali otkazati zbog korone i u 2021.
+
+403
+00:52:46,639 --> 00:52:53,440
+[SPEAKER_00] kad smo donosili odluku, još uvijek vladaliale mjere koje su vrijedile za zatvorene prostore sedam metara udaljenosti.
+
+404
+00:52:53,840 --> 00:53:09,199
+[SPEAKER_00] E sad, glavno sam mislila, evo što je Luka, kako ćemo mi se ton, ti si tu na sedam metara, a progledaj srcem, je zagrljaj, zagrljaj ono, nećemo se moći ni vidjeti kako treba u mraku, kamo li zagrljati.
+
+405
+00:53:09,280 --> 00:53:10,960
+[SPEAKER_00] I to nas je odvela na Maksimir.
+
+406
+00:53:11,679 --> 00:53:24,320
+[SPEAKER_00] Ta odluka nas je odvela na Maksimir i kako velika većina naše publike nije bila cijepljenja, rekli smo da moramo organizirati testiranje.
+
+407
+00:53:24,880 --> 00:53:34,480
+[SPEAKER_00] I zato smo stadion odlučili otvoriti u dva sata, a koncert je bio tek u 8 na večer, da se stigne ta silna količina ljudi istestirati.
+
+408
+00:53:35,280 --> 00:53:41,519
+[SPEAKER_00] Međutim, dogodilo se to da je nekoliko dana prije 4.6.2022.
+
+409
+00:53:42,480 --> 00:53:48,800
+[SPEAKER_00] jednostavno mjere su ukinute, a mi smo ostali sa predprogramom i sa programom.
+
+410
+00:53:50,320 --> 00:54:00,719
+[SPEAKER_00] Taj osjećaj, ja se sjećam u tri sata smo molili krunicu Božjeg milosrđa, kad sam ja ušetila, kad sam osjetila, dakle, živjeli smo skoro.
+
+411
+00:54:01,199 --> 00:54:03,679
+[SPEAKER_00] dvije godine u virtualnom svijetu, manje više.
+
+412
+00:54:04,480 --> 00:54:22,559
+[SPEAKER_00] Kad sam vidjela te silne ljude koji sjede na deklicama, djecu koja trče, mlade koji su zagrljeni, sam ovako pogledala gore prema nebu i rekla sam Bože, ovo je naša Hrvatska, ovo je naša Hrvatska i hvala ti na tome.
+
+413
+00:54:23,199 --> 00:54:36,880
+[SPEAKER_00] Dakle, to je bio jedan neprocijenjiv osjećaj i sve to što smo doživjeli i proživjeli te večeri, da sve ono što se meni dogodilo iza toga bio je stvarno jedan teški križni put nakon tog maksimuma.
+
+414
+00:54:36,880 --> 00:54:40,639
+[SPEAKER_00] Nakon tog Maksimira, sve sam to nekako zaboravila.
+
+415
+00:54:41,679 --> 00:54:51,199
+[SPEAKER_00] Kad se sjeti Maksimira, nikad se ne sjetim sa težinom i kroz što smo morali proći prije, a pogotovo ja poslije, uvijek se sjetim samo dobro.
+
+416
+00:54:51,920 --> 00:54:58,159
+[SPEAKER_00] Samo dobro, sama rado, snaga, ljubeza, veselje.
+
+417
+00:54:58,559 --> 00:55:03,360
+[SPEAKER_00] Ali ljudi zagrljeni, nismo više virtualni, nego stvarni zagriženi.
+
+418
+00:55:03,519 --> 00:55:06,159
+[SPEAKER_01] Da, još je to davala jednu dodatnu dimenziju.
+
+419
+00:55:06,320 --> 00:55:07,440
+[SPEAKER_00] Dodatnu dimenziju, da.
+
+420
+00:55:07,679 --> 00:55:09,679
+[SPEAKER_01] Kakva su bila svjedočanstva nakon toga ljudi?
+
+421
+00:55:10,000 --> 00:55:12,639
+[SPEAKER_00] Mislim, slika i stvarno.
+
+422
+00:55:12,639 --> 00:55:26,480
+[SPEAKER_00] I tamo su bili predstavnici IWTN-a iz nekoliko zemalja i posebno ova Vatikanska ekipa IWTN ROM iz Rima poslala je sliku u cijeli svijet.
+
+423
+00:55:28,480 --> 00:55:56,719
+[SPEAKER_00] Dakle velika većina i svjetovnih medija, sekularnih medija prenosili su čudo u Hrvatskoj, to je bilo u oči duhova, to je bilo dakle jedno blagdansko bdijenje, mislim sve se posložilo od toga da mi nikada ne bismo mogli izaći na ta Znači na taj stadion da smo morali platiti troškove trave, jer to su bili silni milijuni.
+
+424
+00:55:57,280 --> 00:56:02,719
+[SPEAKER_00] Mislim da je bilo negdje tad, ne sjećam se više, ali znam da su bili milijuni.
+
+425
+00:56:03,199 --> 00:56:11,280
+[SPEAKER_00] I baš tad, baš tad nakon našeg koncepta, nakon ne znam koji broj godina, Dinamo odlučio da zamijeni travu.
+
+426
+00:56:11,679 --> 00:56:16,639
+[SPEAKER_00] Dakle, mi smo na toj travi mogli šta god, nismo ju morali osiguravati sa portflorom.
+
+427
+00:56:17,199 --> 00:56:25,920
+[SPEAKER_00] Dakle, to su te, ja bih rekla, božje intervencije u svemu kako smo se mi uopće tu dogodili i kako se to sve skupa dogodilo.
+
+428
+00:56:26,159 --> 00:56:49,599
+[SPEAKER_00] Mislim, svjedočanstva su ozdravljenja, radosti, suze, zajedništvo, Hrvatska, mi smo tad odlučili i dvije domoljubne pjesme otpjevati, to, klapa Hrvatske ratne mornarice, Sveti Jura, pjevala je Moju domovinu, a Doris Dragović je otpjevala Dajem ti srce zemljemu.
+
+429
+00:56:49,760 --> 00:57:00,719
+[SPEAKER_00] A možete misliti, pogotovo ljude koji su došli, naši ljudi, za suhu su iz Njemačke, iz Austrije, rade tamo, zagrljeni s tim zastavama na tom Maksimiru, pa taj van.
+
+430
+00:57:00,719 --> 00:57:02,559
+[SPEAKER_00] Pa taj vatromet, pa taj amen.
+
+431
+00:57:03,920 --> 00:57:05,280
+[SPEAKER_00] To je moja Hrvatska.
+
+432
+00:57:06,480 --> 00:57:11,440
+[SPEAKER_00] Ja takvu Hrvatsku volim, takvu Hrvatsku želim i za takvu se Hrvatsku molim.
+
+433
+00:57:11,760 --> 00:57:18,079
+[SPEAKER_00] I mi to možemo, uz pomoć vas mladih, mi možemo mijenjati svijet.
+
+434
+00:57:19,280 --> 00:57:23,280
+[SPEAKER_01] Ali ne samo i mladih, nego i moramo vas slušati malo po tom pitanju.
+
+435
+00:57:26,639 --> 00:57:27,280
+[SPEAKER_01] Da, da, da.
+
+436
+00:57:28,079 --> 00:57:28,880
+[SPEAKER_00] Govorila je sve ovo.
+
+437
+00:57:29,360 --> 00:57:29,840
+[SPEAKER_00] Ovo je baš bilo.
+
+438
+00:57:30,800 --> 00:57:42,880
+[SPEAKER_01] Postavljam ja dosta pitanja, tako da nemojte mi zamjeriti, ali što onda kad pominjete te mlade danas, što danas tražite u tim mladim ljudima, kakvi oni moraju biti, koje vrijednosti, kakav karakter, kako to prosuđujete.
+
+439
+00:57:43,119 --> 00:57:47,840
+[SPEAKER_01] Morali ste proći sa ovakvim ljudima, ja sam uvjeren da je to ono što ostaje.
+
+440
+00:57:48,320 --> 00:58:14,239
+[SPEAKER_00] Čak sam jednom na trenutak rekao da neću više zapošljavati nakon ne, si navršio dvadeset pet godina super baš me zanima dakle odgovornost lojalnost ne izimani dakle nema ono lako ću zaraditi ono što više novaca što manje truda tu formulu dosta treba zaboraviti.
+
+441
+00:58:14,960 --> 00:58:19,760
+[SPEAKER_00] To su formule iz nekih filmova američkih, nemam pojma gdje bi to i šta bi s tim.
+
+442
+00:58:20,400 --> 00:58:35,920
+[SPEAKER_00] Dakle, polako da ti nije sramota raditi niti jedan posao, da se osjeti da potežeš, da ti je stalo i da daješ sebe u to da odrađuješ posao nego da ga radiš.
+
+443
+00:58:37,119 --> 00:58:37,199
+[SPEAKER_00] Da.
+
+444
+00:58:37,920 --> 00:58:44,239
+[SPEAKER_00] Evo, takvog mladog čovjeka, odgovornog prema Bogu, prema domovini i prema obitelji.
+
+445
+00:58:44,559 --> 00:58:44,960
+[SPEAKER_01] Da, da.
+
+446
+00:58:46,239 --> 00:58:50,159
+[SPEAKER_01] Baš razmišljam sa prijateljima, pričam koliko se zapravo danas i nije teško odvojiti.
+
+447
+00:58:50,239 --> 00:58:52,960
+[SPEAKER_01] To je stvar koju ste spomenuli, nije to neka znanstvena fantastika.
+
+448
+00:58:53,119 --> 00:59:02,800
+[SPEAKER_01] Bit ću odgovoran, znači radit ću ono što se od mene traži, ubati ću barem deset posto svog mozga da probam dokućit nešto više da li od toga nešto učinim.
+
+449
+00:59:04,320 --> 00:59:05,760
+[SPEAKER_00] Jel'svijet učinio svoje?
+
+450
+00:59:06,079 --> 00:59:08,400
+[SPEAKER_00] Jesu li društvene mreže učinile svoje?
+
+451
+00:59:09,119 --> 00:59:31,840
+[SPEAKER_00] Jesu li ono pozivi na oglase da zaradite ne znam sto tisuća pol milijuna eura u pet dana ne znam ali to nije istina i to je nemoguća misija dakle to ne može biti blagoslovljeno ne može, mora, dakle mora biti tog truda, mora biti muke, mora biti napora jer nema uskosa bez križa.
+
+452
+00:59:32,159 --> 00:59:32,400
+[SPEAKER_00] Nema.
+
+453
+00:59:33,280 --> 00:59:38,320
+[SPEAKER_01] Kada nas je Kolinda razmazila sa osam tisuća onda smo morali onda moramo biti zbiljivi.
+
+454
+00:59:38,639 --> 00:59:41,199
+[SPEAKER_00] Ja bi volio imati takvu plaću, joj, joj, joj.
+
+455
+00:59:42,320 --> 00:59:43,519
+[SPEAKER_01] Morali smo biti zbiljivi.
+
+456
+00:59:43,760 --> 00:59:51,440
+[SPEAKER_01] Zanimljivo, ali stvarno to nisu teške stvari, tako da nije se teško izvojiti ali opet zanimljivo je odgovornost, lojalnost, da.
+
+457
+00:59:52,000 --> 00:59:59,599
+[SPEAKER_00] Da i nekad bih htjela reći ako vam predpostavljeni direktor, rukovoditelj i nije u
+
+458
+01:00:01,599 --> 01:00:11,280
+[SPEAKER_00] ne morate odmah buntovno reagirati nego polako nemojte voditi svoje bitke i svoje pravice odmah u početcima.
+
+459
+01:00:12,719 --> 01:00:19,360
+[SPEAKER_00] Malo nekad istrpite, malo nekad nek se dogodi ta poniznost, a Bog će već to sve dovesti na svoje.
+
+460
+01:00:20,239 --> 01:00:35,519
+[SPEAKER_01] Mi smo većinom okruženi mladima, vjerujem i vi, kažem i po toj televiziji, ali evo, jel'lite neko pitanje koje ću vam postaviti, jel'lite neko rješenje kako potaknuti mlade da ne budu samo konzumenti tog sadržaja, tog tiktoka društvenih mreža i sl., nego da budu ti nositelji promjena.
+
+461
+01:00:35,599 --> 01:00:52,480
+[SPEAKER_01] Ovo što ste i sami rekli, dakle Hrvatska koju želite vidjeti sastoji se od iskustva i sastoji se od mladih ljudi koji nisu samo oni puki promatrači svega nego osvrnuti su na odgovornosti koje oni moraju dati prema sebi, prema svojim najbližima pa na kraju krajeva prema domovini.
+
+462
+01:00:53,440 --> 01:00:57,360
+[SPEAKER_00] Pa znate što je jako važno to iskustvo razlučivanja.
+
+463
+01:00:59,280 --> 01:01:13,679
+[SPEAKER_00] Trebamo nekad ostati u toj tišini svoje sobe i razgovarati ono sa gospodinom doslovno, otvoriti to svoje srce i reći gospodine što želiš da učinim, što ti želiš da učinim.
+
+464
+01:01:14,480 --> 01:01:21,360
+[SPEAKER_00] Jako je važno zaista prijonut uz sveto pismo, uz evangelije.
+
+465
+01:01:21,920 --> 01:01:27,519
+[SPEAKER_00] Evanđelje, to je stvarno sveta knjiga, ne zove se bez razloga sveto pismo.
+
+466
+01:01:28,159 --> 01:01:30,559
+[SPEAKER_00] Neka nam evangelija bude nadahnuće.
+
+467
+01:01:31,840 --> 01:01:37,840
+[SPEAKER_00] I kažemo si ono, evo, danas ću, korizma je ok.
+
+468
+01:01:38,960 --> 01:01:43,039
+[SPEAKER_00] Za pokoru, danas neću na tik tog sutraću, mislim.
+
+469
+01:01:44,079 --> 01:01:54,400
+[SPEAKER_00] Iako kad smo sad dotakli se korizme, nije stvar samo u odricanju sa tih 40 dana i onda kad.
+
+470
+01:01:54,400 --> 01:01:56,960
+[SPEAKER_00] Onda kad dođe uskrs pa čemo po starom.
+
+471
+01:01:58,400 --> 01:02:01,599
+[SPEAKER_00] Korizman, ovaj misli idu u korist, je li tako?
+
+472
+01:02:03,039 --> 01:02:12,960
+[SPEAKER_00] Htjela bih samo reći, korizman upravo jedno razdoblje koje nas može potaknuti i odgovor na ovo vaše pitanje, da razmišljamo drugačije.
+
+473
+01:02:13,679 --> 01:02:46,400
+[SPEAKER_00] Što ja mogu učiniti za novo proljeće svoga života, svoga života, ne ovih 40 dana, odreći se ne znam čokolade, TikToka, Facebooka, Instagrama, Storija, ne imam pojma čega sve ne, nego zaista dobro se preispitat što ja mogu učiniti da bude bolje jer sveto pismo, Isus nas ono poziva, sveti Pavao o tome često je puta govorio dok imamo vremena činimo dobro.
+
+474
+01:02:47,199 --> 01:02:49,119
+[SPEAKER_00] Dakle, dobra djela s druge strane.
+
+475
+01:02:49,599 --> 01:02:56,480
+[SPEAKER_00] Idemo učiniti neko dobro djelo, idemo otići u posjet nekom starcu u starački dom.
+
+476
+01:02:56,880 --> 01:03:04,480
+[SPEAKER_00] Ja sam u zadnje vrijeme bila puno u staračkim domovima i vidim koliko su stari ljudi ostavljeni.
+
+477
+01:03:04,880 --> 01:03:22,239
+[SPEAKER_00] Evo ja bih potakla mladog čovjeka koji gleda ovu emisiju, ništa ne morate nositi sa sobom ni kremšnite, ni sokove, ni narađe, odite u starački dom i samo nekome dajte ruku, dajte nekome zagrljaj.
+
+478
+01:03:22,559 --> 01:03:36,079
+[SPEAKER_00] Evo, dobra djela i odricanja generalno, ali novo za novo proljeće, ne za korist mu, za svoj novi život.
+
+479
+01:03:36,800 --> 01:03:38,079
+[SPEAKER_01] Da, da, slažem se.
+
+480
+01:03:38,159 --> 01:03:55,119
+[SPEAKER_01] Evo, imam jedno iskustvo, prije dva tjedna smo bili u srednjoj školi Jelkovec, imali smo predavanje kako imamo unutar udruge, tako, poticanje na veću volontersku aktivnost, društvenu aktivnost, promatranje čovjeka pored sebe, jer ono što vjerujemo je bogoljubljiv jednako, je domoljubljiv jednako, je čovjekoljubljiv.
+
+481
+01:03:55,199 --> 01:03:57,119
+[SPEAKER_01] Znači ide ovako prema dolje.
+
+482
+01:03:57,599 --> 01:04:06,480
+[SPEAKER_01] I ono što je baš bilo interesantno kada smo pitali te ljude, bilo četrdesettak ljudi, kao jesali ikada volontirali ili pomagali nekome, samo se jedan dečko javio.
+
+483
+01:04:06,639 --> 01:04:08,159
+[SPEAKER_01] Dakle, ja ne znam gdje se to izgubilo.
+
+484
+01:04:09,280 --> 01:04:24,719
+[SPEAKER_00] Ja bi na to potaknula, ali vi kad dođete sa takve jedne večeri ili dana iz staračkog doma ili iz te škole, neće vam pas na pamet da odmah idete na TikTok i da tamo snimate video, selfie, hello.
+
+485
+01:04:25,360 --> 01:04:36,159
+[SPEAKER_01] Na taj individualizam, ja mislim baš ono toliko okrenutost prema sebi i traženje tog komfora da potpuno stvoriš jedan balon oko sebe da ne vidiš da je pored tebe netko ranjen, da je netko siromašan.
+
+486
+01:04:36,400 --> 01:04:47,519
+[SPEAKER_01] Bio siromašan u smislu da nema za jesti, bio siromašan da nema za koga s kim pričat, to je baš jedno otuđenje, ali kažem to je ono uvijek mora biti taj kontrast i ona ta želja da idemo prema naprijed.
+
+487
+01:04:47,599 --> 01:04:49,840
+[SPEAKER_00] Evo uzmite si čitajte psaume, ima pred nama.
+
+488
+01:04:50,400 --> 01:04:57,440
+[SPEAKER_00] Evo meditirajte nad rečenicama, psalama, ne znam prepusti gospodinu puteve svoje i on će sve voditi.
+
+489
+01:04:57,679 --> 01:04:59,840
+[SPEAKER_00] Evo to mi je odgovor, u tom psalmu je sve.
+
+490
+01:05:00,960 --> 01:05:07,760
+[SPEAKER_00] Ali moramo naći vremena za tišinu, pogotovo da moramo znati stati na tome.
+
+491
+01:05:08,159 --> 01:05:19,920
+[SPEAKER_00] Ne danas gospodin često puta bolešću zaustavi, to se meni događa priznajem jer ono previše trčim i radim i sve i onda eto, e sad ćeš odmoriti.
+
+492
+01:05:20,159 --> 01:05:25,760
+[SPEAKER_00] Dakle ne da nam se to događa nego da to preduhitrimo i da idemo više u kontemplaciju molitve.
+
+493
+01:05:25,840 --> 01:05:26,880
+[SPEAKER_00] Evo to je moj prijedlog.
+
+494
+01:05:27,039 --> 01:05:34,800
+[SPEAKER_01] Idemo polako prema kraju pa ću vas onda pitati da vas ne dam devet sati ovdje kao što sam mislio.
+
+495
+01:05:35,840 --> 01:05:56,079
+[SPEAKER_01] Pitanje je, razmišljate li o nekim emisijama koje bi možda snažnije povezale vjeru, domovlju, društvo kao što ste možda imali prije, spomenuli ste sad tijekom podcasta tu jednu apolitičnost, baš me zanima šta mislite, jeste li se opekli u jednom trenutku, imate li taj neki zaziv, što znači apolitičnost u smislu laudate televizije?
+
+496
+01:05:56,239 --> 01:06:01,119
+[SPEAKER_00] Pa zapravo sve katoličke televizije na svijetu ne bave se politikom.
+
+497
+01:06:02,000 --> 01:06:18,639
+[SPEAKER_00] Mi smo možda tu malo napravili jedan iskorak pa smo ono otišli u tom smjeru, ali onda sam se nekako vratila tim izvorima, mada Anđelika čak nije dopuštala političarima koji su u kampanjama da se slikaju sa njihovim recimo voditeljima.
+
+498
+01:06:19,360 --> 01:06:21,280
+[SPEAKER_01] Oke, to ima smisla, to se slažem.
+
+499
+01:06:21,920 --> 01:06:24,480
+[SPEAKER_00] Da, tako da smo se nekako vratili.
+
+500
+01:06:24,960 --> 01:06:45,599
+[SPEAKER_00] Ja ne kažem da treba bježati od aktualnih tema, evo kao što sam rekla emisija o demografiji i mi planiramo i ministra pozvat kod nas u emisiju ili sad o surogat majčinstvu itede ali i to je na neki način politika, ali ne ona politika na kojoj se.
+
+501
+01:06:46,000 --> 01:06:52,960
+[SPEAKER_01] Na to i mislim, da, jer upravo recimo da samo katolici gledaju laudatu televiziju primjerice i vjerujem da je taj tako.
+
+502
+01:06:53,199 --> 01:06:56,400
+[SPEAKER_00] Ali pogledajte samo, nećete vjerovati, imaju i ovih drugih.
+
+503
+01:06:56,880 --> 01:07:01,840
+[SPEAKER_01] Oke, super, ali evo recimo da je tamo najopremljeniji katolički glas ajmo tako reći.
+
+504
+01:07:02,000 --> 01:07:16,480
+[SPEAKER_01] I sa jedne pozicije katoličke televizije pojedinac može pratiti i gledati i taj voditelj može biti jedan mikrofon odnosno jedan megafon onoga koji se nalazi ispred ekrana kao ono.
+
+505
+01:07:16,639 --> 01:07:29,039
+[SPEAKER_01] Evo ovo se traži od tebe kao katolika, ako se već deklariraš kao katolik, bilo bi dobro da zbog toga imaš takav i takav stav prema bilo kojem političkom, ne mora biti ni političko nego društveno pitanje i sl.
+
+506
+01:07:29,440 --> 01:07:34,000
+[SPEAKER_00] Mislim da bi to bilo kroz izvojeno, mi znamo da se to radi, to je istina.
+
+507
+01:07:34,800 --> 01:07:37,199
+[SPEAKER_01] Možda neka druga, možda neka druga, jel vam pada pamet.
+
+508
+01:07:37,440 --> 01:07:40,079
+[SPEAKER_01] Jer postavljam da vam to nije fokus i mišljenje.
+
+509
+01:07:41,280 --> 01:07:45,199
+[SPEAKER_00] Ako ste otvoreni za to, mislim da bi se pronašlo nešto.
+
+510
+01:07:45,440 --> 01:07:49,119
+[SPEAKER_01] Jer baš mislim da je taj socijalni nauk Crkve, to je takvo blago Crkve.
+
+511
+01:07:49,280 --> 01:07:53,679
+[SPEAKER_01] Tisuće i tisuće dokumenata o tome kako bi se katolici trebali ponašati u društvu.
+
+512
+01:07:54,079 --> 01:08:04,800
+[SPEAKER_01] I imam osjećaj da se puno političara, pogotovo onih koji se deklariraju kao katolici, kao da su potpuno zaboravili na taj katolički glas ili ga potpuno odbacuju kao nebitno.
+
+513
+01:08:04,960 --> 01:08:08,719
+[SPEAKER_01] I otiću se pričestiti, pokazat ću se da sam u prvom redu, pokazat ću se sam tamo.
+
+514
+01:08:09,039 --> 01:08:10,960
+[SPEAKER_01] Zapravo, kralju, ne može to tako funkcionirati.
+
+515
+01:08:11,039 --> 01:08:20,319
+[SPEAKER_00] Zato što ja bih rekla na to sve skupa uvijek jednu rečenicu moramo znat, Bog sve vidi.
+
+516
+01:08:20,800 --> 01:08:21,520
+[SPEAKER_01] Da, da, da.
+
+517
+01:08:22,159 --> 01:08:25,920
+[SPEAKER_00] Evo onima koji to tako rade, Bog sve vidi.
+
+518
+01:08:26,319 --> 01:08:35,039
+[SPEAKER_00] Možemo zavaravati sebe, možemo zavaravati druge, ali gospodina ne možemo jednog dana doćemo na koncu konca pred njega.
+
+519
+01:08:35,359 --> 01:08:35,840
+[SPEAKER_01] To je istina.
+
+520
+01:08:36,239 --> 01:08:39,920
+[SPEAKER_00] Evo neka to ljudi imaju na umu koji rade tako kao kako ste vi sada.
+
+521
+01:08:40,319 --> 01:08:40,720
+[SPEAKER_01] Da, da.
+
+522
+01:08:41,520 --> 01:08:47,039
+[SPEAKER_01] Znam da ste prijateljica sa već bivšim apostolskim nuncima ako se ne varam, Jođem Lingom.
+
+523
+01:08:48,000 --> 01:08:55,199
+[SPEAKER_01] Moram vas pitati o stanju samo kratko crkve u Hrvatskoj i kako gledate na smjer u kojem crkva ide u Hrvatskoj u ovom trenutku.
+
+524
+01:08:55,359 --> 01:08:58,319
+[SPEAKER_01] Puno radite sa njima, pretpostavljate imate puno komunikacije.
+
+525
+01:08:59,199 --> 01:09:02,880
+[SPEAKER_01] Koji je neki vaš dojam, plus naravno odnos sa apostolskim nuncima?
+
+526
+01:09:03,439 --> 01:09:29,039
+[SPEAKER_00] Pa evo, Monsignor Đorđe Lingua otišao je iz Hrvatske i znamo da će biti apostolski nunci u Svetoj zemlji i on je jako bio radostan zbog toga i ponosan i rekao je da je čak nekako i priželjkivao na neki način da svoju misiju nastavi tamo.
+
+527
+01:09:31,279 --> 01:09:35,439
+[SPEAKER_00] Čekamo sad novog anuncija, mislim da će nam doći vrlo brzo.
+
+528
+01:09:36,479 --> 01:09:50,079
+[SPEAKER_00] A što se tiče naše zemlje, naše crkve, evo moram reći, ja sam u vijeću za laike pri Hrvatskoj biskupskoj konferenciji.
+
+529
+01:09:50,239 --> 01:10:02,720
+[SPEAKER_00] Evo upravo mi spremamo jedan, meni se čini dosta važan simpozij koji će se baš ticati aktivnosti laika u našoj crkvi.
+
+530
+01:10:02,960 --> 01:10:18,000
+[SPEAKER_00] Mislim da je naša crkva jako brižna, mislim da smo jako puno dobili sa nadbiskupom, sa monsignorom Draženom Kutlešom, ne samo u Zagrebučkoj nadbiskupi, nego i na nivou cijele Hrvatske biskupske konferencije.
+
+531
+01:10:18,640 --> 01:10:48,079
+[SPEAKER_00] I pogotovo ako dodamo još ovaj zamah koji imamo kroz molitvene zajednice, kroz udruge, kroz mlade, ja mislim da idemo apsolutno u dobrom smjeru i da se uopće ne možemo uspoređivati s nikim da je Hrvatska baš ono na tom nekom vrhu, na tom onom blizu Bogu na toj nekoj europskoj ljestvici, puno bliže nego neke druge zemlje.
+
+532
+01:10:48,239 --> 01:10:52,720
+[SPEAKER_01] Da, pretpostavljam da ste u kontaktu sa drugim zemljama, pogotovo mogu misliti kako to izgleda.
+
+533
+01:10:53,439 --> 01:11:02,960
+[SPEAKER_01] Da, možemo biti nekako bar malo ponosni, ali uvijek je to konstantno obdijenje da znamo da ne upadnemo ni u tu jednu razinu oholosti, da sad mislimo da sve ide super, da su udruge ovako, onako.
+
+534
+01:11:03,439 --> 01:11:05,439
+[SPEAKER_01] Tako da, stalni poziv na budnost.
+
+535
+01:11:05,760 --> 01:11:29,760
+[SPEAKER_00] I ja bih samo još mladima poručila da se uzdaju u čvrstu vjeru, možda bi tu citirala za kraj Madre Angeliku, često i tu citiram, ona je znala reći ne bojim se biti bolesna, ne bojim se umrijeti, ali bojim se jednog dana gospodine doći u pretebe i tvoje oči, a ti ćeš reći, Angelika, mogla si više napraviti da si više vjerovala.
+
+536
+01:11:30,560 --> 01:11:42,479
+[SPEAKER_00] Evo svima nam želim vjeru koja pomiče planine, vjeru koja mijenja na dobro i nemamo straha za budućnost naše Hrvatske.
+
+537
+01:11:42,800 --> 01:11:44,479
+[SPEAKER_01] Vjerujem da si to napisao i u knjizi.
+
+538
+01:11:44,720 --> 01:11:45,520
+[SPEAKER_01] Bilo bi dobro možda.
+
+539
+01:11:47,920 --> 01:11:49,199
+[SPEAKER_01] Sad je vrijeme da nadodate.
+
+540
+01:11:50,640 --> 01:11:51,600
+[SPEAKER_01] Knjiga je velika stvar.
+
+541
+01:11:52,000 --> 01:11:55,119
+[SPEAKER_01] Možete li samo kratko reći o čemu se radi, čisto da ljudi dobiju dojam?
+
+542
+01:11:55,279 --> 01:11:58,640
+[SPEAKER_00] Knjiga je svjedočanstvo vjere na putu malih koraka.
+
+543
+01:11:59,680 --> 01:12:02,319
+[SPEAKER_00] Knjiga nije svjedočanstvo o meni, nego.
+
+544
+01:12:02,399 --> 01:12:09,359
+[SPEAKER_00] nego svjedočanstvo o tome kad to naše malo da gospodinu u potrebi za njegova velika djela.
+
+545
+01:12:10,000 --> 01:12:17,439
+[SPEAKER_00] I, definitivno, svjedočanstvo o Božjoj pravidnosti koja dolazi u svoje vrijeme, u svoje, ne u moje, ne u naše.
+
+546
+01:12:18,239 --> 01:12:45,760
+[SPEAKER_00] I knjiga koja bi trebala potaknuti ljude da kažu: Evo, mene, kad osjetite taj Boži poziv, tu ne mislim na redovnički i na svećenički poziv, tu mislim, Gospodin nas očito sve zove, Gospodin nas je zacrtao u svoje planove i zna o našoj umajčenoj utrvi, je već značajnoo kamo idemo, samo mi sami trebamo to prepoznati u Božjoj volji.
+
+547
+01:12:46,720 --> 01:13:16,560
+[SPEAKER_00] I ne trebamo se bojati reći evo me koliko god to nosi križ, ali moramo znati da mi katolici i vjernici, da mi ne nosimo taj križ sami i da bit će teških trenutaka u životu dok ste mladi i kasnije, ali moramo biti svjesni te spoznaje da je Gospodin taj koji onda taj križ nosi za nas.
+
+548
+01:13:17,039 --> 01:13:34,640
+[SPEAKER_00] Znate ono, vidjeli ste vjerojatno puno puta su to bile slikice gdje ljudi nose križeve i onda jedan od nositelja križa se stalno buni, gospodine, težak mi je križ, daj mi ga malo odcijeci, daj mi ga još presijeci, daj još, daj još.
+
+549
+01:13:34,800 --> 01:13:45,920
+[SPEAKER_00] I onda se dođe do prvalije i svi imaju križ pored kojeg pređu sa jedne strane na drugu osim onoga kojemu je križ bio prekratak.
+
+550
+01:13:46,159 --> 01:13:59,439
+[SPEAKER_00] Dakle, ne tražimo od gospodina da nam makne križ, nego predajmo mu to ono svoje breme i onda će biti puno lakše.
+
+551
+01:13:59,680 --> 01:14:02,159
+[SPEAKER_00] Evo s time bih završila.
+
+552
+01:14:02,319 --> 01:14:04,960
+[SPEAKER_00] Knjiga se zove Jednostavno evo me.
+
+553
+01:14:05,439 --> 01:14:06,079
+[SPEAKER_01] Fenomenalno.
+
+554
+01:14:06,159 --> 01:14:07,680
+[SPEAKER_01] Hvala vam puno se na ovom razgovoru.
+
+555
+01:14:07,760 --> 01:14:08,880
+[SPEAKER_00] Hvala vam na pozivu.
+
+556
+01:14:10,399 --> 01:14:17,359
+[SPEAKER_01] Evo, drago mi je da se dogodio razgovor unatoč svim smetnjama i napadima, ali evo baš mislim da je bio nadahnuće mnogima.
+
+557
+01:14:17,840 --> 01:14:19,680
+[SPEAKER_00] I zajedno smo jači, zapamtite to.
+
+558
+01:14:19,840 --> 01:14:21,760
+[SPEAKER_00] Svako od nas je neka mala pazla.
+
+559
+01:14:22,000 --> 01:14:22,720
+[SPEAKER_01] Točno, točno.
+
+560
+01:14:22,960 --> 01:14:31,600
+[SPEAKER_00] Ali kad te sve pazle stavimo, sve te komadiće u jedno, onda imamo ono pravu, predivnu, jedinstvenu Božju sliku našeg života.
+
+561
+01:14:32,479 --> 01:14:33,680
+[SPEAKER_01] I odgovornost je na nama.
+
+562
+01:14:33,840 --> 01:14:34,880
+[SPEAKER_00] Odgovornost je na nama.
+
+563
+01:14:34,880 --> 01:14:36,720
+[SPEAKER_00] Odgovorno živi domovlju.
+
+564
+01:14:37,520 --> 01:14:39,920
+[SPEAKER_01] Dragi ljudi, hvala što ste gledali ovaj novi podcast.
+
+565
+01:14:40,159 --> 01:14:42,319
+[SPEAKER_01] Vjerujem da se osjećate nadahnuto kao i ja.
+
+566
+01:14:43,680 --> 01:14:44,399
+[SPEAKER_01] Čuli ste sve.
+
+567
+01:14:44,560 --> 01:14:50,159
+[SPEAKER_01] Zapravo pošaljite nam komentare, pišite nam komentare, lajkajte ovaj video kako bi došlo do što većeg broja ljudi.
+
+568
+01:14:50,479 --> 01:14:56,319
+[SPEAKER_01] I potičem samo ako želite podržati nas neovisni rad, krobaj.hr, možete slobodno to učiniti.
+
+569
+01:14:56,880 --> 01:14:58,239
+[SPEAKER_01] Vidimo se u sljedećem podkastu.
+

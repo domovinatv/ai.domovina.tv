@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import '../models/speaker_timeline.dart';
+import '../models/podcast_summary.dart';
 
 /// Marker za jedno poglavlje u video playeru (timestamp + label)
 class VideoChapterMark {
@@ -24,6 +26,8 @@ class VideoPanel extends StatefulWidget {
   final String? activeTimestamp;
   final void Function(String timestamp) onChapterTap;
   final int totalDurationSeconds;
+  final SpeakerTimeline? speakerTimeline;
+  final List<SummarySpeaker> speakers;
 
   const VideoPanel({
     super.key,
@@ -33,6 +37,8 @@ class VideoPanel extends StatefulWidget {
     this.activeTimestamp,
     required this.onChapterTap,
     required this.totalDurationSeconds,
+    this.speakerTimeline,
+    this.speakers = const [],
   });
 
   @override
@@ -77,12 +83,40 @@ class _VideoPanelState extends State<VideoPanel> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  /// Boje govornika — gradimo po redoslijedu iz speakers liste.
+  Map<String, Color> _speakerColors(ThemeData theme) {
+    final palette = [
+      theme.colorScheme.primary,
+      theme.colorScheme.tertiary,
+      theme.colorScheme.secondary,
+      theme.colorScheme.error,
+    ];
+    final map = <String, Color>{};
+    for (var i = 0; i < widget.speakers.length; i++) {
+      map[widget.speakers[i].id] = palette[i % palette.length];
+    }
+    return map;
+  }
+
+  SummarySpeaker? _currentSpeaker() {
+    final timeline = widget.speakerTimeline;
+    if (timeline == null) return null;
+    final id = timeline.speakerAt(_position);
+    if (id == null) return null;
+    for (final s in widget.speakers) {
+      if (s.id == id) return s;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totalMs = _duration.inMilliseconds > 0
         ? _duration.inMilliseconds
         : widget.totalDurationSeconds * 1000;
+    final colors = _speakerColors(theme);
+    final speaker = _currentSpeaker();
 
     return Container(
       width: 360,
@@ -109,6 +143,28 @@ class _VideoPanelState extends State<VideoPanel> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: Column(
               children: [
+                // Speaker timeline bar
+                if (widget.speakerTimeline != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        return SizedBox(
+                          height: 6,
+                          width: constraints.maxWidth,
+                          child: CustomPaint(
+                            painter: _SpeakerBarPainter(
+                              segments: widget.speakerTimeline!.segments,
+                              totalMs: totalMs,
+                              colors: colors,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+
                 // Seek bar s chapter markerima
                 _SeekBar(
                   value: _sliderValue,
@@ -172,6 +228,13 @@ class _VideoPanelState extends State<VideoPanel> {
                     ),
                   ],
                 ),
+
+                // Trenutni govornik
+                if (speaker != null)
+                  _CurrentSpeakerRow(
+                    speaker: speaker,
+                    color: colors[speaker.id] ?? theme.colorScheme.outline,
+                  ),
               ],
             ),
           ),
@@ -305,6 +368,111 @@ class _ChapterMarkerPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ChapterMarkerPainter old) =>
       old.chapters != chapters || old.totalMs != totalMs;
+}
+
+// ---------------------------------------------------------------------------
+
+class _SpeakerBarPainter extends CustomPainter {
+  final List<SpeakerSegment> segments;
+  final int totalMs;
+  final Map<String, Color> colors;
+
+  const _SpeakerBarPainter({
+    required this.segments,
+    required this.totalMs,
+    required this.colors,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (totalMs <= 0) return;
+    for (final seg in segments) {
+      final x1 = seg.startMs / totalMs * size.width;
+      final x2 = seg.endMs / totalMs * size.width;
+      final color = colors[seg.speakerId] ?? const Color(0x40808080);
+      canvas.drawRect(
+        Rect.fromLTWH(x1, 0, (x2 - x1).clamp(0.5, size.width), size.height),
+        Paint()..color = color.withAlpha(180),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SpeakerBarPainter old) =>
+      old.segments != segments || old.totalMs != totalMs;
+}
+
+// ---------------------------------------------------------------------------
+
+class _CurrentSpeakerRow extends StatelessWidget {
+  final SummarySpeaker speaker;
+  final Color color;
+
+  const _CurrentSpeakerRow({
+    required this.speaker,
+    required this.color,
+  });
+
+  String get _initials {
+    final parts = speaker.suggestedName.split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return speaker.suggestedName.substring(0, 1).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: color.withAlpha(40),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: color, width: 1.5),
+            ),
+            child: Center(
+              child: Text(
+                _initials,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  speaker.suggestedName,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  speaker.role,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

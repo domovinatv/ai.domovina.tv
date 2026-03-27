@@ -170,7 +170,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
     final player = Player();
     final controller = VideoController(player);
-    await player.open(Media(videoPath), play: false);
+    await player.open(Media(videoPath), play: true);
 
     _positionSub = player.stream.position.listen(_onVideoPosition);
 
@@ -361,6 +361,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             activeTimestamp: _activeTimestamp,
             onChapterTap: _seekAndPlay,
             totalDurationSeconds: data.info.duration,
+            speakerTimeline: data.speakerTimeline,
+            speakers: data.summary.summary.speakers,
           ),
         ],
       );
