@@ -16,12 +16,15 @@ class SpeakerTimeline {
 
   const SpeakerTimeline({required this.segments});
 
-  /// Vraca ID govornika koji govori u trenutku [pos], ili null.
+  /// Vraca ID govornika koji govori u trenutku [pos].
+  /// "Sticky": u prazninama između segmenata zadržava zadnjeg govornika.
   String? speakerAt(Duration pos) {
     final ms = pos.inMilliseconds;
+    String? lastSpeaker;
     for (final seg in segments) {
-      if (ms >= seg.startMs && ms < seg.endMs) return seg.speakerId;
+      if (seg.startMs > ms) break;
+      lastSpeaker = seg.speakerId;
     }
-    return null;
+    return lastSpeaker;
   }
 }
