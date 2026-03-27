@@ -27,16 +27,17 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-      body: FutureBuilder<EpisodeData>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
+    return FutureBuilder<EpisodeData>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -51,11 +52,11 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                   ],
                 ),
               ),
-            );
-          }
-          return _EpisodeContent(data: snapshot.data!);
-        },
-      ),
+            ),
+          );
+        }
+        return _EpisodeContent(data: snapshot.data!);
+      },
     );
   }
 }
@@ -92,7 +93,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     super.dispose();
   }
 
-  /// Osvježava aktivnu sekciju na temelju scroll pozicije
   void _updateActiveSection() {
     for (final entry in _sectionKeys.entries) {
       final ctx = entry.value.currentContext;
@@ -100,7 +100,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       final box = ctx.findRenderObject() as RenderBox?;
       if (box == null) continue;
       final pos = box.localToGlobal(Offset.zero);
-      // Sekcija je "aktivna" ako joj je vrh u gornjem trećini ekrana
       final screenH = MediaQuery.sizeOf(context).height;
       if (pos.dy >= 0 && pos.dy < screenH * 0.4) {
         if (_activeTimestamp != entry.key) {
@@ -124,18 +123,38 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     }
   }
 
+  /// Zatvori Drawer pa scrollaj — postFrameCallback osigurava
+  /// da se scroll dogodi nakon što se Drawer animacija završi
+  void _drawerTap(BuildContext scaffoldContext, String timestamp) {
+    Scaffold.of(scaffoldContext).closeDrawer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSection(timestamp);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
     final theme = Theme.of(context);
     final isWide = MediaQuery.sizeOf(context).width > 900;
 
-    final mainContent = CustomScrollView(
+    final scrollBody = CustomScrollView(
       controller: _scrollController,
       slivers: [
         SliverAppBar(
           floating: true,
           snap: true,
+          // Na mobilnom: hamburger koji otvara Drawer
+          leading: isWide
+              ? null
+              : Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    tooltip: 'Sadržaj',
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                ),
+          automaticallyImplyLeading: false,
           title: Text(
             data.info.channel,
             style: theme.textTheme.titleMedium
@@ -193,19 +212,34 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       ],
     );
 
-    if (!isWide) return mainContent;
-
-    // Desktop: sidebar lijevo + main content desno
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TableOfContents(
-          article: data.article,
-          onSectionTap: _scrollToSection,
-          activeTimestamp: _activeTimestamp,
-        ),
-        Expanded(child: mainContent),
-      ],
+    return Builder(
+      builder: (scaffoldContext) => Scaffold(
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
+        // Drawer samo na uskim ekranima
+        drawer: isWide
+            ? null
+            : Drawer(
+                child: TableOfContents(
+                  article: data.article,
+                  activeTimestamp: _activeTimestamp,
+                  onSectionTap: (ts) =>
+                      _drawerTap(scaffoldContext, ts),
+                ),
+              ),
+        body: isWide
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TableOfContents(
+                    article: data.article,
+                    activeTimestamp: _activeTimestamp,
+                    onSectionTap: _scrollToSection,
+                  ),
+                  Expanded(child: scrollBody),
+                ],
+              )
+            : scrollBody,
+      ),
     );
   }
 }
