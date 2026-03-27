@@ -18,6 +18,7 @@ class ArticleSection extends StatefulWidget {
 class _ArticleSectionState extends State<ArticleSection>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -26,10 +27,18 @@ class _ArticleSectionState extends State<ArticleSection>
       length: widget.article.iterations.length,
       vsync: this,
     );
+    _tabController.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index != _currentIndex) {
+      setState(() => _currentIndex = _tabController.index);
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -58,17 +67,11 @@ class _ArticleSectionState extends State<ArticleSection>
               .map((i) => Tab(text: 'Dio ${i.iterationNumber}'))
               .toList(),
         ),
-        SizedBox(
-          height: 2000,
-          child: TabBarView(
-            controller: _tabController,
-            children: iterations
-                .map((iter) => _IterationArticle(
-                      iteration: iter,
-                      youtubeId: widget.youtubeId,
-                    ))
-                .toList(),
-          ),
+        // Prikazuje samo aktivnu iteraciju — bez fiksne visine,
+        // outer CustomScrollView preuzima vertikalni scroll.
+        _IterationArticle(
+          iteration: iterations[_currentIndex],
+          youtubeId: widget.youtubeId,
         ),
       ],
     );
@@ -88,11 +91,11 @@ class _IterationArticle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -111,7 +114,8 @@ class _IterationArticle extends StatelessWidget {
         ...iteration.sections.map(
           (sec) => _SectionCard(section: sec, youtubeId: youtubeId),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
