@@ -5,9 +5,9 @@ import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/entities_section.dart';
+import '../widgets/table_of_contents.dart';
 
 class EpisodeScreen extends StatefulWidget {
-  /// YouTube video ID — odredjuje koji se skup JSON asseta ucitava
   final String youtubeId;
 
   const EpisodeScreen({super.key, required this.youtubeId});
@@ -60,24 +60,86 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
   }
 }
 
-class _EpisodeContent extends StatelessWidget {
+class _EpisodeContent extends StatefulWidget {
   final EpisodeData data;
 
   const _EpisodeContent({required this.data});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<_EpisodeContent> createState() => _EpisodeContentState();
+}
 
-    return CustomScrollView(
+class _EpisodeContentState extends State<_EpisodeContent> {
+  final _scrollController = ScrollController();
+  late final Map<String, GlobalKey> _sectionKeys;
+  String? _activeTimestamp;
+
+  @override
+  void initState() {
+    super.initState();
+    _sectionKeys = {
+      for (final iter in widget.data.article.iterations)
+        for (final sec in iter.sections)
+          sec.screenshotTimestamp: GlobalKey(),
+    };
+    _scrollController.addListener(_updateActiveSection);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateActiveSection);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Osvježava aktivnu sekciju na temelju scroll pozicije
+  void _updateActiveSection() {
+    for (final entry in _sectionKeys.entries) {
+      final ctx = entry.value.currentContext;
+      if (ctx == null) continue;
+      final box = ctx.findRenderObject() as RenderBox?;
+      if (box == null) continue;
+      final pos = box.localToGlobal(Offset.zero);
+      // Sekcija je "aktivna" ako joj je vrh u gornjem trećini ekrana
+      final screenH = MediaQuery.sizeOf(context).height;
+      if (pos.dy >= 0 && pos.dy < screenH * 0.4) {
+        if (_activeTimestamp != entry.key) {
+          setState(() => _activeTimestamp = entry.key);
+        }
+        return;
+      }
+    }
+  }
+
+  void _scrollToSection(String timestamp) {
+    final key = _sectionKeys[timestamp];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.05,
+      );
+      setState(() => _activeTimestamp = timestamp);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.data;
+    final theme = Theme.of(context);
+    final isWide = MediaQuery.sizeOf(context).width > 900;
+
+    final mainContent = CustomScrollView(
+      controller: _scrollController,
       slivers: [
-        // AppBar koji nestaje pri scrollu
         SliverAppBar(
           floating: true,
           snap: true,
           title: Text(
             data.info.channel,
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           actions: [
             Padding(
@@ -94,7 +156,6 @@ class _EpisodeContent extends StatelessWidget {
             ),
           ],
         ),
-
         SliverToBoxAdapter(
           child: Align(
             alignment: Alignment.topCenter,
@@ -103,46 +164,47 @@ class _EpisodeContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              // Hero: thumbnail + naslov + statistike
-              HeroSection(
-                info: data.info,
-                summary: data.summary,
-                youtubeId: data.youtubeId,
+                  HeroSection(
+                    info: data.info,
+                    summary: data.summary,
+                    youtubeId: data.youtubeId,
+                  ),
+                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                  SummarySection(summary: data.summary),
+                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                  const SizedBox(height: 12),
+                  ChaptersSection(outline: data.outline),
+                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                  const SizedBox(height: 12),
+                  ArticleSection(
+                    article: data.article,
+                    youtubeId: data.youtubeId,
+                    sectionKeys: _sectionKeys,
+                  ),
+                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                  const SizedBox(height: 12),
+                  EntitiesSection(summary: data.summary.summary),
+                  _MetadataFooter(data: data),
+                ],
               ),
-
-              Divider(height: 1, color: theme.colorScheme.outlineVariant),
-
-              // Sažetak, teme, govornici, zaključci
-              SummarySection(summary: data.summary),
-
-              Divider(height: 1, color: theme.colorScheme.outlineVariant),
-
-              // Poglavlja po iteracijama
-              const SizedBox(height: 12),
-              ChaptersSection(outline: data.outline),
-
-              Divider(height: 1, color: theme.colorScheme.outlineVariant),
-
-              // Novinarskli clanak po tabovima
-              const SizedBox(height: 12),
-              ArticleSection(
-                article: data.article,
-                youtubeId: data.youtubeId,
-              ),
-
-              Divider(height: 1, color: theme.colorScheme.outlineVariant),
-
-              // Entiteti: osobe, mjesta, organizacije
-              const SizedBox(height: 12),
-              EntitiesSection(summary: data.summary.summary),
-
-              // Metadata footer
-              _MetadataFooter(data: data),
-            ],
+            ),
           ),
         ),
-          ),
+      ],
+    );
+
+    if (!isWide) return mainContent;
+
+    // Desktop: sidebar lijevo + main content desno
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TableOfContents(
+          article: data.article,
+          onSectionTap: _scrollToSection,
+          activeTimestamp: _activeTimestamp,
         ),
+        Expanded(child: mainContent),
       ],
     );
   }

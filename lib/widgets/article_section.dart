@@ -1,52 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_article.dart';
 
-class ArticleSection extends StatefulWidget {
+class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
   final String youtubeId;
+  final Map<String, GlobalKey> sectionKeys;
 
   const ArticleSection({
     super.key,
     required this.article,
     required this.youtubeId,
+    required this.sectionKeys,
   });
-
-  @override
-  State<ArticleSection> createState() => _ArticleSectionState();
-}
-
-class _ArticleSectionState extends State<ArticleSection>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: widget.article.iterations.length,
-      vsync: this,
-    );
-    _tabController.addListener(_onTabChanged);
-  }
-
-  void _onTabChanged() {
-    if (_tabController.index != _currentIndex) {
-      setState(() => _currentIndex = _tabController.index);
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final iterations = widget.article.iterations;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,32 +28,28 @@ class _ArticleSectionState extends State<ArticleSection>
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: iterations
-              .map((i) => Tab(text: 'Dio ${i.iterationNumber}'))
-              .toList(),
-        ),
-        // Prikazuje samo aktivnu iteraciju — bez fiksne visine,
-        // outer CustomScrollView preuzima vertikalni scroll.
-        _IterationArticle(
-          iteration: iterations[_currentIndex],
-          youtubeId: widget.youtubeId,
+        const SizedBox(height: 12),
+        ...article.iterations.map(
+          (iter) => _IterationBlock(
+            iteration: iter,
+            youtubeId: youtubeId,
+            sectionKeys: sectionKeys,
+          ),
         ),
       ],
     );
   }
 }
 
-class _IterationArticle extends StatelessWidget {
+class _IterationBlock extends StatelessWidget {
   final ArticleIteration iteration;
   final String youtubeId;
+  final Map<String, GlobalKey> sectionKeys;
 
-  const _IterationArticle({
+  const _IterationBlock({
     required this.iteration,
     required this.youtubeId,
+    required this.sectionKeys,
   });
 
   @override
@@ -92,28 +57,55 @@ class _IterationArticle extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            iteration.theme,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+          // Iteracija header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${iteration.iterationNumber}',
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    iteration.theme,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        ...iteration.sections.map(
-          (sec) => _SectionCard(section: sec, youtubeId: youtubeId),
-        ),
+          const SizedBox(height: 16),
+          ...iteration.sections.map((sec) => _SectionCard(
+                key: sectionKeys[sec.screenshotTimestamp],
+                section: sec,
+                youtubeId: youtubeId,
+              )),
         ],
       ),
     );
@@ -124,9 +116,8 @@ class _SectionCard extends StatelessWidget {
   final PodcastSection section;
   final String youtubeId;
 
-  const _SectionCard({required this.section, required this.youtubeId});
+  const _SectionCard({super.key, required this.section, required this.youtubeId});
 
-  /// Konvertira "HH:MM:SS" → "HH-MM-SS" za asset path
   String get _screenshotAssetPath {
     final ts = section.screenshotTimestamp.replaceAll(':', '-');
     return 'assets/images/$youtubeId/screenshots/$ts.png';
@@ -152,8 +143,7 @@ class _SectionCard extends StatelessWidget {
                   color: theme.colorScheme.primary.withAlpha(25),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                      color: theme.colorScheme.primary.withAlpha(80),
-                      width: 1),
+                      color: theme.colorScheme.primary.withAlpha(80), width: 1),
                 ),
                 child: Text(
                   section.screenshotTimestamp,
@@ -183,7 +173,8 @@ class _SectionCard extends StatelessWidget {
               _screenshotAssetPath,
               fit: BoxFit.cover,
               width: double.infinity,
-              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
             ),
           ),
 
