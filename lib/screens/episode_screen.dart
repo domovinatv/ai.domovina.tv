@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
@@ -101,6 +100,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   /// Sprječava auto-scroll iz video listenera dok korisnik ručno scrolla
   DateTime? _lastManualScroll;
 
+  /// Sprječava section flicker tijekom preroll seek-a (-2s)
+  DateTime? _seekLock;
+
   @override
   void initState() {
     super.initState();
@@ -164,13 +166,12 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   // ---------- video ---------------------------------------------------------
 
   Future<void> _initVideo() async {
-    final videoPath = widget.data.info.localVideoPath;
-    if (videoPath == null) return;
-    if (!File(videoPath).existsSync()) return;
+    final videoUri = widget.data.videoUri;
+    if (videoUri == null) return;
 
     final player = Player();
     final controller = VideoController(player);
-    await player.open(Media(videoPath), play: true);
+    await player.open(Media(videoUri), play: true);
 
     _positionSub = player.stream.position.listen(_onVideoPosition);
 
@@ -184,6 +185,13 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   }
 
   void _onVideoPosition(Duration pos) {
+    // Preskoči section detekciju tijekom preroll seeka (-2s)
+    final lock = _seekLock;
+    if (lock != null &&
+        DateTime.now().difference(lock) < const Duration(seconds: 3)) {
+      return;
+    }
+
     // Pronadji aktivnu sekciju: zadnja sekcija čiji timestamp <= pos
     String? newTs;
     for (final s in _sortedSections) {
@@ -243,11 +251,17 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     }
   }
 
-  /// Seek video 2s prije timestampa + play + scroll teksta
-  void _seekAndPlay(String timestamp) {
+  /// Seek video na timestamp + play + scroll teksta.
+  /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
+  void _seekAndPlay(String timestamp, {bool preroll = false}) {
     final dur = _parseDuration(timestamp);
-    final seekTo = dur - const Duration(seconds: 2);
-    _player?.seek(seekTo < Duration.zero ? Duration.zero : seekTo);
+    var seekTo = dur;
+    if (preroll) {
+      seekTo = dur - const Duration(seconds: 2);
+      if (seekTo < Duration.zero) seekTo = Duration.zero;
+      _seekLock = DateTime.now();
+    }
+    _player?.seek(seekTo);
     _player?.play();
     setState(() => _activeTimestamp = timestamp);
     _scrollToSection(timestamp);
@@ -370,7 +384,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             controller: _videoController!,
             chapters: _videoChapters,
             activeTimestamp: _activeTimestamp,
-            onChapterTap: _seekAndPlay,
+            onChapterTap: (ts) => _seekAndPlay(ts, preroll: true),
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: data.summary.summary.speakers,
@@ -418,7 +432,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 controller: _videoController!,
                 chapters: _videoChapters,
                 activeTimestamp: _activeTimestamp,
-                onChapterTap: _seekAndPlay,
+                onChapterTap: (ts) => _seekAndPlay(ts, preroll: true),
                 totalDurationSeconds: data.info.duration,
                 speakerTimeline: data.speakerTimeline,
                 speakers: data.summary.summary.speakers,

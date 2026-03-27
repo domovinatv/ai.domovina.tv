@@ -57,6 +57,15 @@ class _VideoPanelState extends State<VideoPanel> {
   @override
   void initState() {
     super.initState();
+    // Inicijaliziraj iz trenutnog stanja playera (bitno kad se widget
+    // rekreira, npr. sidebar → EndDrawer pri resize-u)
+    _position = widget.player.state.position;
+    _duration = widget.player.state.duration;
+    _playing = widget.player.state.playing;
+    if (_duration.inMilliseconds > 0) {
+      _sliderValue = _position.inMilliseconds / _duration.inMilliseconds;
+    }
+
     widget.player.stream.position.listen((p) {
       if (!_seeking && mounted) {
         setState(() {
@@ -281,12 +290,7 @@ class _VideoPanelState extends State<VideoPanel> {
                 return _ChapterListItem(
                   chapter: ch,
                   isActive: isActive,
-                  onTap: () {
-                    final seekTo = ch.position - const Duration(seconds: 2);
-                    widget.player.seek(seekTo < Duration.zero ? Duration.zero : seekTo);
-                    widget.player.play();
-                    widget.onChapterTap(ch.timestamp);
-                  },
+                  onTap: () => widget.onChapterTap(ch.timestamp),
                 );
               },
             ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
@@ -13,6 +14,8 @@ import '../models/speaker_timeline.dart';
 ///   assets/data/{youtubeId}/summary.json
 ///   assets/data/{youtubeId}/outline.json
 ///   assets/data/{youtubeId}/article.json
+///   assets/data/{youtubeId}/video.mkv       (opcionalno)
+///   assets/data/{youtubeId}/diarized.srt    (opcionalno)
 ///   assets/images/{youtubeId}/thumbnail.webp  (ili .png)
 class DataService {
   final String youtubeId;
@@ -41,6 +44,31 @@ class DataService {
   Future<PodcastArticle> loadArticle() async {
     final raw = await rootBundle.loadString(_dataPath('article.json'));
     return PodcastArticle.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  }
+
+  /// Vraca URI za video: asset:/// ako je bundlan, lokalni path kao fallback,
+  /// ili null ako video nije dostupan.
+  Future<String?> resolveVideoUri(PodcastInfo info) async {
+    final assetPath = _dataPath('video.mkv');
+
+    // Provjeri je li video bundlan u AssetManifest
+    try {
+      final manifestJson =
+          await rootBundle.loadString('AssetManifest.json');
+      final manifest =
+          jsonDecode(manifestJson) as Map<String, dynamic>;
+      if (manifest.containsKey(assetPath)) {
+        return 'asset:///$assetPath';
+      }
+    } catch (_) {}
+
+    // Fallback: lokalni fajl iz info.json (macOS dev)
+    final localPath = info.localVideoPath;
+    if (localPath != null && File(localPath).existsSync()) {
+      return localPath;
+    }
+
+    return null;
   }
 
   /// Ucitaj diariziran SRT i parsiraj u SpeakerTimeline.
@@ -113,6 +141,7 @@ class EpisodeData {
   final PodcastOutline outline;
   final PodcastArticle article;
   final SpeakerTimeline? speakerTimeline;
+  final String? videoUri;
 
   const EpisodeData({
     required this.youtubeId,
@@ -121,6 +150,7 @@ class EpisodeData {
     required this.outline,
     required this.article,
     this.speakerTimeline,
+    this.videoUri,
   });
 
   static Future<EpisodeData> load({required String youtubeId}) async {
@@ -132,13 +162,16 @@ class EpisodeData {
       svc.loadArticle(),
       svc.loadSpeakerTimeline(),
     ]);
+    final info = results[0] as PodcastInfo;
+    final videoUri = await svc.resolveVideoUri(info);
     return EpisodeData(
       youtubeId: youtubeId,
-      info: results[0] as PodcastInfo,
+      info: info,
       summary: results[1] as PodcastSummary,
       outline: results[2] as PodcastOutline,
       article: results[3] as PodcastArticle,
       speakerTimeline: results[4] as SpeakerTimeline?,
+      videoUri: videoUri,
     );
   }
 }
