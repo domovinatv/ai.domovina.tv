@@ -1,11 +1,12 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
 import '../models/podcast_article.dart';
 import '../models/speaker_timeline.dart';
+import 'file_utils.dart';
 
 /// Čita JSON assete za konkretni YouTube video ID.
 ///
@@ -62,10 +63,12 @@ class DataService {
       }
     } catch (_) {}
 
-    // Fallback: lokalni fajl iz info.json (macOS dev)
-    final localPath = info.localVideoPath;
-    if (localPath != null && File(localPath).existsSync()) {
-      return localPath;
+    // Fallback: lokalni fajl iz info.json (desktop dev)
+    if (!kIsWeb) {
+      final localPath = info.localVideoPath;
+      if (localPath != null && fileExists(localPath)) {
+        return localPath;
+      }
     }
 
     return null;
