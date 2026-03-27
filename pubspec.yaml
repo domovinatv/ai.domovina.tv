@@ -62,6 +62,7 @@ flutter:
     # Za novi video: dodaj assets/data/{YT_ID}/ i assets/images/{YT_ID}/
     - assets/data/H-p2Hl6x7I0/
     - assets/images/H-p2Hl6x7I0/
+    - assets/images/H-p2Hl6x7I0/screenshots/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

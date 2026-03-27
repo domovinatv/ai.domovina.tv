@@ -3,8 +3,13 @@ import '../models/podcast_article.dart';
 
 class ArticleSection extends StatefulWidget {
   final PodcastArticle article;
+  final String youtubeId;
 
-  const ArticleSection({super.key, required this.article});
+  const ArticleSection({
+    super.key,
+    required this.article,
+    required this.youtubeId,
+  });
 
   @override
   State<ArticleSection> createState() => _ArticleSectionState();
@@ -58,7 +63,10 @@ class _ArticleSectionState extends State<ArticleSection>
           child: TabBarView(
             controller: _tabController,
             children: iterations
-                .map((iter) => _IterationArticle(iteration: iter))
+                .map((iter) => _IterationArticle(
+                      iteration: iter,
+                      youtubeId: widget.youtubeId,
+                    ))
                 .toList(),
           ),
         ),
@@ -69,8 +77,12 @@ class _ArticleSectionState extends State<ArticleSection>
 
 class _IterationArticle extends StatelessWidget {
   final ArticleIteration iteration;
+  final String youtubeId;
 
-  const _IterationArticle({required this.iteration});
+  const _IterationArticle({
+    required this.iteration,
+    required this.youtubeId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +108,9 @@ class _IterationArticle extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        ...iteration.sections.map((sec) => _SectionCard(section: sec)),
+        ...iteration.sections.map(
+          (sec) => _SectionCard(section: sec, youtubeId: youtubeId),
+        ),
       ],
     );
   }
@@ -104,15 +118,22 @@ class _IterationArticle extends StatelessWidget {
 
 class _SectionCard extends StatelessWidget {
   final PodcastSection section;
+  final String youtubeId;
 
-  const _SectionCard({required this.section});
+  const _SectionCard({required this.section, required this.youtubeId});
+
+  /// Konvertira "HH:MM:SS" → "HH-MM-SS" za asset path
+  String get _screenshotAssetPath {
+    final ts = section.screenshotTimestamp.replaceAll(':', '-');
+    return 'assets/images/$youtubeId/screenshots/$ts.png';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -127,7 +148,8 @@ class _SectionCard extends StatelessWidget {
                   color: theme.colorScheme.primary.withAlpha(25),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                      color: theme.colorScheme.primary.withAlpha(80), width: 1),
+                      color: theme.colorScheme.primary.withAlpha(80),
+                      width: 1),
                 ),
                 child: Text(
                   section.screenshotTimestamp,
@@ -148,11 +170,38 @@ class _SectionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+
+          // Screenshot
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              _screenshotAssetPath,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+            ),
+          ),
+
+          // Screenshot caption
+          if (section.screenshotDescription.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+              child: Text(
+                section.screenshotDescription,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
 
           // Content
-          Text(section.content,
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.65)),
+          Text(
+            section.content,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.65),
+          ),
           const SizedBox(height: 10),
 
           // Keywords
@@ -171,8 +220,7 @@ class _SectionCard extends StatelessWidget {
                         child: Text(
                           k,
                           style: theme.textTheme.labelSmall?.copyWith(
-                              color:
-                                  theme.colorScheme.onSecondaryContainer),
+                              color: theme.colorScheme.onSecondaryContainer),
                         ),
                       ))
                   .toList(),

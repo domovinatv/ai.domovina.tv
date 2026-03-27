@@ -125,7 +125,10 @@ class _EpisodeContent extends StatelessWidget {
 
               // Novinarskli clanak po tabovima
               const SizedBox(height: 12),
-              ArticleSection(article: data.article),
+              ArticleSection(
+                article: data.article,
+                youtubeId: data.youtubeId,
+              ),
 
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
 
