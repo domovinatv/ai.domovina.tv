@@ -7,6 +7,15 @@ import '../models/podcast_article.dart';
 import '../models/speaker_timeline.dart';
 import 'cdn_config.dart';
 
+/// Bačen kad info.json za dani YouTube ID ne postoji na CDN-u (HTTP 404).
+class VideoNotFoundException implements Exception {
+  final String youtubeId;
+  const VideoNotFoundException(this.youtubeId);
+
+  @override
+  String toString() => 'VideoNotFoundException: $youtubeId';
+}
+
 /// Učitava podatke za konkretni YouTube video ID s CDN-a (cdn.domovina.ai).
 class DataService {
   final String youtubeId;
@@ -22,8 +31,13 @@ class DataService {
   }
 
   Future<PodcastInfo> loadInfo() async {
-    final raw = await _fetch(CdnConfig.infoUrl(youtubeId));
-    return PodcastInfo.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    final url = CdnConfig.infoUrl(youtubeId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 404) throw VideoNotFoundException(youtubeId);
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return PodcastInfo.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   Future<PodcastSummary> loadSummary() async {

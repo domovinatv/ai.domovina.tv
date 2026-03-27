@@ -6,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../services/data_service.dart';
+import '../services/cdn_config.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
@@ -43,6 +44,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
           );
         }
         if (snapshot.hasError) {
+          final notFound = snapshot.error is VideoNotFoundException;
           return Scaffold(
             body: Center(
               child: Padding(
@@ -50,12 +52,35 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: Colors.red),
+                    Icon(
+                      notFound
+                          ? Icons.video_file_outlined
+                          : Icons.error_outline,
+                      size: 48,
+                      color: notFound ? null : Colors.red,
+                    ),
                     const SizedBox(height: 12),
                     Text(
-                      'Greška pri ucitavanju podataka:\n${snapshot.error}',
+                      notFound
+                          ? 'Epizoda "${widget.youtubeId}" nije pronađena na CDN-u.\n\nProvjeri je li ID ispravan i jesu li datoteke uploadane.'
+                          : 'Greška pri učitavanju podataka:\n${snapshot.error}',
                       textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    if (notFound)
+                      Text(
+                        CdnConfig.infoUrl(widget.youtubeId),
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Natrag'),
                     ),
                   ],
                 ),
