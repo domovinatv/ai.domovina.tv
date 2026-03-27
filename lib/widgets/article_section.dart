@@ -5,12 +5,14 @@ class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
   final String youtubeId;
   final Map<String, GlobalKey> sectionKeys;
+  final void Function(String timestamp)? onPlayTap;
 
   const ArticleSection({
     super.key,
     required this.article,
     required this.youtubeId,
     required this.sectionKeys,
+    this.onPlayTap,
   });
 
   @override
@@ -34,6 +36,7 @@ class ArticleSection extends StatelessWidget {
             iteration: iter,
             youtubeId: youtubeId,
             sectionKeys: sectionKeys,
+            onPlayTap: onPlayTap,
           ),
         ),
       ],
@@ -45,11 +48,13 @@ class _IterationBlock extends StatelessWidget {
   final ArticleIteration iteration;
   final String youtubeId;
   final Map<String, GlobalKey> sectionKeys;
+  final void Function(String timestamp)? onPlayTap;
 
   const _IterationBlock({
     required this.iteration,
     required this.youtubeId,
     required this.sectionKeys,
+    required this.onPlayTap,
   });
 
   @override
@@ -61,7 +66,6 @@ class _IterationBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Iteracija header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -92,9 +96,8 @@ class _IterationBlock extends StatelessWidget {
                 Expanded(
                   child: Text(
                     iteration.theme,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -105,6 +108,7 @@ class _IterationBlock extends StatelessWidget {
                 key: sectionKeys[sec.screenshotTimestamp],
                 section: sec,
                 youtubeId: youtubeId,
+                onPlayTap: onPlayTap,
               )),
         ],
       ),
@@ -115,8 +119,14 @@ class _IterationBlock extends StatelessWidget {
 class _SectionCard extends StatelessWidget {
   final PodcastSection section;
   final String youtubeId;
+  final void Function(String timestamp)? onPlayTap;
 
-  const _SectionCard({super.key, required this.section, required this.youtubeId});
+  const _SectionCard({
+    super.key,
+    required this.section,
+    required this.youtubeId,
+    this.onPlayTap,
+  });
 
   String get _screenshotAssetPath {
     final ts = section.screenshotTimestamp.replaceAll(':', '-');
@@ -132,13 +142,13 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timestamp badge + subtitle
+          // Timestamp badge + play button + subtitle
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Timestamp
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withAlpha(25),
                   borderRadius: BorderRadius.circular(4),
@@ -154,7 +164,26 @@ class _SectionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              // Play button (samo kad je video dostupan)
+              if (onPlayTap != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.play_circle_outline,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                      tooltip: 'Pusti od ${section.screenshotTimestamp}',
+                      onPressed: () => onPlayTap!(section.screenshotTimestamp),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   section.subtitle,
@@ -178,7 +207,6 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
 
-          // Screenshot caption
           if (section.screenshotDescription.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
@@ -192,14 +220,12 @@ class _SectionCard extends StatelessWidget {
             ),
           const SizedBox(height: 12),
 
-          // Content
           Text(
             section.content,
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.65),
           ),
           const SizedBox(height: 10),
 
-          // Keywords
           if (section.keywords.isNotEmpty)
             Wrap(
               spacing: 6,

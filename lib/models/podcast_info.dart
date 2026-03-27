@@ -19,6 +19,12 @@ class PodcastInfo {
   final List<YtChapter> chapters;
   final List<YtThumbnail> thumbnails;
 
+  /// Putanja lokalnog video fajla (MKV — merged video+audio, preporučeno za playback)
+  final String? localVideoPath;
+
+  /// Putanja video-only MP4 streama (bez audio, samo za referencu)
+  final String? localVideoPathMp4;
+
   const PodcastInfo({
     required this.id,
     required this.title,
@@ -38,6 +44,8 @@ class PodcastInfo {
     required this.categories,
     required this.chapters,
     required this.thumbnails,
+    this.localVideoPath,
+    this.localVideoPathMp4,
   });
 
   factory PodcastInfo.fromJson(Map<String, dynamic> json) {
@@ -66,6 +74,8 @@ class PodcastInfo {
               ?.map((t) => YtThumbnail.fromJson(t as Map<String, dynamic>))
               .toList() ??
           [],
+      localVideoPath: json['local_video_path'] as String?,
+      localVideoPathMp4: json['local_video_path_mp4'] as String?,
     );
   }
 

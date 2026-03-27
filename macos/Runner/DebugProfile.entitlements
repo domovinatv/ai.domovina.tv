@@ -8,5 +8,15 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Dozvoljava citanje lokalnih fajlova (video na eksternom volumenu) -->
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-only</key>
+	<array>
+		<string>/Volumes/</string>
+		<string>/Users/</string>
+	</array>
 </dict>
 </plist>

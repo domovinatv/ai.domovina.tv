@@ -1,4 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+
 import '../services/data_service.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
@@ -6,6 +12,7 @@ import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/entities_section.dart';
 import '../widgets/table_of_contents.dart';
+import '../widgets/video_panel.dart';
 
 class EpisodeScreen extends StatefulWidget {
   final String youtubeId;
@@ -31,8 +38,8 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: const Center(child: CircularProgressIndicator()),
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
         }
         if (snapshot.hasError) {
@@ -43,7 +50,8 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const Icon(Icons.error_outline,
+                        size: 48, color: Colors.red),
                     const SizedBox(height: 12),
                     Text(
                       'Greška pri ucitavanju podataka:\n${snapshot.error}',
@@ -61,6 +69,8 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
   }
 }
 
+// ---------------------------------------------------------------------------
+
 class _EpisodeContent extends StatefulWidget {
   final EpisodeData data;
 
@@ -76,25 +86,135 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   late final Map<String, GlobalKey> _sectionKeys;
   String? _activeTimestamp;
 
+  // Video
+  Player? _player;
+  VideoController? _videoController;
+  StreamSubscription<Duration>? _positionSub;
+  bool _videoReady = false;
+
+  /// Sortirane sekcije kao (Duration, timestampString) za sync Video→Text
+  late final List<({Duration dur, String ts})> _sortedSections;
+
+  /// Chapters za VideoPanel
+  late final List<VideoChapterMark> _videoChapters;
+
+  /// Sprječava auto-scroll iz video listenera dok korisnik ručno scrolla
+  DateTime? _lastManualScroll;
+
   @override
   void initState() {
     super.initState();
+
     _sectionKeys = {
       for (final iter in widget.data.article.iterations)
         for (final sec in iter.sections)
           sec.screenshotTimestamp: GlobalKey(),
     };
-    _scrollController.addListener(_updateActiveSection);
+
+    _sortedSections = [
+      for (final iter in widget.data.article.iterations)
+        for (final sec in iter.sections)
+          (dur: _parseDuration(sec.screenshotTimestamp), ts: sec.screenshotTimestamp),
+    ]..sort((a, b) => a.dur.compareTo(b.dur));
+
+    _videoChapters = _sortedSections
+        .map((s) {
+          final label = _subtitleForTimestamp(s.ts);
+          return VideoChapterMark(
+            position: s.dur,
+            timestamp: s.ts,
+            label: label,
+          );
+        })
+        .toList();
+
+    _scrollController.addListener(_onScroll);
+    _initVideo();
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_updateActiveSection);
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _positionSub?.cancel();
+    _player?.dispose();
     super.dispose();
   }
 
-  void _updateActiveSection() {
+  // ---------- helpers -------------------------------------------------------
+
+  Duration _parseDuration(String ts) {
+    // "HH:MM:SS" → Duration
+    final parts = ts.split(':').map(int.parse).toList();
+    if (parts.length == 3) {
+      return Duration(hours: parts[0], minutes: parts[1], seconds: parts[2]);
+    }
+    return Duration.zero;
+  }
+
+  String _subtitleForTimestamp(String ts) {
+    for (final iter in widget.data.article.iterations) {
+      for (final sec in iter.sections) {
+        if (sec.screenshotTimestamp == ts) return sec.subtitle;
+      }
+    }
+    return ts;
+  }
+
+  // ---------- video ---------------------------------------------------------
+
+  Future<void> _initVideo() async {
+    final videoPath = widget.data.info.localVideoPath;
+    if (videoPath == null) return;
+    if (!File(videoPath).existsSync()) return;
+
+    final player = Player();
+    final controller = VideoController(player);
+    await player.open(Media(videoPath), play: false);
+
+    _positionSub = player.stream.position.listen(_onVideoPosition);
+
+    if (mounted) {
+      setState(() {
+        _player = player;
+        _videoController = controller;
+        _videoReady = true;
+      });
+    }
+  }
+
+  void _onVideoPosition(Duration pos) {
+    // Pronadji aktivnu sekciju: zadnja sekcija čiji timestamp <= pos
+    String? newTs;
+    for (final s in _sortedSections) {
+      if (pos >= s.dur) {
+        newTs = s.ts;
+      } else {
+        break;
+      }
+    }
+    if (newTs == null || newTs == _activeTimestamp) return;
+
+    // Postavi aktivni timestamp (ažurira TOC highlight)
+    setState(() => _activeTimestamp = newTs!);
+
+    // Auto-scroll teksta samo ako korisnik nije ručno scrollao zadnje 2 sekunde
+    final lastScroll = _lastManualScroll;
+    if (lastScroll == null ||
+        DateTime.now().difference(lastScroll) >
+            const Duration(seconds: 2)) {
+      _scrollToSection(newTs);
+    }
+  }
+
+  // ---------- scroll --------------------------------------------------------
+
+  void _onScroll() {
+    _lastManualScroll = DateTime.now();
+    _updateActiveSectionFromScroll();
+  }
+
+  void _updateActiveSectionFromScroll() {
     for (final entry in _sectionKeys.entries) {
       final ctx = entry.value.currentContext;
       if (ctx == null) continue;
@@ -120,26 +240,34 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         curve: Curves.easeInOut,
         alignment: 0.05,
       );
-      setState(() => _activeTimestamp = timestamp);
     }
   }
 
-  /// Zatvori Drawer pa scrollaj — postFrameCallback osigurava
-  /// da se scroll dogodi nakon što se Drawer animacija završi.
-  /// Koristi _scaffoldKey umjesto Scaffold.of(context) jer Drawer
-  /// callback nema dostupan descendant context Scaffold-a.
+  /// Seek video na timestamp + play + scroll teksta
+  void _seekAndPlay(String timestamp) {
+    final dur = _parseDuration(timestamp);
+    _player?.seek(dur);
+    _player?.play();
+    setState(() => _activeTimestamp = timestamp);
+    _scrollToSection(timestamp);
+  }
+
   void _drawerTap(String timestamp) {
     _scaffoldKey.currentState?.closeDrawer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToSection(timestamp);
+      _seekAndPlay(timestamp);
     });
   }
+
+  // ---------- build ---------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
     final theme = Theme.of(context);
-    final isWide = MediaQuery.sizeOf(context).width > 900;
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width > 900;
+    final showVideo = _videoReady && width > 1100;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
@@ -147,13 +275,13 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         SliverAppBar(
           floating: true,
           snap: true,
-          // Na mobilnom: hamburger koji otvara Drawer
           leading: isWide
               ? null
               : IconButton(
                   icon: const Icon(Icons.menu),
                   tooltip: 'Sadržaj',
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                  onPressed: () =>
+                      _scaffoldKey.currentState?.openDrawer(),
                 ),
           automaticallyImplyLeading: false,
           title: Text(
@@ -200,6 +328,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                     article: data.article,
                     youtubeId: data.youtubeId,
                     sectionKeys: _sectionKeys,
+                    onPlayTap: _videoReady ? _seekAndPlay : null,
                   ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
@@ -213,10 +342,52 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       ],
     );
 
+    Widget body;
+    if (showVideo) {
+      // Desktop wide: TOC | content | video
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TableOfContents(
+            article: data.article,
+            activeTimestamp: _activeTimestamp,
+            onSectionTap: _seekAndPlay,
+          ),
+          Expanded(child: scrollBody),
+          VideoPanel(
+            player: _player!,
+            controller: _videoController!,
+            chapters: _videoChapters,
+            activeTimestamp: _activeTimestamp,
+            onChapterTap: _seekAndPlay,
+            totalDurationSeconds: data.info.duration,
+          ),
+        ],
+      );
+    } else if (isWide) {
+      // Desktop narrow: TOC | content (bez video panela)
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TableOfContents(
+            article: data.article,
+            activeTimestamp: _activeTimestamp,
+            onSectionTap: (ts) {
+              setState(() => _activeTimestamp = ts);
+              _seekAndPlay(ts);
+            },
+          ),
+          Expanded(child: scrollBody),
+        ],
+      );
+    } else {
+      // Mobitel: samo scroll content, Drawer za TOC
+      body = scrollBody;
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.colorScheme.surfaceContainerLow,
-      // Drawer samo na uskim ekranima
       drawer: isWide
           ? null
           : Drawer(
@@ -226,22 +397,12 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 onSectionTap: _drawerTap,
               ),
             ),
-      body: isWide
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TableOfContents(
-                  article: data.article,
-                  activeTimestamp: _activeTimestamp,
-                  onSectionTap: _scrollToSection,
-                ),
-                Expanded(child: scrollBody),
-              ],
-            )
-          : scrollBody,
+      body: body,
     );
   }
 }
+
+// ---------------------------------------------------------------------------
 
 class _MetadataFooter extends StatelessWidget {
   final EpisodeData data;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
@@ -8,6 +9,8 @@ import 'screens/episode_screen.dart';
 ///   assets/data/{youtubeId}/*.json
 ///   assets/images/{youtubeId}/thumbnail.webp
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   runApp(const DominovinaApp());
 }
 
