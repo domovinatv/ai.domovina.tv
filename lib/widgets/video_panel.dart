@@ -28,6 +28,7 @@ class VideoPanel extends StatefulWidget {
   final int totalDurationSeconds;
   final SpeakerTimeline? speakerTimeline;
   final List<SummarySpeaker> speakers;
+  final double? width;
 
   const VideoPanel({
     super.key,
@@ -39,6 +40,7 @@ class VideoPanel extends StatefulWidget {
     required this.totalDurationSeconds,
     this.speakerTimeline,
     this.speakers = const [],
+    this.width = 360,
   });
 
   @override
@@ -119,12 +121,14 @@ class _VideoPanelState extends State<VideoPanel> {
     final speaker = _currentSpeaker();
 
     return Container(
-      width: 360,
+      width: widget.width,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        border: Border(
-          left: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
+        border: widget.width != null
+            ? Border(
+                left: BorderSide(color: theme.colorScheme.outlineVariant),
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -278,7 +282,8 @@ class _VideoPanelState extends State<VideoPanel> {
                   chapter: ch,
                   isActive: isActive,
                   onTap: () {
-                    widget.player.seek(ch.position);
+                    final seekTo = ch.position - const Duration(seconds: 2);
+                    widget.player.seek(seekTo < Duration.zero ? Duration.zero : seekTo);
                     widget.player.play();
                     widget.onChapterTap(ch.timestamp);
                   },

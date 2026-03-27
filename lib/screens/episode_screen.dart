@@ -243,10 +243,11 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     }
   }
 
-  /// Seek video na timestamp + play + scroll teksta
+  /// Seek video 2s prije timestampa + play + scroll teksta
   void _seekAndPlay(String timestamp) {
     final dur = _parseDuration(timestamp);
-    _player?.seek(dur);
+    final seekTo = dur - const Duration(seconds: 2);
+    _player?.seek(seekTo < Duration.zero ? Duration.zero : seekTo);
     _player?.play();
     setState(() => _activeTimestamp = timestamp);
     _scrollToSection(timestamp);
@@ -291,7 +292,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           ),
           actions: [
             Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: _videoReady && !showVideo ? 4 : 16),
               child: Center(
                 child: Text(
                   data.info.id,
@@ -302,6 +303,16 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 ),
               ),
             ),
+            if (_videoReady && !showVideo)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  icon: const Icon(Icons.ondemand_video),
+                  tooltip: 'Video',
+                  onPressed: () =>
+                      _scaffoldKey.currentState?.openEndDrawer(),
+                ),
+              ),
           ],
         ),
         SliverToBoxAdapter(
@@ -399,6 +410,22 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 onSectionTap: _drawerTap,
               ),
             ),
+      endDrawer: _videoReady && !showVideo
+          ? Drawer(
+              width: 360,
+              child: VideoPanel(
+                player: _player!,
+                controller: _videoController!,
+                chapters: _videoChapters,
+                activeTimestamp: _activeTimestamp,
+                onChapterTap: _seekAndPlay,
+                totalDurationSeconds: data.info.duration,
+                speakerTimeline: data.speakerTimeline,
+                speakers: data.summary.summary.speakers,
+                width: null,
+              ),
+            )
+          : null,
       body: body,
     );
   }
