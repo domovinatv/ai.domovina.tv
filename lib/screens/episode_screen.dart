@@ -28,6 +28,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       body: FutureBuilder<EpisodeData>(
         future: _future,
         builder: (context, snapshot) {
@@ -95,9 +96,13 @@ class _EpisodeContent extends StatelessWidget {
         ),
 
         SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
               // Hero: thumbnail + naslov + statistike
               HeroSection(
                 info: data.info,
@@ -131,6 +136,8 @@ class _EpisodeContent extends StatelessWidget {
               // Metadata footer
               _MetadataFooter(data: data),
             ],
+          ),
+        ),
           ),
         ),
       ],
