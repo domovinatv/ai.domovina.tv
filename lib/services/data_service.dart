@@ -47,28 +47,41 @@ class DataService {
     return PodcastArticle.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
-  /// Vraca URI za video (MP4, H.264+AAC — cross-platform).
-  /// Asset bundle → lokalni fajl (desktop dev) → null.
+  /// Vraca URI za video (MP4, cross-platform).
+  /// Na webu: relativni path do asseta (HTML5 <video>).
+  /// Na native: asset:/// URI ili lokalni fajl.
   Future<String?> resolveVideoUri(PodcastInfo info) async {
     final assetPath = _dataPath('video.mp4');
 
-    // Provjeri je li video bundlan u AssetManifest
+    // Na webu: koristi relativni path — Flutter web servira assete iz assets/
+    if (kIsWeb) {
+      // Provjeri postoji li asset (bez učitavanja cijelog fajla)
+      try {
+        final manifestJson =
+            await rootBundle.loadString('AssetManifest.bin.json');
+        if (manifestJson.contains(assetPath)) {
+          return 'assets/$assetPath';
+        }
+      } catch (_) {}
+      // Fallback: pretpostavi da postoji
+      return 'assets/$assetPath';
+    }
+
+    // Native: provjeri AssetManifest.json
     try {
       final manifestJson =
           await rootBundle.loadString('AssetManifest.json');
       final manifest =
           jsonDecode(manifestJson) as Map<String, dynamic>;
       if (manifest.containsKey(assetPath)) {
-        return kIsWeb ? assetPath : 'asset:///$assetPath';
+        return 'asset:///$assetPath';
       }
     } catch (_) {}
 
-    // Fallback: lokalni fajl iz info.json (desktop dev)
-    if (!kIsWeb) {
-      final localPath = info.localVideoPath;
-      if (localPath != null && fileExists(localPath)) {
-        return localPath;
-      }
+    // Fallback: lokalni fajl iz info.json (macOS dev)
+    final localPath = info.localVideoPath;
+    if (localPath != null && fileExists(localPath)) {
+      return localPath;
     }
 
     return null;

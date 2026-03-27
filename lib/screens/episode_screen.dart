@@ -167,20 +167,29 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   Future<void> _initVideo() async {
     final videoUri = widget.data.videoUri;
-    if (videoUri == null) return;
+    if (videoUri == null) {
+      debugPrint('Video: no videoUri resolved');
+      return;
+    }
+    debugPrint('Video: opening $videoUri');
 
-    final player = Player();
-    final controller = VideoController(player);
-    await player.open(Media(videoUri), play: true);
+    try {
+      final player = Player();
+      final controller = VideoController(player);
+      await player.open(Media(videoUri), play: true);
 
-    _positionSub = player.stream.position.listen(_onVideoPosition);
+      _positionSub = player.stream.position.listen(_onVideoPosition);
 
-    if (mounted) {
-      setState(() {
-        _player = player;
-        _videoController = controller;
-        _videoReady = true;
-      });
+      if (mounted) {
+        setState(() {
+          _player = player;
+          _videoController = controller;
+          _videoReady = true;
+        });
+        debugPrint('Video: ready');
+      }
+    } catch (e) {
+      debugPrint('Video: init failed — $e');
     }
   }
 
