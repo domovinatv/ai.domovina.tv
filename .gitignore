@@ -48,3 +48,6 @@ app.*.map.json
 *.mkv
 *.mp4
 *.webm
+
+# Wrangler local state
+.wrangler/
