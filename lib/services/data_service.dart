@@ -15,7 +15,7 @@ import 'file_utils.dart';
 ///   assets/data/{youtubeId}/summary.json
 ///   assets/data/{youtubeId}/outline.json
 ///   assets/data/{youtubeId}/article.json
-///   assets/data/{youtubeId}/video.mkv       (opcionalno)
+///   assets/data/{youtubeId}/video.mp4       (opcionalno)
 ///   assets/data/{youtubeId}/diarized.srt    (opcionalno)
 ///   assets/images/{youtubeId}/thumbnail.webp  (ili .png)
 class DataService {
@@ -47,10 +47,10 @@ class DataService {
     return PodcastArticle.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
-  /// Vraca URI za video: asset:/// ako je bundlan, lokalni path kao fallback,
-  /// ili null ako video nije dostupan.
+  /// Vraca URI za video (MP4, H.264+AAC — cross-platform).
+  /// Asset bundle → lokalni fajl (desktop dev) → null.
   Future<String?> resolveVideoUri(PodcastInfo info) async {
-    final assetPath = _dataPath('video.mkv');
+    final assetPath = _dataPath('video.mp4');
 
     // Provjeri je li video bundlan u AssetManifest
     try {
@@ -59,7 +59,7 @@ class DataService {
       final manifest =
           jsonDecode(manifestJson) as Map<String, dynamic>;
       if (manifest.containsKey(assetPath)) {
-        return 'asset:///$assetPath';
+        return kIsWeb ? assetPath : 'asset:///$assetPath';
       }
     } catch (_) {}
 

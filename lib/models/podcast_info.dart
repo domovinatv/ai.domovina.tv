@@ -19,7 +19,7 @@ class PodcastInfo {
   final List<YtChapter> chapters;
   final List<YtThumbnail> thumbnails;
 
-  /// Putanja lokalnog video fajla (MKV — merged video+audio, preporučeno za playback)
+  /// Putanja lokalnog video fajla (MP4 H.264+AAC — cross-platform playback)
   final String? localVideoPath;
 
   /// Putanja video-only MP4 streama (bez audio, samo za referencu)

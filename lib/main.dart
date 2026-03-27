@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
@@ -10,7 +11,9 @@ import 'screens/episode_screen.dart';
 ///   assets/images/{youtubeId}/thumbnail.webp
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
+  if (!kIsWeb) {
+    MediaKit.ensureInitialized();
+  }
   runApp(const DominovinaApp());
 }
 
