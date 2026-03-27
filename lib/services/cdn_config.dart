@@ -5,6 +5,17 @@
 class CdnConfig {
   static const String base = 'https://cdn.domovina.ai';
 
+  /// Poznati YouTube ID-evi epizoda dostupnih na CDN-u.
+  /// Redoslijed određuje prikaz na HomeScreen-u.
+  static const List<String> knownVideoIds = [
+    'KvIhy5SESYs',
+    'MGLq9v3AtvE',
+    'AoXN-3Mkmew',
+    'b-nls1ck8EE',
+    'oxq1U0xypu8',
+    'H-p2Hl6x7I0',
+  ];
+
   // JSON podaci
   static String infoUrl(String ytId) => '$base/data/$ytId/info.json';
   static String summaryUrl(String ytId) => '$base/data/$ytId/summary.json';
