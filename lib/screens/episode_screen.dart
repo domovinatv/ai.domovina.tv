@@ -71,6 +71,7 @@ class _EpisodeContent extends StatefulWidget {
 }
 
 class _EpisodeContentState extends State<_EpisodeContent> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
   String? _activeTimestamp;
@@ -124,9 +125,11 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   }
 
   /// Zatvori Drawer pa scrollaj — postFrameCallback osigurava
-  /// da se scroll dogodi nakon što se Drawer animacija završi
-  void _drawerTap(BuildContext scaffoldContext, String timestamp) {
-    Scaffold.of(scaffoldContext).closeDrawer();
+  /// da se scroll dogodi nakon što se Drawer animacija završi.
+  /// Koristi _scaffoldKey umjesto Scaffold.of(context) jer Drawer
+  /// callback nema dostupan descendant context Scaffold-a.
+  void _drawerTap(String timestamp) {
+    _scaffoldKey.currentState?.closeDrawer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSection(timestamp);
     });
@@ -147,12 +150,10 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           // Na mobilnom: hamburger koji otvara Drawer
           leading: isWide
               ? null
-              : Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu),
-                    tooltip: 'Sadržaj',
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
-                  ),
+              : IconButton(
+                  icon: const Icon(Icons.menu),
+                  tooltip: 'Sadržaj',
+                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
           automaticallyImplyLeading: false,
           title: Text(
@@ -212,34 +213,32 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       ],
     );
 
-    return Builder(
-      builder: (scaffoldContext) => Scaffold(
-        backgroundColor: theme.colorScheme.surfaceContainerLow,
-        // Drawer samo na uskim ekranima
-        drawer: isWide
-            ? null
-            : Drawer(
-                child: TableOfContents(
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      // Drawer samo na uskim ekranima
+      drawer: isWide
+          ? null
+          : Drawer(
+              child: TableOfContents(
+                article: data.article,
+                activeTimestamp: _activeTimestamp,
+                onSectionTap: _drawerTap,
+              ),
+            ),
+      body: isWide
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TableOfContents(
                   article: data.article,
                   activeTimestamp: _activeTimestamp,
-                  onSectionTap: (ts) =>
-                      _drawerTap(scaffoldContext, ts),
+                  onSectionTap: _scrollToSection,
                 ),
-              ),
-        body: isWide
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TableOfContents(
-                    article: data.article,
-                    activeTimestamp: _activeTimestamp,
-                    onSectionTap: _scrollToSection,
-                  ),
-                  Expanded(child: scrollBody),
-                ],
-              )
-            : scrollBody,
-      ),
+                Expanded(child: scrollBody),
+              ],
+            )
+          : scrollBody,
     );
   }
 }
