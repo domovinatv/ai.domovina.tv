@@ -1,0 +1,106 @@
+{
+  "iterations": [
+    {
+      "iteration_number": 1,
+      "start_time": "00:00:10",
+      "end_time": "00:36:44",
+      "theme": "Počeci Laudato TV-a, izazovi financiranja i programski planovi",
+      "reason_for_cut": "Završava se predstavljanje novog projekta 'Novi život' i diskusija o financiranju i dosegu Laudato TV-a, prije prelaska na širu temu Božje providnosti u poslovanju.",
+      "chapters": [
+        {
+          "timestamp": "00:00:10",
+          "topic": "Uvod i predstavljanje gošće Ksenije Abramović"
+        },
+        {
+          "timestamp": "00:01:15",
+          "topic": "Misija Udruge Mladi za domovinu i Ksenijina uloga"
+        },
+        {
+          "timestamp": "00:03:04",
+          "topic": "Ksenijine liderske sposobnosti od djetinjstva"
+        },
+        {
+          "timestamp": "00:05:12",
+          "topic": "Počeci Laudato TV-a i financijski izazovi"
+        },
+        {
+          "timestamp": "00:08:27",
+          "topic": "Božji poziv za Laudato TV i povjerenje u providnost"
+        },
+        {
+          "timestamp": "00:10:19",
+          "topic": "Put do EWTN-a i nabavke programa (priča o upornosti)"
+        },
+        {
+          "timestamp": "00:17:25",
+          "topic": "Najveći doprinos Laudato TV-a (COVID-19, mir, nada)"
+        },
+        {
+          "timestamp": "00:19:18",
+          "topic": "Izazovi nacionalne koncesije i trenutni doseg"
+        },
+        {
+          "timestamp": "00:23:56",
+          "topic": "Model financiranja Laudato TV-a (donacije, Klub prijatelja)"
+        },
+        {
+          "timestamp": "00:27:47",
+          "topic": "Strateški planovi i ciljevi Laudato TV-a (nacionalna koncesija, dosezanje starijih)"
+        },
+        {
+          "timestamp": "00:32:24",
+          "topic": "Budući programski sadržaji (kršćanska sapunica, crtići) i najava emisije 'Novi život'"
+        }
+      ]
+    },
+    {
+      "iteration_number": 2,
+      "start_time": "00:36:45",
+      "end_time": "01:14:58",
+      "theme": "Božja providnost, domoljublje, vizija Hrvatske i uloga mladih",
+      "reason_for_cut": "Nastavlja se razgovor o Božjoj providnosti, prelazi se na teme domoljublja, vizije Hrvatske, uloge mladih i stanja Crkve, zaključujući s porukom vjere i najavom knjige.",
+      "chapters": [
+        {
+          "timestamp": "00:36:45",
+          "topic": "Božja providnost u poslovanju i važnost vjere"
+        },
+        {
+          "timestamp": "00:39:05",
+          "topic": "Ljubav prema domovini i odgovorno domoljublje"
+        },
+        {
+          "timestamp": "00:43:35",
+          "topic": "Vizija Hrvatske za budućnost (demografija, duhovni zanos)"
+        },
+        {
+          "timestamp": "00:46:39",
+          "topic": "Ulaganje u mlade ljude i prepoznavanje talenata"
+        },
+        {
+          "timestamp": "00:50:33",
+          "topic": "Koncert 'Progledaj srcem' na Maksimiru (organizacija, utjecaj)"
+        },
+        {
+          "timestamp": "00:57:26",
+          "topic": "Osobine koje se traže kod mladih (odgovornost, lojalnost, trud)"
+        },
+        {
+          "timestamp": "01:00:35",
+          "topic": "Poticanje mladih na aktivno sudjelovanje i razlučivanje"
+        },
+        {
+          "timestamp": "01:05:35",
+          "topic": "Apolitičnost Laudato TV-a i stanje Crkve u Hrvatskoj"
+        },
+        {
+          "timestamp": "01:11:48",
+          "topic": "Najava knjige 'Evo me' i završna poruka vjere"
+        },
+        {
+          "timestamp": "01:14:19",
+          "topic": "Zaključak podcasta i poziv na zajedništvo"
+        }
+      ]
+    }
+  ]
+}

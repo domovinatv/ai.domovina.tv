@@ -1,0 +1,148 @@
+import 'package:flutter/material.dart';
+import '../models/podcast_info.dart';
+import '../models/podcast_summary.dart';
+
+class HeroSection extends StatelessWidget {
+  final PodcastInfo info;
+  final PodcastSummary summary;
+  final String youtubeId;
+
+  const HeroSection({
+    super.key,
+    required this.info,
+    required this.summary,
+    required this.youtubeId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final uploadDt = info.uploadDateTime;
+    final dateStr =
+        '${uploadDt.day}.${uploadDt.month}.${uploadDt.year}.';
+
+    return Container(
+      color: theme.colorScheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Thumbnail — path parametriziran po youtubeId
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Image.asset(
+              'assets/images/$youtubeId/thumbnail.webp',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Image.asset(
+                'assets/images/$youtubeId/thumbnail.png',
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Channel chip
+                Chip(
+                  label: Text(
+                    info.channel,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: theme.colorScheme.onPrimary),
+                  ),
+                  backgroundColor: theme.colorScheme.primary,
+                  side: BorderSide.none,
+                  padding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 12),
+
+                // Title
+                Text(
+                  info.title,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Stats row
+                Wrap(
+                  spacing: 20,
+                  runSpacing: 8,
+                  children: [
+                    _Stat(icon: Icons.calendar_today_outlined, label: dateStr),
+                    _Stat(
+                      icon: Icons.timer_outlined,
+                      label: info.durationString.isNotEmpty
+                          ? info.durationString
+                          : _formatDuration(info.duration),
+                    ),
+                    _Stat(
+                      icon: Icons.visibility_outlined,
+                      label: _formatCount(info.viewCount),
+                    ),
+                    _Stat(
+                      icon: Icons.thumb_up_outlined,
+                      label: _formatCount(info.likeCount),
+                    ),
+                    if (info.commentCount != null)
+                      _Stat(
+                        icon: Icons.comment_outlined,
+                        label: _formatCount(info.commentCount!),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) {
+      return '${h}h ${m}min';
+    }
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M';
+    }
+    if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K';
+    }
+    return count.toString();
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _Stat({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
