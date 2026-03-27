@@ -251,6 +251,21 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     }
   }
 
+  /// Kad korisnik seekuje slider, uvijek scrollaj na ispravnu sekciju.
+  void _onVideoSeek(Duration pos) {
+    String? newTs;
+    for (final s in _sortedSections) {
+      if (pos >= s.dur) {
+        newTs = s.ts;
+      } else {
+        break;
+      }
+    }
+    if (newTs == null) return;
+    setState(() => _activeTimestamp = newTs!);
+    _scrollToSection(newTs);
+  }
+
   /// Seek video na timestamp + play + scroll teksta.
   /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
   void _seekAndPlay(String timestamp, {bool preroll = false}) {
@@ -385,6 +400,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             chapters: _videoChapters,
             activeTimestamp: _activeTimestamp,
             onChapterTap: (ts) => _seekAndPlay(ts, preroll: true),
+            onSeek: _onVideoSeek,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: data.summary.summary.speakers,
@@ -433,6 +449,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 chapters: _videoChapters,
                 activeTimestamp: _activeTimestamp,
                 onChapterTap: (ts) => _seekAndPlay(ts, preroll: true),
+                onSeek: _onVideoSeek,
                 totalDurationSeconds: data.info.duration,
                 speakerTimeline: data.speakerTimeline,
                 speakers: data.summary.summary.speakers,

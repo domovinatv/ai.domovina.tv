@@ -29,6 +29,7 @@ class VideoPanel extends StatefulWidget {
   final SpeakerTimeline? speakerTimeline;
   final List<SummarySpeaker> speakers;
   final double? width;
+  final void Function(Duration position)? onSeek;
 
   const VideoPanel({
     super.key,
@@ -41,6 +42,7 @@ class VideoPanel extends StatefulWidget {
     this.speakerTimeline,
     this.speakers = const [],
     this.width = 360,
+    this.onSeek,
   });
 
   @override
@@ -201,7 +203,9 @@ class _VideoPanelState extends State<VideoPanel> {
                   onChanged: (v) => setState(() => _sliderValue = v),
                   onChangeEnd: (v) {
                     final ms = (v * totalMs).round();
-                    widget.player.seek(Duration(milliseconds: ms));
+                    final dur = Duration(milliseconds: ms);
+                    widget.player.seek(dur);
+                    widget.onSeek?.call(dur);
                     setState(() => _seeking = false);
                   },
                 ),
