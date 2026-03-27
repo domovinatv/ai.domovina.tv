@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_info.dart';
-import '../models/podcast_summary.dart';
+import '../services/cdn_config.dart';
 
 class HeroSection extends StatelessWidget {
   final PodcastInfo info;
-  final PodcastSummary summary;
   final String youtubeId;
 
   const HeroSection({
     super.key,
     required this.info,
-    required this.summary,
     required this.youtubeId,
   });
 
@@ -26,15 +24,18 @@ class HeroSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Thumbnail — path parametriziran po youtubeId
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: Image.asset(
-              'assets/images/$youtubeId/thumbnail.webp',
+            child: Image.network(
+              CdnConfig.thumbnailUrl(youtubeId),
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Image.asset(
-                'assets/images/$youtubeId/thumbnail.png',
-                fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),

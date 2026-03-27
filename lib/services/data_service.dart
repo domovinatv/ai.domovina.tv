@@ -1,91 +1,54 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
 import '../models/podcast_article.dart';
 import '../models/speaker_timeline.dart';
-import 'file_utils.dart';
+import 'cdn_config.dart';
 
-/// Čita JSON assete za konkretni YouTube video ID.
-///
-/// Ocekivana struktura asseta:
-///   assets/data/{youtubeId}/info.json
-///   assets/data/{youtubeId}/summary.json
-///   assets/data/{youtubeId}/outline.json
-///   assets/data/{youtubeId}/article.json
-///   assets/data/{youtubeId}/video.mp4       (opcionalno)
-///   assets/data/{youtubeId}/diarized.srt    (opcionalno)
-///   assets/images/{youtubeId}/thumbnail.webp  (ili .png)
+/// Učitava podatke za konkretni YouTube video ID s CDN-a (cdn.domovina.ai).
 class DataService {
   final String youtubeId;
 
   const DataService({required this.youtubeId});
 
-  String _dataPath(String filename) => 'assets/data/$youtubeId/$filename';
-  String thumbnailWebpPath() => 'assets/images/$youtubeId/thumbnail.webp';
-  String thumbnailPngPath() => 'assets/images/$youtubeId/thumbnail.png';
+  Future<String> _fetch(String url) async {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return response.body;
+  }
 
   Future<PodcastInfo> loadInfo() async {
-    final raw = await rootBundle.loadString(_dataPath('info.json'));
+    final raw = await _fetch(CdnConfig.infoUrl(youtubeId));
     return PodcastInfo.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
   Future<PodcastSummary> loadSummary() async {
-    final raw = await rootBundle.loadString(_dataPath('summary.json'));
+    final raw = await _fetch(CdnConfig.summaryUrl(youtubeId));
     return PodcastSummary.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
   Future<PodcastOutline> loadOutline() async {
-    final raw = await rootBundle.loadString(_dataPath('outline.json'));
+    final raw = await _fetch(CdnConfig.outlineUrl(youtubeId));
     return PodcastOutline.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
   Future<PodcastArticle> loadArticle() async {
-    final raw = await rootBundle.loadString(_dataPath('article.json'));
+    final raw = await _fetch(CdnConfig.articleUrl(youtubeId));
     return PodcastArticle.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
-  /// Vraca URI za video (MP4, cross-platform).
-  /// Na webu: relativni path do asseta (HTML5 <video>).
-  /// Na native: asset:/// URI ili lokalni fajl.
-  Future<String?> resolveVideoUri(PodcastInfo info) async {
-    final assetPath = _dataPath('video.mp4');
-
-    // Na webu: preferiraj video_url (R2 ili CDN) koji podržava HTTP 206 range
-    // requeste neophodne za seeking. Bundlani asset vraća 200 pa seek ne radi.
-    if (kIsWeb) {
-      if (info.videoUrl != null) return info.videoUrl;
-      // Fallback na bundlani asset (seeking neće raditi bez range support)
-      return assetPath;
-    }
-
-    // Native: provjeri AssetManifest.json
-    try {
-      final manifestJson =
-          await rootBundle.loadString('AssetManifest.json');
-      final manifest =
-          jsonDecode(manifestJson) as Map<String, dynamic>;
-      if (manifest.containsKey(assetPath)) {
-        return 'asset:///$assetPath';
-      }
-    } catch (_) {}
-
-    // Fallback: lokalni fajl iz info.json (macOS dev)
-    final localPath = info.localVideoPath;
-    if (localPath != null && fileExists(localPath)) {
-      return localPath;
-    }
-
-    return null;
-  }
+  /// Vraća CDN URL videa — podržava HTTP 206 range requeste za seeking.
+  String resolveVideoUri() => CdnConfig.videoUrl(youtubeId);
 
   /// Ucitaj diariziran SRT i parsiraj u SpeakerTimeline.
-  /// Vraca null ako fajl ne postoji.
+  /// Vraća null ako fajl ne postoji (nije obavezan asset).
   Future<SpeakerTimeline?> loadSpeakerTimeline() async {
     try {
-      final raw = await rootBundle.loadString(_dataPath('diarized.srt'));
+      final raw = await _fetch(CdnConfig.diarizedSrtUrl(youtubeId));
       return _parseSrt(raw);
     } catch (_) {
       return null;
@@ -143,7 +106,7 @@ SpeakerTimeline _parseSrt(String raw) {
   return SpeakerTimeline(segments: segments);
 }
 
-/// Svi podaci za jednu podcast epizodu, ucitani iz asseta.
+/// Svi podaci za jednu podcast epizodu, ucitani s CDN-a.
 class EpisodeData {
   final String youtubeId;
   final PodcastInfo info;
@@ -151,7 +114,7 @@ class EpisodeData {
   final PodcastOutline outline;
   final PodcastArticle article;
   final SpeakerTimeline? speakerTimeline;
-  final String? videoUri;
+  final String videoUri;
 
   const EpisodeData({
     required this.youtubeId,
@@ -160,7 +123,7 @@ class EpisodeData {
     required this.outline,
     required this.article,
     this.speakerTimeline,
-    this.videoUri,
+    required this.videoUri,
   });
 
   static Future<EpisodeData> load({required String youtubeId}) async {
@@ -172,16 +135,14 @@ class EpisodeData {
       svc.loadArticle(),
       svc.loadSpeakerTimeline(),
     ]);
-    final info = results[0] as PodcastInfo;
-    final videoUri = await svc.resolveVideoUri(info);
     return EpisodeData(
       youtubeId: youtubeId,
-      info: info,
+      info: results[0] as PodcastInfo,
       summary: results[1] as PodcastSummary,
       outline: results[2] as PodcastOutline,
       article: results[3] as PodcastArticle,
       speakerTimeline: results[4] as SpeakerTimeline?,
-      videoUri: videoUri,
+      videoUri: svc.resolveVideoUri(),
     );
   }
 }

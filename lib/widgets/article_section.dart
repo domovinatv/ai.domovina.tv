@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_article.dart';
+import '../services/cdn_config.dart';
 
 class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
@@ -128,11 +129,6 @@ class _SectionCard extends StatelessWidget {
     this.onPlayTap,
   });
 
-  String get _screenshotAssetPath {
-    final ts = section.screenshotTimestamp.replaceAll(':', '-');
-    return 'assets/images/$youtubeId/screenshots/$ts.png';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -198,8 +194,8 @@ class _SectionCard extends StatelessWidget {
           // Screenshot
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              _screenshotAssetPath,
+            child: Image.network(
+              CdnConfig.screenshotUrl(youtubeId, section.screenshotTimestamp),
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder: (context, error, stackTrace) =>

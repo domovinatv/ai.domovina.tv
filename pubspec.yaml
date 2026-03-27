@@ -34,6 +34,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  http: ^1.2.0
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1
   media_kit_libs_macos_video: ^1.1.4
@@ -60,18 +61,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  assets:
-    # Asseti su organizirani po YouTube video ID-u.
-    # Za novi video: dodaj assets/data/{YT_ID}/ i assets/images/{YT_ID}/
-    - assets/data/H-p2Hl6x7I0/
-    - assets/images/H-p2Hl6x7I0/
-    - assets/images/H-p2Hl6x7I0/screenshots/
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
+  # Svi asseti se loadaju s CDN-a (cdn.domovina.ai) — nema lokalnih bundlanih fajlova.
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

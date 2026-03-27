@@ -168,10 +168,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   Future<void> _initVideo() async {
     final videoUri = widget.data.videoUri;
-    if (videoUri == null) {
-      debugPrint('Video: no videoUri resolved');
-      return;
-    }
     debugPrint('Video: opening $videoUri');
 
     try {
@@ -373,7 +369,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 children: [
                   HeroSection(
                     info: data.info,
-                    summary: data.summary,
                     youtubeId: data.youtubeId,
                   ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),

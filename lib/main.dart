@@ -1,14 +1,11 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
-/// Promjena epizode: promijeni [kDefaultYoutubeId] ili proslijedi drugi ID
-/// u [EpisodeScreen]. Asseti moraju biti na:
-///   assets/data/{youtubeId}/*.json
-///   assets/images/{youtubeId}/thumbnail.webp
+/// Svi podaci (JSON, slike, video) se loadaju s CDN-a: https://cdn.domovina.ai/
+/// Promjena epizode: promijeni [kDefaultYoutubeId] ili proslijedi drugi ID u [EpisodeScreen].
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
