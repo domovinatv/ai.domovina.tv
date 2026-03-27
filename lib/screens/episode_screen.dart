@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -176,7 +177,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     try {
       final player = Player();
       final controller = VideoController(player);
-      await player.open(Media(videoUri), play: true);
+      // Na webu: preglednici blokiraju autoplay s audiom, korisnik mora kliknuti play
+      await player.open(Media(videoUri), play: !kIsWeb);
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
 
@@ -277,7 +279,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   /// Seek video na timestamp + play + scroll teksta.
   /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
-  void _seekAndPlay(String timestamp, {bool preroll = false}) {
+  Future<void> _seekAndPlay(String timestamp, {bool preroll = false}) async {
     final dur = _parseDuration(timestamp);
     var seekTo = dur;
     if (preroll) {
@@ -285,8 +287,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       if (seekTo < Duration.zero) seekTo = Duration.zero;
       _seekLock = DateTime.now();
     }
-    _player?.seek(seekTo);
-    _player?.play();
+    await _player?.seek(seekTo);
+    await _player?.play();
     setState(() => _activeTimestamp = timestamp);
     _scrollToSection(timestamp);
   }
