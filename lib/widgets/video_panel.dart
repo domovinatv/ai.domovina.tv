@@ -134,7 +134,21 @@ class _VideoPanelState extends State<VideoPanel> {
             aspectRatio: 16 / 9,
             child: Container(
               color: Colors.black,
-              child: Video(controller: widget.controller),
+              child: MaterialDesktopVideoControlsTheme(
+                normal: const MaterialDesktopVideoControlsThemeData(),
+                fullscreen: MaterialDesktopVideoControlsThemeData(
+                  topButtonBar: [
+                    if (widget.speakerTimeline != null)
+                      _FullscreenSpeakerLabel(
+                        player: widget.player,
+                        speakerTimeline: widget.speakerTimeline!,
+                        speakers: widget.speakers,
+                        speakerColors: colors,
+                      ),
+                  ],
+                ),
+                child: Video(controller: widget.controller),
+              ),
             ),
           ),
 
@@ -471,6 +485,83 @@ class _CurrentSpeakerRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _FullscreenSpeakerLabel extends StatelessWidget {
+  final Player player;
+  final SpeakerTimeline speakerTimeline;
+  final List<SummarySpeaker> speakers;
+  final Map<String, Color> speakerColors;
+
+  const _FullscreenSpeakerLabel({
+    required this.player,
+    required this.speakerTimeline,
+    required this.speakers,
+    required this.speakerColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Duration>(
+      stream: player.stream.position,
+      builder: (context, snapshot) {
+        final pos = snapshot.data ?? Duration.zero;
+        final speakerId = speakerTimeline.speakerAt(pos);
+        if (speakerId == null) return const SizedBox.shrink();
+
+        SummarySpeaker? speaker;
+        for (final s in speakers) {
+          if (s.id == speakerId) {
+            speaker = s;
+            break;
+          }
+        }
+        if (speaker == null) return const SizedBox.shrink();
+
+        final color = speakerColors[speakerId] ?? Colors.white;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black54,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                speaker.suggestedName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                speaker.role,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
