@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => EpisodeScreen(youtubeId: id),
-        settings: RouteSettings(name: '/?v=$id'),
+        settings: RouteSettings(name: '/v/$id'),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
 import 'screens/home_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/home_screen.dart';
 ///   /episode/ytId  - EpisodeScreen — legacy format
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy(); // /v/ytId umjesto /#/v/ytId — server dobiva path, Worker injektava OG tagove
   MediaKit.ensureInitialized();
   runApp(const DominovinaApp());
 }
