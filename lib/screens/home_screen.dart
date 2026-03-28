@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'episode_screen.dart';
 
 /// Početni ekran — korisnik unosi YouTube ID epizode.
 /// Nema hardkodiranih podataka; sve se učitava s CDN-a po unesenom ID-u.
@@ -17,12 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _open() {
     if (!_formKey.currentState!.validate()) return;
     final id = _controller.text.trim();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => EpisodeScreen(youtubeId: id),
-        settings: RouteSettings(name: '/v/$id'),
-      ),
-    );
+    Navigator.of(context).pushNamed('/v/$id');
   }
 
   @override
