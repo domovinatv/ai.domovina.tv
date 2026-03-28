@@ -7,9 +7,10 @@ import 'screens/home_screen.dart';
 ///
 /// Svi podaci (JSON, slike, video) se loadaju s CDN-a: https://cdn.domovina.ai/
 /// Routing:
-///   /              - HomeScreen (popis epizoda)
-///   /?v=ytId       - EpisodeScreen za dani YouTube ID
-///   /episode/ytId  - EpisodeScreen (alternativni format)
+///   /              - HomeScreen (unos YouTube ID-a)
+///   /v/ytId        - EpisodeScreen — permalink format za sharing
+///   /?v=ytId       - EpisodeScreen — query param format
+///   /episode/ytId  - EpisodeScreen — legacy format
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
@@ -42,6 +43,14 @@ class DominovinaApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         final uri = Uri.parse(settings.name ?? '/');
 
+        // /v/<ytId> — permalink za sharing
+        if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'v') {
+          return MaterialPageRoute(
+            builder: (_) => EpisodeScreen(youtubeId: uri.pathSegments[1]),
+            settings: settings,
+          );
+        }
+
         // /?v=<ytId>
         final vtId = uri.queryParameters['v'];
         if (vtId != null && vtId.isNotEmpty) {
@@ -51,7 +60,7 @@ class DominovinaApp extends StatelessWidget {
           );
         }
 
-        // /episode/<ytId>
+        // /episode/<ytId> — legacy
         if (uri.pathSegments.length == 2 &&
             uri.pathSegments[0] == 'episode') {
           return MaterialPageRoute(
