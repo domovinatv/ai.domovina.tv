@@ -87,9 +87,14 @@ export default {
   <meta name="twitter:image" content="${thumb}">
   <meta name="twitter:image:alt" content="${x(title)}">`;
 
-    // Zamijeni default <title> i injektaj tagove ispred </head>
+    // Ukloni default tagove iz index.html koji će biti zamijenjeni,
+    // pa injektaj video-specifične tagove ispred </head>.
+    // Crawler uvijek čita PRVI match — mora biti naš, ne default.
     let html = await indexResponse.text();
-    html = html.replace(/<title>[^<]*<\/title>/, '');
+    html = html
+      .replace(/<title>[^<]*<\/title>/gi, '')
+      .replace(/<meta\s[^>]*(?:property|name)=["'](?:og:|twitter:|article:|description)[^"']*["'][^>]*>/gi, '')
+      .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '');
     html = html.replace('</head>', `${tags}\n</head>`);
 
     return htmlResponse(html, 'public, max-age=3600, s-maxage=3600');

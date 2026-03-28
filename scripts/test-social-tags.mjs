@@ -1,5 +1,6 @@
 /**
  * Testira server-side OG/social tagove za sve poznate epizode.
+ * Verificira i PRISUTNOST i ISPRAVNOST vrijednosti.
  *
  * Korištenje:
  *   node scripts/test-social-tags.mjs                        # produkcija
@@ -17,34 +18,17 @@ const VIDEO_IDS = [
 
 const BASE = (process.argv[2] || 'https://domovina.ai').replace(/\/$/, '');
 
-// OG tagovi koje svaka epizoda mora imati
-const REQUIRED_TAGS = [
-  { type: 'tag', name: 'title',                     desc: '<title>' },
-  { type: 'meta', attr: 'name',     val: 'description',           desc: 'meta[name=description]' },
-  { type: 'meta', attr: 'property', val: 'og:title',              desc: 'og:title' },
-  { type: 'meta', attr: 'property', val: 'og:description',        desc: 'og:description' },
-  { type: 'meta', attr: 'property', val: 'og:image',              desc: 'og:image' },
-  { type: 'meta', attr: 'property', val: 'og:url',                desc: 'og:url' },
-  { type: 'meta', attr: 'property', val: 'og:type',               desc: 'og:type' },
-  { type: 'meta', attr: 'property', val: 'og:site_name',          desc: 'og:site_name' },
-  { type: 'meta', attr: 'name',     val: 'twitter:card',          desc: 'twitter:card' },
-  { type: 'meta', attr: 'name',     val: 'twitter:title',         desc: 'twitter:title' },
-  { type: 'meta', attr: 'name',     val: 'twitter:image',         desc: 'twitter:image' },
-  { type: 'link', attr: 'rel',      val: 'canonical',             desc: 'canonical link' },
-];
-
 const GREEN  = '\x1b[32m';
 const RED    = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const BOLD   = '\x1b[1m';
 const RESET  = '\x1b[0m';
 
-function ok(s)   { return `${GREEN}✓${RESET} ${s}`; }
-function fail(s) { return `${RED}✗${RESET} ${s}`; }
-function warn(s) { return `${YELLOW}!${RESET} ${s}`; }
+const ok   = (s) => `${GREEN}✓${RESET} ${s}`;
+const fail = (s) => `${RED}✗${RESET} ${s}`;
+const warn = (s) => `${YELLOW}!${RESET} ${s}`;
 
 function extractMeta(html, attr, val) {
-  // Matches <meta property="og:title" content="..."> or reversed attr order
   const re = new RegExp(
     `<meta[^>]+${attr}=["']${val}["'][^>]+content=["']([^"']*)["']` +
     `|<meta[^>]+content=["']([^"']*)["'][^>]+${attr}=["']${val}["']`,
@@ -64,6 +48,11 @@ function extractCanonical(html) {
   return m ? m[1] : null;
 }
 
+function countMeta(html, attr, val) {
+  const re = new RegExp(`<meta[^>]+${attr}=["']${val}["']`, 'gi');
+  return (html.match(re) || []).length;
+}
+
 async function testVideo(ytId) {
   const url = `${BASE}/v/${ytId}`;
   console.log(`\n${BOLD}── ${ytId}${RESET}  ${url}`);
@@ -71,7 +60,7 @@ async function testVideo(ytId) {
   let html;
   try {
     const res = await fetch(url, {
-      headers: { 'Accept': 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
       redirect: 'follow',
     });
     if (!res.ok) {
@@ -87,41 +76,64 @@ async function testVideo(ytId) {
   let passed = 0;
   let failed = 0;
 
-  for (const tag of REQUIRED_TAGS) {
-    let value = null;
-    if (tag.type === 'tag')  value = extractTitle(html);
-    if (tag.type === 'link') value = extractCanonical(html);
-    if (tag.type === 'meta') value = extractMeta(html, tag.attr, tag.val);
-
-    if (value !== null && value.trim() !== '') {
-      const preview = value.length > 80 ? value.slice(0, 77) + '…' : value;
-      console.log(`  ${ok(tag.desc.padEnd(25))} "${preview}"`);
-      passed++;
-    } else {
-      console.log(`  ${fail(tag.desc.padEnd(25))} NEDOSTAJE`);
+  const check = (label, value, expected) => {
+    const label20 = label.padEnd(26);
+    if (value === null || value.trim() === '') {
+      console.log(`  ${fail(label20)} NEDOSTAJE`);
       failed++;
+      return;
     }
-  }
-
-  // Provjeri da OG image pokazuje na CDN thumbnail
-  const ogImage = extractMeta(html, 'property', 'og:image');
-  if (ogImage) {
-    const expectedThumb = `https://cdn.domovina.ai/images/${ytId}/thumbnail.png`;
-    if (ogImage === expectedThumb) {
-      console.log(`  ${ok('og:image URL')}              točan CDN path`);
-    } else {
-      console.log(`  ${warn('og:image URL')}              očekivano: ${expectedThumb}`);
-      console.log(`                              dobiveno:  ${ogImage}`);
+    if (expected !== undefined && !expected(value)) {
+      const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+      console.log(`  ${fail(label20)} "${preview}"`);
+      failed++;
+      return;
     }
-  }
+    const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+    console.log(`  ${ok(label20)} "${preview}"`);
+    passed++;
+  };
 
-  // Provjeri canonical URL format
-  const canonical = extractCanonical(html);
   const expectedCanonical = `https://domovina.ai/v/${ytId}`;
-  if (canonical === expectedCanonical) {
-    console.log(`  ${ok('canonical URL')}             točan`);
-  } else if (canonical) {
-    console.log(`  ${warn('canonical URL')}             dobiveno: ${canonical}`);
+  const expectedThumb = `https://cdn.domovina.ai/images/${ytId}/thumbnail.png`;
+
+  const title      = extractTitle(html);
+  const desc       = extractMeta(html, 'name', 'description');
+  const ogTitle    = extractMeta(html, 'property', 'og:title');
+  const ogDesc     = extractMeta(html, 'property', 'og:description');
+  const ogImage    = extractMeta(html, 'property', 'og:image');
+  const ogUrl      = extractMeta(html, 'property', 'og:url');
+  const ogType     = extractMeta(html, 'property', 'og:type');
+  const ogSite     = extractMeta(html, 'property', 'og:site_name');
+  const twCard     = extractMeta(html, 'name', 'twitter:card');
+  const twTitle    = extractMeta(html, 'name', 'twitter:title');
+  const twImage    = extractMeta(html, 'name', 'twitter:image');
+  const canonical  = extractCanonical(html);
+
+  // Provjeri prisutnost i ispravnost vrijednosti
+  check('<title>',           title,    (v) => v.includes('– Domovina.ai') && v !== '– Domovina.ai');
+  check('description',       desc,     (v) => v !== 'A new Flutter project.' && v.length > 10);
+  check('og:title',          ogTitle,  (v) => v !== 'Domovina.ai' && v.length > 3);
+  check('og:description',    ogDesc,   (v) => v.length > 10);
+  check('og:image',          ogImage,  (v) => v === expectedThumb);
+  check('og:url',            ogUrl,    (v) => v === expectedCanonical);
+  check('og:type',           ogType,   (v) => v === 'video.other');
+  check('og:site_name',      ogSite,   (v) => v === 'Domovina.ai');
+  check('twitter:card',      twCard,   (v) => v === 'summary_large_image');
+  check('twitter:title',     twTitle,  (v) => v !== 'Domovina.ai' && v.length > 3);
+  check('twitter:image',     twImage,  (v) => v === expectedThumb);
+  check('canonical',         canonical,(v) => v === expectedCanonical);
+
+  // Upozori ako postoji više istih tagova (duplicati)
+  const dupChecks = [
+    ['property', 'og:title'], ['property', 'og:type'],
+    ['name', 'twitter:card'], ['name', 'twitter:title'],
+  ];
+  for (const [attr, val] of dupChecks) {
+    const n = countMeta(html, attr, val);
+    if (n > 1) {
+      console.log(`  ${warn(`${val} (duplicat!)`)}       pronađeno ${n}x — provjeri Worker stripanje`);
+    }
   }
 
   return { ytId, passed, failed };
@@ -130,14 +142,13 @@ async function testVideo(ytId) {
 async function main() {
   console.log(`${BOLD}Domovina.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
-  console.log(`Testira se: ${VIDEO_IDS.length} epizoda, ${REQUIRED_TAGS.length} tagova po epizodi\n`);
+  console.log(`Testira: ${VIDEO_IDS.length} epizoda × 12 tagova (prisutnost + ispravne vrijednosti)\n`);
 
   const results = [];
   for (const id of VIDEO_IDS) {
     results.push(await testVideo(id));
   }
 
-  // Summary
   const totalPassed = results.reduce((s, r) => s + r.passed, 0);
   const totalFailed = results.reduce((s, r) => s + r.failed, 0);
   const total = totalPassed + totalFailed;
@@ -152,7 +163,7 @@ async function main() {
 
   console.log(`\nUkupno: ${totalPassed}/${total} prošlo`);
   if (totalFailed > 0) {
-    console.log(`${RED}${totalFailed} tagova nedostaje — provjeri _worker.js deployment${RESET}`);
+    console.log(`${RED}${totalFailed} tagova nije ispravno — provjeri _worker.js deployment${RESET}`);
     process.exit(1);
   } else {
     console.log(`${GREEN}${BOLD}Sve OK!${RESET}`);
