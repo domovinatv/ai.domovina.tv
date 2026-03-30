@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Model za .article.magisterium.json — teološko obogaćivanje Magisterium AI
 class MagisteriumData {
   final String version;
@@ -135,13 +137,40 @@ class SectionMagisterium {
   });
 
   factory SectionMagisterium.fromJson(Map<String, dynamic> json) {
+    var assessment = json['assessment'] as String? ?? '';
+    var enrichment = json['enrichment'] as String? ?? '';
+    var score = json['score'] as int?;
+    var concerns = (json['concerns'] as List<dynamic>? ?? [])
+        .whereType<String>()
+        .toList();
+
+    // Detect raw JSON in assessment (model returned JSON inside markdown fence)
+    final stripped = assessment
+        .replaceAll(RegExp(r'^```(?:json)?\s*', multiLine: true), '')
+        .replaceAll(RegExp(r'\s*```\s*$', multiLine: true), '')
+        .trim();
+    if (stripped.startsWith('{') && stripped.endsWith('}')) {
+      try {
+        final inner =
+            jsonDecode(stripped) as Map<String, dynamic>;
+        assessment = inner['assessment'] as String? ?? assessment;
+        enrichment = inner['enrichment'] as String? ?? enrichment;
+        score ??= inner['score'] as int?;
+        if (concerns.isEmpty) {
+          concerns = (inner['concerns'] as List<dynamic>? ?? [])
+              .whereType<String>()
+              .toList();
+        }
+      } catch (_) {
+        // Not valid JSON — keep original assessment
+      }
+    }
+
     return SectionMagisterium(
-      score: json['score'] as int?,
-      assessment: json['assessment'] as String? ?? '',
-      concerns: (json['concerns'] as List<dynamic>? ?? [])
-          .whereType<String>()
-          .toList(),
-      enrichment: json['enrichment'] as String? ?? '',
+      score: score,
+      assessment: assessment,
+      concerns: concerns,
+      enrichment: enrichment,
       citations: (json['citations'] as List<dynamic>? ?? [])
           .map((e) => MagisteriumCitation.fromJson(e as Map<String, dynamic>))
           .toList(),

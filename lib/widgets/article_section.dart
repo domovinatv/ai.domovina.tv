@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
 import '../services/cdn_config.dart';
 import 'magisterium_section.dart';
+import 'citation_helpers.dart';
 
 class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
@@ -162,7 +165,6 @@ class _SectionCardState extends State<_SectionCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Timestamp
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -180,7 +182,6 @@ class _SectionCardState extends State<_SectionCard> {
                   ),
                 ),
               ),
-              // Play button (samo kad je video dostupan)
               if (widget.onPlayTap != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
@@ -200,7 +201,6 @@ class _SectionCardState extends State<_SectionCard> {
                     ),
                   ),
                 ),
-              // Magisterium score badge
               if (mag?.score != null) ...[
                 const SizedBox(width: 4),
                 Container(
@@ -219,16 +219,14 @@ class _SectionCardState extends State<_SectionCard> {
                     children: [
                       Icon(Icons.church,
                           size: 12,
-                          color:
-                              MagisteriumSection.scoreColor(mag.score)),
+                          color: MagisteriumSection.scoreColor(mag.score)),
                       const SizedBox(width: 3),
                       Text(
                         '${mag.score}',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color:
-                              MagisteriumSection.scoreColor(mag.score),
+                          color: MagisteriumSection.scoreColor(mag.score),
                         ),
                       ),
                     ],
@@ -273,9 +271,15 @@ class _SectionCardState extends State<_SectionCard> {
             ),
           const SizedBox(height: 12),
 
-          Text(
-            section.content,
-            style: theme.textTheme.bodyMedium?.copyWith(height: 1.65),
+          // Article content — markdown
+          MarkdownBody(
+            data: section.content,
+            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+              p: theme.textTheme.bodyMedium?.copyWith(height: 1.65),
+            ),
+            onTapLink: (text, href, title) {
+              if (href != null) launchUrl(Uri.parse(href));
+            },
           ),
           const SizedBox(height: 10),
 
@@ -333,6 +337,9 @@ class _MagisteriumEnrichment extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = MagisteriumSection.scoreColor(mag.score);
+    final mdStyle = MarkdownStyleSheet.fromTheme(theme).copyWith(
+      p: theme.textTheme.bodySmall?.copyWith(height: 1.5),
+    );
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -345,7 +352,6 @@ class _MagisteriumEnrichment extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Icon(Icons.church, size: 16, color: color),
@@ -361,21 +367,20 @@ class _MagisteriumEnrichment extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Assessment
-          Text(
-            mag.assessment,
-            style: theme.textTheme.bodySmall?.copyWith(height: 1.5),
-          ),
+          // Assessment — markdown
+          MarkdownBody(data: mag.assessment, styleSheet: mdStyle),
 
-          // Enrichment
+          // Enrichment — markdown
           if (mag.enrichment.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              mag.enrichment,
-              style: theme.textTheme.bodySmall?.copyWith(
-                height: 1.5,
-                fontStyle: FontStyle.italic,
-                color: theme.colorScheme.onSurfaceVariant,
+            MarkdownBody(
+              data: mag.enrichment,
+              styleSheet: mdStyle.copyWith(
+                p: theme.textTheme.bodySmall?.copyWith(
+                  height: 1.5,
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -404,7 +409,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
                 )),
           ],
 
-          // Citations (expandable)
+          // Citations (expandable, tappable)
           if (mag.citations.isNotEmpty) ...[
             const SizedBox(height: 8),
             InkWell(
@@ -434,8 +439,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
               ),
             ),
             if (citationsExpanded)
-              ...mag.citations.map(
-                  (cit) => _CitationCard(citation: cit)),
+              ...mag.citations.map((cit) => _CitationCard(citation: cit)),
           ],
         ],
       ),
@@ -451,13 +455,7 @@ class _CitationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Clean up cited_text: strip markdown footnote references and excessive whitespace
-    final cleanText = citation.citedText
-        .replaceAll(RegExp(r'\[\^\d+\]:?\s*[^\n]*'), '')
-        .replaceAll(RegExp(r'---\s*'), '')
-        .replaceAll(RegExp(r'\n{2,}'), '\n')
-        .trim();
-    // Truncate to ~300 chars for readability
+    final cleanText = cleanCitedText(citation.citedText);
     final displayText = cleanText.length > 300
         ? '${cleanText.substring(0, 300)}...'
         : cleanText;
@@ -466,50 +464,53 @@ class _CitationCard extends StatelessWidget {
       citation.documentTitle,
       if (citation.documentReference.isNotEmpty) citation.documentReference,
       if (citation.documentYear.isNotEmpty) citation.documentYear,
-    ].join(' - ');
+    ].join(' — ');
 
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
-        borderRadius: BorderRadius.circular(6),
-        border: Border(
-          left: BorderSide(
-            color: theme.colorScheme.primary.withAlpha(100),
-            width: 3,
+    return GestureDetector(
+      onTap: () => showCitationSheet(context, citation),
+      child: Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
+          borderRadius: BorderRadius.circular(6),
+          border: Border(
+            left: BorderSide(
+              color: theme.colorScheme.primary.withAlpha(100),
+              width: 3,
+            ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            displayText,
-            style: theme.textTheme.bodySmall?.copyWith(
-              height: 1.5,
-              fontStyle: FontStyle.italic,
-            ),
-            maxLines: 6,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            ref,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          if (citation.documentAuthor.isNotEmpty &&
-              citation.documentAuthor != citation.documentTitle)
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              citation.documentAuthor,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              displayText,
+              style: theme.textTheme.bodySmall?.copyWith(
+                height: 1.5,
+                fontStyle: FontStyle.italic,
               ),
+              maxLines: 6,
+              overflow: TextOverflow.ellipsis,
             ),
-        ],
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    ref,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Icon(Icons.open_in_new,
+                    size: 12, color: theme.colorScheme.primary),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

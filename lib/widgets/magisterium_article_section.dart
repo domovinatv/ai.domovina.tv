@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/magisterium_data.dart';
 import 'magisterium_section.dart';
+import 'citation_helpers.dart';
 
 /// Standalone chronological read-through of the full Magisterium AI analysis.
 /// Presents all theological assessments, enrichments, and citations as a
@@ -378,13 +381,18 @@ class _SectionAnalysis extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // Assessment
-              Text(
-                mag.assessment,
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+              // Assessment — markdown
+              MarkdownBody(
+                data: mag.assessment,
+                styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                  p: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                ),
+                onTapLink: (text, href, title) {
+                  if (href != null) launchUrl(Uri.parse(href));
+                },
               ),
 
-              // Enrichment
+              // Enrichment — markdown
               if (mag.enrichment.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Container(
@@ -396,13 +404,18 @@ class _SectionAnalysis extends StatelessWidget {
                       left: BorderSide(color: color.withAlpha(100), width: 3),
                     ),
                   ),
-                  child: Text(
-                    mag.enrichment,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      height: 1.6,
-                      fontStyle: FontStyle.italic,
-                      color: theme.colorScheme.onSurfaceVariant,
+                  child: MarkdownBody(
+                    data: mag.enrichment,
+                    styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                      p: theme.textTheme.bodySmall?.copyWith(
+                        height: 1.6,
+                        fontStyle: FontStyle.italic,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
+                    onTapLink: (text, href, title) {
+                      if (href != null) launchUrl(Uri.parse(href));
+                    },
                   ),
                 ),
               ],
@@ -495,16 +508,10 @@ class _FullCitation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Clean up cited_text
-    final cleanText = citation.citedText
-        .replaceAll(RegExp(r'\[\^\d+\]:?\s*[^\n]*'), '')
-        .replaceAll(RegExp(r'---\s*'), '')
-        .replaceAll(RegExp(r'\n{2,}'), '\n')
-        .trim();
-    // Allow more text in standalone view
-    final displayText = cleanText.length > 500
-        ? '${cleanText.substring(0, 500)}...'
-        : cleanText;
+    final cleaned = cleanCitedText(citation.citedText);
+    final displayText = cleaned.length > 500
+        ? '${cleaned.substring(0, 500)}...'
+        : cleaned;
 
     final parts = <String>[
       citation.documentTitle,
@@ -512,60 +519,63 @@ class _FullCitation extends StatelessWidget {
       if (citation.documentYear.isNotEmpty) citation.documentYear,
     ];
 
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(100),
-        borderRadius: BorderRadius.circular(8),
-        border: Border(
-          left: BorderSide(
-            color: theme.colorScheme.primary.withAlpha(80),
-            width: 3,
+    return GestureDetector(
+      onTap: () => showCitationSheet(context, citation),
+      child: Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha(100),
+          borderRadius: BorderRadius.circular(8),
+          border: Border(
+            left: BorderSide(
+              color: theme.colorScheme.primary.withAlpha(80),
+              width: 3,
+            ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Source header
-          Row(
-            children: [
-              Icon(Icons.menu_book,
-                  size: 14, color: theme.colorScheme.primary),
-              const SizedBox(width: 6),
-              Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.menu_book,
+                    size: 14, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    parts.join(' — '),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                Icon(Icons.open_in_new,
+                    size: 12, color: theme.colorScheme.primary),
+              ],
+            ),
+            if (citation.documentAuthor.isNotEmpty &&
+                citation.documentAuthor != citation.documentTitle)
+              Padding(
+                padding: const EdgeInsets.only(top: 2, left: 20),
                 child: Text(
-                  parts.join(' — '),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
+                  citation.documentAuthor,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
-            ],
-          ),
-          if (citation.documentAuthor.isNotEmpty &&
-              citation.documentAuthor != citation.documentTitle)
-            Padding(
-              padding: const EdgeInsets.only(top: 2, left: 20),
-              child: Text(
-                citation.documentAuthor,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            const SizedBox(height: 8),
+            Text(
+              displayText,
+              style: theme.textTheme.bodySmall?.copyWith(
+                height: 1.6,
+                fontStyle: FontStyle.italic,
               ),
             ),
-          const SizedBox(height: 8),
-          // Cited text
-          Text(
-            displayText,
-            style: theme.textTheme.bodySmall?.copyWith(
-              height: 1.6,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
