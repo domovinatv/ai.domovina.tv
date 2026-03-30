@@ -11,8 +11,7 @@ import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
-import '../widgets/magisterium_section.dart';
-import '../widgets/magisterium_article_section.dart';
+import '../widgets/magisterium_panel.dart';
 import '../widgets/entities_section.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
@@ -110,7 +109,6 @@ class _EpisodeContent extends StatefulWidget {
 class _EpisodeContentState extends State<_EpisodeContent> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
-  final _magScrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
   late final Map<String, GlobalKey> _magSectionKeys;
   String? _activeTimestamp;
@@ -143,10 +141,11 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           sec.screenshotTimestamp: GlobalKey(),
     };
 
-    // Keys za Magisterium stupac — scroll sync
+    // Keys za Magisterium stupac — scroll sync (primary variant)
+    final magPrimary = widget.data.magisteriumPrimary;
     _magSectionKeys = {
-      if (widget.data.magisterium != null)
-        for (final iter in widget.data.magisterium!.iterations)
+      if (magPrimary != null)
+        for (final iter in magPrimary.iterations)
           for (final sec in iter.sections)
             if (sec.magisterium != null)
               sec.screenshotTimestamp: GlobalKey(),
@@ -177,7 +176,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _magScrollController.dispose();
     _positionSub?.cancel();
     _player?.dispose();
     super.dispose();
@@ -365,7 +363,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
-    final hasMag = data.magisterium != null;
+    final magVariants = data.magisteriumVariants;
+    final hasMag = magVariants.isNotEmpty;
     // Magisterium stupac: zasebni scrollable panel na širokim ekranima
     final showMagColumn = hasMag && width > 1500;
 
@@ -438,16 +437,13 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                     youtubeId: data.youtubeId,
                     sectionKeys: _sectionKeys,
                     onPlayTap: _videoReady ? _seekAndPlay : null,
-                    magisterium: data.magisterium,
+                    magisterium: data.magisteriumPrimary,
                   ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
                   // Magisterium inline: samo kad NIJE prikazan kao stupac
                   if (hasMag && !showMagColumn) ...[
-                    MagisteriumSection(magisterium: data.magisterium!),
-                    const SizedBox(height: 4),
-                    MagisteriumArticleSection(
-                        magisterium: data.magisterium!),
+                    MagisteriumPanel(variants: magVariants),
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     const SizedBox(height: 12),
                   ],
@@ -472,17 +468,10 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             ),
           ),
         ),
-        child: ListView(
-          controller: _magScrollController,
-          padding: const EdgeInsets.only(top: 16, bottom: 32),
-          children: [
-            MagisteriumSection(magisterium: data.magisterium!),
-            const SizedBox(height: 4),
-            MagisteriumArticleSection(
-              magisterium: data.magisterium!,
-              sectionKeys: _magSectionKeys,
-            ),
-          ],
+        child: MagisteriumPanel(
+          variants: magVariants,
+          fillParent: true,
+          sectionKeys: _magSectionKeys,
         ),
       );
     }
@@ -639,8 +628,8 @@ class _MetadataFooter extends StatelessWidget {
           _MetaRow('Kanal', data.info.channel),
           _MetaRow('Model (sažetak)', summary.model),
           _MetaRow('Model (članak)', data.article.metadata.model),
-          if (data.magisterium != null)
-            _MetaRow('Model (teologija)', data.magisterium!.model),
+          if (data.magisteriumPrimary != null)
+            _MetaRow('Model (teologija)', data.magisteriumPrimary!.model),
           _MetaRow(
             'Generirano',
             summary.generatedAt.toIso8601String().substring(0, 10),

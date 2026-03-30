@@ -12,6 +12,8 @@ class CdnConfig {
   static String articleUrl(String ytId) => '$base/data/$ytId/article.json';
   static String magisteriumUrl(String ytId) =>
       '$base/data/$ytId/article.magisterium.json';
+  static String magisteriumBatchUrl(String ytId) =>
+      '$base/data/$ytId/article.magisterium_batch.json';
   static String diarizedSrtUrl(String ytId) => '$base/data/$ytId/diarized.srt';
 
   /// Video MP4 — CDN podržava HTTP 206 range requeste za seeking

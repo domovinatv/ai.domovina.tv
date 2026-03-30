@@ -66,6 +66,16 @@ class DataService {
     }
   }
 
+  /// Magisterium batch varijanta — opcionalno.
+  Future<MagisteriumData?> loadMagisteriumBatch() async {
+    try {
+      final raw = await _fetch(CdnConfig.magisteriumBatchUrl(youtubeId));
+      return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Vraća CDN URL videa — podržava HTTP 206 range requeste za seeking.
   String resolveVideoUri() => CdnConfig.videoUrl(youtubeId);
 
@@ -139,6 +149,7 @@ class EpisodeData {
   final PodcastOutline outline;
   final PodcastArticle article;
   final MagisteriumData? magisterium;
+  final MagisteriumData? magisteriumBatch;
   final SpeakerTimeline? speakerTimeline;
   final String videoUri;
 
@@ -149,9 +160,22 @@ class EpisodeData {
     required this.outline,
     required this.article,
     this.magisterium,
+    this.magisteriumBatch,
     this.speakerTimeline,
     required this.videoUri,
   });
+
+  /// All available Magisterium variants as (label, data) pairs.
+  List<(String, MagisteriumData)> get magisteriumVariants {
+    return [
+      if (magisterium != null) ('Po sekciji', magisterium!),
+      if (magisteriumBatch != null) ('Po bloku', magisteriumBatch!),
+    ];
+  }
+
+  /// Preferred (first available) Magisterium data for inline enrichment.
+  MagisteriumData? get magisteriumPrimary =>
+      magisteriumBatch ?? magisterium;
 
   static Future<EpisodeData> load({required String youtubeId}) async {
     final svc = DataService(youtubeId: youtubeId);
@@ -161,6 +185,7 @@ class EpisodeData {
       svc.loadOutline(),
       svc.loadArticle(),
       svc.loadMagisterium(),
+      svc.loadMagisteriumBatch(),
       svc.loadSpeakerTimeline(),
     ]);
     return EpisodeData(
@@ -170,7 +195,8 @@ class EpisodeData {
       outline: results[2] as PodcastOutline,
       article: results[3] as PodcastArticle,
       magisterium: results[4] as MagisteriumData?,
-      speakerTimeline: results[5] as SpeakerTimeline?,
+      magisteriumBatch: results[5] as MagisteriumData?,
+      speakerTimeline: results[6] as SpeakerTimeline?,
       videoUri: svc.resolveVideoUri(),
     );
   }
