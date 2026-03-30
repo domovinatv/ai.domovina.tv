@@ -12,6 +12,7 @@ import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/magisterium_section.dart';
+import '../widgets/magisterium_article_section.dart';
 import '../widgets/entities_section.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
@@ -415,6 +416,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                   const SizedBox(height: 12),
                   if (data.magisterium != null) ...[
                     MagisteriumSection(magisterium: data.magisterium!),
+                    const SizedBox(height: 4),
+                    MagisteriumArticleSection(
+                        magisterium: data.magisterium!),
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     const SizedBox(height: 12),
                   ],
