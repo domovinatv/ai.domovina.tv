@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/magisterium_data.dart';
+import '../services/open_url.dart';
 import 'magisterium_section.dart';
 import 'citation_helpers.dart';
 
@@ -388,7 +388,7 @@ class _SectionAnalysis extends StatelessWidget {
                   p: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
                 ),
                 onTapLink: (text, href, title) {
-                  if (href != null) launchUrl(Uri.parse(href));
+                  if (href != null) openUrl(href);
                 },
               ),
 
@@ -414,7 +414,7 @@ class _SectionAnalysis extends StatelessWidget {
                       ),
                     ),
                     onTapLink: (text, href, title) {
-                      if (href != null) launchUrl(Uri.parse(href));
+                      if (href != null) openUrl(href);
                     },
                   ),
                 ),

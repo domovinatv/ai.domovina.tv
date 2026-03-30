@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
 import '../services/cdn_config.dart';
 import 'magisterium_section.dart';
 import 'citation_helpers.dart';
+import '../services/open_url.dart';
 
 class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
@@ -278,7 +278,7 @@ class _SectionCardState extends State<_SectionCard> {
               p: theme.textTheme.bodyMedium?.copyWith(height: 1.65),
             ),
             onTapLink: (text, href, title) {
-              if (href != null) launchUrl(Uri.parse(href));
+              if (href != null) openUrl(href);
             },
           ),
           const SizedBox(height: 10),

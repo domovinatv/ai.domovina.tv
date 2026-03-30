@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/magisterium_data.dart';
+import '../services/open_url.dart';
 
 /// Cleans cited_text: strips markdown footnote refs, dividers, excess whitespace.
 String cleanCitedText(String raw) {
@@ -118,7 +118,7 @@ void showCitationSheet(BuildContext context, MagisteriumCitation citation) {
                     ),
                   ),
                   onTapLink: (text, href, title) {
-                    if (href != null) launchUrl(Uri.parse(href));
+                    if (href != null) openUrl(href);
                   },
                 ),
               ),
@@ -126,8 +126,7 @@ void showCitationSheet(BuildContext context, MagisteriumCitation citation) {
               if (citation.sourceUrl.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 FilledButton.tonalIcon(
-                  onPressed: () =>
-                      launchUrl(Uri.parse(citation.sourceUrl)),
+                  onPressed: () => openUrl(citation.sourceUrl),
                   icon: const Icon(Icons.open_in_new, size: 18),
                   label: const Text('Otvori na Magisterium.com'),
                 ),
