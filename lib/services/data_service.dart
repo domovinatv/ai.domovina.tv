@@ -4,6 +4,7 @@ import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
 import '../models/podcast_article.dart';
+import '../models/magisterium_data.dart';
 import '../models/speaker_timeline.dart';
 import 'cdn_config.dart';
 
@@ -53,6 +54,16 @@ class DataService {
   Future<PodcastArticle> loadArticle() async {
     final raw = await _fetch(CdnConfig.articleUrl(youtubeId));
     return PodcastArticle.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  }
+
+  /// Magisterium teološko obogaćivanje — opcionalno (nije obavezan asset).
+  Future<MagisteriumData?> loadMagisterium() async {
+    try {
+      final raw = await _fetch(CdnConfig.magisteriumUrl(youtubeId));
+      return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Vraća CDN URL videa — podržava HTTP 206 range requeste za seeking.
@@ -127,6 +138,7 @@ class EpisodeData {
   final PodcastSummary summary;
   final PodcastOutline outline;
   final PodcastArticle article;
+  final MagisteriumData? magisterium;
   final SpeakerTimeline? speakerTimeline;
   final String videoUri;
 
@@ -136,6 +148,7 @@ class EpisodeData {
     required this.summary,
     required this.outline,
     required this.article,
+    this.magisterium,
     this.speakerTimeline,
     required this.videoUri,
   });
@@ -147,6 +160,7 @@ class EpisodeData {
       svc.loadSummary(),
       svc.loadOutline(),
       svc.loadArticle(),
+      svc.loadMagisterium(),
       svc.loadSpeakerTimeline(),
     ]);
     return EpisodeData(
@@ -155,7 +169,8 @@ class EpisodeData {
       summary: results[1] as PodcastSummary,
       outline: results[2] as PodcastOutline,
       article: results[3] as PodcastArticle,
-      speakerTimeline: results[4] as SpeakerTimeline?,
+      magisterium: results[4] as MagisteriumData?,
+      speakerTimeline: results[5] as SpeakerTimeline?,
       videoUri: svc.resolveVideoUri(),
     );
   }

@@ -11,6 +11,7 @@ import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
+import '../widgets/magisterium_section.dart';
 import '../widgets/entities_section.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
@@ -408,9 +409,15 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                     youtubeId: data.youtubeId,
                     sectionKeys: _sectionKeys,
                     onPlayTap: _videoReady ? _seekAndPlay : null,
+                    magisterium: data.magisterium,
                   ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
+                  if (data.magisterium != null) ...[
+                    MagisteriumSection(magisterium: data.magisterium!),
+                    Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                    const SizedBox(height: 12),
+                  ],
                   EntitiesSection(summary: data.summary.summary),
                   _MetadataFooter(data: data),
                 ],
@@ -531,6 +538,8 @@ class _MetadataFooter extends StatelessWidget {
           _MetaRow('Kanal', data.info.channel),
           _MetaRow('Model (sažetak)', summary.model),
           _MetaRow('Model (članak)', data.article.metadata.model),
+          if (data.magisterium != null)
+            _MetaRow('Model (teologija)', data.magisterium!.model),
           _MetaRow(
             'Generirano',
             summary.generatedAt.toIso8601String().substring(0, 10),
