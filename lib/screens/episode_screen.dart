@@ -110,7 +110,9 @@ class _EpisodeContent extends StatefulWidget {
 class _EpisodeContentState extends State<_EpisodeContent> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
+  final _magScrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
+  late final Map<String, GlobalKey> _magSectionKeys;
   String? _activeTimestamp;
 
   // Video
@@ -141,6 +143,15 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           sec.screenshotTimestamp: GlobalKey(),
     };
 
+    // Keys za Magisterium stupac — scroll sync
+    _magSectionKeys = {
+      if (widget.data.magisterium != null)
+        for (final iter in widget.data.magisterium!.iterations)
+          for (final sec in iter.sections)
+            if (sec.magisterium != null)
+              sec.screenshotTimestamp: GlobalKey(),
+    };
+
     _sortedSections = [
       for (final iter in widget.data.article.iterations)
         for (final sec in iter.sections)
@@ -166,6 +177,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _magScrollController.dispose();
     _positionSub?.cancel();
     _player?.dispose();
     super.dispose();
@@ -283,6 +295,19 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         alignment: 0.05,
       );
     }
+    _scrollMagToSection(timestamp);
+  }
+
+  void _scrollMagToSection(String timestamp) {
+    final key = _magSectionKeys[timestamp];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.05,
+      );
+    }
   }
 
   /// Kad korisnik seekuje slider, uvijek scrollaj na ispravnu sekciju.
@@ -340,6 +365,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
+    final hasMag = data.magisterium != null;
+    // Magisterium stupac: zasebni scrollable panel na širokim ekranima
+    final showMagColumn = hasMag && width > 1500;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
@@ -414,7 +442,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                   ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
-                  if (data.magisterium != null) ...[
+                  // Magisterium inline: samo kad NIJE prikazan kao stupac
+                  if (hasMag && !showMagColumn) ...[
                     MagisteriumSection(magisterium: data.magisterium!),
                     const SizedBox(height: 4),
                     MagisteriumArticleSection(
@@ -432,8 +461,76 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       ],
     );
 
+    // Magisterium stupac — neovisno scrollable, blog-post stil
+    Widget? magColumn;
+    if (showMagColumn) {
+      magColumn = Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: theme.colorScheme.outlineVariant.withAlpha(80),
+            ),
+          ),
+        ),
+        child: ListView(
+          controller: _magScrollController,
+          padding: const EdgeInsets.only(top: 16, bottom: 32),
+          children: [
+            MagisteriumSection(magisterium: data.magisterium!),
+            const SizedBox(height: 4),
+            MagisteriumArticleSection(
+              magisterium: data.magisterium!,
+              sectionKeys: _magSectionKeys,
+            ),
+          ],
+        ),
+      );
+    }
+
     Widget body;
-    if (showVideo) {
+    if (showVideo && showMagColumn) {
+      // Ultrawide: TOC | content | magisterium | video
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TableOfContents(
+            article: data.article,
+            activeTimestamp: _activeTimestamp,
+            onSectionTap: _seekAndPlay,
+          ),
+          Expanded(flex: 3, child: scrollBody),
+          Expanded(flex: 2, child: magColumn!),
+          VideoPanel(
+            player: _player!,
+            controller: _videoController!,
+            chapters: _videoChapters,
+            activeTimestamp: _activeTimestamp,
+            onChapterTap: (ts) => _seekAndPlay(ts, preroll: true),
+            onSeek: _onVideoSeek,
+            totalDurationSeconds: data.info.duration,
+            speakerTimeline: data.speakerTimeline,
+            speakers: data.summary.summary.speakers,
+          ),
+        ],
+      );
+    } else if (showMagColumn) {
+      // Wide bez videa: TOC | content | magisterium
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TableOfContents(
+            article: data.article,
+            activeTimestamp: _activeTimestamp,
+            onSectionTap: (ts) {
+              setState(() => _activeTimestamp = ts);
+              _seekAndPlay(ts);
+            },
+          ),
+          Expanded(flex: 3, child: scrollBody),
+          Expanded(flex: 2, child: magColumn!),
+        ],
+      );
+    } else if (showVideo) {
       // Desktop wide: TOC | content | video
       body = Row(
         crossAxisAlignment: CrossAxisAlignment.start,

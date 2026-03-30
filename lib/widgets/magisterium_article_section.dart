@@ -8,7 +8,14 @@ import 'magisterium_section.dart';
 class MagisteriumArticleSection extends StatefulWidget {
   final MagisteriumData magisterium;
 
-  const MagisteriumArticleSection({super.key, required this.magisterium});
+  /// Optional keys per screenshot_timestamp — used by parent for scroll-sync.
+  final Map<String, GlobalKey>? sectionKeys;
+
+  const MagisteriumArticleSection({
+    super.key,
+    required this.magisterium,
+    this.sectionKeys,
+  });
 
   @override
   State<MagisteriumArticleSection> createState() =>
@@ -97,6 +104,7 @@ class _MagisteriumArticleSectionState extends State<MagisteriumArticleSection> {
           // ── Iteration blocks ──────────────────────────────────
           ...mag.iterations.map((iter) => _IterationArticle(
                 iteration: iter,
+                sectionKeys: widget.sectionKeys,
                 expandedCitations: _expandedCitations,
                 onToggleCitation: (key) {
                   setState(() {
@@ -151,12 +159,14 @@ class _MagisteriumArticleSectionState extends State<MagisteriumArticleSection> {
 
 class _IterationArticle extends StatelessWidget {
   final MagisteriumIteration iteration;
+  final Map<String, GlobalKey>? sectionKeys;
   final Set<String> expandedCitations;
   final void Function(String key) onToggleCitation;
   final bool isLast;
 
   const _IterationArticle({
     required this.iteration,
+    this.sectionKeys,
     required this.expandedCitations,
     required this.onToggleCitation,
     required this.isLast,
@@ -254,6 +264,7 @@ class _IterationArticle extends StatelessWidget {
             final citKey =
                 '${iteration.iterationNumber}:$idx';
             return _SectionAnalysis(
+              key: sectionKeys?[sec.screenshotTimestamp],
               section: sec,
               mag: sec.magisterium!,
               citationsExpanded: expandedCitations.contains(citKey),
@@ -280,6 +291,7 @@ class _SectionAnalysis extends StatelessWidget {
   final bool showDivider;
 
   const _SectionAnalysis({
+    super.key,
     required this.section,
     required this.mag,
     required this.citationsExpanded,
