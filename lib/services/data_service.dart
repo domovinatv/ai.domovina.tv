@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/channel_index.dart';
+import '../models/channel_detail.dart';
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
@@ -15,6 +17,28 @@ class VideoNotFoundException implements Exception {
 
   @override
   String toString() => 'VideoNotFoundException: $youtubeId';
+}
+
+/// Učitava channel index i detail s CDN-a.
+class ChannelService {
+  static Future<ChannelIndex> loadIndex() async {
+    final response = await http.get(Uri.parse(CdnConfig.channelsIndexUrl()));
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: channels/index.json');
+    }
+    return ChannelIndex.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  static Future<ChannelDetail> loadChannel(String channelId) async {
+    final url = CdnConfig.channelUrl(channelId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return ChannelDetail.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
+  }
 }
 
 /// Učitava podatke za konkretni YouTube video ID s CDN-a (cdn.domovina.ai).

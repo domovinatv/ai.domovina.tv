@@ -5,6 +5,11 @@
 class CdnConfig {
   static const String base = 'https://cdn.domovina.ai';
 
+  // Channels
+  static String channelsIndexUrl() => '$base/channels/index.json';
+  static String channelUrl(String channelId) =>
+      '$base/channels/$channelId.json';
+
   // JSON podaci
   static String infoUrl(String ytId) => '$base/data/$ytId/info.json';
   static String summaryUrl(String ytId) => '$base/data/$ytId/summary.json';
