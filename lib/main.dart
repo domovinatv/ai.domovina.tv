@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
@@ -14,7 +16,18 @@ import 'screens/home_screen.dart';
 ///   /episode/ytId  - EpisodeScreen — legacy format
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  usePathUrlStrategy(); // /v/ytId umjesto /#/v/ytId — server dobiva path, Worker injektava OG tagove
+
+  // Path routing — ignoriraj grešku ako je već postavljeno (npr. drugi poziv u testovima)
+  try { usePathUrlStrategy(); } catch (_) {}
+
+  // Semantics (flt-semantics DOM overlay) — uvijek uključeno u release buildu.
+  // U debug/test modu test framework upravlja semanticsima sam.
+  if (kReleaseMode) {
+    SemanticsBinding.instance.ensureSemantics();
+    // Handle namjerno nije pohranjen — u release modu app živi zauvijek,
+    // handle ne treba biti disposean.
+  }
+
   MediaKit.ensureInitialized();
   runApp(const DominovinaApp());
 }

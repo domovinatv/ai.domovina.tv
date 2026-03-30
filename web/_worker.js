@@ -6,6 +6,10 @@
  *  2. Statički asseti — proslijeđuju se direktno iz Pages ASSETS bindinga
  *  3. OG/social tagovi — za /v/<ytId> i /?v=<ytId> fetchamo info.json s CDN-a
  *     i injektamo meta tagove u HTML PRIJE nego crawler dobije odgovor
+ *  4. COEP/COOP headeri — potrebni za Flutter Skwasm (WebAssembly renderer)
+ *     COOP: same-origin        — izolira browsing context za SharedArrayBuffer
+ *     COEP: credentialless     — cross-origin resursi (CDN video/slike) se loadaju
+ *                                bez credentials — javni CDN pa nema problema
  */
 
 const CDN = 'https://cdn.domovina.ai';
@@ -107,6 +111,10 @@ function htmlResponse(html, cacheControl) {
     headers: {
       'Content-Type': 'text/html;charset=UTF-8',
       'Cache-Control': cacheControl,
+      // Skwasm (Flutter WebAssembly renderer) zahtijeva ove headere
+      // za SharedArrayBuffer koji koristi za multi-threading.
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
     },
   });
 }

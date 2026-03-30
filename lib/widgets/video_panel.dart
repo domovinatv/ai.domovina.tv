@@ -248,6 +248,7 @@ class _VideoPanelState extends State<VideoPanel> {
                           ? Icons.pause_circle_filled
                           : Icons.play_circle_filled),
                       color: theme.colorScheme.primary,
+                      tooltip: _playing ? 'Pauziraj' : 'Reproduciraj',
                       onPressed: () =>
                           _playing ? widget.player.pause() : widget.player.play(),
                     ),
