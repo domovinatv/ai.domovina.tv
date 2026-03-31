@@ -7,6 +7,7 @@ import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
+import '../models/magisterium_full_data.dart';
 import '../models/speaker_timeline.dart';
 import 'cdn_config.dart';
 
@@ -100,6 +101,26 @@ class DataService {
     }
   }
 
+  /// Magisterium full evaluacija (Magisterium AI API) — opcionalno.
+  Future<MagisteriumFullData?> loadMagisteriumFull() async {
+    try {
+      final raw = await _fetch(CdnConfig.magisteriumFullUrl(youtubeId));
+      return MagisteriumFullData.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Magisterium full prompt (markdown) — opcionalno.
+  Future<String?> loadMagisteriumFullPrompt() async {
+    try {
+      return await _fetch(CdnConfig.magisteriumFullPromptUrl(youtubeId));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Vraća CDN URL videa — podržava HTTP 206 range requeste za seeking.
   String resolveVideoUri() => CdnConfig.videoUrl(youtubeId);
 
@@ -174,6 +195,8 @@ class EpisodeData {
   final PodcastArticle article;
   final MagisteriumData? magisterium;
   final MagisteriumData? magisteriumBatch;
+  final MagisteriumFullData? magisteriumFull;
+  final String? magisteriumFullPrompt;
   final SpeakerTimeline? speakerTimeline;
   final String videoUri;
 
@@ -185,6 +208,8 @@ class EpisodeData {
     required this.article,
     this.magisterium,
     this.magisteriumBatch,
+    this.magisteriumFull,
+    this.magisteriumFullPrompt,
     this.speakerTimeline,
     required this.videoUri,
   });
@@ -204,13 +229,15 @@ class EpisodeData {
   static Future<EpisodeData> load({required String youtubeId}) async {
     final svc = DataService(youtubeId: youtubeId);
     final results = await Future.wait([
-      svc.loadInfo(),
-      svc.loadSummary(),
-      svc.loadOutline(),
-      svc.loadArticle(),
-      svc.loadMagisterium(),
-      svc.loadMagisteriumBatch(),
-      svc.loadSpeakerTimeline(),
+      svc.loadInfo(),           // 0
+      svc.loadSummary(),        // 1
+      svc.loadOutline(),        // 2
+      svc.loadArticle(),        // 3
+      svc.loadMagisterium(),    // 4
+      svc.loadMagisteriumBatch(), // 5
+      svc.loadSpeakerTimeline(),  // 6
+      svc.loadMagisteriumFull(),  // 7
+      svc.loadMagisteriumFullPrompt(), // 8
     ]);
     return EpisodeData(
       youtubeId: youtubeId,
@@ -221,6 +248,8 @@ class EpisodeData {
       magisterium: results[4] as MagisteriumData?,
       magisteriumBatch: results[5] as MagisteriumData?,
       speakerTimeline: results[6] as SpeakerTimeline?,
+      magisteriumFull: results[7] as MagisteriumFullData?,
+      magisteriumFullPrompt: results[8] as String?,
       videoUri: svc.resolveVideoUri(),
     );
   }
@@ -265,6 +294,10 @@ class EpisodeData {
     final magF = trackOptional('Magisterium', svc.loadMagisterium());
     final magBatchF =
         trackOptional('Magisterium batch', svc.loadMagisteriumBatch());
+    final magFullF =
+        trackOptional('Magisterium full', svc.loadMagisteriumFull());
+    final magPromptF =
+        trackOptional('Magisterium prompt', svc.loadMagisteriumFullPrompt());
     final srtF = trackOptional('Transkript', svc.loadSpeakerTimeline());
 
     // Await all (required ones may throw)
@@ -274,6 +307,8 @@ class EpisodeData {
     final article = await articleF;
     final mag = await magF;
     final magBatch = await magBatchF;
+    final magFull = await magFullF;
+    final magPrompt = await magPromptF;
     final srt = await srtF;
 
     return EpisodeData(
@@ -284,6 +319,8 @@ class EpisodeData {
       article: article,
       magisterium: mag,
       magisteriumBatch: magBatch,
+      magisteriumFull: magFull,
+      magisteriumFullPrompt: magPrompt,
       speakerTimeline: srt,
       videoUri: svc.resolveVideoUri(),
     );

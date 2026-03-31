@@ -480,7 +480,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
     final magVariants = data.magisteriumVariants;
-    final hasMag = magVariants.isNotEmpty;
+    final hasMag = magVariants.isNotEmpty ||
+        data.magisteriumFull != null ||
+        data.magisteriumFullPrompt != null;
     // Magisterium stupac: zasebni scrollable panel na širokim ekranima
     final showMagColumn = hasMag && width > 1500;
 
@@ -559,7 +561,11 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                   const SizedBox(height: 12),
                   // Magisterium inline: samo kad NIJE prikazan kao stupac
                   if (hasMag && !showMagColumn) ...[
-                    MagisteriumPanel(variants: magVariants),
+                    MagisteriumPanel(
+                      variants: magVariants,
+                      magisteriumFull: data.magisteriumFull,
+                      magisteriumFullPrompt: data.magisteriumFullPrompt,
+                    ),
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     const SizedBox(height: 12),
                   ],
@@ -586,6 +592,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         ),
         child: MagisteriumPanel(
           variants: magVariants,
+          magisteriumFull: data.magisteriumFull,
+          magisteriumFullPrompt: data.magisteriumFullPrompt,
           fillParent: true,
           sectionKeys: _magSectionKeys,
         ),
