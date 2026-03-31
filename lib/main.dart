@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
@@ -18,22 +17,36 @@ const String appVersion = '2.0.1';
 ///   /v/ytId        - EpisodeScreen — permalink format za sharing
 ///   /?v=ytId       - EpisodeScreen — query param format
 ///   /episode/ytId  - EpisodeScreen — legacy format
+void _log(String msg) {
+  // ignore: avoid_print
+  print('[DOMOVINA v$appVersion] $msg');
+}
+
 void main() {
+  _log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
+  _log('WidgetsBinding OK');
 
   // Path routing — ignoriraj grešku ako je već postavljeno (npr. drugi poziv u testovima)
   try { usePathUrlStrategy(); } catch (_) {}
+  _log('usePathUrlStrategy OK');
 
-  // Semantics (flt-semantics DOM overlay) — uvijek uključeno u release buildu.
-  // U debug/test modu test framework upravlja semanticsima sam.
-  if (kReleaseMode) {
-    SemanticsBinding.instance.ensureSemantics();
-    // Handle namjerno nije pohranjen — u release modu app živi zauvijek,
-    // handle ne treba biti disposean.
-  }
+  // ensureSemantics maknuto — crashao release web build
 
+  _log('MediaKit.ensureInitialized...');
   MediaKit.ensureInitialized();
+  _log('MediaKit OK');
+
+  // Uhvati Flutter greške i ispiši u console
+  FlutterError.onError = (details) {
+    _log('FLUTTER ERROR: ${details.exception}');
+    _log('STACK: ${details.stack}');
+    FlutterError.presentError(details);
+  };
+
+  _log('runApp...');
   runApp(const DominovinaApp());
+  _log('runApp OK');
 }
 
 class DominovinaApp extends StatefulWidget {
@@ -67,6 +80,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
 
   @override
   Widget build(BuildContext context) {
+    _log('DominovinaApp.build()');
     return MaterialApp(
       scaffoldMessengerKey: _messengerKey,
       title: 'DOMOVINA.ai',
@@ -114,18 +128,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
           reverseTransitionDuration: Duration.zero,
         );
       },
-      // home: creates the initial '/' route. onGenerateInitialRoutes ensures
-      // it also uses zero-duration transitions (fixes back-navigation jank).
-      onGenerateInitialRoutes: (initialRoute) {
-        return [
-          PageRouteBuilder(
-            settings: const RouteSettings(name: '/'),
-            pageBuilder: (_, __, ___) => const HomeScreen(),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-        ];
-      },
+      home: const HomeScreen(),
     );
   }
 }
