@@ -10,7 +10,7 @@ import 'services/update_notifier.dart';
 /// App version — prikazuje se u HomeScreen footer.
 const String appVersion = '1.3.2';
 
-/// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
+/// DOMOVINA.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
 /// Svi podaci (JSON, slike, video) se loadaju s CDN-a: https://cdn.domovina.ai/
 /// Routing:
@@ -69,7 +69,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       scaffoldMessengerKey: _messengerKey,
-      title: 'Domovina.ai',
+      title: 'DOMOVINA.ai',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

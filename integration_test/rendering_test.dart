@@ -27,7 +27,7 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      expect(find.text('Domovina.ai'), findsOneWidget);
+      expect(find.text('DOMOVINA.ai'), findsOneWidget);
       expect(find.text('Unesi YouTube ID epizode'), findsOneWidget);
       expect(find.text('Otvori epizodu'), findsOneWidget);
       expect(find.byIcon(Icons.ondemand_video_outlined), findsOneWidget);
@@ -41,7 +41,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Unesi YouTube ID'), findsOneWidget);
-      expect(find.text('Domovina.ai'), findsOneWidget); // i dalje na HomeScreen
+      expect(find.text('DOMOVINA.ai'), findsOneWidget); // i dalje na HomeScreen
     });
 
     testWidgets('screenshot — HomeScreen', (tester) async {

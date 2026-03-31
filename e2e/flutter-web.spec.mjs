@@ -15,7 +15,7 @@ test.describe('HomeScreen', () => {
   test('naslov i subtitle su vidljivi u accessibility tree', async ({ page }) => {
     // Flutter semantics generira flt-semantics elemente s ARIA atributima.
     // Playwright getByRole/getByText radi jer čita accessibility tree, ne DOM.
-    await expect(page.getByText('Domovina.ai')).toBeAttached();
+    await expect(page.getByText('DOMOVINA.ai')).toBeAttached();
     await expect(page.getByText('Unesi YouTube ID epizode')).toBeAttached();
   });
 

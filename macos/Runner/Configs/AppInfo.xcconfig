@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = domovina_ai
+PRODUCT_NAME = DOMOVINA.ai
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = tv.domovina.domovinaAi
+PRODUCT_BUNDLE_IDENTIFIER = ai.domovina
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 tv.domovina. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 ai.domovina. All rights reserved.

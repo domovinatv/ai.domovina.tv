@@ -111,16 +111,16 @@ async function testVideo(ytId) {
   const canonical  = extractCanonical(html);
 
   // Provjeri prisutnost i ispravnost vrijednosti
-  check('<title>',           title,    (v) => v.includes('– Domovina.ai') && v !== '– Domovina.ai');
+  check('<title>',           title,    (v) => v.includes('– DOMOVINA.ai') && v !== '– DOMOVINA.ai');
   check('description',       desc,     (v) => v !== 'A new Flutter project.' && v.length > 10);
-  check('og:title',          ogTitle,  (v) => v !== 'Domovina.ai' && v.length > 3);
+  check('og:title',          ogTitle,  (v) => v !== 'DOMOVINA.ai' && v.length > 3);
   check('og:description',    ogDesc,   (v) => v.length > 10);
   check('og:image',          ogImage,  (v) => v === expectedThumb);
   check('og:url',            ogUrl,    (v) => v === expectedCanonical);
   check('og:type',           ogType,   (v) => v === 'video.other');
-  check('og:site_name',      ogSite,   (v) => v === 'Domovina.ai');
+  check('og:site_name',      ogSite,   (v) => v === 'DOMOVINA.ai');
   check('twitter:card',      twCard,   (v) => v === 'summary_large_image');
-  check('twitter:title',     twTitle,  (v) => v !== 'Domovina.ai' && v.length > 3);
+  check('twitter:title',     twTitle,  (v) => v !== 'DOMOVINA.ai' && v.length > 3);
   check('twitter:image',     twImage,  (v) => v === expectedThumb);
   check('canonical',         canonical,(v) => v === expectedCanonical);
 
@@ -140,7 +140,7 @@ async function testVideo(ytId) {
 }
 
 async function main() {
-  console.log(`${BOLD}Domovina.ai — Social Tag Tester${RESET}`);
+  console.log(`${BOLD}DOMOVINA.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
   console.log(`Testira: ${VIDEO_IDS.length} epizoda × 12 tagova (prisutnost + ispravne vrijednosti)\n`);
 

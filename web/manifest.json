@@ -1,11 +1,11 @@
 {
-    "name": "domovina_ai",
-    "short_name": "domovina_ai",
+    "name": "DOMOVINA.ai",
+    "short_name": "DOMOVINA.ai",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#002F6C",
-    "description": "A new Flutter project.",
+    "description": "AI-obradeni hrvatski podcasti",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

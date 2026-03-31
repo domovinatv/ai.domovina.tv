@@ -1,4 +1,4 @@
-package tv.domovina.domovina_ai
+package ai.domovina
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -60,20 +60,20 @@ export default {
     }
 
     // Generiraj OG/social meta tagove
-    const title = info.title || 'Domovina.ai';
+    const title = info.title || 'DOMOVINA.ai';
     const rawDesc = (info.description || '').replace(/\s+/g, ' ').trim();
     const desc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
     const thumb = `${CDN}/images/${ytId}/thumbnail.png`;
     const canonical = `${SITE}/v/${ytId}`;
-    const channel = info.channel || 'Domovina TV';
+    const channel = info.channel || 'DOMOVINA.ai';
 
     const tags = `
-  <title>${x(title)} – Domovina.ai</title>
+  <title>${x(title)} – DOMOVINA.ai</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
 
   <meta property="og:type" content="video.other">
-  <meta property="og:site_name" content="Domovina.ai">
+  <meta property="og:site_name" content="DOMOVINA.ai">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
   <meta property="og:url" content="${canonical}">
