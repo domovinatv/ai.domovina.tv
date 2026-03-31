@@ -446,19 +446,19 @@ class _ChannelGridCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Square avatar (150px logical = 300px at 2x)
+              // Square avatar (90px logical = 180px at 2x)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: channel.avatarSquare != null
                     ? Image.network(
                         channel.avatarSquare!,
-                        width: 150,
-                        height: 150,
+                        width: 90,
+                        height: 90,
                         fit: BoxFit.cover,
                         errorBuilder: (c, e, s) =>
-                            _avatarPlaceholder(theme, 150),
+                            _avatarPlaceholder(theme, 90),
                       )
-                    : _avatarPlaceholder(theme, 150),
+                    : _avatarPlaceholder(theme, 90),
               ),
               const SizedBox(width: 10),
               Expanded(child: _infoColumn(theme)),
@@ -476,7 +476,7 @@ class _ChannelGridCard extends StatelessWidget {
   Widget _buildSquareLayout(ThemeData theme) {
     final scoreColor =
         MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
-    const avatarSize = 225.0; // 225px logical = 450px at 2x
+    const avatarSize = 178.0; // matches banner card total height (cover ~88 + avatar 90)
 
     return Padding(
       padding: const EdgeInsets.all(12),
