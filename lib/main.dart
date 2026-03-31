@@ -8,7 +8,7 @@ import 'screens/home_screen.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '1.1.4';
+const String appVersion = '1.1.5';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
@@ -102,6 +102,15 @@ class _DominovinaAppState extends State<DominovinaApp> {
         if (vtId != null && vtId.isNotEmpty) {
           return MaterialPageRoute(
             builder: (_) => EpisodeScreen(youtubeId: vtId),
+            settings: settings,
+          );
+        }
+
+        // /c/<channel-slug> — channel permalink (slug uses dashes, API uses underscores)
+        if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'c') {
+          final channelId = uri.pathSegments[1].replaceAll('-', '_');
+          return MaterialPageRoute(
+            builder: (_) => HomeScreen(initialChannelId: channelId),
             settings: settings,
           );
         }

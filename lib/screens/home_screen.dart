@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../main.dart' show appVersion;
@@ -8,7 +10,10 @@ import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  /// If set, go straight to this channel (from /c/<slug> route).
+  final String? initialChannelId;
+
+  const HomeScreen({super.key, this.initialChannelId});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -19,13 +24,19 @@ class _HomeScreenState extends State<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late Future<ChannelIndex> _indexFuture;
-  ChannelSummary? _selectedChannel;
+  String? _selectedChannelId;
+  String? _selectedChannelName;
   Future<ChannelDetail>? _channelFuture;
 
   @override
   void initState() {
     super.initState();
     _indexFuture = ChannelService.loadIndex();
+    if (widget.initialChannelId != null) {
+      _selectedChannelId = widget.initialChannelId;
+      _channelFuture =
+          ChannelService.loadChannel(widget.initialChannelId!);
+    }
   }
 
   @override
@@ -35,17 +46,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _selectChannel(ChannelSummary channel) {
-    setState(() {
-      _selectedChannel = channel;
-      _channelFuture = ChannelService.loadChannel(channel.id);
-    });
+    final slug = channel.id.replaceAll('_', '-');
+    Navigator.of(context).pushNamed('/c/$slug');
   }
 
   void _back() {
-    setState(() {
-      _selectedChannel = null;
-      _channelFuture = null;
-    });
+    Navigator.of(context).pushNamed('/');
   }
 
   void _openVideo(String videoId) {
@@ -60,27 +66,34 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isChannel = _selectedChannelId != null;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: _selectedChannel != null
-              ? _VideoListView(
-                  channelFuture: _channelFuture!,
-                  channelName: _selectedChannel!.name,
-                  onBack: _back,
-                  onVideoTap: _openVideo,
-                )
-              : _ChannelListView(
+        child: isChannel
+            ? _VideoGridView(
+                channelFuture: _channelFuture!,
+                channelName: _selectedChannelName,
+                channelId: _selectedChannelId!,
+                onResolvedName: (name) {
+                  if (_selectedChannelName == null && mounted) {
+                    setState(() => _selectedChannelName = name);
+                  }
+                },
+                onBack: _back,
+                onVideoTap: _openVideo,
+              )
+            : ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: _ChannelListView(
                   indexFuture: _indexFuture,
                   onChannelTap: _selectChannel,
                   idController: _idController,
                   formKey: _formKey,
                   onManualOpen: _openManual,
                 ),
-        ),
+              ),
       ),
     );
   }
@@ -131,7 +144,7 @@ class _ChannelListView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // Channel cards
+        // Channel cards (random order)
         FutureBuilder<ChannelIndex>(
           future: indexFuture,
           builder: (context, snap) {
@@ -152,7 +165,8 @@ class _ChannelListView extends StatelessWidget {
                 ),
               );
             }
-            final channels = snap.data!.channels;
+            final channels = List<ChannelSummary>.from(snap.data!.channels)
+              ..shuffle(Random());
             return Column(
               children: channels
                   .map((ch) => _ChannelCard(
@@ -259,7 +273,6 @@ class _ChannelCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Channel icon
               Container(
                 width: 48,
                 height: 48,
@@ -271,7 +284,6 @@ class _ChannelCard extends StatelessWidget {
                     color: theme.colorScheme.onPrimaryContainer),
               ),
               const SizedBox(width: 16),
-              // Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +314,6 @@ class _ChannelCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Score + arrow
               if (channel.avgMagisteriumScore != null) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -342,18 +353,22 @@ class _ChannelCard extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Step 2: Video selection
+// Step 2: Video grid / list (responsive)
 // ---------------------------------------------------------------------------
 
-class _VideoListView extends StatelessWidget {
+class _VideoGridView extends StatelessWidget {
   final Future<ChannelDetail> channelFuture;
-  final String channelName;
+  final String? channelName;
+  final String channelId;
+  final void Function(String name) onResolvedName;
   final VoidCallback onBack;
   final void Function(String videoId) onVideoTap;
 
-  const _VideoListView({
+  const _VideoGridView({
     required this.channelFuture,
-    required this.channelName,
+    this.channelName,
+    required this.channelId,
+    required this.onResolvedName,
     required this.onBack,
     required this.onVideoTap,
   });
@@ -364,7 +379,6 @@ class _VideoListView extends StatelessWidget {
 
     return Column(
       children: [
-        // Header with back button
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
           child: Row(
@@ -376,7 +390,7 @@ class _VideoListView extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                channelName,
+                channelName ?? channelId.replaceAll('_', ' '),
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
@@ -384,7 +398,6 @@ class _VideoListView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Video list
         Expanded(
           child: FutureBuilder<ChannelDetail>(
             future: channelFuture,
@@ -393,18 +406,13 @@ class _VideoListView extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snap.hasError) {
-                return Center(
-                  child: Text('Greska: ${snap.error}'),
-                );
+                return Center(child: Text('Greska: ${snap.error}'));
               }
-              final videos = snap.data!.videos;
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                itemCount: videos.length,
-                itemBuilder: (context, i) => _VideoCard(
-                  video: videos[i],
-                  onTap: () => onVideoTap(videos[i].id),
-                ),
+              final detail = snap.data!;
+              onResolvedName(detail.name);
+              return _ResponsiveVideoList(
+                videos: detail.videos,
+                onVideoTap: onVideoTap,
               );
             },
           ),
@@ -414,6 +422,54 @@ class _VideoListView extends StatelessWidget {
   }
 }
 
+class _ResponsiveVideoList extends StatelessWidget {
+  final List<ChannelVideo> videos;
+  final void Function(String videoId) onVideoTap;
+
+  const _ResponsiveVideoList({
+    required this.videos,
+    required this.onVideoTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        // Mobile (<600): single column list
+        // Tablet/Desktop (>=600): grid with cards
+        if (width < 600) {
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            itemCount: videos.length,
+            itemBuilder: (context, i) => _VideoCard(
+              video: videos[i],
+              onTap: () => onVideoTap(videos[i].id),
+            ),
+          );
+        }
+        // Grid: 2 columns at 600-900, 3 at 900-1200, 4 at 1200+
+        final crossAxisCount = width >= 1200 ? 4 : (width >= 900 ? 3 : 2);
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: videos.length,
+          itemBuilder: (context, i) => _VideoGridCard(
+            video: videos[i],
+            onTap: () => onVideoTap(videos[i].id),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// List card for mobile — horizontal thumbnail + text.
 class _VideoCard extends StatelessWidget {
   final ChannelVideo video;
   final VoidCallback onTap;
@@ -435,7 +491,6 @@ class _VideoCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Thumbnail
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: video.thumbnail != null
@@ -444,145 +499,187 @@ class _VideoCard extends StatelessWidget {
                         width: 120,
                         height: 68,
                         fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => _thumbnailPlaceholder(theme),
+                        errorBuilder: (c, e, s) =>
+                            _placeholder(theme, 120, 68),
                       )
-                    : _thumbnailPlaceholder(theme),
+                    : _placeholder(theme, 120, 68),
               ),
               const SizedBox(width: 12),
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      video.displayTitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Metadata row
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: [
-                        if (video.date != null)
-                          _metaChip(theme, Icons.calendar_today, video.date!),
-                        if (video.durationDisplay != null)
-                          _metaChip(
-                              theme, Icons.schedule, video.durationDisplay!),
-                        if (video.views != null && video.views! > 0)
-                          _metaChip(theme, Icons.visibility,
-                              _formatCount(video.views!)),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    // Speakers
-                    if (video.speakers.isNotEmpty)
-                      Text(
-                        video.speakers
-                            .map((s) => s.suggestedName)
-                            .join(', '),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    // Pipeline / score badges
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        if (video.magisteriumScore != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: MagisteriumSection.scoreColor(
-                                      video.magisteriumScore)
-                                  .withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: MagisteriumSection.scoreColor(
-                                          video.magisteriumScore)
-                                      .withAlpha(80)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.church,
-                                    size: 11,
-                                    color: MagisteriumSection.scoreColor(
-                                        video.magisteriumScore)),
-                                const SizedBox(width: 3),
-                                Text(
-                                  '${video.magisteriumScore}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: MagisteriumSection.scoreColor(
-                                        video.magisteriumScore),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        if (!hasArticle)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'U obradi',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              Expanded(child: _videoMeta(theme, video, hasArticle)),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _thumbnailPlaceholder(ThemeData theme) => Container(
-        width: 120,
-        height: 68,
-        color: theme.colorScheme.surfaceContainerHighest,
+/// Grid card for desktop/tablet — vertical thumbnail + text.
+class _VideoGridCard extends StatelessWidget {
+  final ChannelVideo video;
+  final VoidCallback onTap;
+
+  const _VideoGridCard({required this.video, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasArticle = video.pipeline?.hasArticle ?? false;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail fills card width
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: video.thumbnail != null
+                  ? Image.network(
+                      video.thumbnail!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (c, e, s) => _placeholder(theme),
+                    )
+                  : _placeholder(theme),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: _videoMeta(theme, video, hasArticle),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+Widget _placeholder(ThemeData theme, [double? w, double? h]) => Container(
+      width: w,
+      height: h,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Center(
         child: Icon(Icons.ondemand_video,
             color: theme.colorScheme.onSurfaceVariant),
-      );
+      ),
+    );
 
-  Widget _metaChip(ThemeData theme, IconData icon, String text) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 3),
+Widget _videoMeta(ThemeData theme, ChannelVideo video, bool hasArticle) =>
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          video.displayTitle,
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            if (video.date != null)
+              _metaChip(theme, Icons.calendar_today, video.date!),
+            if (video.durationDisplay != null)
+              _metaChip(theme, Icons.schedule, video.durationDisplay!),
+            if (video.views != null && video.views! > 0)
+              _metaChip(theme, Icons.visibility, _formatCount(video.views!)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        if (video.speakers.isNotEmpty)
           Text(
-            text,
-            style: theme.textTheme.labelSmall?.copyWith(
+            video.speakers.map((s) => s.suggestedName).join(', '),
+            style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      );
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            if (video.magisteriumScore != null) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: MagisteriumSection.scoreColor(video.magisteriumScore)
+                      .withAlpha(25),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color:
+                          MagisteriumSection.scoreColor(video.magisteriumScore)
+                              .withAlpha(80)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.church,
+                        size: 11,
+                        color: MagisteriumSection.scoreColor(
+                            video.magisteriumScore)),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${video.magisteriumScore}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: MagisteriumSection.scoreColor(
+                            video.magisteriumScore),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            if (!hasArticle)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'U obradi',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
 
-  static String _formatCount(int n) {
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
-    return '$n';
-  }
+Widget _metaChip(ThemeData theme, IconData icon, String text) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 3),
+        Text(
+          text,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+
+String _formatCount(int n) {
+  if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+  if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+  return '$n';
 }
