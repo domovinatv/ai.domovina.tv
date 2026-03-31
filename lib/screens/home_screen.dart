@@ -403,7 +403,7 @@ class _ChannelGridCard extends StatelessWidget {
           children: [
             // Cover banner (source is 1:1, display as wide strip)
             AspectRatio(
-              aspectRatio: 3,
+              aspectRatio: 4,
               child: channel.avatarCover != null
                   ? Image.network(
                       channel.avatarCover!,
