@@ -26,71 +26,187 @@ class EpisodeScreen extends StatefulWidget {
 }
 
 class _EpisodeScreenState extends State<EpisodeScreen> {
-  late Future<EpisodeData> _future;
+  EpisodeData? _data;
+  Object? _error;
+  final Map<String, (bool done, bool ok)> _assetStatus = {};
 
   @override
   void initState() {
     super.initState();
-    _future = EpisodeData.load(youtubeId: widget.youtubeId);
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await EpisodeData.loadWithProgress(
+        youtubeId: widget.youtubeId,
+        onProgress: (asset, done, ok) {
+          if (mounted) setState(() => _assetStatus[asset] = (done, ok));
+        },
+      );
+      if (mounted) setState(() => _data = data);
+    } catch (e) {
+      if (mounted) setState(() => _error = e);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<EpisodeData>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
-          final notFound = snapshot.error is VideoNotFoundException;
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      notFound
-                          ? Icons.video_file_outlined
-                          : Icons.error_outline,
-                      size: 48,
-                      color: notFound ? null : Colors.red,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      notFound
-                          ? 'Epizoda "${widget.youtubeId}" nije pronađena na CDN-u.\n\nProvjeri je li ID ispravan i jesu li datoteke uploadane.'
-                          : 'Greška pri učitavanju podataka:\n${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    if (notFound)
-                      Text(
-                        CdnConfig.infoUrl(widget.youtubeId),
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 11,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    const SizedBox(height: 20),
-                    FilledButton.icon(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Natrag'),
-                    ),
-                  ],
+    if (_data != null) return _EpisodeContent(data: _data!);
+
+    if (_error != null) {
+      final notFound = _error is VideoNotFoundException;
+      final theme = Theme.of(context);
+      return Scaffold(
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  notFound ? Icons.video_file_outlined : Icons.error_outline,
+                  size: 48,
+                  color: notFound ? null : Colors.red,
                 ),
-              ),
+                const SizedBox(height: 12),
+                Text(
+                  notFound
+                      ? 'Epizoda "${widget.youtubeId}" nije pronađena na CDN-u.\n\nProvjeri je li ID ispravan i jesu li datoteke uploadane.'
+                      : 'Greška pri učitavanju podataka:\n$_error',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                if (notFound)
+                  Text(
+                    CdnConfig.infoUrl(widget.youtubeId),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Natrag'),
+                ),
+              ],
             ),
-          );
-        }
-        return _EpisodeContent(data: snapshot.data!);
-      },
+          ),
+        ),
+      );
+    }
+
+    // Loading screen with per-asset progress
+    return _LoadingScreen(
+      youtubeId: widget.youtubeId,
+      assetStatus: _assetStatus,
+    );
+  }
+}
+
+class _LoadingScreen extends StatelessWidget {
+  final String youtubeId;
+  final Map<String, (bool done, bool ok)> assetStatus;
+
+  const _LoadingScreen({
+    required this.youtubeId,
+    required this.assetStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final doneCount = assetStatus.values.where((s) => s.$1).length;
+    final totalCount = assetStatus.isEmpty ? 7 : assetStatus.length;
+    final progress = totalCount > 0 ? doneCount / totalCount : 0.0;
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Progress ring
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: CircularProgressIndicator(
+                    value: assetStatus.isEmpty ? null : progress,
+                    strokeWidth: 4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Ucitavanje epizode',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  youtubeId,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Asset status list
+                ...assetStatus.entries.map((e) {
+                  final (done, ok) = e.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: done
+                              ? Icon(
+                                  ok
+                                      ? Icons.check_circle
+                                      : Icons.remove_circle_outline,
+                                  size: 18,
+                                  color: ok
+                                      ? const Color(0xFF2E7D32)
+                                      : theme.colorScheme.onSurfaceVariant
+                                          .withAlpha(100),
+                                )
+                              : const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          e.key,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: done && !ok
+                                ? theme.colorScheme.onSurfaceVariant
+                                    .withAlpha(100)
+                                : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

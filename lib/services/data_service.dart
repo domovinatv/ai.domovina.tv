@@ -224,4 +224,68 @@ class EpisodeData {
       videoUri: svc.resolveVideoUri(),
     );
   }
+
+  /// Progressive loader — reports per-asset status via [onProgress].
+  /// Assets load in parallel; callback fires as each completes.
+  static Future<EpisodeData> loadWithProgress({
+    required String youtubeId,
+    required void Function(String asset, bool done, bool ok) onProgress,
+  }) async {
+    final svc = DataService(youtubeId: youtubeId);
+
+    Future<T> track<T>(String name, Future<T> future) async {
+      onProgress(name, false, true);
+      try {
+        final result = await future;
+        onProgress(name, true, true);
+        return result;
+      } catch (e) {
+        onProgress(name, true, false);
+        rethrow;
+      }
+    }
+
+    Future<T?> trackOptional<T>(String name, Future<T?> future) async {
+      onProgress(name, false, true);
+      try {
+        final result = await future;
+        onProgress(name, true, result != null);
+        return result;
+      } catch (_) {
+        onProgress(name, true, false);
+        return null;
+      }
+    }
+
+    // Start all in parallel
+    final infoF = track('Info', svc.loadInfo());
+    final summaryF = track('Sažetak', svc.loadSummary());
+    final outlineF = track('Poglavlja', svc.loadOutline());
+    final articleF = track('Članak', svc.loadArticle());
+    final magF = trackOptional('Magisterium', svc.loadMagisterium());
+    final magBatchF =
+        trackOptional('Magisterium batch', svc.loadMagisteriumBatch());
+    final srtF = trackOptional('Transkript', svc.loadSpeakerTimeline());
+
+    // Await all (required ones may throw)
+    final info = await infoF;
+    final summary = await summaryF;
+    final outline = await outlineF;
+    final article = await articleF;
+    final mag = await magF;
+    final magBatch = await magBatchF;
+    final srt = await srtF;
+
+    return EpisodeData(
+      youtubeId: youtubeId,
+      info: info,
+      summary: summary,
+      outline: outline,
+      article: article,
+      magisterium: mag,
+      magisteriumBatch: magBatch,
+      speakerTimeline: srt,
+      videoUri: svc.resolveVideoUri(),
+    );
+  }
 }
