@@ -106,7 +106,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
           page = const HomeScreen();
         }
 
-        // Instant navigation — no slide/fade animation
+        // Instant navigation — no slide/fade animation (forward + reverse)
         return PageRouteBuilder(
           settings: settings,
           pageBuilder: (_, __, ___) => page,
@@ -114,7 +114,18 @@ class _DominovinaAppState extends State<DominovinaApp> {
           reverseTransitionDuration: Duration.zero,
         );
       },
-      initialRoute: '/',
+      // home: creates the initial '/' route. onGenerateInitialRoutes ensures
+      // it also uses zero-duration transitions (fixes back-navigation jank).
+      onGenerateInitialRoutes: (initialRoute) {
+        return [
+          PageRouteBuilder(
+            settings: const RouteSettings(name: '/'),
+            pageBuilder: (_, __, ___) => const HomeScreen(),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        ];
+      },
     );
   }
 }
