@@ -436,13 +436,14 @@ class _ResponsiveVideoList extends StatelessWidget {
     required this.onVideoTap,
   });
 
+  static const double _maxCardWidth = 300;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         // Mobile (<600): single column list
-        // Tablet/Desktop (>=600): grid with cards
         if (width < 600) {
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
@@ -453,20 +454,25 @@ class _ResponsiveVideoList extends StatelessWidget {
             ),
           );
         }
-        // Grid: 2 columns at 600-900, 3 at 900-1200, 4 at 1200+
-        final crossAxisCount = width >= 1200 ? 4 : (width >= 900 ? 3 : 2);
-        return GridView.builder(
+        // Desktop/Tablet: Wrap with max-width cards, dynamic height
+        final availableWidth = width - 32; // 16px padding each side
+        final columns = (availableWidth / _maxCardWidth).floor().clamp(2, 99);
+        final cardWidth =
+            (availableWidth - (columns - 1) * 12) / columns;
+        return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.75,
-          ),
-          itemCount: videos.length,
-          itemBuilder: (context, i) => _VideoGridCard(
-            video: videos[i],
-            onTap: () => onVideoTap(videos[i].id),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: videos
+                .map((v) => SizedBox(
+                      width: cardWidth,
+                      child: _VideoGridCard(
+                        video: v,
+                        onTap: () => onVideoTap(v.id),
+                      ),
+                    ))
+                .toList(),
           ),
         );
       },
@@ -550,11 +556,9 @@ class _VideoGridCard extends StatelessWidget {
                     )
                   : _placeholder(theme),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: _videoMeta(theme, video, hasArticle),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: _videoMeta(theme, video, hasArticle),
             ),
           ],
         ),
