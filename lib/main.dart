@@ -8,7 +8,7 @@ import 'screens/home_screen.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '1.3.0';
+const String appVersion = '1.3.1';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
@@ -73,14 +73,14 @@ class _DominovinaAppState extends State<DominovinaApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0), // Hrvatska plava
+          seedColor: const Color(0xFF37474F), // warm slate
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0),
+          seedColor: const Color(0xFF37474F),
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
