@@ -368,71 +368,113 @@ class _ChannelGridView extends StatelessWidget {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: channels
-          .map((ch) => SizedBox(
-                width: cardWidth,
-                child: _ChannelGridCard(
-                  channel: ch,
-                  onTap: () => onChannelTap(ch),
-                ),
-              ))
-          .toList(),
+      children: [
+        for (int i = 0; i < channels.length; i++)
+          SizedBox(
+            width: cardWidth,
+            child: _ChannelGridCard(
+              channel: channels[i],
+              index: i,
+              onTap: () => onChannelTap(channels[i]),
+            ),
+          ),
+      ],
     );
   }
 }
 
-/// Grid card for desktop/tablet — vertical avatar + info.
+/// Grid card for desktop/tablet.
+/// If cover != square: banner cover + small avatar.
+/// If cover == square or missing: no banner, bigger centered avatar.
 class _ChannelGridCard extends StatelessWidget {
   final ChannelSummary channel;
+  final int index;
   final VoidCallback onTap;
 
-  const _ChannelGridCard({required this.channel, required this.onTap});
+  const _ChannelGridCard({
+    required this.channel,
+    required this.index,
+    required this.onTap,
+  });
+
+  bool get _hasCover =>
+      channel.avatarCover != null &&
+      channel.avatarSquare != null &&
+      channel.avatarCover != channel.avatarSquare;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scoreColor =
         MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
+    final isOdd = index.isOdd;
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isOdd
+            ? BorderSide(
+                color: theme.colorScheme.outlineVariant.withAlpha(80))
+            : BorderSide.none,
+      ),
       child: InkWell(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover banner (source is 1:1, display as wide strip)
-            AspectRatio(
-              aspectRatio: 4,
-              child: channel.avatarCover != null
-                  ? Image.network(
-                      channel.avatarCover!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (c, e, s) => _coverPlaceholder(theme),
-                    )
-                  : _coverPlaceholder(theme),
-            ),
+            // Top section: cover banner or bigger square avatar
+            if (_hasCover)
+              AspectRatio(
+                aspectRatio: 4,
+                child: Image.network(
+                  channel.avatarCover!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (c, e, s) => _coverPlaceholder(theme),
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+                color: theme.colorScheme.primaryContainer.withAlpha(30),
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: channel.avatarSquare != null
+                        ? Image.network(
+                            channel.avatarSquare!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) =>
+                                _avatarPlaceholder(theme, 80),
+                          )
+                        : _avatarPlaceholder(theme, 80),
+                  ),
+                ),
+              ),
+            // Info row
             Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Avatar (56px logical = 112px at 2x for crisp display)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: channel.avatarSquare != null
-                        ? Image.network(
-                            channel.avatarSquare!,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) =>
-                                _avatarPlaceholder(theme),
-                          )
-                        : _avatarPlaceholder(theme),
-                  ),
-                  const SizedBox(width: 10),
+                  if (_hasCover) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        channel.avatarSquare!,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) =>
+                            _avatarPlaceholder(theme, 56),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,15 +538,15 @@ class _ChannelGridCard extends StatelessWidget {
         ),
       );
 
-  static Widget _avatarPlaceholder(ThemeData theme) => Container(
-        width: 56,
-        height: 56,
+  static Widget _avatarPlaceholder(ThemeData theme, double size) => Container(
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: theme.colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(size > 60 ? 14 : 10),
         ),
         child: Icon(Icons.podcasts,
-            size: 24, color: theme.colorScheme.onPrimaryContainer),
+            size: size * 0.4, color: theme.colorScheme.onPrimaryContainer),
       );
 }
 
@@ -539,9 +581,9 @@ class _ChannelListCard extends StatelessWidget {
                         height: 56,
                         fit: BoxFit.cover,
                         errorBuilder: (c, e, s) =>
-                            _ChannelGridCard._avatarPlaceholder(theme),
+                            _ChannelGridCard._avatarPlaceholder(theme, 56),
                       )
-                    : _ChannelGridCard._avatarPlaceholder(theme),
+                    : _ChannelGridCard._avatarPlaceholder(theme, 56),
               ),
               const SizedBox(width: 12),
               Expanded(
