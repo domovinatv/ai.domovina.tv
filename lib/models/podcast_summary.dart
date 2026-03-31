@@ -85,15 +85,15 @@ class SummaryContent {
     return SummaryContent(
       titleHr: json['title_hr'] as String,
       abstractHr: json['abstract_hr'] as String,
-      keyTopics: (json['key_topics'] as List<dynamic>).cast<String>(),
-      speakers: (json['speakers'] as List<dynamic>)
+      keyTopics: (json['key_topics'] as List<dynamic>? ?? []).cast<String>(),
+      speakers: (json['speakers'] as List<dynamic>? ?? [])
           .map((s) => SummarySpeaker.fromJson(s as Map<String, dynamic>))
           .toList(),
-      keyPoints: (json['key_points'] as List<dynamic>).cast<String>(),
-      mentionedPeople: (json['mentioned_people'] as List<dynamic>).cast<String>(),
-      mentionedPlaces: (json['mentioned_places'] as List<dynamic>).cast<String>(),
+      keyPoints: (json['key_points'] as List<dynamic>? ?? []).cast<String>(),
+      mentionedPeople: (json['mentioned_people'] as List<dynamic>? ?? []).cast<String>(),
+      mentionedPlaces: (json['mentioned_places'] as List<dynamic>? ?? []).cast<String>(),
       mentionedOrganizations:
-          (json['mentioned_organizations'] as List<dynamic>).cast<String>(),
+          (json['mentioned_organizations'] as List<dynamic>? ?? []).cast<String>(),
       language: json['language'] as String,
       contentType: json['content_type'] as String,
       sentiment: json['sentiment'] as String,

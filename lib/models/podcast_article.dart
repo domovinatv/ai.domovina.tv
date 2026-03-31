@@ -86,8 +86,8 @@ class PodcastSection {
       screenshotTimestamp: json['screenshot_timestamp'] as String,
       screenshotDescription: json['screenshot_description'] as String,
       content: json['content'] as String,
-      keywords: (json['keywords'] as List<dynamic>).cast<String>(),
-      entities: (json['entities'] as List<dynamic>).cast<String>(),
+      keywords: (json['keywords'] as List<dynamic>? ?? []).cast<String>(),
+      entities: (json['entities'] as List<dynamic>? ?? []).cast<String>(),
     );
   }
 }
