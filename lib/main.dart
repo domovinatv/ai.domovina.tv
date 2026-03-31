@@ -73,14 +73,14 @@ class _DominovinaAppState extends State<DominovinaApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF37474F), // warm slate
+          seedColor: const Color(0xFF002F6C), // Croatian navy blue
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF37474F),
+          seedColor: const Color(0xFF002F6C),
           brightness: Brightness.dark,
         ),
         useMaterial3: true,

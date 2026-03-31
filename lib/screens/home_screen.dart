@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart' show appVersion;
 import '../models/channel_index.dart';
@@ -9,6 +10,10 @@ import '../models/channel_detail.dart';
 import '../services/data_service.dart';
 import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
+
+/// Croatian flag colours extracted from the logo SVG.
+const _croRed = Color(0xFFFF0000);
+const _croBlue = Color(0xFF002F6C);
 
 const _channelOrderKey = 'channel_order';
 
@@ -326,53 +331,68 @@ class _HomeHeader extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      padding: EdgeInsets.all(isMobile ? 20 : 28),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  theme.colorScheme.primary.withAlpha(25),
-                  theme.colorScheme.surface,
-                ]
-              : [
-                  theme.colorScheme.primary.withAlpha(15),
-                  theme.colorScheme.surfaceContainerLowest,
-                ],
-        ),
+        color: isDark
+            ? theme.colorScheme.surface
+            : theme.colorScheme.surfaceContainerLowest,
         border: Border.all(
-          color: theme.colorScheme.primary.withAlpha(isDark ? 40 : 30),
+          color: _croBlue.withAlpha(isDark ? 50 : 30),
         ),
       ),
-      child: isMobile ? _buildMobile(theme) : _buildDesktop(theme),
+      child: Column(
+        children: [
+          // Croatian tricolour accent bar
+          Row(
+            children: [
+              Expanded(child: Container(height: 4, color: _croRed)),
+              Expanded(child: Container(height: 4, color: Colors.white)),
+              Expanded(child: Container(height: 4, color: _croBlue)),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.all(isMobile ? 20 : 28),
+            child: isMobile ? _buildMobile(theme, isDark) : _buildDesktop(theme, isDark),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildDesktop(ThemeData theme) {
+  Widget _buildDesktop(ThemeData theme, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Left: branding
+        // Left: logo icon + branding
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              _logo(theme),
-              const SizedBox(height: 6),
-              _subtitle(theme),
+              SvgPicture.asset(
+                'assets/icons/domovina_ai_logo.svg',
+                width: 52,
+                height: 52,
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _logoText(theme, isDark),
+                  const SizedBox(height: 4),
+                  _subtitle(theme),
+                ],
+              ),
             ],
           ),
         ),
         const SizedBox(width: 24),
         // Right: YouTube ID input + shuffle
         SizedBox(
-          width: 320,
+          width: 340,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _idInput(theme),
+              _idInput(theme, isDark),
               const SizedBox(height: 8),
               _shuffleRow(theme),
             ],
@@ -382,21 +402,27 @@ class _HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildMobile(ThemeData theme) {
+  Widget _buildMobile(ThemeData theme, bool isDark) {
     return Column(
       children: [
-        _logo(theme),
-        const SizedBox(height: 6),
+        SvgPicture.asset(
+          'assets/icons/domovina_ai_logo.svg',
+          width: 56,
+          height: 56,
+        ),
+        const SizedBox(height: 12),
+        _logoText(theme, isDark),
+        const SizedBox(height: 4),
         _subtitle(theme),
         const SizedBox(height: 16),
-        _idInput(theme),
+        _idInput(theme, isDark),
         const SizedBox(height: 8),
         _shuffleRow(theme),
       ],
     );
   }
 
-  Widget _logo(ThemeData theme) {
+  Widget _logoText(ThemeData theme, bool isDark) {
     return Text.rich(
       TextSpan(
         children: [
@@ -405,7 +431,7 @@ class _HomeHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface,
+              color: isDark ? Colors.white : _croBlue,
               letterSpacing: 1.5,
             ),
           ),
@@ -414,7 +440,7 @@ class _HomeHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: theme.colorScheme.primary,
+              color: _croRed,
               letterSpacing: 1.5,
             ),
           ),
@@ -435,7 +461,7 @@ class _HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _idInput(ThemeData theme) {
+  Widget _idInput(ThemeData theme, bool isDark) {
     return Form(
       key: formKey,
       child: Row(
@@ -473,6 +499,8 @@ class _HomeHeader extends StatelessWidget {
             child: FilledButton(
               onPressed: onManualOpen,
               style: FilledButton.styleFrom(
+                backgroundColor: _croBlue,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),

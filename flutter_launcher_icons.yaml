@@ -1,0 +1,19 @@
+flutter_launcher_icons:
+  image_path: "assets/icons/domovina_ai_logo_1024.png"
+
+  android: true
+  ios: true
+  macos:
+    generate: true
+    image_path: "assets/icons/domovina_ai_logo_1024.png"
+  web:
+    generate: true
+    image_path: "assets/icons/domovina_ai_logo_1024.png"
+    background_color: "#FFFFFF"
+    theme_color: "#002F6C"
+
+  remove_alpha_ios: true
+
+  # Adaptive icon for Android 8+
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/domovina_ai_logo_1024.png"
