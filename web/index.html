@@ -33,9 +33,13 @@
 <body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
-    // Service Worker update detection → dispatches 'flutter-app-updated' event
+    // Service Worker update detection + forced check on every page load.
+    // Safari iOS caches SW aggressively — reg.update() forces re-fetch.
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(function(reg) {
+        // Force SW update check on every page load
+        reg.update();
+
         reg.addEventListener('updatefound', function() {
           var newWorker = reg.installing;
           if (!newWorker) return;
