@@ -52,6 +52,9 @@ app.*.map.json
 # Wrangler local state
 .wrangler/
 
+# Secrets
+.env
+
 # Node / Playwright
 node_modules/
 test-results/
