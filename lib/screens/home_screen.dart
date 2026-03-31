@@ -165,7 +165,7 @@ class _ChannelGridView extends StatelessWidget {
     required this.onManualOpen,
   });
 
-  static const double _maxCardWidth = 280;
+  static const double _maxCardWidth = 530;
 
   @override
   Widget build(BuildContext context) {
@@ -449,19 +449,19 @@ class _ChannelGridCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Square avatar
+              // Square avatar (150px logical = 300px at 2x)
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 child: channel.avatarSquare != null
                     ? Image.network(
                         channel.avatarSquare!,
-                        width: 56,
-                        height: 56,
+                        width: 150,
+                        height: 150,
                         fit: BoxFit.cover,
                         errorBuilder: (c, e, s) =>
-                            _avatarPlaceholder(theme, 56),
+                            _avatarPlaceholder(theme, 150),
                       )
-                    : _avatarPlaceholder(theme, 56),
+                    : _avatarPlaceholder(theme, 150),
               ),
               const SizedBox(width: 10),
               Expanded(child: _infoColumn(theme)),
@@ -479,7 +479,7 @@ class _ChannelGridCard extends StatelessWidget {
   Widget _buildSquareLayout(ThemeData theme) {
     final scoreColor =
         MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
-    const avatarSize = 120.0; // reasonable for card width ~280px
+    const avatarSize = 225.0; // 225px logical = 450px at 2x
 
     return Padding(
       padding: const EdgeInsets.all(12),
