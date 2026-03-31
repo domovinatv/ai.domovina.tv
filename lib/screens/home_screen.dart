@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart' show appVersion;
 import '../models/channel_index.dart';
@@ -368,8 +367,8 @@ class _HomeHeader extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              SvgPicture.asset(
-                'assets/icons/domovina_ai_logo.svg',
+              Image.asset(
+                'assets/icons/domovina_ai_logo_1024.png',
                 width: 52,
                 height: 52,
               ),
@@ -405,8 +404,8 @@ class _HomeHeader extends StatelessWidget {
   Widget _buildMobile(ThemeData theme, bool isDark) {
     return Column(
       children: [
-        SvgPicture.asset(
-          'assets/icons/domovina_ai_logo.svg',
+        Image.asset(
+          'assets/icons/domovina_ai_logo_1024.png',
           width: 56,
           height: 56,
         ),
