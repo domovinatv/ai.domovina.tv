@@ -402,10 +402,7 @@ class _ChannelGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Inverted border: light theme → dark border, dark theme → light border
-    final borderColor = theme.brightness == Brightness.light
-        ? theme.colorScheme.onSurface.withAlpha(30)
-        : theme.colorScheme.surface.withAlpha(80);
+    final borderColor = theme.colorScheme.onSurface.withAlpha(40);
 
     return Card(
       clipBehavior: Clip.antiAlias,
