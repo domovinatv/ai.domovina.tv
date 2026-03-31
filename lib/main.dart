@@ -8,7 +8,7 @@ import 'screens/home_screen.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '1.3.1';
+const String appVersion = '1.3.2';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
@@ -89,45 +89,29 @@ class _DominovinaAppState extends State<DominovinaApp> {
       onGenerateRoute: (settings) {
         final uri = Uri.parse(settings.name ?? '/');
 
-        // /v/<ytId> — permalink za sharing
+        Widget page;
+
         if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'v') {
-          return MaterialPageRoute(
-            builder: (_) => EpisodeScreen(youtubeId: uri.pathSegments[1]),
-            settings: settings,
-          );
-        }
-
-        // /?v=<ytId>
-        final vtId = uri.queryParameters['v'];
-        if (vtId != null && vtId.isNotEmpty) {
-          return MaterialPageRoute(
-            builder: (_) => EpisodeScreen(youtubeId: vtId),
-            settings: settings,
-          );
-        }
-
-        // /c/<channel-slug> — channel permalink (slug uses dashes, API uses underscores)
-        if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'c') {
+          page = EpisodeScreen(youtubeId: uri.pathSegments[1]);
+        } else if (uri.queryParameters['v']?.isNotEmpty == true) {
+          page = EpisodeScreen(youtubeId: uri.queryParameters['v']!);
+        } else if (uri.pathSegments.length == 2 &&
+            uri.pathSegments[0] == 'c') {
           final channelId = uri.pathSegments[1].replaceAll('-', '_');
-          return MaterialPageRoute(
-            builder: (_) => HomeScreen(initialChannelId: channelId),
-            settings: settings,
-          );
-        }
-
-        // /episode/<ytId> — legacy
-        if (uri.pathSegments.length == 2 &&
+          page = HomeScreen(initialChannelId: channelId);
+        } else if (uri.pathSegments.length == 2 &&
             uri.pathSegments[0] == 'episode') {
-          return MaterialPageRoute(
-            builder: (_) => EpisodeScreen(youtubeId: uri.pathSegments[1]),
-            settings: settings,
-          );
+          page = EpisodeScreen(youtubeId: uri.pathSegments[1]);
+        } else {
+          page = const HomeScreen();
         }
 
-        // / → HomeScreen
-        return MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
+        // Instant navigation — no slide/fade animation
+        return PageRouteBuilder(
           settings: settings,
+          pageBuilder: (_, __, ___) => page,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         );
       },
       home: const HomeScreen(),
