@@ -206,43 +206,13 @@ class _ChannelGridView extends StatelessWidget {
               slivers: [
                 // Header
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Domovina.ai',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${channels.length} kanala',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: onShuffle,
-                              icon: const Icon(Icons.shuffle, size: 20),
-                              tooltip: 'Promijesaj redoslijed',
-                              style: IconButton.styleFrom(
-                                foregroundColor:
-                                    theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
+                  child: _HomeHeader(
+                    channelCount: channels.length,
+                    onShuffle: onShuffle,
+                    idController: idController,
+                    formKey: formKey,
+                    onManualOpen: onManualOpen,
+                    isMobile: isMobile,
                   ),
                 ),
 
@@ -264,88 +234,33 @@ class _ChannelGridView extends StatelessWidget {
                         ),
                 ),
 
-                // Footer: manual ID + version
+                // Footer: version
                 SliverToBoxAdapter(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 480),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                        child: Column(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: kIsWeb ? hardReload : null,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Divider(color: theme.colorScheme.outlineVariant),
-                            const SizedBox(height: 16),
                             Text(
-                              'Ili unesi YouTube ID direktno',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            Form(
-                              key: formKey,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: idController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'YouTube ID',
-                                        hintText: 'npr. H-p2Hl6x7I0',
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(
-                                            Icons.ondemand_video_outlined),
-                                        isDense: true,
-                                      ),
-                                      textInputAction: TextInputAction.go,
-                                      onFieldSubmitted: (_) => onManualOpen(),
-                                      validator: (v) =>
-                                          v == null || v.trim().isEmpty
-                                              ? 'Unesi ID'
-                                              : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  FilledButton(
-                                    onPressed: onManualOpen,
-                                    child: const Icon(Icons.play_arrow),
-                                  ),
-                                ],
+                              'v$appVersion',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withAlpha(100),
+                                fontFamily: 'monospace',
                               ),
                             ),
-                            const SizedBox(height: 32),
-                            Center(
-                              child: GestureDetector(
-                                onTap: kIsWeb ? hardReload : null,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'v$appVersion',
-                                      style:
-                                          theme.textTheme.labelSmall?.copyWith(
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant
-                                            .withAlpha(100),
-                                        fontFamily: 'monospace',
-                                      ),
-                                    ),
-                                    if (kIsWeb) ...[
-                                      const SizedBox(width: 6),
-                                      Icon(
-                                        Icons.refresh,
-                                        size: 14,
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant
-                                            .withAlpha(100),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                            if (kIsWeb) ...[
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.refresh,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withAlpha(100),
                               ),
-                            ),
-                            const SizedBox(height: 16),
+                            ],
                           ],
                         ),
                       ),
@@ -378,6 +293,214 @@ class _ChannelGridView extends StatelessWidget {
               onTap: () => onChannelTap(channels[i]),
             ),
           ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------------------
+
+class _HomeHeader extends StatelessWidget {
+  final int channelCount;
+  final VoidCallback onShuffle;
+  final TextEditingController idController;
+  final GlobalKey<FormState> formKey;
+  final VoidCallback onManualOpen;
+  final bool isMobile;
+
+  const _HomeHeader({
+    required this.channelCount,
+    required this.onShuffle,
+    required this.idController,
+    required this.formKey,
+    required this.onManualOpen,
+    required this.isMobile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: EdgeInsets.all(isMobile ? 20 : 28),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  theme.colorScheme.primary.withAlpha(25),
+                  theme.colorScheme.surface,
+                ]
+              : [
+                  theme.colorScheme.primary.withAlpha(15),
+                  theme.colorScheme.surfaceContainerLowest,
+                ],
+        ),
+        border: Border.all(
+          color: theme.colorScheme.primary.withAlpha(isDark ? 40 : 30),
+        ),
+      ),
+      child: isMobile ? _buildMobile(theme) : _buildDesktop(theme),
+    );
+  }
+
+  Widget _buildDesktop(ThemeData theme) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Left: branding
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _logo(theme),
+              const SizedBox(height: 6),
+              _subtitle(theme),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        // Right: YouTube ID input + shuffle
+        SizedBox(
+          width: 320,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _idInput(theme),
+              const SizedBox(height: 8),
+              _shuffleRow(theme),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobile(ThemeData theme) {
+    return Column(
+      children: [
+        _logo(theme),
+        const SizedBox(height: 6),
+        _subtitle(theme),
+        const SizedBox(height: 16),
+        _idInput(theme),
+        const SizedBox(height: 8),
+        _shuffleRow(theme),
+      ],
+    );
+  }
+
+  Widget _logo(ThemeData theme) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: 'DOMOVINA',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: theme.colorScheme.onSurface,
+              letterSpacing: 1.5,
+            ),
+          ),
+          TextSpan(
+            text: '.ai',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: theme.colorScheme.primary,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ],
+      ),
+      textAlign: isMobile ? TextAlign.center : TextAlign.start,
+    );
+  }
+
+  Widget _subtitle(ThemeData theme) {
+    return Text(
+      '$channelCount kanala  •  AI-obradeni hrvatski podcasti',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+        letterSpacing: 0.3,
+      ),
+      textAlign: isMobile ? TextAlign.center : TextAlign.start,
+    );
+  }
+
+  Widget _idInput(ThemeData theme) {
+    return Form(
+      key: formKey,
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 42,
+              child: TextFormField(
+                controller: idController,
+                style: theme.textTheme.bodySmall,
+                decoration: InputDecoration(
+                  hintText: 'YouTube ID (npr. H-p2Hl6x7I0)',
+                  hintStyle: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withAlpha(120),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12),
+                  prefixIcon: const Icon(Icons.ondemand_video_outlined,
+                      size: 18),
+                  isDense: true,
+                ),
+                textInputAction: TextInputAction.go,
+                onFieldSubmitted: (_) => onManualOpen(),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Unesi ID' : null,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 42,
+            child: FilledButton(
+              onPressed: onManualOpen,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Icon(Icons.play_arrow, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shuffleRow(ThemeData theme) {
+    return Row(
+      mainAxisAlignment:
+          isMobile ? MainAxisAlignment.center : MainAxisAlignment.end,
+      children: [
+        IconButton(
+          onPressed: onShuffle,
+          icon: const Icon(Icons.shuffle, size: 18),
+          tooltip: 'Promijesaj redoslijed',
+          style: IconButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurfaceVariant,
+            padding: const EdgeInsets.all(6),
+            minimumSize: const Size(32, 32),
+          ),
+        ),
       ],
     );
   }
