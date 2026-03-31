@@ -5,6 +5,10 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'screens/episode_screen.dart';
 import 'screens/home_screen.dart';
+import 'services/update_notifier.dart';
+
+/// App version — prikazuje se u HomeScreen footer.
+const String appVersion = '1.1.0';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
@@ -32,12 +36,39 @@ void main() {
   runApp(const DominovinaApp());
 }
 
-class DominovinaApp extends StatelessWidget {
+class DominovinaApp extends StatefulWidget {
   const DominovinaApp({super.key});
+
+  @override
+  State<DominovinaApp> createState() => _DominovinaAppState();
+}
+
+class _DominovinaAppState extends State<DominovinaApp> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    listenForAppUpdate(_showUpdateSnackBar);
+  }
+
+  void _showUpdateSnackBar() {
+    _messengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: const Text('Nova verzija je dostupna'),
+        duration: const Duration(days: 1), // persist until action
+        action: SnackBarAction(
+          label: 'OSVJEZI',
+          onPressed: reloadPage,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: _messengerKey,
       title: 'Domovina.ai',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

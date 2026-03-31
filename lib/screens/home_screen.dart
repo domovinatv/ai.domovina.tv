@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart' show appVersion;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
 import '../services/data_service.dart';
@@ -202,6 +203,17 @@ class _ChannelListView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 32),
+
+        // Version footer
+        Text(
+          'v$appVersion',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+            fontFamily: 'monospace',
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
