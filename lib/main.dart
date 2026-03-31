@@ -114,7 +114,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
           reverseTransitionDuration: Duration.zero,
         );
       },
-      home: const HomeScreen(),
+      initialRoute: '/',
     );
   }
 }
