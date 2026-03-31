@@ -6,9 +6,13 @@ class CdnConfig {
   static const String base = 'https://cdn.domovina.ai';
 
   // Channels
-  static String channelsIndexUrl() => '$base/channels/index.json';
+  static String channelsIndexUrl() => '$base/channels/data/index.json';
   static String channelUrl(String channelId) =>
-      '$base/channels/$channelId.json';
+      '$base/channels/data/$channelId.json';
+  static String channelAvatarUrl(String channelId) =>
+      '$base/channels/images/$channelId/avatar_square.jpg';
+  static String channelCoverUrl(String channelId) =>
+      '$base/channels/images/$channelId/avatar_cover.jpg';
 
   // JSON podaci
   static String infoUrl(String ytId) => '$base/data/$ytId/info.json';

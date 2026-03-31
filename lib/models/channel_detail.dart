@@ -1,9 +1,15 @@
-/// Model za /channels/{channel_id}.json
+/// Model za /channels/data/{channel_id}.json
 class ChannelDetail {
   final String version;
   final String id;
   final String name;
+  final String? avatarSquare;
+  final String? avatarCover;
   final String youtubeChannelUrl;
+  final String? youtubePlaylistUrl;
+  final String? description;
+  final List<String> tags;
+  final int? followerCount;
   final int videoCount;
   final int totalDurationSeconds;
   final int? avgMagisteriumScore;
@@ -14,7 +20,13 @@ class ChannelDetail {
     required this.version,
     required this.id,
     required this.name,
+    this.avatarSquare,
+    this.avatarCover,
     required this.youtubeChannelUrl,
+    this.youtubePlaylistUrl,
+    this.description,
+    this.tags = const [],
+    this.followerCount,
     required this.videoCount,
     required this.totalDurationSeconds,
     this.avgMagisteriumScore,
@@ -25,9 +37,15 @@ class ChannelDetail {
   factory ChannelDetail.fromJson(Map<String, dynamic> json) {
     return ChannelDetail(
       version: json['version'] as String? ?? '1.0',
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      avatarSquare: json['avatar_square'] as String?,
+      avatarCover: json['avatar_cover'] as String?,
       youtubeChannelUrl: json['youtube_channel_url'] as String? ?? '',
+      youtubePlaylistUrl: json['youtube_playlist_url'] as String?,
+      description: json['description'] as String?,
+      tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),
+      followerCount: json['follower_count'] as int?,
       videoCount: json['video_count'] as int? ?? 0,
       totalDurationSeconds: json['total_duration_seconds'] as int? ?? 0,
       avgMagisteriumScore: json['avg_magisterium_score'] as int?,
@@ -52,7 +70,7 @@ class ChannelVideo {
   final String? youtubeUrl;
   final String? abstract_;
   final List<String> topics;
-  final List<VideoSpeaker> speakers;
+  final List<String> speakers;
   final int? magisteriumScore;
   final VideoPipeline? pipeline;
 
@@ -78,8 +96,18 @@ class ChannelVideo {
   String get displayTitle => titleHr ?? title;
 
   factory ChannelVideo.fromJson(Map<String, dynamic> json) {
+    // speakers can be List<String> or List<{id, suggested_name, role}>
+    final rawSpeakers = json['speakers'] as List<dynamic>? ?? [];
+    final speakers = rawSpeakers.map((s) {
+      if (s is String) return s;
+      if (s is Map<String, dynamic>) {
+        return s['suggested_name'] as String? ?? s['name'] as String? ?? '';
+      }
+      return s.toString();
+    }).toList();
+
     return ChannelVideo(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       titleHr: json['title_hr'] as String?,
       date: json['date'] as String?,
@@ -91,33 +119,11 @@ class ChannelVideo {
       youtubeUrl: json['youtube_url'] as String?,
       abstract_: json['abstract'] as String?,
       topics: (json['topics'] as List<dynamic>? ?? []).cast<String>(),
-      speakers: (json['speakers'] as List<dynamic>? ?? [])
-          .map((e) => VideoSpeaker.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      speakers: speakers,
       magisteriumScore: json['magisterium_score'] as int?,
       pipeline: json['pipeline'] != null
           ? VideoPipeline.fromJson(json['pipeline'] as Map<String, dynamic>)
           : null,
-    );
-  }
-}
-
-class VideoSpeaker {
-  final String id;
-  final String suggestedName;
-  final String role;
-
-  const VideoSpeaker({
-    required this.id,
-    required this.suggestedName,
-    required this.role,
-  });
-
-  factory VideoSpeaker.fromJson(Map<String, dynamic> json) {
-    return VideoSpeaker(
-      id: json['id'] as String? ?? '',
-      suggestedName: json['suggested_name'] as String? ?? '',
-      role: json['role'] as String? ?? '',
     );
   }
 }

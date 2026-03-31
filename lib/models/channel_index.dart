@@ -1,4 +1,4 @@
-/// Model za /channels/index.json
+/// Model za /channels/data/index.json
 class ChannelIndex {
   final String version;
   final int channelCount;
@@ -24,7 +24,11 @@ class ChannelIndex {
 class ChannelSummary {
   final String id;
   final String name;
+  final String? avatarSquare;
+  final String? avatarCover;
   final String youtubeChannelUrl;
+  final String? youtubePlaylistUrl;
+  final int? followerCount;
   final int videoCount;
   final int totalDurationSeconds;
   final int? avgMagisteriumScore;
@@ -33,7 +37,11 @@ class ChannelSummary {
   const ChannelSummary({
     required this.id,
     required this.name,
+    this.avatarSquare,
+    this.avatarCover,
     required this.youtubeChannelUrl,
+    this.youtubePlaylistUrl,
+    this.followerCount,
     required this.videoCount,
     required this.totalDurationSeconds,
     this.avgMagisteriumScore,
@@ -49,9 +57,13 @@ class ChannelSummary {
   factory ChannelSummary.fromJson(Map<String, dynamic> json) {
     final lv = json['latest_video'];
     return ChannelSummary(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      avatarSquare: json['avatar_square'] as String?,
+      avatarCover: json['avatar_cover'] as String?,
       youtubeChannelUrl: json['youtube_channel_url'] as String? ?? '',
+      youtubePlaylistUrl: json['youtube_playlist_url'] as String?,
+      followerCount: json['follower_count'] as int?,
       videoCount: json['video_count'] as int? ?? 0,
       totalDurationSeconds: json['total_duration_seconds'] as int? ?? 0,
       avgMagisteriumScore: json['avg_magisterium_score'] as int?,
@@ -75,7 +87,7 @@ class LatestVideo {
 
   factory LatestVideo.fromJson(Map<String, dynamic> json) {
     return LatestVideo(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       date: json['date'] as String? ?? '',
       title: json['title'] as String? ?? '',
     );

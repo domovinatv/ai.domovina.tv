@@ -273,15 +273,17 @@ class _ChannelCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.podcasts,
-                    color: theme.colorScheme.onPrimaryContainer),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: channel.avatarSquare != null
+                    ? Image.network(
+                        channel.avatarSquare!,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => _channelPlaceholder(theme),
+                      )
+                    : _channelPlaceholder(theme),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -350,6 +352,17 @@ class _ChannelCard extends StatelessWidget {
       ),
     );
   }
+
+  static Widget _channelPlaceholder(ThemeData theme) => Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(Icons.podcasts,
+            color: theme.colorScheme.onPrimaryContainer),
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -608,7 +621,7 @@ Widget _videoMeta(ThemeData theme, ChannelVideo video, bool hasArticle) =>
         const SizedBox(height: 4),
         if (video.speakers.isNotEmpty)
           Text(
-            video.speakers.map((s) => s.suggestedName).join(', '),
+            video.speakers.join(', '),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
