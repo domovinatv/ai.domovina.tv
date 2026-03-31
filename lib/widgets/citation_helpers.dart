@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/magisterium_data.dart';
+import '../models/magisterium_full_data.dart';
 import '../services/open_url.dart';
 
 /// Cleans cited_text: strips markdown footnote refs, dividers, excess whitespace.
@@ -11,6 +12,22 @@ String cleanCitedText(String raw) {
       .replaceAll(RegExp(r'\n{3,}'), '\n\n')
       .trim();
 }
+
+/// Converts MagisteriumFullCitation to MagisteriumCitation for reuse.
+MagisteriumCitation _toMagCitation(MagisteriumFullCitation c) =>
+    MagisteriumCitation(
+      citedText: c.citedText,
+      documentTitle: c.documentTitle,
+      documentAuthor: c.documentAuthor ?? '',
+      documentYear: c.documentYear ?? '',
+      documentReference: c.documentReference ?? '',
+      sourceUrl: c.sourceUrl ?? '',
+    );
+
+/// Shows a bottom sheet for MagisteriumFullCitation.
+void showFullCitationSheet(
+        BuildContext context, MagisteriumFullCitation citation) =>
+    showCitationSheet(context, _toMagCitation(citation));
 
 /// Shows a bottom sheet with full citation details and link to source.
 void showCitationSheet(BuildContext context, MagisteriumCitation citation) {

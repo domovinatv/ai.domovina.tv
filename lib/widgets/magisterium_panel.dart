@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
+import '../services/open_url.dart';
+import 'citation_helpers.dart';
 import 'magisterium_section.dart';
 import 'magisterium_article_section.dart';
 
@@ -56,22 +58,8 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
   List<_TabEntry> _buildTabs() {
     final tabs = <_TabEntry>[];
 
-    // Existing per-section / per-block variants
-    for (final (label, data) in widget.variants) {
-      final color = MagisteriumSection.scoreColor(data.overallScore);
-      tabs.add(_TabEntry(
-        label: label,
-        icon: Icons.church,
-        badgeColor: color,
-        badgeText: data.overallScore != null ? '${data.overallScore}' : '?',
-        builder: (fill, keys, sel, my) => _VariantContent(
-          magisterium: data,
-          sectionKeys: sel == my ? keys : null,
-        ),
-      ));
-    }
-
-    // Magisterium Full evaluacija (Magisterium AI API output)
+    // When Evaluacija (full) exists, it replaces old per-section/per-block tabs.
+    // Old variants only shown as fallback when no full evaluation available.
     if (widget.magisteriumFull != null) {
       final full = widget.magisteriumFull!;
       final color = MagisteriumSection.scoreColor(full.overallScore);
@@ -83,6 +71,20 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
         builder: (_, __, ___, ____) =>
             _MagisteriumFullContent(data: full),
       ));
+    } else {
+      for (final (label, data) in widget.variants) {
+        final color = MagisteriumSection.scoreColor(data.overallScore);
+        tabs.add(_TabEntry(
+          label: label,
+          icon: Icons.church,
+          badgeColor: color,
+          badgeText: data.overallScore != null ? '${data.overallScore}' : '?',
+          builder: (fill, keys, sel, my) => _VariantContent(
+            magisterium: data,
+            sectionKeys: sel == my ? keys : null,
+          ),
+        ));
+      }
     }
 
     // Magisterium Full prompt (raw markdown)
@@ -283,87 +285,63 @@ class _VariantContent extends StatelessWidget {
   }
 }
 
-/// Full Magisterium AI evaluation — renders markdown evaluation + citations.
-class _MagisteriumFullContent extends StatelessWidget {
+/// Full Magisterium AI evaluation — premium layout with gradient header,
+/// markdown evaluation, and expandable clickable citations.
+class _MagisteriumFullContent extends StatefulWidget {
   final MagisteriumFullData data;
 
   const _MagisteriumFullContent({required this.data});
 
   @override
+  State<_MagisteriumFullContent> createState() =>
+      _MagisteriumFullContentState();
+}
+
+class _MagisteriumFullContentState extends State<_MagisteriumFullContent> {
+  bool _citationsExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scoreColor = MagisteriumSection.scoreColor(data.overallScore);
-
-    // Build markdown: evaluation text + footnotes with citation details
-    final buffer = StringBuffer();
-    buffer.writeln(data.evaluation);
-
-    if (data.citations.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('---');
-      buffer.writeln();
-      buffer.writeln('## Izvori (${data.citations.length})');
-      buffer.writeln();
-      for (int i = 0; i < data.citations.length; i++) {
-        final c = data.citations[i];
-        final author = c.documentAuthor ?? '';
-        final year = c.documentYear ?? '';
-        final authorYear =
-            [author, year].where((s) => s.isNotEmpty).join(', ');
-        buffer.writeln(
-            '**[^${i + 1}]** ${c.documentTitle}${authorYear.isNotEmpty ? ' ($authorYear)' : ''}');
-        buffer.writeln();
-      }
-    }
+    final data = widget.data;
+    final color = MagisteriumSection.scoreColor(data.overallScore);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Score header
+        // Gradient header — matches MagisteriumArticleSection style
         Container(
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: scoreColor.withAlpha(15),
-            border: Border.all(color: scoreColor.withAlpha(60)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withAlpha(18),
+                color.withAlpha(6),
+              ],
+            ),
+            border: Border.all(color: color.withAlpha(40)),
           ),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: scoreColor.withAlpha(25),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: scoreColor.withAlpha(80), width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    '${data.overallScore}',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: scoreColor,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
+              Icon(Icons.auto_awesome, size: 22, color: color),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data.scoreInterpretation,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      'Magisterium AI — Teoloska evaluacija',
+                      style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: scoreColor,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      'Magisterium AI  •  ${data.citations.length} citata',
+                      '${data.model ?? 'magisterium-1'}  •  ${data.citations.length} citata',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -371,36 +349,239 @@ class _MagisteriumFullContent extends StatelessWidget {
                   ],
                 ),
               ),
+              // Score circle
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(30),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color.withAlpha(100), width: 3),
+                ),
+                child: Center(
+                  child: Text(
+                    '${data.overallScore}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+        // Score interpretation badge
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withAlpha(15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: color.withAlpha(50)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.church, size: 14, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  data.scoreInterpretation,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         // Evaluation markdown
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: MarkdownBody(
-            data: buffer.toString(),
+            data: data.evaluation,
             selectable: true,
             styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
               p: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
               h1: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.bold),
               h2: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+                  ?.copyWith(fontWeight: FontWeight.bold, height: 2.0),
               h3: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w600),
               blockquotePadding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
               blockquoteDecoration: BoxDecoration(
                 border: Border(
-                  left: BorderSide(color: scoreColor.withAlpha(120), width: 3),
+                  left: BorderSide(color: color.withAlpha(120), width: 3),
                 ),
-                color: scoreColor.withAlpha(10),
+                color: color.withAlpha(10),
               ),
               listBullet: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+              listBulletPadding: const EdgeInsets.only(right: 8),
+            ),
+            onTapLink: (text, href, title) {
+              if (href != null) openUrl(href);
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Citations — expandable section
+        if (data.citations.isNotEmpty)
+          _buildCitationsSection(theme, data, color),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildCitationsSection(
+      ThemeData theme, MagisteriumFullData data, Color color) {
+    final count = data.citations.length;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
+          // Toggle header
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () =>
+                setState(() => _citationsExpanded = !_citationsExpanded),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.menu_book, size: 16, color: color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '$count ${count == 1 ? 'izvor' : 'izvora'} iz crkvenih dokumenata',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _citationsExpanded
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Citation cards
+          if (_citationsExpanded)
+            ...data.citations.asMap().entries.map((entry) {
+              final i = entry.key;
+              final c = entry.value;
+              return _FullCitationCard(
+                index: i + 1,
+                citation: c,
+                accentColor: color,
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single citation card — clickable, opens bottom sheet with full text.
+class _FullCitationCard extends StatelessWidget {
+  final int index;
+  final MagisteriumFullCitation citation;
+  final Color accentColor;
+
+  const _FullCitationCard({
+    required this.index,
+    required this.citation,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final authorYear = [
+      citation.documentAuthor ?? '',
+      citation.documentYear ?? '',
+    ].where((s) => s.isNotEmpty).join(', ');
+
+    return GestureDetector(
+      onTap: () => showFullCitationSheet(context, citation),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha(60),
+          border: Border(
+            left: BorderSide(
+              color: accentColor.withAlpha(80),
+              width: 3,
             ),
           ),
         ),
-        const SizedBox(height: 24),
-      ],
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Footnote number
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: accentColor.withAlpha(20),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  '$index',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    citation.documentTitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (authorYear.isNotEmpty)
+                    Text(
+                      authorYear,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (citation.sourceUrl != null &&
+                citation.sourceUrl!.isNotEmpty)
+              Icon(Icons.open_in_new,
+                  size: 14, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
     );
   }
 }
