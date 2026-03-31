@@ -401,9 +401,9 @@ class _ChannelGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover/avatar banner
+            // Cover banner (source is 1:1, display as wide strip)
             AspectRatio(
-              aspectRatio: 16 / 9,
+              aspectRatio: 3,
               child: channel.avatarCover != null
                   ? Image.network(
                       channel.avatarCover!,
@@ -418,14 +418,14 @@ class _ChannelGridCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Small avatar
+                  // Avatar (56px logical = 112px at 2x for crisp display)
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     child: channel.avatarSquare != null
                         ? Image.network(
                             channel.avatarSquare!,
-                            width: 36,
-                            height: 36,
+                            width: 56,
+                            height: 56,
                             fit: BoxFit.cover,
                             errorBuilder: (c, e, s) =>
                                 _avatarPlaceholder(theme),
@@ -497,14 +497,14 @@ class _ChannelGridCard extends StatelessWidget {
       );
 
   static Widget _avatarPlaceholder(ThemeData theme) => Container(
-        width: 36,
-        height: 36,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
           color: theme.colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(Icons.podcasts,
-            size: 18, color: theme.colorScheme.onPrimaryContainer),
+            size: 24, color: theme.colorScheme.onPrimaryContainer),
       );
 }
 
@@ -535,8 +535,8 @@ class _ChannelListCard extends StatelessWidget {
                 child: channel.avatarSquare != null
                     ? Image.network(
                         channel.avatarSquare!,
-                        width: 48,
-                        height: 48,
+                        width: 56,
+                        height: 56,
                         fit: BoxFit.cover,
                         errorBuilder: (c, e, s) =>
                             _ChannelGridCard._avatarPlaceholder(theme),
