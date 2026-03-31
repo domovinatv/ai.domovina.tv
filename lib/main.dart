@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
@@ -9,44 +8,31 @@ import 'services/update_notifier.dart';
 /// App version — prikazuje se u HomeScreen footer.
 const String appVersion = '2.0.1';
 
-/// DOMOVINA.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
-///
-/// Svi podaci (JSON, slike, video) se loadaju s CDN-a: https://cdn.domovina.ai/
-/// Routing:
-///   /              - HomeScreen (unos YouTube ID-a)
-///   /v/ytId        - EpisodeScreen — permalink format za sharing
-///   /?v=ytId       - EpisodeScreen — query param format
-///   /episode/ytId  - EpisodeScreen — legacy format
-void _log(String msg) {
-  // ignore: avoid_print
-  print('[DOMOVINA v$appVersion] $msg');
-}
+/// Console logger s verzijom — koristi za debug u release web buildovima
+/// gdje su stack traceovi minificirani. Vidi CLAUDE.md za detalje.
+// ignore: avoid_print
+void log(String msg) => print('[DOMOVINA v$appVersion] $msg');
 
 void main() {
-  _log('main() start');
+  log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
-  _log('WidgetsBinding OK');
 
-  // Path routing — ignoriraj grešku ako je već postavljeno (npr. drugi poziv u testovima)
   try { usePathUrlStrategy(); } catch (_) {}
-  _log('usePathUrlStrategy OK');
 
-  // ensureSemantics maknuto — crashao release web build
+  // ensureSemantics ZABRANJENO na webu — crasha release build.
+  // Vidi CLAUDE.md "Known Issues".
 
-  _log('MediaKit.ensureInitialized...');
   MediaKit.ensureInitialized();
-  _log('MediaKit OK');
 
-  // Uhvati Flutter greške i ispiši u console
+  // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {
-    _log('FLUTTER ERROR: ${details.exception}');
-    _log('STACK: ${details.stack}');
+    log('FLUTTER ERROR: ${details.exception}');
+    log('STACK: ${details.stack}');
     FlutterError.presentError(details);
   };
 
-  _log('runApp...');
+  log('runApp');
   runApp(const DominovinaApp());
-  _log('runApp OK');
 }
 
 class DominovinaApp extends StatefulWidget {
@@ -69,7 +55,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
     _messengerKey.currentState?.showSnackBar(
       SnackBar(
         content: const Text('Nova verzija je dostupna'),
-        duration: const Duration(days: 1), // persist until action
+        duration: const Duration(days: 1),
         action: SnackBarAction(
           label: 'OSVJEZI',
           onPressed: reloadPage,
@@ -80,7 +66,6 @@ class _DominovinaAppState extends State<DominovinaApp> {
 
   @override
   Widget build(BuildContext context) {
-    _log('DominovinaApp.build()');
     return MaterialApp(
       scaffoldMessengerKey: _messengerKey,
       title: 'DOMOVINA.ai',
@@ -120,7 +105,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
           page = const HomeScreen();
         }
 
-        // Instant navigation — no slide/fade animation (forward + reverse)
+        // Instant navigation — no slide/fade animation
         return PageRouteBuilder(
           settings: settings,
           pageBuilder: (_, __, ___) => page,

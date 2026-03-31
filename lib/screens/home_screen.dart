@@ -3,7 +3,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart' show appVersion;
+import 'package:web/web.dart' as web;
+import '../main.dart' show appVersion, log;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
 import '../services/data_service.dart';
@@ -15,6 +16,30 @@ const _croRed = Color(0xFFFF0000);
 const _croBlue = Color(0xFF002F6C);
 
 const _channelOrderKey = 'channel_order';
+
+// ---------------------------------------------------------------------------
+// Channel order persistence
+// ---------------------------------------------------------------------------
+// Web: SharedPreferences throws MissingPluginException in release builds
+//      (dart2js strips the method channel registration). Use localStorage.
+// Native (iOS/Android/macOS): SharedPreferences works normally.
+// ---------------------------------------------------------------------------
+
+List<String>? _loadOrderWeb() {
+  try {
+    final raw = web.window.localStorage.getItem(_channelOrderKey);
+    if (raw == null || raw.isEmpty) return null;
+    return raw.split(',');
+  } catch (_) {
+    return null;
+  }
+}
+
+void _saveOrderWeb(List<String> ids) {
+  try {
+    web.window.localStorage.setItem(_channelOrderKey, ids.join(','));
+  } catch (_) {}
+}
 
 class HomeScreen extends StatefulWidget {
   final String? initialChannelId;
@@ -55,27 +80,40 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Apply saved order or shuffle for first-time visitors, then persist.
+  /// Web: localStorage (SharedPreferences crashes in release).
+  /// Native: SharedPreferences.
   Future<List<ChannelSummary>> _applyOrder(
       List<ChannelSummary> channels) async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedOrder = prefs.getStringList(_channelOrderKey);
+    List<String>? savedOrder;
+
+    if (kIsWeb) {
+      savedOrder = _loadOrderWeb();
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      savedOrder = prefs.getStringList(_channelOrderKey);
+    }
 
     if (savedOrder != null && savedOrder.isNotEmpty) {
-      // Reorder channels by saved ID order, append any new channels at end
       final byId = {for (final ch in channels) ch.id: ch};
       final ordered = <ChannelSummary>[];
       for (final id in savedOrder) {
         final ch = byId.remove(id);
         if (ch != null) ordered.add(ch);
       }
-      ordered.addAll(byId.values); // new channels not in saved order
+      ordered.addAll(byId.values);
       return ordered;
     }
 
     // First visit — shuffle and save
     final shuffled = List<ChannelSummary>.from(channels)..shuffle(Random());
-    await prefs.setStringList(
-        _channelOrderKey, shuffled.map((c) => c.id).toList());
+    final ids = shuffled.map((c) => c.id).toList();
+
+    if (kIsWeb) {
+      _saveOrderWeb(ids);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_channelOrderKey, ids);
+    }
     return shuffled;
   }
 
@@ -83,9 +121,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_orderedChannels == null) return;
     final shuffled = List<ChannelSummary>.from(_orderedChannels!)
       ..shuffle(Random());
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-        _channelOrderKey, shuffled.map((c) => c.id).toList());
+    final ids = shuffled.map((c) => c.id).toList();
+
+    if (kIsWeb) {
+      _saveOrderWeb(ids);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_channelOrderKey, ids);
+    }
     setState(() => _orderedChannels = shuffled);
   }
 
@@ -182,6 +225,7 @@ class _ChannelGridView extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
+          log('ChannelIndex ERROR: ${snap.error}');
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
