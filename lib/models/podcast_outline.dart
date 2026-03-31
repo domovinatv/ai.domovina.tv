@@ -6,7 +6,7 @@ class PodcastOutline {
 
   factory PodcastOutline.fromJson(Map<String, dynamic> json) {
     return PodcastOutline(
-      iterations: (json['iterations'] as List<dynamic>)
+      iterations: (json['iterations'] as List<dynamic>? ?? [])
           .map((i) => OutlineIteration.fromJson(i as Map<String, dynamic>))
           .toList(),
     );
@@ -32,12 +32,12 @@ class OutlineIteration {
 
   factory OutlineIteration.fromJson(Map<String, dynamic> json) {
     return OutlineIteration(
-      iterationNumber: json['iteration_number'] as int,
-      startTime: json['start_time'] as String,
-      endTime: json['end_time'] as String,
-      theme: json['theme'] as String,
-      reasonForCut: json['reason_for_cut'] as String,
-      chapters: (json['chapters'] as List<dynamic>)
+      iterationNumber: json['iteration_number'] as int? ?? 0,
+      startTime: json['start_time'] as String? ?? '',
+      endTime: json['end_time'] as String? ?? '',
+      theme: json['theme'] as String? ?? '',
+      reasonForCut: json['reason_for_cut'] as String? ?? '',
+      chapters: (json['chapters'] as List<dynamic>? ?? [])
           .map((c) => OutlineChapter.fromJson(c as Map<String, dynamic>))
           .toList(),
     );
@@ -52,8 +52,8 @@ class OutlineChapter {
 
   factory OutlineChapter.fromJson(Map<String, dynamic> json) {
     return OutlineChapter(
-      timestamp: json['timestamp'] as String,
-      topic: json['topic'] as String,
+      timestamp: json['timestamp'] as String? ?? '',
+      topic: json['topic'] as String? ?? '',
     );
   }
 

@@ -27,7 +27,8 @@ class MagisteriumData {
   factory MagisteriumData.fromJson(Map<String, dynamic> json) {
     return MagisteriumData(
       version: json['version'] as String? ?? '1.0',
-      generatedAt: DateTime.parse(json['generated_at'] as String),
+      generatedAt: DateTime.tryParse(json['generated_at'] as String? ?? '') ??
+          DateTime.now(),
       model: json['model'] as String? ?? 'magisterium-1',
       sourceArticle: json['source_article'] as String? ?? '',
       overallScore: json['overall_score'] as int?,
@@ -66,8 +67,8 @@ class MagisteriumScoreBreakdown {
 
   factory MagisteriumScoreBreakdown.fromJson(Map<String, dynamic> json) {
     return MagisteriumScoreBreakdown(
-      iteration: json['iteration'] as int,
-      theme: json['theme'] as String,
+      iteration: json['iteration'] as int? ?? 0,
+      theme: json['theme'] as String? ?? '',
       score: json['score'] as int?,
     );
   }
@@ -88,7 +89,7 @@ class MagisteriumIteration {
 
   factory MagisteriumIteration.fromJson(Map<String, dynamic> json) {
     return MagisteriumIteration(
-      iterationNumber: json['iteration_number'] as int,
+      iterationNumber: json['iteration_number'] as int? ?? 0,
       iterationScore: json['iteration_score'] as int?,
       theme: json['theme'] as String? ?? '',
       sections: (json['sections'] as List<dynamic>? ?? [])

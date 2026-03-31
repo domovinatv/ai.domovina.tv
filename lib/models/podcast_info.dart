@@ -42,13 +42,13 @@ class PodcastInfo {
 
   factory PodcastInfo.fromJson(Map<String, dynamic> json) {
     return PodcastInfo(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      channel: json['channel'] as String,
-      channelId: json['channel_id'] as String,
-      uploader: json['uploader'] as String,
-      uploadDate: json['upload_date'] as String,
-      duration: json['duration'] as int,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      channel: json['channel'] as String? ?? '',
+      channelId: json['channel_id'] as String? ?? '',
+      uploader: json['uploader'] as String? ?? '',
+      uploadDate: json['upload_date'] as String? ?? '',
+      duration: json['duration'] as int? ?? 0,
       durationString: json['duration_string'] as String? ?? '',
       viewCount: json['view_count'] as int? ?? 0,
       likeCount: json['like_count'] as int? ?? 0,
@@ -56,16 +56,14 @@ class PodcastInfo {
       description: json['description'] as String? ?? '',
       thumbnail: json['thumbnail'] as String? ?? '',
       webpageUrl: json['webpage_url'] as String? ?? '',
-      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      categories: (json['categories'] as List<dynamic>?)?.cast<String>() ?? [],
-      chapters: (json['chapters'] as List<dynamic>?)
-              ?.map((c) => YtChapter.fromJson(c as Map<String, dynamic>))
-              .toList() ??
-          [],
-      thumbnails: (json['thumbnails'] as List<dynamic>?)
-              ?.map((t) => YtThumbnail.fromJson(t as Map<String, dynamic>))
-              .toList() ??
-          [],
+      tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),
+      categories: (json['categories'] as List<dynamic>? ?? []).cast<String>(),
+      chapters: (json['chapters'] as List<dynamic>? ?? [])
+          .map((c) => YtChapter.fromJson(c as Map<String, dynamic>))
+          .toList(),
+      thumbnails: (json['thumbnails'] as List<dynamic>? ?? [])
+          .map((t) => YtThumbnail.fromJson(t as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -91,8 +89,8 @@ class YtChapter {
 
   factory YtChapter.fromJson(Map<String, dynamic> json) {
     return YtChapter(
-      startTime: (json['start_time'] as num).toDouble(),
-      title: json['title'] as String,
+      startTime: (json['start_time'] as num?)?.toDouble() ?? 0,
+      title: json['title'] as String? ?? '',
     );
   }
 }
@@ -106,7 +104,7 @@ class YtThumbnail {
 
   factory YtThumbnail.fromJson(Map<String, dynamic> json) {
     return YtThumbnail(
-      url: json['url'] as String,
+      url: json['url'] as String? ?? '',
       width: json['width'] as int?,
       height: json['height'] as int?,
     );

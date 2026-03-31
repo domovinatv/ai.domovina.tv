@@ -7,8 +7,9 @@ class PodcastArticle {
 
   factory PodcastArticle.fromJson(Map<String, dynamic> json) {
     return PodcastArticle(
-      metadata: ArticleMetadata.fromJson(json['metadata'] as Map<String, dynamic>),
-      iterations: (json['iterations'] as List<dynamic>)
+      metadata: ArticleMetadata.fromJson(
+          json['metadata'] as Map<String, dynamic>? ?? {}),
+      iterations: (json['iterations'] as List<dynamic>? ?? [])
           .map((i) => ArticleIteration.fromJson(i as Map<String, dynamic>))
           .toList(),
     );
@@ -28,9 +29,10 @@ class ArticleMetadata {
 
   factory ArticleMetadata.fromJson(Map<String, dynamic> json) {
     return ArticleMetadata(
-      sourceFile: json['source_file'] as String,
-      generatedAt: DateTime.parse(json['generated_at'] as String),
-      model: json['model'] as String,
+      sourceFile: json['source_file'] as String? ?? '',
+      generatedAt: DateTime.tryParse(json['generated_at'] as String? ?? '') ??
+          DateTime.now(),
+      model: json['model'] as String? ?? '',
     );
   }
 }
@@ -52,11 +54,11 @@ class ArticleIteration {
 
   factory ArticleIteration.fromJson(Map<String, dynamic> json) {
     return ArticleIteration(
-      iterationNumber: json['iteration_number'] as int,
-      startTime: json['start_time'] as String,
-      endTime: json['end_time'] as String,
-      theme: json['theme'] as String,
-      sections: (json['sections'] as List<dynamic>)
+      iterationNumber: json['iteration_number'] as int? ?? 0,
+      startTime: json['start_time'] as String? ?? '',
+      endTime: json['end_time'] as String? ?? '',
+      theme: json['theme'] as String? ?? '',
+      sections: (json['sections'] as List<dynamic>? ?? [])
           .map((s) => PodcastSection.fromJson(s as Map<String, dynamic>))
           .toList(),
     );
@@ -82,10 +84,10 @@ class PodcastSection {
 
   factory PodcastSection.fromJson(Map<String, dynamic> json) {
     return PodcastSection(
-      subtitle: json['subtitle'] as String,
-      screenshotTimestamp: json['screenshot_timestamp'] as String,
-      screenshotDescription: json['screenshot_description'] as String,
-      content: json['content'] as String,
+      subtitle: json['subtitle'] as String? ?? '',
+      screenshotTimestamp: json['screenshot_timestamp'] as String? ?? '',
+      screenshotDescription: json['screenshot_description'] as String? ?? '',
+      content: json['content'] as String? ?? '',
       keywords: (json['keywords'] as List<dynamic>? ?? []).cast<String>(),
       entities: (json['entities'] as List<dynamic>? ?? []).cast<String>(),
     );
