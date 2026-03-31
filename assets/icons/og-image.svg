@@ -1,0 +1,54 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#FFFFFF"/>
+
+  <!-- Croatian tricolour accent bar at top -->
+  <rect x="0" y="0" width="400" height="6" fill="#FF0000"/>
+  <rect x="400" y="0" width="400" height="6" fill="#FFFFFF"/>
+  <rect x="800" y="0" width="400" height="6" fill="#002F6C"/>
+
+  <!-- Croatian tricolour accent bar at bottom -->
+  <rect x="0" y="624" width="400" height="6" fill="#FF0000"/>
+  <rect x="400" y="624" width="400" height="6" fill="#FFFFFF"/>
+  <rect x="800" y="624" width="400" height="6" fill="#002F6C"/>
+
+  <!-- Logo D shape (scaled from 512 to ~200px, centered at x=390) -->
+  <g transform="translate(290, 150) scale(0.625)">
+    <defs>
+      <linearGradient id="croFlag" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FF0000"/><stop offset="33.3%" stop-color="#FF0000"/>
+        <stop offset="33.3%" stop-color="#FFFFFF"/><stop offset="66.6%" stop-color="#FFFFFF"/>
+        <stop offset="66.6%" stop-color="#002F6C"/><stop offset="100%" stop-color="#002F6C"/>
+      </linearGradient>
+    </defs>
+    <path d="M72 64H248C354.071 64 440 149.929 440 256C440 362.071 354.071 448 248 448H72V64Z" fill="url(#croFlag)"/>
+    <path d="M168 160H248C301.019 160 344 202.981 344 256C344 309.019 301.019 352 248 352H168V160Z" fill="white"/>
+    <g stroke="#002F6C" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="205" y1="205" x2="295" y2="225"/>
+      <line x1="295" y1="225" x2="285" y2="285"/>
+      <line x1="285" y1="285" x2="205" y2="307"/>
+      <line x1="205" y1="307" x2="205" y2="205"/>
+      <line x1="205" y1="205" x2="245" y2="256"/>
+      <line x1="295" y1="225" x2="245" y2="256"/>
+      <line x1="285" y1="285" x2="245" y2="256"/>
+      <line x1="205" y1="307" x2="245" y2="256"/>
+    </g>
+    <g fill="#002F6C">
+      <circle cx="205" cy="205" r="10"/>
+      <circle cx="295" cy="225" r="10"/>
+      <circle cx="205" cy="307" r="10"/>
+      <circle cx="285" cy="285" r="10"/>
+      <circle cx="245" cy="256" r="14"/>
+    </g>
+  </g>
+
+  <!-- DOMOVINA.ai text -->
+  <text x="600" y="490" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="52" font-weight="800" letter-spacing="3">
+    <tspan fill="#002F6C">DOMOVINA</tspan><tspan fill="#FF0000">.ai</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="535" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#5A6570" letter-spacing="0.5">
+    AI-obradjeni hrvatski podcasti
+  </text>
+</svg>

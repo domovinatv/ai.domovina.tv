@@ -102,12 +102,18 @@ async function testVideo(ytId) {
   const ogTitle    = extractMeta(html, 'property', 'og:title');
   const ogDesc     = extractMeta(html, 'property', 'og:description');
   const ogImage    = extractMeta(html, 'property', 'og:image');
+  const ogImgW     = extractMeta(html, 'property', 'og:image:width');
+  const ogImgH     = extractMeta(html, 'property', 'og:image:height');
+  const ogImgType  = extractMeta(html, 'property', 'og:image:type');
+  const ogImgAlt   = extractMeta(html, 'property', 'og:image:alt');
   const ogUrl      = extractMeta(html, 'property', 'og:url');
   const ogType     = extractMeta(html, 'property', 'og:type');
   const ogSite     = extractMeta(html, 'property', 'og:site_name');
+  const ogLocale   = extractMeta(html, 'property', 'og:locale');
   const twCard     = extractMeta(html, 'name', 'twitter:card');
   const twTitle    = extractMeta(html, 'name', 'twitter:title');
   const twImage    = extractMeta(html, 'name', 'twitter:image');
+  const twImgAlt   = extractMeta(html, 'name', 'twitter:image:alt');
   const canonical  = extractCanonical(html);
 
   // Provjeri prisutnost i ispravnost vrijednosti
@@ -116,12 +122,18 @@ async function testVideo(ytId) {
   check('og:title',          ogTitle,  (v) => v !== 'DOMOVINA.ai' && v.length > 3);
   check('og:description',    ogDesc,   (v) => v.length > 10);
   check('og:image',          ogImage,  (v) => v === expectedThumb);
+  check('og:image:width',    ogImgW,   (v) => v === '1280');
+  check('og:image:height',   ogImgH,   (v) => v === '720');
+  check('og:image:type',     ogImgType,(v) => v === 'image/png');
+  check('og:image:alt',      ogImgAlt, (v) => v.length > 3);
   check('og:url',            ogUrl,    (v) => v === expectedCanonical);
   check('og:type',           ogType,   (v) => v === 'video.other');
   check('og:site_name',      ogSite,   (v) => v === 'DOMOVINA.ai');
+  check('og:locale',         ogLocale, (v) => v === 'hr_HR');
   check('twitter:card',      twCard,   (v) => v === 'summary_large_image');
   check('twitter:title',     twTitle,  (v) => v !== 'DOMOVINA.ai' && v.length > 3);
   check('twitter:image',     twImage,  (v) => v === expectedThumb);
+  check('twitter:image:alt', twImgAlt, (v) => v.length > 3);
   check('canonical',         canonical,(v) => v === expectedCanonical);
 
   // Upozori ako postoji više istih tagova (duplicati)
@@ -139,12 +151,95 @@ async function testVideo(ytId) {
   return { ytId, passed, failed };
 }
 
+async function testHomepage() {
+  const url = BASE;
+  console.log(`\n${BOLD}── HOMEPAGE${RESET}  ${url}`);
+
+  let html;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      console.log(`  ${fail(`HTTP ${res.status}`)}`);
+      return { ytId: 'HOMEPAGE', passed: 0, failed: 1 };
+    }
+    html = await res.text();
+  } catch (e) {
+    console.log(`  ${fail(`Network error: ${e.message}`)}`);
+    return { ytId: 'HOMEPAGE', passed: 0, failed: 1 };
+  }
+
+  let passed = 0;
+  let failed = 0;
+
+  const check = (label, value, expected) => {
+    const label20 = label.padEnd(26);
+    if (value === null || value.trim() === '') {
+      console.log(`  ${fail(label20)} NEDOSTAJE`);
+      failed++;
+      return;
+    }
+    if (expected !== undefined && !expected(value)) {
+      const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+      console.log(`  ${fail(label20)} "${preview}"`);
+      failed++;
+      return;
+    }
+    const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+    console.log(`  ${ok(label20)} "${preview}"`);
+    passed++;
+  };
+
+  const title      = extractTitle(html);
+  const desc       = extractMeta(html, 'name', 'description');
+  const ogTitle    = extractMeta(html, 'property', 'og:title');
+  const ogDesc     = extractMeta(html, 'property', 'og:description');
+  const ogImage    = extractMeta(html, 'property', 'og:image');
+  const ogImgW     = extractMeta(html, 'property', 'og:image:width');
+  const ogImgH     = extractMeta(html, 'property', 'og:image:height');
+  const ogImgType  = extractMeta(html, 'property', 'og:image:type');
+  const ogImgAlt   = extractMeta(html, 'property', 'og:image:alt');
+  const ogUrl      = extractMeta(html, 'property', 'og:url');
+  const ogType     = extractMeta(html, 'property', 'og:type');
+  const ogSite     = extractMeta(html, 'property', 'og:site_name');
+  const ogLocale   = extractMeta(html, 'property', 'og:locale');
+  const twCard     = extractMeta(html, 'name', 'twitter:card');
+  const twTitle    = extractMeta(html, 'name', 'twitter:title');
+  const twImage    = extractMeta(html, 'name', 'twitter:image');
+  const twImgAlt   = extractMeta(html, 'name', 'twitter:image:alt');
+  const canonical  = extractCanonical(html);
+
+  check('<title>',           title,    (v) => v.includes('DOMOVINA.ai'));
+  check('description',       desc,     (v) => v.length > 20);
+  check('og:type',           ogType,   (v) => v === 'website');
+  check('og:locale',         ogLocale, (v) => v === 'hr_HR');
+  check('og:site_name',      ogSite,   (v) => v === 'DOMOVINA.ai');
+  check('og:title',          ogTitle,  (v) => v.includes('DOMOVINA.ai'));
+  check('og:description',    ogDesc,   (v) => v.length > 20);
+  check('og:url',            ogUrl,    (v) => v === 'https://domovina.ai');
+  check('og:image',          ogImage,  (v) => v === 'https://domovina.ai/og-image.png');
+  check('og:image:width',    ogImgW,   (v) => v === '1200');
+  check('og:image:height',   ogImgH,   (v) => v === '630');
+  check('og:image:type',     ogImgType,(v) => v === 'image/png');
+  check('og:image:alt',      ogImgAlt, (v) => v.length > 3);
+  check('twitter:card',      twCard,   (v) => v === 'summary_large_image');
+  check('twitter:title',     twTitle,  (v) => v.includes('DOMOVINA.ai'));
+  check('twitter:image',     twImage,  (v) => v === 'https://domovina.ai/og-image.png');
+  check('twitter:image:alt', twImgAlt, (v) => v.length > 3);
+  check('canonical',         canonical,(v) => v === 'https://domovina.ai');
+
+  return { ytId: 'HOMEPAGE', passed, failed };
+}
+
 async function main() {
   console.log(`${BOLD}DOMOVINA.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
-  console.log(`Testira: ${VIDEO_IDS.length} epizoda × 12 tagova (prisutnost + ispravne vrijednosti)\n`);
+  console.log(`Testira: homepage (18 tagova) + ${VIDEO_IDS.length} epizoda (18 tagova svaka)\n`);
 
   const results = [];
+  results.push(await testHomepage());
   for (const id of VIDEO_IDS) {
     results.push(await testVideo(id));
   }

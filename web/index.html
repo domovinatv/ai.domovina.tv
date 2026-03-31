@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="hr">
 <head>
   <base href="$FLUTTER_BASE_HREF">
 
@@ -8,27 +8,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Default meta — episode pages get overridden server-side by _worker.js -->
-  <title>DOMOVINA.ai</title>
-  <meta name="description" content="AI-obrađeni hrvatski podcasti — transkripti, sažeci i analiza epizoda.">
+  <title>DOMOVINA.ai — AI-obradjeni hrvatski podcasti</title>
+  <meta name="description" content="Transkripti, sazeci, analize i Magisterium uskladenost za hrvatske podcast epizode — sve obradjeno umjetnom inteligencijom.">
+  <link rel="canonical" href="https://domovina.ai">
 
+  <!-- Open Graph -->
   <meta property="og:type" content="website">
+  <meta property="og:locale" content="hr_HR">
   <meta property="og:site_name" content="DOMOVINA.ai">
-  <meta property="og:title" content="DOMOVINA.ai">
-  <meta property="og:description" content="AI-obrađeni hrvatski podcasti — transkripti, sažeci i analiza epizoda.">
+  <meta property="og:title" content="DOMOVINA.ai — AI-obradjeni hrvatski podcasti">
+  <meta property="og:description" content="Transkripti, sazeci, analize i Magisterium uskladenost za hrvatske podcast epizode — sve obradjeno umjetnom inteligencijom.">
   <meta property="og:url" content="https://domovina.ai">
+  <meta property="og:image" content="https://domovina.ai/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DOMOVINA.ai — logo s hrvatskom trikolorom i AI grafom">
 
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="DOMOVINA.ai">
-  <meta name="twitter:description" content="AI-obrađeni hrvatski podcasti — transkripti, sažeci i analiza epizoda.">
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DOMOVINA.ai — AI-obradjeni hrvatski podcasti">
+  <meta name="twitter:description" content="Transkripti, sazeci, analize i Magisterium uskladenost za hrvatske podcast epizode.">
+  <meta name="twitter:image" content="https://domovina.ai/og-image.png">
+  <meta name="twitter:image:alt" content="DOMOVINA.ai — logo s hrvatskom trikolorom i AI grafom">
 
-  <!-- iOS -->
+  <!-- iOS / PWA -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="DOMOVINA.ai">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <link rel="icon" type="image/png" href="favicon.png">
+  <!-- Theme -->
+  <meta name="theme-color" content="#002F6C">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
   <link rel="manifest" href="manifest.json">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "DOMOVINA.ai",
+    "url": "https://domovina.ai",
+    "description": "AI-obradjeni hrvatski podcasti — transkripti, sazeci, analize i Magisterium uskladenost.",
+    "inLanguage": "hr",
+    "publisher": {
+      "@type": "Organization",
+      "name": "DOMOVINA.ai",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://domovina.ai/icons/Icon-512.png",
+        "width": 512,
+        "height": 512
+      }
+    }
+  }
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

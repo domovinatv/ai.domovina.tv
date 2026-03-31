@@ -73,11 +73,13 @@ export default {
   <link rel="canonical" href="${canonical}">
 
   <meta property="og:type" content="video.other">
+  <meta property="og:locale" content="hr_HR">
   <meta property="og:site_name" content="DOMOVINA.ai">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
   <meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${thumb}">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
   <meta property="og:image:alt" content="${x(title)}">
