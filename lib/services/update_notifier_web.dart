@@ -14,6 +14,12 @@ void reloadPageImpl() {
 
 void hardReloadImpl() async {
   try {
+    // Clear all caches (Cache API)
+    final cacheNames = await web.window.caches.keys().toDart;
+    for (final name in cacheNames.toDart) {
+      await web.window.caches.delete(name.toDart).toDart;
+    }
+    // Unregister all Service Workers
     final regs = await web.window.navigator.serviceWorker
         .getRegistrations()
         .toDart;
@@ -21,5 +27,8 @@ void hardReloadImpl() async {
       await reg.unregister().toDart;
     }
   } catch (_) {}
-  web.window.location.reload();
+  // Navigate with cache-buster to bypass bfcache
+  final base = web.window.location.origin;
+  final bust = DateTime.now().millisecondsSinceEpoch;
+  web.window.location.replace('$base/?_cb=$bust');
 }

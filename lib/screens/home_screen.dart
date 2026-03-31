@@ -409,7 +409,12 @@ class _VideoGridView extends StatelessWidget {
                 return Center(child: Text('Greska: ${snap.error}'));
               }
               final detail = snap.data!;
-              onResolvedName(detail.name);
+              // Schedule name update for after build
+              if (detail.name != channelName) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  onResolvedName(detail.name);
+                });
+              }
               return _ResponsiveVideoList(
                 videos: detail.videos,
                 onVideoTap: onVideoTap,
