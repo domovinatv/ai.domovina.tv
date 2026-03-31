@@ -16,3 +16,10 @@ void reloadPage() {
     platform.reloadPageImpl();
   }
 }
+
+/// Unregisters all Service Workers then reloads — guarantees fresh version.
+void hardReload() {
+  if (kIsWeb) {
+    platform.hardReloadImpl();
+  }
+}

@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../main.dart' show appVersion;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
 import '../services/data_service.dart';
+import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -204,14 +206,31 @@ class _ChannelListView extends StatelessWidget {
         ),
         const SizedBox(height: 32),
 
-        // Version footer
-        Text(
-          'v$appVersion',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
-            fontFamily: 'monospace',
+        // Version footer — tap to force refresh (unregister SW + reload)
+        Center(
+          child: GestureDetector(
+            onTap: kIsWeb ? hardReload : null,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'v$appVersion',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                if (kIsWeb) ...[
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.refresh,
+                    size: 14,
+                    color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+                  ),
+                ],
+              ],
+            ),
           ),
-          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
       ],

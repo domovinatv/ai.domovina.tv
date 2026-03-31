@@ -11,3 +11,15 @@ void listenForAppUpdateImpl(void Function() onUpdateAvailable) {
 void reloadPageImpl() {
   web.window.location.reload();
 }
+
+void hardReloadImpl() async {
+  try {
+    final regs = await web.window.navigator.serviceWorker
+        .getRegistrations()
+        .toDart;
+    for (final reg in regs.toDart) {
+      await reg.unregister().toDart;
+    }
+  } catch (_) {}
+  web.window.location.reload();
+}
