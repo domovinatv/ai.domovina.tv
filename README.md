@@ -1,17 +1,84 @@
-# domovina_ai
+# Domovina.ai
 
-A new Flutter project.
+Flutter web app za vizualizaciju AI-obradjenih podcast epizoda s hrvatskih YouTube kanala.
 
-## Getting Started
+**Produkcija:** https://domovina.ai
 
-This project is a starting point for a Flutter application.
+## Arhitektura
 
-A few resources to get you started if this is your first Flutter project:
+- **Flutter Web (Skwasm/WASM)** — Material 3, responsive layout (desktop/mobile)
+- **CDN:** https://cdn.domovina.ai — svi podaci (JSON, slike, video) loadaju se u runtimeu
+- **Cloudflare Pages** — hosting + edge worker za server-side OG tagove
+- **Magisterium AI** — teoloska analiza uskladenosti s katolickim naukom
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Struktura
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+lib/
+  main.dart                  — routing, tema, update notifikacija
+  models/                    — Dart modeli za sve JSON formate
+    channel_index.dart       — /channels/index.json
+    channel_detail.dart      — /channels/{id}.json
+    podcast_info.dart        — info.json (yt-dlp metadata)
+    podcast_summary.dart     — summary.json (Gemini sazretak)
+    podcast_outline.dart     — outline.json (poglavlja)
+    podcast_article.dart     — article.json (clanak po sekcijama)
+    magisterium_data.dart    — article.magisterium.json / _batch.json
+    speaker_timeline.dart    — diarized.srt (govornici)
+  services/
+    cdn_config.dart          — CDN URL builder
+    data_service.dart        — HTTP fetch + progressive loader
+    open_url.dart            — cross-platform URL opener (web/native)
+    update_notifier.dart     — Service Worker update detekcija
+  screens/
+    home_screen.dart         — odabir kanala → video lista → epizoda
+    episode_screen.dart      — glavni viewer s video sync
+  widgets/
+    hero_section.dart        — thumbnail, naslov, statistike
+    summary_section.dart     — sazretak, teme, govornici
+    chapters_section.dart    — poglavlja s timestampovima
+    article_section.dart     — clanak + inline Magisterium enrichment
+    magisterium_section.dart — overall score kartica
+    magisterium_article_section.dart — standalone teoloska analiza
+    magisterium_panel.dart   — tabbed panel (po sekciji / po bloku)
+    citation_helpers.dart    — citation bottom sheet + cleanup
+    entities_section.dart    — osobe, mjesta, organizacije
+    table_of_contents.dart   — sidebar TOC
+    video_panel.dart         — video player, seek bar, speaker timeline
+web/
+  index.html                 — SW update detekcija
+  _worker.js                 — Cloudflare Pages Function (OG tagovi)
+  _headers                   — cache control (no-cache za index/SW)
+```
+
+## Development
+
+```bash
+flutter run -d chrome
+```
+
+## Build & Deploy
+
+```bash
+# Build Skwasm (WASM)
+flutter build web --wasm --release
+
+# Deploy na Cloudflare Pages
+npx wrangler pages deploy build/web --project-name=domovina-ai
+
+# Purge CDN cache (potreban .env s CLOUDFLARE_PURGE_TOKEN)
+source .env && curl -s -X POST \
+  "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+  -H "Authorization: Bearer ${CLOUDFLARE_PURGE_TOKEN}" \
+  -H "Content-Type: application/json" \
+  --data '{"purge_everything":true}'
+```
+
+## Environment (.env)
+
+Kopiraj `.env.example` u `.env` i popuni:
+
+```
+CLOUDFLARE_PURGE_TOKEN=   # API token s Zone > Cache Purge > Purge permisijom
+CLOUDFLARE_ZONE_ID=       # Zone ID za domovina.ai
+```

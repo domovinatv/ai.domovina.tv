@@ -8,7 +8,7 @@ import 'screens/home_screen.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '1.1.2';
+const String appVersion = '1.1.3';
 
 /// Domovina.ai — prezentacijska Flutter aplikacija za obradjene podcast epizode.
 ///
