@@ -25,6 +25,14 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
+    // Cloudflare Pages "pretty URLs" strippa .html ekstenziju (social-test.html → /social-test).
+    // Provjeri postoji li .html fajl za ovaj path prije nego padnemo na SPA routing.
+    if (path !== '/' && !path.endsWith('/')) {
+      const htmlReq = new Request(`${url.origin}${path}.html`, { headers: request.headers });
+      const htmlRes = await env.ASSETS.fetch(htmlReq);
+      if (htmlRes.ok) return htmlRes;
+    }
+
     // Dohvati index.html iz statičkih asseta
     const indexRequest = new Request(`${url.origin}/index.html`, {
       headers: request.headers,
