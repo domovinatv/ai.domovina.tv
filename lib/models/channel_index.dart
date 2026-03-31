@@ -26,6 +26,7 @@ class ChannelSummary {
   final String name;
   final String? avatarSquare;
   final String? avatarCover;
+  final ImageDimensions? avatarCoverDimensions;
   final String youtubeChannelUrl;
   final String? youtubePlaylistUrl;
   final int? followerCount;
@@ -39,6 +40,7 @@ class ChannelSummary {
     required this.name,
     this.avatarSquare,
     this.avatarCover,
+    this.avatarCoverDimensions,
     required this.youtubeChannelUrl,
     this.youtubePlaylistUrl,
     this.followerCount,
@@ -54,13 +56,25 @@ class ChannelSummary {
     return '${h}h ${m}m';
   }
 
+  /// True if cover is a real banner (width != height).
+  bool get hasBannerCover {
+    final d = avatarCoverDimensions;
+    if (d == null || avatarCover == null) return false;
+    return d.width != d.height;
+  }
+
   factory ChannelSummary.fromJson(Map<String, dynamic> json) {
     final lv = json['latest_video'];
+    final coverDim = json['avatar_cover_dimensions'];
     return ChannelSummary(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       avatarSquare: json['avatar_square'] as String?,
       avatarCover: json['avatar_cover'] as String?,
+      avatarCoverDimensions:
+          coverDim != null && coverDim is Map<String, dynamic>
+              ? ImageDimensions.fromJson(coverDim)
+              : null,
       youtubeChannelUrl: json['youtube_channel_url'] as String? ?? '',
       youtubePlaylistUrl: json['youtube_playlist_url'] as String?,
       followerCount: json['follower_count'] as int?,
@@ -70,6 +84,22 @@ class ChannelSummary {
       latestVideo: lv != null && lv is Map<String, dynamic>
           ? LatestVideo.fromJson(lv)
           : null,
+    );
+  }
+}
+
+class ImageDimensions {
+  final int width;
+  final int height;
+
+  const ImageDimensions({required this.width, required this.height});
+
+  double get aspectRatio => height > 0 ? width / height : 1;
+
+  factory ImageDimensions.fromJson(Map<String, dynamic> json) {
+    return ImageDimensions(
+      width: json['width'] as int? ?? 0,
+      height: json['height'] as int? ?? 0,
     );
   }
 }

@@ -383,9 +383,11 @@ class _ChannelGridView extends StatelessWidget {
   }
 }
 
-/// Grid card for desktop/tablet.
-/// If cover != square: banner cover + small avatar.
-/// If cover == square or missing: no banner, bigger centered avatar.
+/// Grid card for desktop/tablet — two layout modes:
+/// BANNER (cover w!=h): cover image at real aspect ratio (530px logical = 1060/2),
+///   text underneath.
+/// SQUARE (cover w==h or missing): avatar 265px left, text right.
+/// Both with 2px inverted border.
 class _ChannelGridCard extends StatelessWidget {
   final ChannelSummary channel;
   final int index;
@@ -397,144 +399,165 @@ class _ChannelGridCard extends StatelessWidget {
     required this.onTap,
   });
 
-  bool get _hasCover =>
-      channel.avatarCover != null &&
-      channel.avatarSquare != null &&
-      channel.avatarCover != channel.avatarSquare;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scoreColor =
-        MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
-    final isOdd = index.isOdd;
+    // Inverted border: light theme → dark border, dark theme → light border
+    final borderColor = theme.brightness == Brightness.light
+        ? theme.colorScheme.onSurface.withAlpha(30)
+        : theme.colorScheme.surface.withAlpha(80);
 
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isOdd
-            ? BorderSide(
-                color: theme.colorScheme.outlineVariant.withAlpha(80))
-            : BorderSide.none,
+        side: BorderSide(color: borderColor, width: 2),
       ),
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top section: cover banner or bigger square avatar
-            if (_hasCover)
-              AspectRatio(
-                aspectRatio: 4,
-                child: Image.network(
-                  channel.avatarCover!,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (c, e, s) => _coverPlaceholder(theme),
-                ),
-              )
-            else
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
-                color: theme.colorScheme.primaryContainer.withAlpha(30),
-                child: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: channel.avatarSquare != null
-                        ? Image.network(
-                            channel.avatarSquare!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) =>
-                                _avatarPlaceholder(theme, 80),
-                          )
-                        : _avatarPlaceholder(theme, 80),
-                  ),
-                ),
-              ),
-            // Info row
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_hasCover) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
+        child: channel.hasBannerCover
+            ? _buildBannerLayout(theme)
+            : _buildSquareLayout(theme),
+      ),
+    );
+  }
+
+  /// BANNER layout: cover at native aspect ratio (530px logical width),
+  /// then info row underneath.
+  Widget _buildBannerLayout(ThemeData theme) {
+    final dim = channel.avatarCoverDimensions!;
+    final scoreColor =
+        MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Cover at real aspect ratio (1060x175 → ~6:1)
+        AspectRatio(
+          aspectRatio: dim.aspectRatio,
+          child: Image.network(
+            channel.avatarCover!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorBuilder: (c, e, s) => Container(
+              color: theme.colorScheme.primaryContainer.withAlpha(60),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Square avatar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: channel.avatarSquare != null
+                    ? Image.network(
                         channel.avatarSquare!,
                         width: 56,
                         height: 56,
                         fit: BoxFit.cover,
                         errorBuilder: (c, e, s) =>
                             _avatarPlaceholder(theme, 56),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          channel.name,
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${channel.videoCount} epizoda  •  ${channel.durationDisplay}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (channel.avgMagisteriumScore != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: scoreColor.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: scoreColor.withAlpha(80)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.church, size: 12, color: scoreColor),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${channel.avgMagisteriumScore}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: scoreColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                      )
+                    : _avatarPlaceholder(theme, 56),
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(child: _infoColumn(theme)),
+              if (channel.avgMagisteriumScore != null)
+                _scoreBadge(scoreColor, channel.avgMagisteriumScore!),
+            ],
+          ),
         ),
+      ],
+    );
+  }
+
+  /// SQUARE layout: big avatar left (265px logical = 530/2 for 2x crisp),
+  /// text right.
+  Widget _buildSquareLayout(ThemeData theme) {
+    final scoreColor =
+        MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
+    const avatarSize = 120.0; // reasonable for card width ~280px
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: channel.avatarSquare != null
+                ? Image.network(
+                    channel.avatarSquare!,
+                    width: avatarSize,
+                    height: avatarSize,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) =>
+                        _avatarPlaceholder(theme, avatarSize),
+                  )
+                : _avatarPlaceholder(theme, avatarSize),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _infoColumn(theme),
+                if (channel.avgMagisteriumScore != null) ...[
+                  const SizedBox(height: 8),
+                  _scoreBadge(scoreColor, channel.avgMagisteriumScore!),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  static Widget _coverPlaceholder(ThemeData theme) => Container(
-        color: theme.colorScheme.primaryContainer.withAlpha(60),
-        child: Center(
-          child: Icon(Icons.podcasts,
-              size: 32, color: theme.colorScheme.onPrimaryContainer),
+  Widget _infoColumn(ThemeData theme) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            channel.name,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${channel.videoCount} epizoda  •  ${channel.durationDisplay}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      );
+
+  static Widget _scoreBadge(Color color, int score) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withAlpha(25),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withAlpha(80)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.church, size: 12, color: color),
+            const SizedBox(width: 3),
+            Text(
+              '$score',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
         ),
       );
 
