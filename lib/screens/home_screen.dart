@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart' show appVersion;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
@@ -9,8 +10,9 @@ import '../services/data_service.dart';
 import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
 
+const _channelOrderKey = 'channel_order';
+
 class HomeScreen extends StatefulWidget {
-  /// If set, go straight to this channel (from /c/<slug> route).
   final String? initialChannelId;
 
   const HomeScreen({super.key, this.initialChannelId});
@@ -28,6 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedChannelName;
   Future<ChannelDetail>? _channelFuture;
 
+  // Ordered channel list (shuffled once, persisted)
+  List<ChannelSummary>? _orderedChannels;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +48,41 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _idController.dispose();
     super.dispose();
+  }
+
+  /// Apply saved order or shuffle for first-time visitors, then persist.
+  Future<List<ChannelSummary>> _applyOrder(
+      List<ChannelSummary> channels) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedOrder = prefs.getStringList(_channelOrderKey);
+
+    if (savedOrder != null && savedOrder.isNotEmpty) {
+      // Reorder channels by saved ID order, append any new channels at end
+      final byId = {for (final ch in channels) ch.id: ch};
+      final ordered = <ChannelSummary>[];
+      for (final id in savedOrder) {
+        final ch = byId.remove(id);
+        if (ch != null) ordered.add(ch);
+      }
+      ordered.addAll(byId.values); // new channels not in saved order
+      return ordered;
+    }
+
+    // First visit — shuffle and save
+    final shuffled = List<ChannelSummary>.from(channels)..shuffle(Random());
+    await prefs.setStringList(
+        _channelOrderKey, shuffled.map((c) => c.id).toList());
+    return shuffled;
+  }
+
+  Future<void> _shuffle() async {
+    if (_orderedChannels == null) return;
+    final shuffled = List<ChannelSummary>.from(_orderedChannels!)
+      ..shuffle(Random());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+        _channelOrderKey, shuffled.map((c) => c.id).toList());
+    setState(() => _orderedChannels = shuffled);
   }
 
   void _selectChannel(ChannelSummary channel) {
@@ -70,193 +110,283 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
-      body: Center(
-        child: isChannel
-            ? _VideoGridView(
-                channelFuture: _channelFuture!,
-                channelName: _selectedChannelName,
-                channelId: _selectedChannelId!,
-                onResolvedName: (name) {
-                  if (_selectedChannelName == null && mounted) {
-                    setState(() => _selectedChannelName = name);
-                  }
-                },
-                onBack: _back,
-                onVideoTap: _openVideo,
-              )
-            : ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: _ChannelListView(
-                  indexFuture: _indexFuture,
-                  onChannelTap: _selectChannel,
-                  idController: _idController,
-                  formKey: _formKey,
-                  onManualOpen: _openManual,
-                ),
-              ),
-      ),
+      body: isChannel
+          ? _VideoGridView(
+              channelFuture: _channelFuture!,
+              channelName: _selectedChannelName,
+              channelId: _selectedChannelId!,
+              onResolvedName: (name) {
+                if (_selectedChannelName == null && mounted) {
+                  setState(() => _selectedChannelName = name);
+                }
+              },
+              onBack: _back,
+              onVideoTap: _openVideo,
+            )
+          : _ChannelGridView(
+              indexFuture: _indexFuture,
+              orderedChannels: _orderedChannels,
+              onChannelsLoaded: (channels) async {
+                final ordered = await _applyOrder(channels);
+                if (mounted) setState(() => _orderedChannels = ordered);
+              },
+              onChannelTap: _selectChannel,
+              onShuffle: _shuffle,
+              idController: _idController,
+              formKey: _formKey,
+              onManualOpen: _openManual,
+            ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Step 1: Channel selection
+// Step 1: Channel grid
 // ---------------------------------------------------------------------------
 
-class _ChannelListView extends StatelessWidget {
+class _ChannelGridView extends StatelessWidget {
   final Future<ChannelIndex> indexFuture;
+  final List<ChannelSummary>? orderedChannels;
+  final Future<void> Function(List<ChannelSummary>) onChannelsLoaded;
   final void Function(ChannelSummary) onChannelTap;
+  final VoidCallback onShuffle;
   final TextEditingController idController;
   final GlobalKey<FormState> formKey;
   final VoidCallback onManualOpen;
 
-  const _ChannelListView({
+  const _ChannelGridView({
     required this.indexFuture,
+    required this.orderedChannels,
+    required this.onChannelsLoaded,
     required this.onChannelTap,
+    required this.onShuffle,
     required this.idController,
     required this.formKey,
     required this.onManualOpen,
   });
 
+  static const double _maxCardWidth = 280;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const SizedBox(height: 32),
-        Text(
-          'Domovina.ai',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Odaberi kanal',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
+    return FutureBuilder<ChannelIndex>(
+      future: indexFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snap.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Greska pri ucitavanju kanala:\n${snap.error}',
+                  textAlign: TextAlign.center),
+            ),
+          );
+        }
 
-        // Channel cards (random order)
-        FutureBuilder<ChannelIndex>(
-          future: indexFuture,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(),
+        // Trigger order computation once
+        final raw = snap.data!.channels;
+        if (orderedChannels == null) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => onChannelsLoaded(raw));
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final channels = orderedChannels!;
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final isMobile = width < 600;
+
+            return CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Domovina.ai',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${channels.length} kanala',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: onShuffle,
+                              icon: const Icon(Icons.shuffle, size: 20),
+                              tooltip: 'Promijesaj redoslijed',
+                              style: IconButton.styleFrom(
+                                foregroundColor:
+                                    theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
                 ),
-              );
-            }
-            if (snap.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Greska pri ucitavanju kanala:\n${snap.error}',
-                  textAlign: TextAlign.center,
+
+                // Channel grid/list
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: isMobile
+                      ? SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, i) => _ChannelListCard(
+                              channel: channels[i],
+                              onTap: () => onChannelTap(channels[i]),
+                            ),
+                            childCount: channels.length,
+                          ),
+                        )
+                      : SliverToBoxAdapter(
+                          child: _buildWrap(channels, width),
+                        ),
                 ),
-              );
-            }
-            final channels = List<ChannelSummary>.from(snap.data!.channels)
-              ..shuffle(Random());
-            return Column(
-              children: channels
-                  .map((ch) => _ChannelCard(
-                        channel: ch,
-                        onTap: () => onChannelTap(ch),
-                      ))
-                  .toList(),
+
+                // Footer: manual ID + version
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                        child: Column(
+                          children: [
+                            Divider(color: theme.colorScheme.outlineVariant),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Ili unesi YouTube ID direktno',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Form(
+                              key: formKey,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: idController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'YouTube ID',
+                                        hintText: 'npr. H-p2Hl6x7I0',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(
+                                            Icons.ondemand_video_outlined),
+                                        isDense: true,
+                                      ),
+                                      textInputAction: TextInputAction.go,
+                                      onFieldSubmitted: (_) => onManualOpen(),
+                                      validator: (v) =>
+                                          v == null || v.trim().isEmpty
+                                              ? 'Unesi ID'
+                                              : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FilledButton(
+                                    onPressed: onManualOpen,
+                                    child: const Icon(Icons.play_arrow),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            Center(
+                              child: GestureDetector(
+                                onTap: kIsWeb ? hardReload : null,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'v$appVersion',
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant
+                                            .withAlpha(100),
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                    if (kIsWeb) ...[
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.refresh,
+                                        size: 14,
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant
+                                            .withAlpha(100),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             );
           },
-        ),
+        );
+      },
+    );
+  }
 
-        // Manual ID fallback
-        const SizedBox(height: 32),
-        Divider(color: theme.colorScheme.outlineVariant),
-        const SizedBox(height: 16),
-        Text(
-          'Ili unesi YouTube ID direktno',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Form(
-          key: formKey,
-          child: Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: idController,
-                  decoration: const InputDecoration(
-                    labelText: 'YouTube ID',
-                    hintText: 'npr. H-p2Hl6x7I0',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.ondemand_video_outlined),
-                    isDense: true,
-                  ),
-                  textInputAction: TextInputAction.go,
-                  onFieldSubmitted: (_) => onManualOpen(),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Unesi ID' : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: onManualOpen,
-                child: const Icon(Icons.play_arrow),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
+  Widget _buildWrap(List<ChannelSummary> channels, double screenWidth) {
+    final availableWidth = screenWidth - 32;
+    final columns = (availableWidth / _maxCardWidth).floor().clamp(2, 99);
+    final cardWidth = (availableWidth - (columns - 1) * 12) / columns;
 
-        // Version footer — tap to force refresh (unregister SW + reload)
-        Center(
-          child: GestureDetector(
-            onTap: kIsWeb ? hardReload : null,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'v$appVersion',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
-                    fontFamily: 'monospace',
-                  ),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: channels
+          .map((ch) => SizedBox(
+                width: cardWidth,
+                child: _ChannelGridCard(
+                  channel: ch,
+                  onTap: () => onChannelTap(ch),
                 ),
-                if (kIsWeb) ...[
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.refresh,
-                    size: 14,
-                    color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
+              ))
+          .toList(),
     );
   }
 }
 
-class _ChannelCard extends StatelessWidget {
+/// Grid card for desktop/tablet — vertical avatar + info.
+class _ChannelGridCard extends StatelessWidget {
   final ChannelSummary channel;
   final VoidCallback onTap;
 
-  const _ChannelCard({required this.channel, required this.onTap});
+  const _ChannelGridCard({required this.channel, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -265,76 +395,195 @@ class _ChannelCard extends StatelessWidget {
         MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cover/avatar banner
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: channel.avatarCover != null
+                  ? Image.network(
+                      channel.avatarCover!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (c, e, s) => _coverPlaceholder(theme),
+                    )
+                  : _coverPlaceholder(theme),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Small avatar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: channel.avatarSquare != null
+                        ? Image.network(
+                            channel.avatarSquare!,
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) =>
+                                _avatarPlaceholder(theme),
+                          )
+                        : _avatarPlaceholder(theme),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          channel.name,
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${channel.videoCount} epizoda  •  ${channel.durationDisplay}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (channel.avgMagisteriumScore != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: scoreColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: scoreColor.withAlpha(80)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.church, size: 12, color: scoreColor),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${channel.avgMagisteriumScore}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: scoreColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _coverPlaceholder(ThemeData theme) => Container(
+        color: theme.colorScheme.primaryContainer.withAlpha(60),
+        child: Center(
+          child: Icon(Icons.podcasts,
+              size: 32, color: theme.colorScheme.onPrimaryContainer),
+        ),
+      );
+
+  static Widget _avatarPlaceholder(ThemeData theme) => Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.podcasts,
+            size: 18, color: theme.colorScheme.onPrimaryContainer),
+      );
+}
+
+/// List card for mobile — horizontal avatar + info.
+class _ChannelListCard extends StatelessWidget {
+  final ChannelSummary channel;
+  final VoidCallback onTap;
+
+  const _ChannelListCard({required this.channel, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scoreColor =
+        MagisteriumSection.scoreColor(channel.avgMagisteriumScore);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 child: channel.avatarSquare != null
                     ? Image.network(
                         channel.avatarSquare!,
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => _channelPlaceholder(theme),
+                        errorBuilder: (c, e, s) =>
+                            _ChannelGridCard._avatarPlaceholder(theme),
                       )
-                    : _channelPlaceholder(theme),
+                    : _ChannelGridCard._avatarPlaceholder(theme),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       channel.name,
-                      style: theme.textTheme.titleMedium
+                      style: theme.textTheme.titleSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       '${channel.videoCount} epizoda  •  ${channel.durationDisplay}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    if (channel.latestVideo != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'Najnovije: ${channel.latestVideo!.title}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
                   ],
                 ),
               ),
               if (channel.avgMagisteriumScore != null) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: scoreColor.withAlpha(25),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: scoreColor.withAlpha(80)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.church, size: 14, color: scoreColor),
-                      const SizedBox(width: 4),
+                      Icon(Icons.church, size: 12, color: scoreColor),
+                      const SizedBox(width: 3),
                       Text(
                         '${channel.avgMagisteriumScore}',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: scoreColor,
                         ),
@@ -343,26 +592,15 @@ class _ChannelCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               Icon(Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant),
+                  size: 20, color: theme.colorScheme.onSurfaceVariant),
             ],
           ),
         ),
       ),
     );
   }
-
-  static Widget _channelPlaceholder(ThemeData theme) => Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(Icons.podcasts,
-            color: theme.colorScheme.onPrimaryContainer),
-      );
 }
 
 // ---------------------------------------------------------------------------
@@ -422,7 +660,6 @@ class _VideoGridView extends StatelessWidget {
                 return Center(child: Text('Greska: ${snap.error}'));
               }
               final detail = snap.data!;
-              // Schedule name update for after build
               if (detail.name != channelName) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   onResolvedName(detail.name);
@@ -456,7 +693,6 @@ class _ResponsiveVideoList extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        // Mobile (<600): single column list
         if (width < 600) {
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
@@ -467,11 +703,9 @@ class _ResponsiveVideoList extends StatelessWidget {
             ),
           );
         }
-        // Desktop/Tablet: Wrap with max-width cards, dynamic height
-        final availableWidth = width - 32; // 16px padding each side
+        final availableWidth = width - 32;
         final columns = (availableWidth / _maxCardWidth).floor().clamp(2, 99);
-        final cardWidth =
-            (availableWidth - (columns - 1) * 12) / columns;
+        final cardWidth = (availableWidth - (columns - 1) * 12) / columns;
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           child: Wrap(
@@ -493,7 +727,6 @@ class _ResponsiveVideoList extends StatelessWidget {
   }
 }
 
-/// List card for mobile — horizontal thumbnail + text.
 class _VideoCard extends StatelessWidget {
   final ChannelVideo video;
   final VoidCallback onTap;
@@ -538,7 +771,6 @@ class _VideoCard extends StatelessWidget {
   }
 }
 
-/// Grid card for desktop/tablet — vertical thumbnail + text.
 class _VideoGridCard extends StatelessWidget {
   final ChannelVideo video;
   final VoidCallback onTap;
@@ -557,7 +789,6 @@ class _VideoGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Thumbnail fills card width
             AspectRatio(
               aspectRatio: 16 / 9,
               child: video.thumbnail != null
