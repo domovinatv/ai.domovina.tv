@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -144,26 +145,68 @@ class _VideoPanelState extends State<VideoPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Video display (16:9)
+          // Video display (16:9) + web play overlay
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: Container(
-              color: Colors.black,
-              child: MaterialDesktopVideoControlsTheme(
-                normal: const MaterialDesktopVideoControlsThemeData(),
-                fullscreen: MaterialDesktopVideoControlsThemeData(
-                  topButtonBar: [
-                    if (widget.speakerTimeline != null)
-                      _FullscreenSpeakerLabel(
-                        player: widget.player,
-                        speakerTimeline: widget.speakerTimeline!,
-                        speakers: widget.speakers,
-                        speakerColors: colors,
-                      ),
-                  ],
+            child: Stack(
+              children: [
+                Container(
+                  color: Colors.black,
+                  child: MaterialDesktopVideoControlsTheme(
+                    normal: const MaterialDesktopVideoControlsThemeData(),
+                    fullscreen: MaterialDesktopVideoControlsThemeData(
+                      topButtonBar: [
+                        if (widget.speakerTimeline != null)
+                          _FullscreenSpeakerLabel(
+                            player: widget.player,
+                            speakerTimeline: widget.speakerTimeline!,
+                            speakers: widget.speakers,
+                            speakerColors: colors,
+                          ),
+                      ],
+                    ),
+                    child: Video(controller: widget.controller),
+                  ),
                 ),
-                child: Video(controller: widget.controller),
-              ),
+                // Web autoplay overlay — browser blokira autoplay
+                if (kIsWeb && !_playing)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => widget.player.play(),
+                      child: Container(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.play_arrow,
+                                  color: Colors.white,
+                                  size: 36,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Pokreni video',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
