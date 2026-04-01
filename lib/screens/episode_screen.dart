@@ -228,7 +228,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   final _scrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
   late final Map<String, GlobalKey> _magSectionKeys;
-  String? _activeTimestamp;
+  String? _activeTimestamp;   // prati video player poziciju
+  String? _scrollTimestamp;  // prati scroll poziciju srednje liste
 
   // Video
   Player? _player;
@@ -386,12 +387,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   }
 
   void _updateActiveSectionFromScroll() {
-    // Ne overridaj activeTimestamp dok traje seek lock (rucni klik na chapter)
-    final lock = _seekLock;
-    if (lock != null &&
-        DateTime.now().difference(lock) < _seekLockDuration) {
-      return;
-    }
     for (final entry in _sectionKeys.entries) {
       final ctx = entry.value.currentContext;
       if (ctx == null) continue;
@@ -400,8 +395,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       final pos = box.localToGlobal(Offset.zero);
       final screenH = MediaQuery.sizeOf(context).height;
       if (pos.dy >= 0 && pos.dy < screenH * 0.4) {
-        if (_activeTimestamp != entry.key) {
-          setState(() => _activeTimestamp = entry.key);
+        if (_scrollTimestamp != entry.key) {
+          setState(() => _scrollTimestamp = entry.key);
         }
         return;
       }
@@ -617,6 +612,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           TableOfContents(
             article: data.article,
             activeTimestamp: _activeTimestamp,
+            scrollTimestamp: _scrollTimestamp,
             onSectionTap: _seekAndPlay,
           ),
           Expanded(flex: 3, child: scrollBody),
@@ -659,6 +655,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           TableOfContents(
             article: data.article,
             activeTimestamp: _activeTimestamp,
+            scrollTimestamp: _scrollTimestamp,
             onSectionTap: _seekAndPlay,
           ),
           Expanded(child: scrollBody),
@@ -705,6 +702,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
               child: TableOfContents(
                 article: data.article,
                 activeTimestamp: _activeTimestamp,
+                scrollTimestamp: _scrollTimestamp,
                 onSectionTap: _drawerTap,
               ),
             ),

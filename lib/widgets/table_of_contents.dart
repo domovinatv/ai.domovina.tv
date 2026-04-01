@@ -4,13 +4,15 @@ import '../models/podcast_article.dart';
 class TableOfContents extends StatefulWidget {
   final PodcastArticle article;
   final void Function(String timestamp) onSectionTap;
-  final String? activeTimestamp;
+  final String? activeTimestamp;   // video player pozicija (plavi)
+  final String? scrollTimestamp;   // scroll pozicija srednje liste (narancasti)
 
   const TableOfContents({
     super.key,
     required this.article,
     required this.onSectionTap,
     this.activeTimestamp,
+    this.scrollTimestamp,
   });
 
   @override
@@ -69,6 +71,7 @@ class _TableOfContentsState extends State<TableOfContents> {
                         iteration: e.value,
                         isExpanded: _expanded.contains(e.key),
                         activeTimestamp: widget.activeTimestamp,
+                        scrollTimestamp: widget.scrollTimestamp,
                         onToggle: () => setState(() {
                           if (_expanded.contains(e.key)) {
                             _expanded.remove(e.key);
@@ -92,6 +95,7 @@ class _IterationGroup extends StatelessWidget {
   final ArticleIteration iteration;
   final bool isExpanded;
   final String? activeTimestamp;
+  final String? scrollTimestamp;
   final VoidCallback onToggle;
   final void Function(String) onSectionTap;
 
@@ -100,6 +104,7 @@ class _IterationGroup extends StatelessWidget {
     required this.iteration,
     required this.isExpanded,
     required this.activeTimestamp,
+    this.scrollTimestamp,
     required this.onToggle,
     required this.onSectionTap,
   });
@@ -161,12 +166,13 @@ class _IterationGroup extends StatelessWidget {
         // Sekcije unutar iteracije
         if (isExpanded)
           ...iteration.sections.map((sec) {
-            final isActive = sec.screenshotTimestamp == activeTimestamp;
+            final ts = sec.screenshotTimestamp;
             return _SectionItem(
-              timestamp: sec.screenshotTimestamp,
+              timestamp: ts,
               subtitle: sec.subtitle,
-              isActive: isActive,
-              onTap: () => onSectionTap(sec.screenshotTimestamp),
+              isPlaying: ts == activeTimestamp,
+              isScrolled: ts == scrollTimestamp && ts != activeTimestamp,
+              onTap: () => onSectionTap(ts),
             );
           }),
 
@@ -185,46 +191,49 @@ class _IterationGroup extends StatelessWidget {
 class _SectionItem extends StatelessWidget {
   final String timestamp;
   final String subtitle;
-  final bool isActive;
+  final bool isPlaying;   // video player je na ovoj sekciji (plavi)
+  final bool isScrolled;  // scroll pozicija srednje liste (narancasti)
   final VoidCallback onTap;
 
   const _SectionItem({
     required this.timestamp,
     required this.subtitle,
-    required this.isActive,
+    required this.isPlaying,
+    required this.isScrolled,
     required this.onTap,
   });
+
+  static const _scrollColor = Color(0xFFEF6C00); // narancasta
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isHighlighted = isPlaying || isScrolled;
+    final accentColor =
+        isPlaying ? theme.colorScheme.primary : _scrollColor;
 
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: isActive
+        decoration: isHighlighted
             ? BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withAlpha(120),
+                color: accentColor.withAlpha(isPlaying ? 120 : 40),
                 border: Border(
-                  left: BorderSide(
-                    color: theme.colorScheme.primary,
-                    width: 3,
-                  ),
+                  left: BorderSide(color: accentColor, width: 3),
                 ),
               )
             : null,
-        padding: EdgeInsets.fromLTRB(isActive ? 11 : 14, 6, 10, 6),
+        padding: EdgeInsets.fromLTRB(isHighlighted ? 11 : 14, 6, 10, 6),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 1),
               child: Text(
-                // Prikaz kao MM:SS (bez sata ako je 00)
                 _formatTimestamp(timestamp),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: isActive
-                      ? theme.colorScheme.primary
+                  color: isHighlighted
+                      ? accentColor
                       : theme.colorScheme.outline,
                   fontFamily: 'monospace',
                   fontWeight: FontWeight.w600,
@@ -236,10 +245,10 @@ class _SectionItem extends StatelessWidget {
               child: Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isActive
+                  color: isHighlighted
                       ? theme.colorScheme.onSurface
                       : theme.colorScheme.onSurfaceVariant,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
