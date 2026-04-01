@@ -11,7 +11,6 @@ import '../main.dart' show appVersion, log;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
 import '../services/channel_cache.dart';
-import '../services/data_service.dart';
 import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
 
@@ -73,15 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _indexFuture = ChannelService.loadIndex();
+    _indexFuture = _channelCache.loadIndex();
     _channelCache.addListener(_onCacheUpdate);
     if (widget.initialChannelId != null) {
       _selectedChannelId = widget.initialChannelId;
-      // Try cache first, fallback to network
-      final cached = _channelCache.get(widget.initialChannelId!);
-      _channelFuture = cached != null
-          ? Future.value(cached)
-          : ChannelService.loadChannel(widget.initialChannelId!);
+      _channelFuture = _channelCache.loadChannel(widget.initialChannelId!);
     }
   }
 
