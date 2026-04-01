@@ -41,10 +41,16 @@ class _TableOfContentsState extends State<TableOfContents> {
   @override
   void didUpdateWidget(TableOfContents old) {
     super.didUpdateWidget(old);
-    // Kad se activeTimestamp promijeni, scroll-into-view ako je izvan viewporta
+    // Kad se activeTimestamp (plavi) promijeni — scroll-into-view
     if (widget.activeTimestamp != null &&
         widget.activeTimestamp != old.activeTimestamp) {
       _ensureVisible(widget.activeTimestamp!);
+    }
+    // Kad se scrollTimestamp (narancasti) promijeni — scroll-into-view
+    if (widget.scrollTimestamp != null &&
+        widget.scrollTimestamp != old.scrollTimestamp &&
+        widget.scrollTimestamp != widget.activeTimestamp) {
+      _ensureVisible(widget.scrollTimestamp!);
     }
   }
 

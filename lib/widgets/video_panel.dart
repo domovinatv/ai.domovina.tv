@@ -354,19 +354,17 @@ class _VideoPanelState extends State<VideoPanel> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child: ListView(
               padding: const EdgeInsets.only(bottom: 8),
-              itemCount: widget.chapters.length,
-              itemBuilder: (context, i) {
-                final ch = widget.chapters[i];
-                final isActive = ch.timestamp == widget.activeTimestamp;
-                return _ChapterListItem(
-                  key: _chapterKeys[ch.timestamp],
-                  chapter: ch,
-                  isActive: isActive,
-                  onTap: () => widget.onChapterTap(ch.timestamp),
-                );
-              },
+              children: [
+                for (final ch in widget.chapters)
+                  _ChapterListItem(
+                    key: _chapterKeys[ch.timestamp],
+                    chapter: ch,
+                    isActive: ch.timestamp == widget.activeTimestamp,
+                    onTap: () => widget.onChapterTap(ch.timestamp),
+                  ),
+              ],
             ),
           ),
         ],
