@@ -1,15 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/home_screen.dart';
 import '../screens/episode_screen.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
-/// Vidi CLAUDE.md za poznate probleme s Navigator 1.0 (back animation jank).
+/// Svaka ruta ima ValueKey da go_router zna rebuildat kad se mijenja path.
 GoRouter createRouter() {
   return GoRouter(
     routes: [
       GoRoute(
         path: '/',
         pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('home'),
           child: HomeScreen(),
         ),
       ),
@@ -19,16 +21,20 @@ GoRouter createRouter() {
           final slug = state.pathParameters['slug']!;
           final channelId = slug.replaceAll('-', '_');
           return NoTransitionPage(
+            key: ValueKey('channel-$slug'),
             child: HomeScreen(initialChannelId: channelId),
           );
         },
       ),
       GoRoute(
         path: '/v/:videoId',
-        pageBuilder: (context, state) => NoTransitionPage(
-          child: EpisodeScreen(
-              youtubeId: state.pathParameters['videoId']!),
-        ),
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          return NoTransitionPage(
+            key: ValueKey('video-$videoId'),
+            child: EpisodeScreen(youtubeId: videoId),
+          );
+        },
       ),
       // Legacy format
       GoRoute(
@@ -46,6 +52,7 @@ GoRouter createRouter() {
       return null;
     },
     errorPageBuilder: (context, state) => const NoTransitionPage(
+      key: ValueKey('error'),
       child: HomeScreen(),
     ),
   );
