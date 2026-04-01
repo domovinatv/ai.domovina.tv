@@ -9,6 +9,7 @@ import 'package:web/web.dart' as web;
 import '../main.dart' show appVersion, log;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
+import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
@@ -56,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _idController = TextEditingController();
   final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _channelCache = channelCache;
   String _searchQuery = '';
 
   late Future<ChannelIndex> _indexFuture;
@@ -70,17 +72,26 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _indexFuture = ChannelService.loadIndex();
+    _channelCache.addListener(_onCacheUpdate);
     if (widget.initialChannelId != null) {
       _selectedChannelId = widget.initialChannelId;
-      _channelFuture =
-          ChannelService.loadChannel(widget.initialChannelId!);
+      // Try cache first, fallback to network
+      final cached = _channelCache.get(widget.initialChannelId!);
+      _channelFuture = cached != null
+          ? Future.value(cached)
+          : ChannelService.loadChannel(widget.initialChannelId!);
     }
+  }
+
+  void _onCacheUpdate() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _idController.dispose();
     _searchController.dispose();
+    _channelCache.removeListener(_onCacheUpdate);
     super.dispose();
   }
 
@@ -179,9 +190,12 @@ class _HomeScreenState extends State<HomeScreen> {
               indexFuture: _indexFuture,
               orderedChannels: _orderedChannels,
               searchQuery: _searchQuery,
+              channelCache: _channelCache,
               onChannelsLoaded: (channels) async {
                 final ordered = await _applyOrder(channels);
                 if (mounted) setState(() => _orderedChannels = ordered);
+                // Prefetch svih channel detaila u pozadini
+                _channelCache.prefetchAll(channels);
               },
               onChannelTap: _selectChannel,
               onShuffle: _shuffle,
@@ -203,6 +217,7 @@ class _ChannelGridView extends StatelessWidget {
   final Future<ChannelIndex> indexFuture;
   final List<ChannelSummary>? orderedChannels;
   final String searchQuery;
+  final ChannelCache channelCache;
   final Future<void> Function(List<ChannelSummary>) onChannelsLoaded;
   final void Function(ChannelSummary) onChannelTap;
   final VoidCallback onShuffle;
@@ -216,6 +231,7 @@ class _ChannelGridView extends StatelessWidget {
     required this.indexFuture,
     required this.orderedChannels,
     required this.searchQuery,
+    required this.channelCache,
     required this.onChannelsLoaded,
     required this.onChannelTap,
     required this.onShuffle,
@@ -258,11 +274,18 @@ class _ChannelGridView extends StatelessWidget {
         }
 
         final allChannels = orderedChannels!;
+
+        // Fuzzy search — kanali + video zapisi (kad je cache spreman)
         final List<ChannelSummary> channels;
+        final List<({String channelId, String channelName, ChannelVideo video})>
+            videoResults;
+
         if (searchQuery.isEmpty) {
           channels = allChannels;
+          videoResults = [];
         } else {
-          final fuse = Fuzzy<ChannelSummary>(
+          // Fuzzy search po kanalima
+          final channelFuse = Fuzzy<ChannelSummary>(
             allChannels,
             options: FuzzyOptions(
               keys: [
@@ -272,13 +295,50 @@ class _ChannelGridView extends StatelessWidget {
               threshold: 0.4,
             ),
           );
-          channels = fuse.search(searchQuery).map((r) => r.item).toList();
+          channels =
+              channelFuse.search(searchQuery).map((r) => r.item).toList();
+
+          // Fuzzy search po svim video zapisima (ako je cache spreman)
+          final allVids = channelCache.allVideos;
+          if (allVids.isNotEmpty) {
+            final videoFuse = Fuzzy<
+                ({
+                  String channelId,
+                  String channelName,
+                  ChannelVideo video
+                })>(
+              allVids,
+              options: FuzzyOptions(
+                keys: [
+                  WeightedKey(
+                    name: 'title',
+                    getter: (v) => v.video.displayTitle,
+                    weight: 1,
+                  ),
+                  WeightedKey(
+                    name: 'speakers',
+                    getter: (v) => v.video.speakers.join(' '),
+                    weight: 0.5,
+                  ),
+                ],
+                threshold: 0.4,
+              ),
+            );
+            videoResults = videoFuse
+                .search(searchQuery)
+                .take(20)
+                .map((r) => r.item)
+                .toList();
+          } else {
+            videoResults = [];
+          }
         }
 
         return LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
             final isMobile = width < 600;
+            final hasResults = channels.isNotEmpty || videoResults.isNotEmpty;
 
             return CustomScrollView(
               slivers: [
@@ -286,6 +346,9 @@ class _ChannelGridView extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: _HomeHeader(
                     channelCount: allChannels.length,
+                    cacheProgress: channelCache.done
+                        ? null
+                        : (channelCache.loaded, channelCache.total),
                     onShuffle: onShuffle,
                     searchController: searchController,
                     onSearchChanged: onSearchChanged,
@@ -296,22 +359,29 @@ class _ChannelGridView extends StatelessWidget {
                   ),
                 ),
 
-                // Channel grid/list
-                if (channels.isEmpty && searchQuery.isNotEmpty)
+                // No results
+                if (!hasResults && searchQuery.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Center(
                         child: Text(
                           'Nema rezultata za "$searchQuery"',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                         ),
                       ),
                     ),
-                  )
-                else
+                  ),
+
+                // Channel results
+                if (channels.isNotEmpty)
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: isMobile
@@ -328,6 +398,37 @@ class _ChannelGridView extends StatelessWidget {
                             child: _buildWrap(channels, width),
                           ),
                   ),
+
+                // Video search results
+                if (videoResults.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                      child: Text(
+                        'Video zapisi (${videoResults.length})',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                          final vr = videoResults[i];
+                          return _VideoSearchCard(
+                            video: vr.video,
+                            channelName: vr.channelName,
+                            onTap: () => context.go('/v/${vr.video.id}'),
+                          );
+                        },
+                        childCount: videoResults.length,
+                      ),
+                    ),
+                  ),
+                ],
 
                 // Footer: version
                 SliverToBoxAdapter(
@@ -399,6 +500,7 @@ class _ChannelGridView extends StatelessWidget {
 
 class _HomeHeader extends StatelessWidget {
   final int channelCount;
+  final (int, int)? cacheProgress; // (loaded, total) — null kad je gotovo
   final VoidCallback onShuffle;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
@@ -409,6 +511,7 @@ class _HomeHeader extends StatelessWidget {
 
   const _HomeHeader({
     required this.channelCount,
+    this.cacheProgress,
     required this.onShuffle,
     required this.searchController,
     required this.onSearchChanged,
@@ -564,6 +667,9 @@ class _HomeHeader extends StatelessWidget {
   }
 
   Widget _searchInput(ThemeData theme) {
+    final hint = cacheProgress != null
+        ? 'Ucitavam ${cacheProgress!.$1}/${cacheProgress!.$2} kanala...'
+        : 'Pretrazi kanale i video zapise...';
     return SizedBox(
       height: 40,
       child: TextField(
@@ -571,7 +677,7 @@ class _HomeHeader extends StatelessWidget {
         onChanged: onSearchChanged,
         style: theme.textTheme.bodySmall,
         decoration: InputDecoration(
-          hintText: 'Pretrazi kanale...',
+          hintText: hint,
           hintStyle: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withAlpha(120),
           ),
@@ -1282,4 +1388,113 @@ String _formatCount(int n) {
   if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
   if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
   return '$n';
+}
+
+/// Search result card for a video found across all channels.
+class _VideoSearchCard extends StatelessWidget {
+  final ChannelVideo video;
+  final String channelName;
+  final VoidCallback onTap;
+
+  const _VideoSearchCard({
+    required this.video,
+    required this.channelName,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: video.thumbnail != null
+                    ? Image.network(
+                        video.thumbnail!,
+                        width: 120,
+                        height: 68,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(
+                          width: 120,
+                          height: 68,
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Icon(Icons.ondemand_video),
+                        ),
+                      )
+                    : Container(
+                        width: 120,
+                        height: 68,
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: const Icon(Icons.ondemand_video),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      video.displayTitle,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      channelName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        if (video.date != null) ...[
+                          Icon(Icons.calendar_today,
+                              size: 11,
+                              color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 3),
+                          Text(
+                            video.date!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (video.durationDisplay != null) ...[
+                          Icon(Icons.schedule,
+                              size: 11,
+                              color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 3),
+                          Text(
+                            video.durationDisplay!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
