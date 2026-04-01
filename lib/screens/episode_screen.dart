@@ -347,17 +347,31 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       final player = Player();
       final controller = VideoController(player);
 
-      if (kIsWeb && startAt != null) {
-        // Web: muted autoplay dozvoljen od browsera, seek na startAt, play
-        await player.setVolume(0);
-        await player.open(Media(videoUri), play: true);
-        await player.seek(Duration(seconds: startAt));
-        // Unmute cim je video pokrenut — overlay "Pokreni video" ce
-        // pokazati "Pojacaj zvuk" umjesto toga
-        _mutedAutoplay = true;
-      } else if (kIsWeb) {
-        // Web bez startAt: korisnik mora kliknuti play
+      if (kIsWeb) {
+        // Web: pokusaj unmuted autoplay (radi ako korisnik ima MEI score
+        // za domenu — tj. vec je klikao na stranici). Ako browser odbije,
+        // fallback na muted autoplay.
         await player.open(Media(videoUri), play: false);
+        if (startAt != null) {
+          await player.seek(Duration(seconds: startAt));
+        }
+        try {
+          await player.play();
+          // Uspjelo! Browser dopustio unmuted autoplay.
+        } catch (_) {
+          // Browser odbio — muted autoplay fallback
+          await player.setVolume(0);
+          await player.play();
+          _mutedAutoplay = true;
+        }
+        // Ako player nije pokrenuo (tihi fail bez exceptiona),
+        // provjeri playing state nakon kratke pauze
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        if (!player.state.playing) {
+          await player.setVolume(0);
+          await player.play();
+          _mutedAutoplay = true;
+        }
       } else {
         // Native: autoplay radi normalno
         await player.open(Media(videoUri), play: true);
