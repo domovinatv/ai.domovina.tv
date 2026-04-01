@@ -67,21 +67,24 @@ class _VideoPanelState extends State<VideoPanel> {
     super.didUpdateWidget(old);
     if (widget.activeTimestamp != null &&
         widget.activeTimestamp != old.activeTimestamp) {
-      _ensureChapterVisible(widget.activeTimestamp!);
+      _scheduleScrollTo(widget.activeTimestamp!);
     }
     if (widget.scrollTimestamp != null &&
         widget.scrollTimestamp != old.scrollTimestamp &&
         widget.scrollTimestamp != widget.activeTimestamp) {
-      _ensureChapterVisible(widget.scrollTimestamp!);
+      _scheduleScrollTo(widget.scrollTimestamp!);
     }
   }
 
-  void _ensureChapterVisible(String timestamp) {
-    final key = _chapterKeys[timestamp];
-    final ctx = key?.currentContext;
-    if (ctx == null) return;
-    // Uvijek scrollaj — chapter lista je mala, ensureVisible je noop ako je vec vidljiv
-    Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.3);
+  void _scheduleScrollTo(String timestamp) {
+    // Odgodi na post-frame kad je layout zavrsen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final key = _chapterKeys[timestamp];
+      final ctx = key?.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.3);
+    });
   }
 
   @override
