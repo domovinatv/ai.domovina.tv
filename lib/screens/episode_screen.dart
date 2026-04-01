@@ -385,6 +385,12 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   // ---------- scroll --------------------------------------------------------
 
   void _onScroll() {
+    // Ne reagiraj na programatski scroll tijekom seek locka
+    final lock = _seekLock;
+    if (lock != null &&
+        DateTime.now().difference(lock) < _seekLockDuration) {
+      return;
+    }
     _lastManualScroll = DateTime.now();
     _updateActiveSectionFromScroll();
   }
@@ -448,8 +454,11 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
   Future<void> _seekAndPlay(String timestamp, {bool preroll = false}) async {
     _seekLock = DateTime.now();
-    // Odmah postavi aktivni chapter i scrollaj — ne cekaj async seek
-    setState(() => _activeTimestamp = timestamp);
+    // Odmah postavi oba pointera i scrollaj — ne cekaj async seek
+    setState(() {
+      _activeTimestamp = timestamp;
+      _scrollTimestamp = timestamp;
+    });
     _scrollToSection(timestamp);
 
     final dur = _parseDuration(timestamp);
