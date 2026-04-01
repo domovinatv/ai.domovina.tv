@@ -386,6 +386,12 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   }
 
   void _updateActiveSectionFromScroll() {
+    // Ne overridaj activeTimestamp dok traje seek lock (rucni klik na chapter)
+    final lock = _seekLock;
+    if (lock != null &&
+        DateTime.now().difference(lock) < _seekLockDuration) {
+      return;
+    }
     for (final entry in _sectionKeys.entries) {
       final ctx = entry.value.currentContext;
       if (ctx == null) continue;
@@ -444,15 +450,16 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
   Future<void> _seekAndPlay(String timestamp, {bool preroll = false}) async {
     _seekLock = DateTime.now();
+    // Odmah postavi aktivni chapter i scrollaj — ne cekaj async seek
+    setState(() => _activeTimestamp = timestamp);
+    _scrollToSection(timestamp);
+
     final dur = _parseDuration(timestamp);
     var seekTo = dur;
     if (preroll) {
       seekTo = dur - const Duration(seconds: 2);
       if (seekTo < Duration.zero) seekTo = Duration.zero;
     }
-    // Na webu, HTML5 video element zahtijeva da je video u playing stanju
-    // prije nego što seek (currentTime) postavi poziciju ispravno.
-    // Ako seek pozovemo na pauziranom/neučitanom videu, bude ignoriran.
     if (kIsWeb) {
       await _player?.play();
       await _player?.seek(seekTo);
@@ -460,8 +467,6 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       await _player?.seek(seekTo);
       await _player?.play();
     }
-    setState(() => _activeTimestamp = timestamp);
-    _scrollToSection(timestamp);
   }
 
   void _drawerTap(String timestamp) {
