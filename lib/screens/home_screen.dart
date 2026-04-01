@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -58,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _channelCache = channelCache;
+  Timer? _debounce;
   String _searchQuery = '';
 
   late Future<ChannelIndex> _indexFuture;
@@ -89,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _idController.dispose();
     _searchController.dispose();
     _channelCache.removeListener(_onCacheUpdate);
@@ -200,7 +203,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onChannelTap: _selectChannel,
               onShuffle: _shuffle,
               searchController: _searchController,
-              onSearchChanged: (q) => setState(() => _searchQuery = q),
+              onSearchChanged: (q) {
+                _debounce?.cancel();
+                _debounce = Timer(
+                  const Duration(milliseconds: 200),
+                  () => setState(() => _searchQuery = q),
+                );
+              },
               idController: _idController,
               formKey: _formKey,
               onManualOpen: _openManual,
