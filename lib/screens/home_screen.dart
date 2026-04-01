@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:fuzzy/fuzzy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web/web.dart' as web;
@@ -257,12 +258,22 @@ class _ChannelGridView extends StatelessWidget {
         }
 
         final allChannels = orderedChannels!;
-        final query = searchQuery.toLowerCase();
-        final channels = query.isEmpty
-            ? allChannels
-            : allChannels
-                .where((c) => c.name.toLowerCase().contains(query))
-                .toList();
+        final List<ChannelSummary> channels;
+        if (searchQuery.isEmpty) {
+          channels = allChannels;
+        } else {
+          final fuse = Fuzzy<ChannelSummary>(
+            allChannels,
+            options: FuzzyOptions(
+              keys: [
+                WeightedKey(
+                    name: 'name', getter: (c) => c.name, weight: 1),
+              ],
+              threshold: 0.4,
+            ),
+          );
+          channels = fuse.search(searchQuery).map((r) => r.item).toList();
+        }
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -286,7 +297,7 @@ class _ChannelGridView extends StatelessWidget {
                 ),
 
                 // Channel grid/list
-                if (channels.isEmpty && query.isNotEmpty)
+                if (channels.isEmpty && searchQuery.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
