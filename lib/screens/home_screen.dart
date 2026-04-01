@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onSearchChanged: (q) {
                 _debounce?.cancel();
                 _debounce = Timer(
-                  const Duration(milliseconds: 200),
+                  const Duration(milliseconds: 400),
                   () => setState(() => _searchQuery = q),
                 );
               },
