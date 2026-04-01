@@ -355,8 +355,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   void _onVideoPosition(Duration pos) {
     // Preskoči auto-sync tijekom rucnog klika na chapter
     final lock = _seekLock;
-    if (lock != null &&
-        DateTime.now().difference(lock) < _seekLockDuration) {
+    final now = DateTime.now();
+    if (lock != null && now.difference(lock) < _seekLockDuration) {
       return;
     }
 
@@ -370,6 +370,14 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       }
     }
     if (newTs == null || newTs == _activeTimestamp) return;
+
+    // Sprjecava flicker: odmah nakon seekLocka, ne dopusti backward jump
+    // na raniji chapter (preroll -2s uzrokuje kratki period na prethodnom).
+    if (lock != null && now.difference(lock) < _seekLockDuration + const Duration(milliseconds: 500)) {
+      final currentIdx = _sortedSections.indexWhere((s) => s.ts == _activeTimestamp);
+      final newIdx = _sortedSections.indexWhere((s) => s.ts == newTs);
+      if (newIdx < currentIdx) return; // ignoriraj backward jump
+    }
 
     // Postavi oba timestampa — video i scroll pointer syncani
     setState(() {
