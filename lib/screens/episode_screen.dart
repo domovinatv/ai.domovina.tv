@@ -19,10 +19,15 @@ import '../widgets/video_panel.dart';
 
 class EpisodeScreen extends StatefulWidget {
   final String youtubeId;
+
   /// Start at position in seconds (from ?t= query param, like YouTube).
   final int? startAtSeconds;
 
-  const EpisodeScreen({super.key, required this.youtubeId, this.startAtSeconds});
+  const EpisodeScreen({
+    super.key,
+    required this.youtubeId,
+    this.startAtSeconds,
+  });
 
   @override
   State<EpisodeScreen> createState() => _EpisodeScreenState();
@@ -120,10 +125,7 @@ class _LoadingScreen extends StatelessWidget {
   final String youtubeId;
   final Map<String, (bool done, bool ok)> assetStatus;
 
-  const _LoadingScreen({
-    required this.youtubeId,
-    required this.assetStatus,
-  });
+  const _LoadingScreen({required this.youtubeId, required this.assetStatus});
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +188,7 @@ class _LoadingScreen extends StatelessWidget {
                                   color: ok
                                       ? const Color(0xFF2E7D32)
                                       : theme.colorScheme.onSurfaceVariant
-                                          .withAlpha(100),
+                                            .withAlpha(100),
                                 )
                               : const SizedBox(
                                   width: 14,
@@ -201,8 +203,9 @@ class _LoadingScreen extends StatelessWidget {
                           e.key,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: done && !ok
-                                ? theme.colorScheme.onSurfaceVariant
-                                    .withAlpha(100)
+                                ? theme.colorScheme.onSurfaceVariant.withAlpha(
+                                    100,
+                                  )
                                 : null,
                           ),
                         ),
@@ -236,8 +239,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   final _scrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
   late final Map<String, GlobalKey> _magSectionKeys;
-  String? _activeTimestamp;   // prati video player poziciju
-  String? _scrollTimestamp;  // prati scroll poziciju srednje liste
+  String? _activeTimestamp; // prati video player poziciju
+  String? _scrollTimestamp; // prati scroll poziciju srednje liste
 
   // Video
   Player? _player;
@@ -272,8 +275,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
     _sectionKeys = {
       for (final iter in widget.data.article.iterations)
-        for (final sec in iter.sections)
-          sec.screenshotTimestamp: GlobalKey(),
+        for (final sec in iter.sections) sec.screenshotTimestamp: GlobalKey(),
     };
 
     // Keys za Magisterium stupac — scroll sync (primary variant)
@@ -282,26 +284,22 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       if (magPrimary != null)
         for (final iter in magPrimary.iterations)
           for (final sec in iter.sections)
-            if (sec.magisterium != null)
-              sec.screenshotTimestamp: GlobalKey(),
+            if (sec.magisterium != null) sec.screenshotTimestamp: GlobalKey(),
     };
 
     _sortedSections = [
       for (final iter in widget.data.article.iterations)
         for (final sec in iter.sections)
-          (dur: _parseDuration(sec.screenshotTimestamp), ts: sec.screenshotTimestamp),
+          (
+            dur: _parseDuration(sec.screenshotTimestamp),
+            ts: sec.screenshotTimestamp,
+          ),
     ]..sort((a, b) => a.dur.compareTo(b.dur));
 
-    _videoChapters = _sortedSections
-        .map((s) {
-          final label = _subtitleForTimestamp(s.ts);
-          return VideoChapterMark(
-            position: s.dur,
-            timestamp: s.ts,
-            label: label,
-          );
-        })
-        .toList();
+    _videoChapters = _sortedSections.map((s) {
+      final label = _subtitleForTimestamp(s.ts);
+      return VideoChapterMark(position: s.dur, timestamp: s.ts, label: label);
+    }).toList();
 
     _scrollController.addListener(_onScroll);
     _initVideo();
@@ -341,7 +339,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   Future<void> _initVideo() async {
     final videoUri = widget.data.videoUri;
     final startAt = widget.startAtSeconds;
-    debugPrint('Video: opening $videoUri${startAt != null ? ' @${startAt}s' : ''}');
+    debugPrint(
+      'Video: opening $videoUri${startAt != null ? ' @${startAt}s' : ''}',
+    );
 
     try {
       final player = Player();
@@ -442,8 +442,12 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
     // Sprjecava flicker: odmah nakon seekLocka, ne dopusti backward jump
     // na raniji chapter (preroll -2s uzrokuje kratki period na prethodnom).
-    if (lock != null && now.difference(lock) < _seekLockDuration + const Duration(milliseconds: 500)) {
-      final currentIdx = _sortedSections.indexWhere((s) => s.ts == _activeTimestamp);
+    if (lock != null &&
+        now.difference(lock) <
+            _seekLockDuration + const Duration(milliseconds: 500)) {
+      final currentIdx = _sortedSections.indexWhere(
+        (s) => s.ts == _activeTimestamp,
+      );
       final newIdx = _sortedSections.indexWhere((s) => s.ts == newTs);
       if (newIdx < currentIdx) return; // ignoriraj backward jump
     }
@@ -457,8 +461,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     // Auto-scroll teksta samo ako korisnik nije ručno scrollao zadnje 2 sekunde
     final lastScroll = _lastManualScroll;
     if (lastScroll == null ||
-        DateTime.now().difference(lastScroll) >
-            const Duration(seconds: 2)) {
+        DateTime.now().difference(lastScroll) > const Duration(seconds: 2)) {
       _scrollLock = DateTime.now();
       _scrollToSection(newTs);
     }
@@ -472,7 +475,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     final sLock = _seekLock;
     if (sLock != null && now.difference(sLock) < _seekLockDuration) return;
     final scLock = _scrollLock;
-    if (scLock != null && now.difference(scLock) < const Duration(milliseconds: 300)) return;
+    if (scLock != null &&
+        now.difference(scLock) < const Duration(milliseconds: 300))
+      return;
     _lastManualScroll = now;
     _updateActiveSectionFromScroll();
   }
@@ -496,7 +501,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   // Alignment offset — appbar je ~56px, na tipicnom viewportu (800px) to je ~0.08.
   // Scrollamo ispod headera da chapter naslov bude jasno vidljiv.
-  static const _scrollAlignment = 0.08;
+  static const _scrollAlignment = 0.18;
 
   void _scrollToSection(String timestamp) {
     final key = _sectionKeys[timestamp];
@@ -579,7 +584,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
     final magVariants = data.magisteriumVariants;
-    final hasMag = magVariants.isNotEmpty ||
+    final hasMag =
+        magVariants.isNotEmpty ||
         data.magisteriumFull != null ||
         data.magisteriumFullPrompt != null;
     // Magisterium stupac: zasebni scrollable panel na širokim ekranima
@@ -596,18 +602,20 @@ class _EpisodeContentState extends State<_EpisodeContent> {
               : IconButton(
                   icon: const Icon(Icons.menu),
                   tooltip: 'Sadržaj',
-                  onPressed: () =>
-                      _scaffoldKey.currentState?.openDrawer(),
+                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
           automaticallyImplyLeading: false,
           title: Text(
             data.info.channel,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           actions: [
             Padding(
-              padding: EdgeInsets.only(right: _videoReady && !showVideo ? 4 : 16),
+              padding: EdgeInsets.only(
+                right: _videoReady && !showVideo ? 4 : 16,
+              ),
               child: Center(
                 child: Text(
                   data.info.id,
@@ -624,8 +632,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                 child: IconButton(
                   icon: const Icon(Icons.ondemand_video),
                   tooltip: 'Video',
-                  onPressed: () =>
-                      _scaffoldKey.currentState?.openEndDrawer(),
+                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                 ),
               ),
           ],
@@ -638,10 +645,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  HeroSection(
-                    info: data.info,
-                    youtubeId: data.youtubeId,
-                  ),
+                  HeroSection(info: data.info, youtubeId: data.youtubeId),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   SummarySection(summary: data.summary),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),

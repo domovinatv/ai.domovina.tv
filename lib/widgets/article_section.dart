@@ -35,8 +35,9 @@ class ArticleSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Text(
             'Članak',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -74,7 +75,7 @@ class _IterationBlock extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -108,22 +109,26 @@ class _IterationBlock extends StatelessWidget {
                 Expanded(
                   child: Text(
                     iteration.theme,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          ...iteration.sections.map((sec) => _SectionCard(
-                key: sectionKeys[sec.screenshotTimestamp],
-                section: sec,
-                youtubeId: youtubeId,
-                onPlayTap: onPlayTap,
-                sectionMagisterium:
-                    magisterium?.forTimestamp(sec.screenshotTimestamp),
-              )),
+          ...iteration.sections.map(
+            (sec) => _SectionCard(
+              key: sectionKeys[sec.screenshotTimestamp],
+              section: sec,
+              youtubeId: youtubeId,
+              onPlayTap: onPlayTap,
+              sectionMagisterium: magisterium?.forTimestamp(
+                sec.screenshotTimestamp,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -176,7 +181,7 @@ class _SectionCardState extends State<_SectionCard> {
     final mag = widget.sectionMagisterium;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 56),
+      padding: const EdgeInsets.only(bottom: 56, top: 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -190,7 +195,9 @@ class _SectionCardState extends State<_SectionCard> {
                   color: theme.colorScheme.primary.withAlpha(25),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                      color: theme.colorScheme.primary.withAlpha(80), width: 1),
+                    color: theme.colorScheme.primary.withAlpha(80),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   section.screenshotTimestamp,
@@ -240,22 +247,29 @@ class _SectionCardState extends State<_SectionCard> {
               if (mag?.score != null) ...[
                 const SizedBox(width: 4),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: MagisteriumSection.scoreColor(mag!.score)
-                        .withAlpha(25),
+                    color: MagisteriumSection.scoreColor(
+                      mag!.score,
+                    ).withAlpha(25),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: MagisteriumSection.scoreColor(mag.score)
-                            .withAlpha(80)),
+                      color: MagisteriumSection.scoreColor(
+                        mag.score,
+                      ).withAlpha(80),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.church,
-                          size: 12,
-                          color: MagisteriumSection.scoreColor(mag.score)),
+                      Icon(
+                        Icons.church,
+                        size: 12,
+                        color: MagisteriumSection.scoreColor(mag.score),
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         '${mag.score}',
@@ -273,8 +287,9 @@ class _SectionCardState extends State<_SectionCard> {
               Expanded(
                 child: Text(
                   section.subtitle,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -286,7 +301,9 @@ class _SectionCardState extends State<_SectionCard> {
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
               CdnConfig.screenshotUrl(
-                  widget.youtubeId, section.screenshotTimestamp),
+                widget.youtubeId,
+                section.screenshotTimestamp,
+              ),
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder: (context, error, stackTrace) =>
@@ -310,9 +327,9 @@ class _SectionCardState extends State<_SectionCard> {
           // Article content — markdown
           MarkdownBody(
             data: section.content,
-            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              p: theme.textTheme.bodyMedium?.copyWith(height: 1.65),
-            ),
+            styleSheet: MarkdownStyleSheet.fromTheme(
+              theme,
+            ).copyWith(p: theme.textTheme.bodyMedium?.copyWith(height: 1.65)),
             onTapLink: (text, href, title) {
               if (href != null) openUrl(href);
             },
@@ -324,19 +341,24 @@ class _SectionCardState extends State<_SectionCard> {
               spacing: 6,
               runSpacing: 4,
               children: section.keywords
-                  .map((k) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
+                  .map(
+                    (k) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        k,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
                         ),
-                        child: Text(
-                          k,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSecondaryContainer),
-                        ),
-                      ))
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
 
@@ -373,9 +395,9 @@ class _MagisteriumEnrichment extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = MagisteriumSection.scoreColor(mag.score);
-    final mdStyle = MarkdownStyleSheet.fromTheme(theme).copyWith(
-      p: theme.textTheme.bodySmall?.copyWith(height: 1.5),
-    );
+    final mdStyle = MarkdownStyleSheet.fromTheme(
+      theme,
+    ).copyWith(p: theme.textTheme.bodySmall?.copyWith(height: 1.5));
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -424,25 +446,30 @@ class _MagisteriumEnrichment extends StatelessWidget {
           // Concerns
           if (mag.concerns.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...mag.concerns.map((c) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.warning_amber,
-                          size: 14, color: Color(0xFFEF6C00)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          c,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFEF6C00),
-                          ),
+            ...mag.concerns.map(
+              (c) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber,
+                      size: 14,
+                      color: Color(0xFFEF6C00),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        c,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFEF6C00),
                         ),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
 
           // Citations (expandable, tappable)
@@ -456,9 +483,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      citationsExpanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
+                      citationsExpanded ? Icons.expand_less : Icons.expand_more,
                       size: 18,
                       color: theme.colorScheme.primary,
                     ),
@@ -541,8 +566,11 @@ class _CitationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(Icons.open_in_new,
-                    size: 12, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.open_in_new,
+                  size: 12,
+                  color: theme.colorScheme.primary,
+                ),
               ],
             ),
           ],
