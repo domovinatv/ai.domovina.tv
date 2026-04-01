@@ -245,8 +245,10 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   /// Sprječava auto-scroll iz video listenera dok korisnik ručno scrolla
   DateTime? _lastManualScroll;
 
-  /// Sprječava section flicker tijekom preroll seek-a (-2s)
+  /// Sprjecava auto-sync activeTimestamp iz video position listenera
+  /// tijekom rucnog klika na chapter (preroll seek, TOC klik, itd.)
   DateTime? _seekLock;
+  static const _seekLockDuration = Duration(milliseconds: 2100);
 
   @override
   void initState() {
@@ -346,10 +348,10 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   }
 
   void _onVideoPosition(Duration pos) {
-    // Preskoči section detekciju tijekom preroll seeka (-2s)
+    // Preskoči auto-sync tijekom rucnog klika na chapter
     final lock = _seekLock;
     if (lock != null &&
-        DateTime.now().difference(lock) < const Duration(seconds: 3)) {
+        DateTime.now().difference(lock) < _seekLockDuration) {
       return;
     }
 
@@ -441,12 +443,12 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   /// Seek video na timestamp + play + scroll teksta.
   /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
   Future<void> _seekAndPlay(String timestamp, {bool preroll = false}) async {
+    _seekLock = DateTime.now();
     final dur = _parseDuration(timestamp);
     var seekTo = dur;
     if (preroll) {
       seekTo = dur - const Duration(seconds: 2);
       if (seekTo < Duration.zero) seekTo = Duration.zero;
-      _seekLock = DateTime.now();
     }
     // Na webu, HTML5 video element zahtijeva da je video u playing stanju
     // prije nego što seek (currentTime) postavi poziciju ispravno.
