@@ -367,8 +367,11 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     }
     if (newTs == null || newTs == _activeTimestamp) return;
 
-    // Postavi aktivni timestamp (ažurira TOC highlight)
-    setState(() => _activeTimestamp = newTs!);
+    // Postavi oba timestampa — video i scroll pointer syncani
+    setState(() {
+      _activeTimestamp = newTs!;
+      _scrollTimestamp = newTs;
+    });
 
     // Auto-scroll teksta samo ako korisnik nije ručno scrollao zadnje 2 sekunde
     final lastScroll = _lastManualScroll;

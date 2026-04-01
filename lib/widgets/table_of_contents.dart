@@ -22,14 +22,44 @@ class TableOfContents extends StatefulWidget {
 class _TableOfContentsState extends State<TableOfContents> {
   // Koja su poglavlja otvorena (iteracija index)
   late final Set<int> _expanded;
+  // Keys za scroll-into-view kad active item izadje iz viewporta
+  late final Map<String, GlobalKey> _itemKeys;
 
   @override
   void initState() {
     super.initState();
-    // Sve iteracije otvorene inicijalno
     _expanded = {
       for (var i = 0; i < widget.article.iterations.length; i++) i,
     };
+    _itemKeys = {
+      for (final iter in widget.article.iterations)
+        for (final sec in iter.sections)
+          sec.screenshotTimestamp: GlobalKey(),
+    };
+  }
+
+  @override
+  void didUpdateWidget(TableOfContents old) {
+    super.didUpdateWidget(old);
+    // Kad se activeTimestamp promijeni, scroll-into-view ako je izvan viewporta
+    if (widget.activeTimestamp != null &&
+        widget.activeTimestamp != old.activeTimestamp) {
+      _ensureVisible(widget.activeTimestamp!);
+    }
+  }
+
+  void _ensureVisible(String timestamp) {
+    final key = _itemKeys[timestamp];
+    final ctx = key?.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    // Provjeri je li item vidljiv u viewportu
+    final pos = box.localToGlobal(Offset.zero);
+    final h = box.size.height;
+    final screen = MediaQuery.sizeOf(ctx).height;
+    if (pos.dy >= 0 && pos.dy + h <= screen) return; // vec vidljiv
+    Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.3);
   }
 
   @override
@@ -72,6 +102,7 @@ class _TableOfContentsState extends State<TableOfContents> {
                         isExpanded: _expanded.contains(e.key),
                         activeTimestamp: widget.activeTimestamp,
                         scrollTimestamp: widget.scrollTimestamp,
+                        itemKeys: _itemKeys,
                         onToggle: () => setState(() {
                           if (_expanded.contains(e.key)) {
                             _expanded.remove(e.key);
@@ -96,6 +127,7 @@ class _IterationGroup extends StatelessWidget {
   final bool isExpanded;
   final String? activeTimestamp;
   final String? scrollTimestamp;
+  final Map<String, GlobalKey> itemKeys;
   final VoidCallback onToggle;
   final void Function(String) onSectionTap;
 
@@ -105,6 +137,7 @@ class _IterationGroup extends StatelessWidget {
     required this.isExpanded,
     required this.activeTimestamp,
     this.scrollTimestamp,
+    required this.itemKeys,
     required this.onToggle,
     required this.onSectionTap,
   });
@@ -168,6 +201,7 @@ class _IterationGroup extends StatelessWidget {
           ...iteration.sections.map((sec) {
             final ts = sec.screenshotTimestamp;
             return _SectionItem(
+              key: itemKeys[ts],
               timestamp: ts,
               subtitle: sec.subtitle,
               isPlaying: ts == activeTimestamp,
@@ -196,6 +230,7 @@ class _SectionItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _SectionItem({
+    super.key,
     required this.timestamp,
     required this.subtitle,
     required this.isPlaying,

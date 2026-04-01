@@ -56,6 +56,31 @@ class _VideoPanelState extends State<VideoPanel> {
   bool _playing = false;
   bool _seeking = false;
   double _sliderValue = 0;
+  late final Map<String, GlobalKey> _chapterKeys = {
+    for (final ch in widget.chapters) ch.timestamp: GlobalKey(),
+  };
+
+  @override
+  void didUpdateWidget(VideoPanel old) {
+    super.didUpdateWidget(old);
+    if (widget.activeTimestamp != null &&
+        widget.activeTimestamp != old.activeTimestamp) {
+      _ensureChapterVisible(widget.activeTimestamp!);
+    }
+  }
+
+  void _ensureChapterVisible(String timestamp) {
+    final key = _chapterKeys[timestamp];
+    final ctx = key?.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final pos = box.localToGlobal(Offset.zero);
+    final h = box.size.height;
+    final screen = MediaQuery.sizeOf(ctx).height;
+    if (pos.dy >= 0 && pos.dy + h <= screen) return;
+    Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.3);
+  }
 
   @override
   void initState() {
@@ -336,6 +361,7 @@ class _VideoPanelState extends State<VideoPanel> {
                 final ch = widget.chapters[i];
                 final isActive = ch.timestamp == widget.activeTimestamp;
                 return _ChapterListItem(
+                  key: _chapterKeys[ch.timestamp],
                   chapter: ch,
                   isActive: isActive,
                   onTap: () => widget.onChapterTap(ch.timestamp),
@@ -631,6 +657,7 @@ class _ChapterListItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ChapterListItem({
+    super.key,
     required this.chapter,
     required this.isActive,
     required this.onTap,
