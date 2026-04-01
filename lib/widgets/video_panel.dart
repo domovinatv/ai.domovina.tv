@@ -359,11 +359,13 @@ class _VideoPanelState extends State<VideoPanel> {
             ),
           ),
           Expanded(
-            child: ListView(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 8),
-              children: [
-                for (final ch in widget.chapters)
-                  _ChapterListItem(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final ch in widget.chapters)
+                    _ChapterListItem(
                     key: _chapterKeys[ch.timestamp],
                     chapter: ch,
                     isPlaying: ch.timestamp == widget.activeTimestamp,
@@ -371,7 +373,8 @@ class _VideoPanelState extends State<VideoPanel> {
                         ch.timestamp != widget.activeTimestamp,
                     onTap: () => widget.onChapterTap(ch.timestamp),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
