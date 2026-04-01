@@ -251,6 +251,10 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   DateTime? _seekLock;
   static const _seekLockDuration = Duration(milliseconds: 2100);
 
+  /// Kratki lock koji sprjecava scroll listener da overridea scrollTimestamp
+  /// dok traje programatski scroll (auto-scroll iz video playbacka).
+  DateTime? _scrollLock;
+
   @override
   void initState() {
     super.initState();
@@ -378,6 +382,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     if (lastScroll == null ||
         DateTime.now().difference(lastScroll) >
             const Duration(seconds: 2)) {
+      _scrollLock = DateTime.now();
       _scrollToSection(newTs);
     }
   }
@@ -385,13 +390,13 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   // ---------- scroll --------------------------------------------------------
 
   void _onScroll() {
-    // Ne reagiraj na programatski scroll tijekom seek locka
-    final lock = _seekLock;
-    if (lock != null &&
-        DateTime.now().difference(lock) < _seekLockDuration) {
-      return;
-    }
-    _lastManualScroll = DateTime.now();
+    final now = DateTime.now();
+    // Ne reagiraj na programatski scroll (seek ili auto-scroll iz playbacka)
+    final sLock = _seekLock;
+    if (sLock != null && now.difference(sLock) < _seekLockDuration) return;
+    final scLock = _scrollLock;
+    if (scLock != null && now.difference(scLock) < const Duration(milliseconds: 300)) return;
+    _lastManualScroll = now;
     _updateActiveSectionFromScroll();
   }
 
