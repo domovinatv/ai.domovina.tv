@@ -405,8 +405,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
         key!.currentContext!,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
+        duration: Duration.zero,
         alignment: 0.05,
       );
     }
@@ -418,8 +417,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
         key!.currentContext!,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
+        duration: Duration.zero,
         alignment: 0.05,
       );
     }
