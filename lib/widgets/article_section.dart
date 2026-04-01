@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
@@ -150,6 +151,24 @@ class _SectionCard extends StatefulWidget {
 class _SectionCardState extends State<_SectionCard> {
   bool _citationsExpanded = false;
 
+  int _tsToSeconds(String ts) {
+    final parts = ts.split(':').map(int.parse).toList();
+    if (parts.length == 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return 0;
+  }
+
+  void _copyShareLink(BuildContext context) {
+    final seconds = _tsToSeconds(widget.section.screenshotTimestamp);
+    final url = 'https://domovina.ai/v/${widget.youtubeId}?t=$seconds';
+    Clipboard.setData(ClipboardData(text: url));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Link kopiran: ${widget.section.screenshotTimestamp}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -201,6 +220,23 @@ class _SectionCardState extends State<_SectionCard> {
                     ),
                   ),
                 ),
+              Padding(
+                padding: const EdgeInsets.only(left: 2),
+                child: SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.link,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    tooltip: 'Kopiraj link',
+                    onPressed: () => _copyShareLink(context),
+                  ),
+                ),
+              ),
               if (mag?.score != null) ...[
                 const SizedBox(width: 4),
                 Container(
