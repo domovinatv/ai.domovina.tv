@@ -494,13 +494,17 @@ class _EpisodeContentState extends State<_EpisodeContent> {
     }
   }
 
+  // Alignment offset — appbar je ~56px, na tipicnom viewportu (800px) to je ~0.08.
+  // Scrollamo ispod headera da chapter naslov bude jasno vidljiv.
+  static const _scrollAlignment = 0.08;
+
   void _scrollToSection(String timestamp) {
     final key = _sectionKeys[timestamp];
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
         key!.currentContext!,
         duration: Duration.zero,
-        alignment: 0.05,
+        alignment: _scrollAlignment,
       );
     }
     _scrollMagToSection(timestamp);
@@ -512,7 +516,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       Scrollable.ensureVisible(
         key!.currentContext!,
         duration: Duration.zero,
-        alignment: 0.05,
+        alignment: _scrollAlignment,
       );
     }
   }

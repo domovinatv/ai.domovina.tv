@@ -176,7 +176,7 @@ class _SectionCardState extends State<_SectionCard> {
     final mag = widget.sectionMagisterium;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: const EdgeInsets.only(bottom: 56),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
