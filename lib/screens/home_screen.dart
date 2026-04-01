@@ -53,7 +53,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _idController = TextEditingController();
+  final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String _searchQuery = '';
 
   late Future<ChannelIndex> _indexFuture;
   String? _selectedChannelId;
@@ -77,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _idController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -174,12 +177,15 @@ class _HomeScreenState extends State<HomeScreen> {
           : _ChannelGridView(
               indexFuture: _indexFuture,
               orderedChannels: _orderedChannels,
+              searchQuery: _searchQuery,
               onChannelsLoaded: (channels) async {
                 final ordered = await _applyOrder(channels);
                 if (mounted) setState(() => _orderedChannels = ordered);
               },
               onChannelTap: _selectChannel,
               onShuffle: _shuffle,
+              searchController: _searchController,
+              onSearchChanged: (q) => setState(() => _searchQuery = q),
               idController: _idController,
               formKey: _formKey,
               onManualOpen: _openManual,
@@ -195,9 +201,12 @@ class _HomeScreenState extends State<HomeScreen> {
 class _ChannelGridView extends StatelessWidget {
   final Future<ChannelIndex> indexFuture;
   final List<ChannelSummary>? orderedChannels;
+  final String searchQuery;
   final Future<void> Function(List<ChannelSummary>) onChannelsLoaded;
   final void Function(ChannelSummary) onChannelTap;
   final VoidCallback onShuffle;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
   final TextEditingController idController;
   final GlobalKey<FormState> formKey;
   final VoidCallback onManualOpen;
@@ -205,9 +214,12 @@ class _ChannelGridView extends StatelessWidget {
   const _ChannelGridView({
     required this.indexFuture,
     required this.orderedChannels,
+    required this.searchQuery,
     required this.onChannelsLoaded,
     required this.onChannelTap,
     required this.onShuffle,
+    required this.searchController,
+    required this.onSearchChanged,
     required this.idController,
     required this.formKey,
     required this.onManualOpen,
@@ -244,7 +256,13 @@ class _ChannelGridView extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final channels = orderedChannels!;
+        final allChannels = orderedChannels!;
+        final query = searchQuery.toLowerCase();
+        final channels = query.isEmpty
+            ? allChannels
+            : allChannels
+                .where((c) => c.name.toLowerCase().contains(query))
+                .toList();
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -256,8 +274,10 @@ class _ChannelGridView extends StatelessWidget {
                 // Header
                 SliverToBoxAdapter(
                   child: _HomeHeader(
-                    channelCount: channels.length,
+                    channelCount: allChannels.length,
                     onShuffle: onShuffle,
+                    searchController: searchController,
+                    onSearchChanged: onSearchChanged,
                     idController: idController,
                     formKey: formKey,
                     onManualOpen: onManualOpen,
@@ -266,22 +286,37 @@ class _ChannelGridView extends StatelessWidget {
                 ),
 
                 // Channel grid/list
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: isMobile
-                      ? SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, i) => _ChannelListCard(
-                              channel: channels[i],
-                              onTap: () => onChannelTap(channels[i]),
-                            ),
-                            childCount: channels.length,
+                if (channels.isEmpty && query.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          'Nema rezultata za "$searchQuery"',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                        )
-                      : SliverToBoxAdapter(
-                          child: _buildWrap(channels, width),
                         ),
-                ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: isMobile
+                        ? SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, i) => _ChannelListCard(
+                                channel: channels[i],
+                                onTap: () => onChannelTap(channels[i]),
+                              ),
+                              childCount: channels.length,
+                            ),
+                          )
+                        : SliverToBoxAdapter(
+                            child: _buildWrap(channels, width),
+                          ),
+                  ),
 
                 // Footer: version
                 SliverToBoxAdapter(
@@ -354,6 +389,8 @@ class _ChannelGridView extends StatelessWidget {
 class _HomeHeader extends StatelessWidget {
   final int channelCount;
   final VoidCallback onShuffle;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
   final TextEditingController idController;
   final GlobalKey<FormState> formKey;
   final VoidCallback onManualOpen;
@@ -362,6 +399,8 @@ class _HomeHeader extends StatelessWidget {
   const _HomeHeader({
     required this.channelCount,
     required this.onShuffle,
+    required this.searchController,
+    required this.onSearchChanged,
     required this.idController,
     required this.formKey,
     required this.onManualOpen,
@@ -405,43 +444,49 @@ class _HomeHeader extends StatelessWidget {
   }
 
   Widget _buildDesktop(ThemeData theme, bool isDark) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
       children: [
-        // Left: logo icon + branding
-        Expanded(
-          child: Row(
-            children: [
-              Image.asset(
-                'assets/icons/domovina_ai_logo_1024.png',
-                width: 52,
-                height: 52,
-              ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Left: logo icon + branding
+            Expanded(
+              child: Row(
                 children: [
-                  _logoText(theme, isDark),
-                  const SizedBox(height: 4),
-                  _subtitle(theme),
+                  Image.asset(
+                    'assets/icons/domovina_ai_logo_1024.png',
+                    width: 52,
+                    height: 52,
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _logoText(theme, isDark),
+                      const SizedBox(height: 4),
+                      _subtitle(theme),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 24),
+            // Right: YouTube ID input + shuffle
+            SizedBox(
+              width: 340,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _idInput(theme, isDark),
+                  const SizedBox(height: 8),
+                  _shuffleRow(theme),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 24),
-        // Right: YouTube ID input + shuffle
-        SizedBox(
-          width: 340,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _idInput(theme, isDark),
-              const SizedBox(height: 8),
-              _shuffleRow(theme),
-            ],
-          ),
-        ),
+        const SizedBox(height: 16),
+        _searchInput(theme),
       ],
     );
   }
@@ -458,7 +503,9 @@ class _HomeHeader extends StatelessWidget {
         _logoText(theme, isDark),
         const SizedBox(height: 4),
         _subtitle(theme),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        _searchInput(theme),
+        const SizedBox(height: 12),
         _idInput(theme, isDark),
         const SizedBox(height: 8),
         _shuffleRow(theme),
@@ -502,6 +549,38 @@ class _HomeHeader extends StatelessWidget {
         letterSpacing: 0.3,
       ),
       textAlign: isMobile ? TextAlign.center : TextAlign.start,
+    );
+  }
+
+  Widget _searchInput(ThemeData theme) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        controller: searchController,
+        onChanged: onSearchChanged,
+        style: theme.textTheme.bodySmall,
+        decoration: InputDecoration(
+          hintText: 'Pretrazi kanale...',
+          hintStyle: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant.withAlpha(120),
+          ),
+          prefixIcon: const Icon(Icons.search, size: 18),
+          suffixIcon: searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 16),
+                  onPressed: () {
+                    searchController.clear();
+                    onSearchChanged('');
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          isDense: true,
+        ),
+      ),
     );
   }
 
