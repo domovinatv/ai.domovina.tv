@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
@@ -89,7 +90,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                   ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: () => context.go('/'),
                   icon: const Icon(Icons.arrow_back),
                   label: const Text('Natrag'),
                 ),

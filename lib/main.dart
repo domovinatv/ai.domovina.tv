@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
-import 'screens/episode_screen.dart';
-import 'screens/home_screen.dart';
+import 'router/app_router.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
@@ -17,7 +15,7 @@ void main() {
   log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
 
-  try { usePathUrlStrategy(); } catch (_) {}
+  // usePathUrlStrategy nepotrebno — go_router koristi path strategy po defaultu.
 
   // ensureSemantics ZABRANJENO na webu — crasha release build.
   // Vidi CLAUDE.md "Known Issues".
@@ -44,6 +42,7 @@ class DominovinaApp extends StatefulWidget {
 
 class _DominovinaAppState extends State<DominovinaApp> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  late final _router = createRouter();
 
   @override
   void initState() {
@@ -66,7 +65,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       scaffoldMessengerKey: _messengerKey,
       title: 'DOMOVINA.ai',
       debugShowCheckedModeBanner: false,
@@ -85,35 +84,7 @@ class _DominovinaAppState extends State<DominovinaApp> {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      onGenerateRoute: (settings) {
-        final uri = Uri.parse(settings.name ?? '/');
-
-        Widget page;
-
-        if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'v') {
-          page = EpisodeScreen(youtubeId: uri.pathSegments[1]);
-        } else if (uri.queryParameters['v']?.isNotEmpty == true) {
-          page = EpisodeScreen(youtubeId: uri.queryParameters['v']!);
-        } else if (uri.pathSegments.length == 2 &&
-            uri.pathSegments[0] == 'c') {
-          final channelId = uri.pathSegments[1].replaceAll('-', '_');
-          page = HomeScreen(initialChannelId: channelId);
-        } else if (uri.pathSegments.length == 2 &&
-            uri.pathSegments[0] == 'episode') {
-          page = EpisodeScreen(youtubeId: uri.pathSegments[1]);
-        } else {
-          page = const HomeScreen();
-        }
-
-        // Instant navigation — no slide/fade animation
-        return PageRouteBuilder(
-          settings: settings,
-          pageBuilder: (_, __, ___) => page,
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        );
-      },
-      home: const HomeScreen(),
+      routerConfig: _router,
     );
   }
 }

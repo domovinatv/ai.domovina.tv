@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web/web.dart' as web;
 import '../main.dart' show appVersion, log;
@@ -134,15 +135,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _selectChannel(ChannelSummary channel) {
     final slug = channel.id.replaceAll('_', '-');
-    Navigator.of(context).pushNamed('/c/$slug');
+    context.go('/c/$slug');
   }
 
   void _back() {
-    Navigator.of(context).pushNamed('/');
+    context.go('/');
   }
 
   void _openVideo(String videoId) {
-    Navigator.of(context).pushNamed('/v/$videoId');
+    context.go('/v/$videoId');
   }
 
   void _openManual() {
