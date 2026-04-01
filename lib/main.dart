@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'router/app_router.dart';
 import 'services/update_notifier.dart';
@@ -15,7 +16,7 @@ void main() {
   log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
 
-  // usePathUrlStrategy nepotrebno — go_router koristi path strategy po defaultu.
+  try { usePathUrlStrategy(); } catch (_) {}
 
   // ensureSemantics ZABRANJENO na webu — crasha release build.
   // Vidi CLAUDE.md "Known Issues".
