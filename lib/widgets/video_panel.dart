@@ -25,6 +25,7 @@ class VideoPanel extends StatefulWidget {
   final VideoController controller;
   final List<VideoChapterMark> chapters;
   final String? activeTimestamp;
+  final String? scrollTimestamp;
   final void Function(String timestamp) onChapterTap;
   final int totalDurationSeconds;
   final SpeakerTimeline? speakerTimeline;
@@ -38,6 +39,7 @@ class VideoPanel extends StatefulWidget {
     required this.controller,
     required this.chapters,
     this.activeTimestamp,
+    this.scrollTimestamp,
     required this.onChapterTap,
     required this.totalDurationSeconds,
     this.speakerTimeline,
@@ -66,6 +68,11 @@ class _VideoPanelState extends State<VideoPanel> {
     if (widget.activeTimestamp != null &&
         widget.activeTimestamp != old.activeTimestamp) {
       _ensureChapterVisible(widget.activeTimestamp!);
+    }
+    if (widget.scrollTimestamp != null &&
+        widget.scrollTimestamp != old.scrollTimestamp &&
+        widget.scrollTimestamp != widget.activeTimestamp) {
+      _ensureChapterVisible(widget.scrollTimestamp!);
     }
   }
 
@@ -356,7 +363,9 @@ class _VideoPanelState extends State<VideoPanel> {
                   _ChapterListItem(
                     key: _chapterKeys[ch.timestamp],
                     chapter: ch,
-                    isActive: ch.timestamp == widget.activeTimestamp,
+                    isPlaying: ch.timestamp == widget.activeTimestamp,
+                    isScrolled: ch.timestamp == widget.scrollTimestamp &&
+                        ch.timestamp != widget.activeTimestamp,
                     onTap: () => widget.onChapterTap(ch.timestamp),
                   ),
               ],
@@ -646,15 +655,19 @@ class _FullscreenSpeakerLabel extends StatelessWidget {
 
 class _ChapterListItem extends StatelessWidget {
   final VideoChapterMark chapter;
-  final bool isActive;
+  final bool isPlaying;
+  final bool isScrolled;
   final VoidCallback onTap;
 
   const _ChapterListItem({
     super.key,
     required this.chapter,
-    required this.isActive,
+    required this.isPlaying,
+    required this.isScrolled,
     required this.onTap,
   });
+
+  static const _scrollColor = Color(0xFFEF6C00);
 
   String get _shortTs {
     final parts = chapter.timestamp.split(':');
@@ -669,29 +682,28 @@ class _ChapterListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isHighlighted = isPlaying || isScrolled;
+    final accentColor = isPlaying ? theme.colorScheme.primary : _scrollColor;
 
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: isActive
+        decoration: isHighlighted
             ? BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withAlpha(120),
+                color: accentColor.withAlpha(isPlaying ? 120 : 40),
                 border: Border(
-                  left: BorderSide(
-                      color: theme.colorScheme.primary, width: 3),
+                  left: BorderSide(color: accentColor, width: 3),
                 ),
               )
             : null,
-        padding: EdgeInsets.fromLTRB(isActive ? 9 : 12, 6, 8, 6),
+        padding: EdgeInsets.fromLTRB(isHighlighted ? 9 : 12, 6, 8, 6),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
               Icons.play_arrow,
               size: 14,
-              color: isActive
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline,
+              color: isHighlighted ? accentColor : theme.colorScheme.outline,
             ),
             const SizedBox(width: 4),
             Text(
@@ -699,9 +711,7 @@ class _ChapterListItem extends StatelessWidget {
               style: theme.textTheme.labelSmall?.copyWith(
                 fontFamily: 'monospace',
                 fontWeight: FontWeight.bold,
-                color: isActive
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.outline,
+                color: isHighlighted ? accentColor : theme.colorScheme.outline,
               ),
             ),
             const SizedBox(width: 8),
@@ -709,11 +719,11 @@ class _ChapterListItem extends StatelessWidget {
               child: Text(
                 chapter.label,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isActive
+                  color: isHighlighted
                       ? theme.colorScheme.onSurface
                       : theme.colorScheme.onSurfaceVariant,
                   fontWeight:
-                      isActive ? FontWeight.w600 : FontWeight.normal,
+                      isHighlighted ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
