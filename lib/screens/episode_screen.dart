@@ -19,8 +19,10 @@ import '../widgets/video_panel.dart';
 
 class EpisodeScreen extends StatefulWidget {
   final String youtubeId;
+  /// Start at position in seconds (from ?t= query param, like YouTube).
+  final int? startAtSeconds;
 
-  const EpisodeScreen({super.key, required this.youtubeId});
+  const EpisodeScreen({super.key, required this.youtubeId, this.startAtSeconds});
 
   @override
   State<EpisodeScreen> createState() => _EpisodeScreenState();
@@ -53,7 +55,12 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_data != null) return _EpisodeContent(data: _data!);
+    if (_data != null) {
+      return _EpisodeContent(
+        data: _data!,
+        startAtSeconds: widget.startAtSeconds,
+      );
+    }
 
     if (_error != null) {
       final notFound = _error is VideoNotFoundException;
@@ -216,8 +223,9 @@ class _LoadingScreen extends StatelessWidget {
 
 class _EpisodeContent extends StatefulWidget {
   final EpisodeData data;
+  final int? startAtSeconds;
 
-  const _EpisodeContent({required this.data});
+  const _EpisodeContent({required this.data, this.startAtSeconds});
 
   @override
   State<_EpisodeContent> createState() => _EpisodeContentState();
@@ -250,6 +258,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   /// tijekom rucnog klika na chapter (preroll seek, TOC klik, itd.)
   DateTime? _seekLock;
   static const _seekLockDuration = Duration(milliseconds: 2100);
+
+  /// Web muted autoplay — video igra ali je mutiran, korisnik mora kliknuti za zvuk.
+  bool _mutedAutoplay = false;
 
   /// Kratki lock koji sprjecava scroll listener da overridea scrollTimestamp
   /// dok traje programatski scroll (auto-scroll iz video playbacka).
@@ -329,13 +340,31 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   Future<void> _initVideo() async {
     final videoUri = widget.data.videoUri;
-    debugPrint('Video: opening $videoUri');
+    final startAt = widget.startAtSeconds;
+    debugPrint('Video: opening $videoUri${startAt != null ? ' @${startAt}s' : ''}');
 
     try {
       final player = Player();
       final controller = VideoController(player);
-      // Na webu: preglednici blokiraju autoplay s audiom, korisnik mora kliknuti play
-      await player.open(Media(videoUri), play: !kIsWeb);
+
+      if (kIsWeb && startAt != null) {
+        // Web: muted autoplay dozvoljen od browsera, seek na startAt, play
+        await player.setVolume(0);
+        await player.open(Media(videoUri), play: true);
+        await player.seek(Duration(seconds: startAt));
+        // Unmute cim je video pokrenut — overlay "Pokreni video" ce
+        // pokazati "Pojacaj zvuk" umjesto toga
+        _mutedAutoplay = true;
+      } else if (kIsWeb) {
+        // Web bez startAt: korisnik mora kliknuti play
+        await player.open(Media(videoUri), play: false);
+      } else {
+        // Native: autoplay radi normalno
+        await player.open(Media(videoUri), play: true);
+        if (startAt != null) {
+          await player.seek(Duration(seconds: startAt));
+        }
+      }
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
 
@@ -346,9 +375,35 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           _videoReady = true;
         });
         debugPrint('Video: ready');
+
+        // Postavi inicijalni chapter za startAt
+        if (startAt != null) {
+          _setInitialChapter(Duration(seconds: startAt));
+        }
       }
     } catch (e) {
       debugPrint('Video: init failed — $e');
+    }
+  }
+
+  /// Postavi activeTimestamp + scrollTimestamp za inicijalnu poziciju.
+  void _setInitialChapter(Duration pos) {
+    String? ts;
+    for (final s in _sortedSections) {
+      if (pos >= s.dur) {
+        ts = s.ts;
+      } else {
+        break;
+      }
+    }
+    if (ts != null) {
+      setState(() {
+        _activeTimestamp = ts;
+        _scrollTimestamp = ts;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToSection(ts!);
+      });
     }
   }
 
@@ -653,6 +708,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: data.summary.summary.speakers,
+            mutedAutoplay: _mutedAutoplay,
+            onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
         ],
       );
@@ -696,6 +753,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: data.summary.summary.speakers,
+            mutedAutoplay: _mutedAutoplay,
+            onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
         ],
       );

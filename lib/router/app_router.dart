@@ -30,9 +30,14 @@ GoRouter createRouter() {
         path: '/v/:videoId',
         pageBuilder: (context, state) {
           final videoId = state.pathParameters['videoId']!;
+          final t = state.uri.queryParameters['t'];
+          final startAt = t != null ? int.tryParse(t) : null;
           return NoTransitionPage(
-            key: ValueKey('video-$videoId'),
-            child: EpisodeScreen(youtubeId: videoId),
+            key: ValueKey('video-$videoId-${startAt ?? 0}'),
+            child: EpisodeScreen(
+              youtubeId: videoId,
+              startAtSeconds: startAt,
+            ),
           );
         },
       ),

@@ -32,6 +32,8 @@ class VideoPanel extends StatefulWidget {
   final List<SummarySpeaker> speakers;
   final double? width;
   final void Function(Duration position)? onSeek;
+  final bool mutedAutoplay;
+  final VoidCallback? onUnmute;
 
   const VideoPanel({
     super.key,
@@ -46,6 +48,8 @@ class VideoPanel extends StatefulWidget {
     this.speakers = const [],
     this.width = 360,
     this.onSeek,
+    this.mutedAutoplay = false,
+    this.onUnmute,
   });
 
   @override
@@ -198,11 +202,18 @@ class _VideoPanelState extends State<VideoPanel> {
                     child: Video(controller: widget.controller),
                   ),
                 ),
-                // Web autoplay overlay — browser blokira autoplay
-                if (kIsWeb && !_playing)
+                // Web overlay: play (paused) ili unmute (muted autoplay)
+                if (kIsWeb && (!_playing || widget.mutedAutoplay))
                   Positioned.fill(
                     child: GestureDetector(
-                      onTap: () => widget.player.play(),
+                      onTap: () {
+                        if (widget.mutedAutoplay && widget.onUnmute != null) {
+                          widget.player.setVolume(100);
+                          widget.onUnmute!();
+                        } else {
+                          widget.player.play();
+                        }
+                      },
                       child: Container(
                         color: Colors.black54,
                         child: Center(
@@ -216,15 +227,19 @@ class _VideoPanelState extends State<VideoPanel> {
                                   color: theme.colorScheme.primary,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
-                                  Icons.play_arrow,
+                                child: Icon(
+                                  widget.mutedAutoplay
+                                      ? Icons.volume_up
+                                      : Icons.play_arrow,
                                   color: Colors.white,
                                   size: 36,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Pokreni video',
+                                widget.mutedAutoplay
+                                    ? 'Pojacaj zvuk'
+                                    : 'Pokreni video',
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
