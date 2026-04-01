@@ -73,12 +73,7 @@ class _VideoPanelState extends State<VideoPanel> {
     final key = _chapterKeys[timestamp];
     final ctx = key?.currentContext;
     if (ctx == null) return;
-    final box = ctx.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final pos = box.localToGlobal(Offset.zero);
-    final h = box.size.height;
-    final screen = MediaQuery.sizeOf(ctx).height;
-    if (pos.dy >= 0 && pos.dy + h <= screen) return;
+    // Uvijek scrollaj — chapter lista je mala, ensureVisible je noop ako je vec vidljiv
     Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.3);
   }
 
