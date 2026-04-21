@@ -629,9 +629,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           leading: isWide
               ? null
               : IconButton(
-                  icon: const Icon(Icons.menu),
-                  tooltip: 'Sadržaj',
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Natrag',
+                  onPressed: () => context.go('/'),
                 ),
           automaticallyImplyLeading: false,
           title: Text(
@@ -723,9 +723,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
             floating: true,
             snap: true,
             leading: IconButton(
-              icon: const Icon(Icons.menu),
-              tooltip: 'Sadržaj',
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Natrag',
+              onPressed: () => context.go('/'),
             ),
             automaticallyImplyLeading: false,
             title: Text(
