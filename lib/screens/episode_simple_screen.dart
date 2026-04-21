@@ -106,7 +106,8 @@ class _SimpleEpisodeContent extends StatefulWidget {
   State<_SimpleEpisodeContent> createState() => _SimpleEpisodeContentState();
 }
 
-class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent> {
+class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
+    with WidgetsBindingObserver {
   int _tabIndex = 0;
 
   // Video
@@ -125,16 +126,31 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _chapters = _buildChapters();
     _initVideo();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _positionSub?.cancel();
     BackgroundAudio.instance.detach();
     _player?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Android kill-a SurfaceView kad Video widget (u _PlayerTab) ode u bg
+    // pa media_kit auto-pauzira. Force-play kratko nakon tranzicije —
+    // foreground service iz audio_service-a drzi process zivim.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      Future<void>.delayed(const Duration(milliseconds: 150), () {
+        _player?.play();
+      });
+    }
   }
 
   List<({String timestamp, String topic, int totalSeconds})> _buildChapters() {
