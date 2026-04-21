@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:fuzzy/fuzzy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:web/web.dart' as web;
 import '../main.dart' show appVersion, log;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
 import '../services/channel_cache.dart';
+import '../services/local_prefs.dart';
 import '../services/update_notifier.dart';
 import '../widgets/magisterium_section.dart';
 
@@ -30,19 +30,13 @@ const _simpleModeKey = 'simple_mode';
 // ---------------------------------------------------------------------------
 
 List<String>? _loadOrderWeb() {
-  try {
-    final raw = web.window.localStorage.getItem(_channelOrderKey);
-    if (raw == null || raw.isEmpty) return null;
-    return raw.split(',');
-  } catch (_) {
-    return null;
-  }
+  final raw = getLocalStorageString(_channelOrderKey);
+  if (raw == null) return null;
+  return raw.split(',');
 }
 
 void _saveOrderWeb(List<String> ids) {
-  try {
-    web.window.localStorage.setItem(_channelOrderKey, ids.join(','));
-  } catch (_) {}
+  setLocalStorageString(_channelOrderKey, ids.join(','));
 }
 
 // ---------------------------------------------------------------------------
@@ -50,19 +44,13 @@ void _saveOrderWeb(List<String> ids) {
 // ---------------------------------------------------------------------------
 
 bool? _loadSimpleModeWeb() {
-  try {
-    final raw = web.window.localStorage.getItem(_simpleModeKey);
-    if (raw == null || raw.isEmpty) return null;
-    return raw == 'true';
-  } catch (_) {
-    return null;
-  }
+  final raw = getLocalStorageString(_simpleModeKey);
+  if (raw == null) return null;
+  return raw == 'true';
 }
 
 void _saveSimpleModeWeb(bool value) {
-  try {
-    web.window.localStorage.setItem(_simpleModeKey, value.toString());
-  } catch (_) {}
+  setLocalStorageString(_simpleModeKey, value.toString());
 }
 
 class HomeScreen extends StatefulWidget {
@@ -228,20 +216,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
-      body: isChannel
-          ? _VideoGridView(
-              channelFuture: _channelFuture!,
-              channelName: _selectedChannelName,
-              channelId: _selectedChannelId!,
-              onResolvedName: (name) {
-                if (_selectedChannelName == null && mounted) {
-                  setState(() => _selectedChannelName = name);
-                }
-              },
-              onBack: _back,
-              onVideoTap: _openVideo,
-            )
-          : _ChannelGridView(
+      body: SafeArea(
+        child: isChannel
+            ? _VideoGridView(
+                channelFuture: _channelFuture!,
+                channelName: _selectedChannelName,
+                channelId: _selectedChannelId!,
+                onResolvedName: (name) {
+                  if (_selectedChannelName == null && mounted) {
+                    setState(() => _selectedChannelName = name);
+                  }
+                },
+                onBack: _back,
+                onVideoTap: _openVideo,
+              )
+            : _ChannelGridView(
               indexFuture: _indexFuture,
               orderedChannels: _orderedChannels,
               searchQuery: _searchQuery,
@@ -272,6 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
               simpleMode: _simpleMode,
               onSimpleModeChanged: _toggleSimpleMode,
             ),
+      ),
     );
   }
 }
