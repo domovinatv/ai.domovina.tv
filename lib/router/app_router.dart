@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/home_screen.dart';
 import '../screens/episode_screen.dart';
+import '../screens/episode_simple_screen.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
 /// Svaka ruta ima ValueKey da go_router zna rebuildat kad se mijenja path.
@@ -38,6 +39,17 @@ GoRouter createRouter() {
               youtubeId: videoId,
               startAtSeconds: startAt,
             ),
+          );
+        },
+      ),
+      // Mobile simplified view
+      GoRoute(
+        path: '/m/:videoId',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          return NoTransitionPage(
+            key: ValueKey('mobile-$videoId'),
+            child: EpisodeSimpleScreen(youtubeId: videoId),
           );
         },
       ),

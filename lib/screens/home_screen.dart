@@ -19,6 +19,7 @@ const _croRed = Color(0xFFFF0000);
 const _croBlue = Color(0xFF002F6C);
 
 const _channelOrderKey = 'channel_order';
+const _simpleModeKey = 'simple_mode';
 
 // ---------------------------------------------------------------------------
 // Channel order persistence
@@ -41,6 +42,26 @@ List<String>? _loadOrderWeb() {
 void _saveOrderWeb(List<String> ids) {
   try {
     web.window.localStorage.setItem(_channelOrderKey, ids.join(','));
+  } catch (_) {}
+}
+
+// ---------------------------------------------------------------------------
+// Simple mode persistence
+// ---------------------------------------------------------------------------
+
+bool? _loadSimpleModeWeb() {
+  try {
+    final raw = web.window.localStorage.getItem(_simpleModeKey);
+    if (raw == null || raw.isEmpty) return null;
+    return raw == 'true';
+  } catch (_) {
+    return null;
+  }
+}
+
+void _saveSimpleModeWeb(bool value) {
+  try {
+    web.window.localStorage.setItem(_simpleModeKey, value.toString());
   } catch (_) {}
 }
 
@@ -69,6 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // Ordered channel list (shuffled once, persisted)
   List<ChannelSummary>? _orderedChannels;
 
+  // Simple/Detailed mode — auto-defaults to simple on mobile
+  bool _simpleMode = false;
+  bool _simpleModeLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +102,34 @@ class _HomeScreenState extends State<HomeScreen> {
     if (widget.initialChannelId != null) {
       _selectedChannelId = widget.initialChannelId;
       _channelFuture = _channelCache.loadChannel(widget.initialChannelId!);
+    }
+    _loadSimpleMode();
+  }
+
+  Future<void> _loadSimpleMode() async {
+    bool? saved;
+    if (kIsWeb) {
+      saved = _loadSimpleModeWeb();
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      saved = prefs.getBool(_simpleModeKey);
+    }
+    if (mounted) {
+      setState(() {
+        // If user has never set preference, auto-detect mobile
+        _simpleMode = saved ?? false;
+        _simpleModeLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _toggleSimpleMode(bool value) async {
+    setState(() => _simpleMode = value);
+    if (kIsWeb) {
+      _saveSimpleModeWeb(value);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_simpleModeKey, value);
     }
   }
 
@@ -156,7 +209,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openVideo(String videoId) {
-    context.go('/v/$videoId');
+    if (_simpleMode) {
+      context.go('/m/$videoId');
+    } else {
+      context.go('/v/$videoId');
+    }
   }
 
   void _openManual() {
@@ -191,7 +248,11 @@ class _HomeScreenState extends State<HomeScreen> {
               channelCache: _channelCache,
               onChannelsLoaded: (channels) async {
                 final ordered = await _applyOrder(channels);
-                if (mounted) setState(() => _orderedChannels = ordered);
+                if (mounted) {
+                  setState(() => _orderedChannels = ordered);
+                  // Auto-detect mobile on first load if no saved preference
+                  if (!_simpleModeLoaded) return;
+                }
                 // Prefetch svih channel detaila u pozadini
                 _channelCache.prefetchAll(channels);
               },
@@ -208,6 +269,8 @@ class _HomeScreenState extends State<HomeScreen> {
               idController: _idController,
               formKey: _formKey,
               onManualOpen: _openManual,
+              simpleMode: _simpleMode,
+              onSimpleModeChanged: _toggleSimpleMode,
             ),
     );
   }
@@ -230,6 +293,8 @@ class _ChannelGridView extends StatelessWidget {
   final TextEditingController idController;
   final GlobalKey<FormState> formKey;
   final VoidCallback onManualOpen;
+  final bool simpleMode;
+  final ValueChanged<bool> onSimpleModeChanged;
 
   const _ChannelGridView({
     required this.indexFuture,
@@ -244,6 +309,8 @@ class _ChannelGridView extends StatelessWidget {
     required this.idController,
     required this.formKey,
     required this.onManualOpen,
+    required this.simpleMode,
+    required this.onSimpleModeChanged,
   });
 
   static const double _maxCardWidth = 530;
@@ -360,6 +427,8 @@ class _ChannelGridView extends StatelessWidget {
                     formKey: formKey,
                     onManualOpen: onManualOpen,
                     isMobile: isMobile,
+                    simpleMode: simpleMode,
+                    onSimpleModeChanged: onSimpleModeChanged,
                   ),
                 ),
 
@@ -512,6 +581,8 @@ class _HomeHeader extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final VoidCallback onManualOpen;
   final bool isMobile;
+  final bool simpleMode;
+  final ValueChanged<bool> onSimpleModeChanged;
 
   const _HomeHeader({
     required this.channelCount,
@@ -523,6 +594,8 @@ class _HomeHeader extends StatelessWidget {
     required this.formKey,
     required this.onManualOpen,
     required this.isMobile,
+    required this.simpleMode,
+    required this.onSimpleModeChanged,
   });
 
   @override
@@ -763,6 +836,8 @@ class _HomeHeader extends StatelessWidget {
       mainAxisAlignment:
           isMobile ? MainAxisAlignment.center : MainAxisAlignment.end,
       children: [
+        _viewModeToggle(theme),
+        const SizedBox(width: 8),
         IconButton(
           onPressed: onShuffle,
           icon: const Icon(Icons.shuffle, size: 18),
@@ -774,6 +849,81 @@ class _HomeHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _viewModeToggle(ThemeData theme) {
+    return Container(
+      height: 34,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _toggleButton(
+            theme: theme,
+            icon: Icons.desktop_windows,
+            label: 'Detaljno',
+            isActive: !simpleMode,
+            onTap: () => onSimpleModeChanged(false),
+          ),
+          _toggleButton(
+            theme: theme,
+            icon: Icons.phone_android,
+            label: 'Jednostavno',
+            isActive: simpleMode,
+            onTap: () => onSimpleModeChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleButton({
+    required ThemeData theme,
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: isActive
+              ? theme.colorScheme.primaryContainer
+              : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: isActive
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                color: isActive
+                    ? theme.colorScheme.onPrimaryContainer
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
