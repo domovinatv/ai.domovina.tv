@@ -7,8 +7,10 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../services/background_audio.dart';
+import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/cdn_config.dart';
+import '../services/notification_art.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
@@ -439,12 +441,28 @@ class _EpisodeContentState extends State<_EpisodeContent>
         debugPrint('Video: ready');
 
         // Background audio session — lock screen + notification na native, no-op na webu.
+        // Artwork strategija:
+        //   iOS: 1:1 channel avatar (savrseno fit u Now Playing square widget).
+        //   Android: 2:1 runtime-composed slika (1:1 avatar + 16:9 thumbnail)
+        //     jer Android 13+ MediaStyle crop-a u widescreen; kompozicija ispuni
+        //     tile elegantno. Fallback na 1:1 avatar ili YouTube thumbnail.
+        await channelCache.loadIndex();
+        final channelName = widget.data.info.channel;
+        final squareUrl = channelCache.avatarSquareForChannelName(channelName);
+        final thumbUrl = widget.data.info.thumbnail;
+        final composed = squareUrl != null
+            ? await NotificationArt.composeForAndroid(
+                videoId: widget.data.youtubeId,
+                avatarSquareUrl: squareUrl,
+                thumbnail16x9Url: thumbUrl,
+              )
+            : null;
         final summaryTitle = widget.data.summary.summary.titleHr;
         BackgroundAudio.instance.attach(
           player: player,
           title: summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title,
-          artist: widget.data.info.channel,
-          artUri: widget.data.info.thumbnail,
+          artist: channelName,
+          artUri: composed ?? squareUrl ?? thumbUrl,
           duration: Duration(seconds: widget.data.info.duration),
         );
 

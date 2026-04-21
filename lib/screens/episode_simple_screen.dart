@@ -7,7 +7,9 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../services/background_audio.dart';
+import '../services/channel_cache.dart';
 import '../services/data_service.dart';
+import '../services/notification_art.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
 /// Optimiziran za slušanje u autu — 3 taba: Player, Poglavlja, Info.
@@ -192,13 +194,24 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent> {
           _videoReady = true;
         });
 
-        // Background audio session — lock screen + notification na native.
+        // Background audio session — vidi episode_screen.dart za strategiju artworka.
+        await channelCache.loadIndex();
+        final channelName = widget.data.info.channel;
+        final squareUrl = channelCache.avatarSquareForChannelName(channelName);
+        final thumbUrl = widget.data.info.thumbnail;
+        final composed = squareUrl != null
+            ? await NotificationArt.composeForAndroid(
+                videoId: widget.data.youtubeId,
+                avatarSquareUrl: squareUrl,
+                thumbnail16x9Url: thumbUrl,
+              )
+            : null;
         final summaryTitle = widget.data.summary.summary.titleHr;
         BackgroundAudio.instance.attach(
           player: player,
           title: summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title,
-          artist: widget.data.info.channel,
-          artUri: widget.data.info.thumbnail,
+          artist: channelName,
+          artUri: composed ?? squareUrl ?? thumbUrl,
           duration: Duration(seconds: widget.data.info.duration),
         );
       }

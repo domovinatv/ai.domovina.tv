@@ -34,6 +34,18 @@ class ChannelCache extends ChangeNotifier {
   /// Dohvati cached channel detail — null ako jos nije ucitan.
   ChannelDetail? get(String channelId) => _cache[channelId];
 
+  /// Look up square avatar URL za kanal po imenu (match info.json `channel`
+  /// polje s index.json `name` poljem). Null ako index nije ucitan ili
+  /// match nije nadjen. Koristeno za media notification artwork.
+  String? avatarSquareForChannelName(String name) {
+    final idx = _index;
+    if (idx == null) return null;
+    for (final c in idx.channels) {
+      if (c.name == name) return c.avatarSquare;
+    }
+    return null;
+  }
+
   /// Ucitaj channel detail (cache-first, network fallback).
   Future<ChannelDetail> loadChannel(String channelId) async {
     final cached = _cache[channelId];
