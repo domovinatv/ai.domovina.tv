@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../services/background_audio.dart';
 import '../services/data_service.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
@@ -129,6 +130,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent> {
   @override
   void dispose() {
     _positionSub?.cancel();
+    BackgroundAudio.instance.detach();
     _player?.dispose();
     super.dispose();
   }
@@ -189,6 +191,16 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent> {
           _videoController = controller;
           _videoReady = true;
         });
+
+        // Background audio session — lock screen + notification na native.
+        final summaryTitle = widget.data.summary.summary.titleHr;
+        BackgroundAudio.instance.attach(
+          player: player,
+          title: summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title,
+          artist: widget.data.info.channel,
+          artUri: widget.data.info.thumbnail,
+          duration: Duration(seconds: widget.data.info.duration),
+        );
       }
     } catch (e) {
       debugPrint('SimpleEpisode: video init failed — $e');

@@ -1,5 +1,8 @@
 package ai.domovina
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+// Extends AudioServiceActivity (not FlutterActivity) so the audio_service
+// plugin can attach its FlutterEngine for background playback. Required by
+// lib/services/background_audio.dart.
+class MainActivity : AudioServiceActivity()

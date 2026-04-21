@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'router/app_router.dart';
+import 'services/background_audio.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
@@ -12,7 +13,7 @@ const String appVersion = '2.0.1';
 // ignore: avoid_print
 void log(String msg) => print('[DOMOVINA v$appVersion] $msg');
 
-void main() {
+void main() async {
   log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,6 +23,7 @@ void main() {
   // Vidi CLAUDE.md "Known Issues".
 
   MediaKit.ensureInitialized();
+  await BackgroundAudio.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {

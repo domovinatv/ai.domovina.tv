@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../services/background_audio.dart';
 import '../services/data_service.dart';
 import '../services/cdn_config.dart';
 import '../widgets/hero_section.dart';
@@ -238,7 +239,8 @@ class _EpisodeContent extends StatefulWidget {
   State<_EpisodeContent> createState() => _EpisodeContentState();
 }
 
-class _EpisodeContentState extends State<_EpisodeContent> {
+class _EpisodeContentState extends State<_EpisodeContent>
+    with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
@@ -252,6 +254,13 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   /// Sprjecava ponavljanje auto-open endDrawera ako korisnik zatvori panel.
   bool _endDrawerAutoOpened = false;
+
+  /// Kad app ode u background dok je endDrawer otvoren, Android unisti
+  /// SurfaceView pa media_kit auto-pauzira. Mitigacija: zatvori drawer
+  /// na `paused` (Video widget detacha -> audio nastavi) i reopen na
+  /// `resumed` da korisnik pri povratku (npr. klik na notifikaciju) vidi
+  /// player kakav je bio.
+  bool _endDrawerWasOpenBeforeBg = false;
 
   // Video
   Player? _player;
@@ -283,6 +292,7 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _sectionKeys = {
       for (final iter in widget.data.article.iterations)
@@ -318,11 +328,38 @@ class _EpisodeContentState extends State<_EpisodeContent> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _positionSub?.cancel();
+    BackgroundAudio.instance.detach();
     _player?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final s = _scaffoldKey.currentState;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      if (s?.isEndDrawerOpen == true) {
+        _endDrawerWasOpenBeforeBg = true;
+        s!.closeEndDrawer();
+      }
+      // Android kill-a SurfaceView kad Video widget ode u bg pa media_kit
+      // auto-pauzira. Force-play kratko nakon tranzicije — foreground service
+      // iz audio_service-a drzi process zivim, pa play() prodje.
+      Future<void>.delayed(const Duration(milliseconds: 150), () {
+        _player?.play();
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      if (_endDrawerWasOpenBeforeBg) {
+        _endDrawerWasOpenBeforeBg = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scaffoldKey.currentState?.openEndDrawer();
+        });
+      }
+    }
   }
 
   // ---------- helpers -------------------------------------------------------
@@ -400,6 +437,16 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           _videoReady = true;
         });
         debugPrint('Video: ready');
+
+        // Background audio session — lock screen + notification na native, no-op na webu.
+        final summaryTitle = widget.data.summary.summary.titleHr;
+        BackgroundAudio.instance.attach(
+          player: player,
+          title: summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title,
+          artist: widget.data.info.channel,
+          artUri: widget.data.info.thumbnail,
+          duration: Duration(seconds: widget.data.info.duration),
+        );
 
         // Postavi inicijalni chapter za startAt
         if (startAt != null) {
