@@ -72,41 +72,43 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
       final theme = Theme.of(context);
       return Scaffold(
         backgroundColor: theme.colorScheme.surfaceContainerLow,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  notFound ? Icons.video_file_outlined : Icons.error_outline,
-                  size: 48,
-                  color: notFound ? null : Colors.red,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  notFound
-                      ? 'Epizoda "${widget.youtubeId}" nije pronađena na CDN-u.\n\nProvjeri je li ID ispravan i jesu li datoteke uploadane.'
-                      : 'Greška pri učitavanju podataka:\n$_error',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                if (notFound)
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    notFound ? Icons.video_file_outlined : Icons.error_outline,
+                    size: 48,
+                    color: notFound ? null : Colors.red,
+                  ),
+                  const SizedBox(height: 12),
                   Text(
-                    CdnConfig.infoUrl(widget.youtubeId),
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                    ),
+                    notFound
+                        ? 'Epizoda "${widget.youtubeId}" nije pronađena na CDN-u.\n\nProvjeri je li ID ispravan i jesu li datoteke uploadane.'
+                        : 'Greška pri učitavanju podataka:\n$_error',
                     textAlign: TextAlign.center,
                   ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => context.go('/'),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Natrag'),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  if (notFound)
+                    Text(
+                      CdnConfig.infoUrl(widget.youtubeId),
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () => context.go('/'),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Natrag'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -136,15 +138,16 @@ class _LoadingScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Progress ring
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Progress ring
                 SizedBox(
                   width: 64,
                   height: 64,
@@ -217,6 +220,7 @@ class _LoadingScreen extends StatelessWidget {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -241,6 +245,13 @@ class _EpisodeContentState extends State<_EpisodeContent> {
   late final Map<String, GlobalKey> _magSectionKeys;
   String? _activeTimestamp; // prati video player poziciju
   String? _scrollTimestamp; // prati scroll poziciju srednje liste
+
+  // Mobile tab switcher: 0 = članak, 1 = Magisterium.
+  // Aktivan samo kad je !isWide && hasMag (inače nema tab bara).
+  int _mobileTab = 0;
+
+  /// Sprjecava ponavljanje auto-open endDrawera ako korisnik zatvori panel.
+  bool _endDrawerAutoOpened = false;
 
   // Video
   Player? _player;
@@ -393,6 +404,21 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         // Postavi inicijalni chapter za startAt
         if (startAt != null) {
           _setInitialChapter(Duration(seconds: startAt));
+        }
+
+        // Native mobile (Android/iOS): auto-open video endDrawer cim video postane spreman,
+        // jer je autoplay pa korisnik odmah zeli vidjeti playback. Web je izuzet (autoplay
+        // policy moze biti mutirana). Desktop ima inline video panel, ne endDrawer.
+        if (!kIsWeb && !_endDrawerAutoOpened) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final width = MediaQuery.sizeOf(context).width;
+            // EndDrawer je renderiran samo kad width <= 1100 (tada !showVideo).
+            if (width <= 1100) {
+              _scaffoldKey.currentState?.openEndDrawer();
+              _endDrawerAutoOpened = true;
+            }
+          });
         }
       }
     } catch (e) {
@@ -590,6 +616,9 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         data.magisteriumFullPrompt != null;
     // Magisterium stupac: zasebni scrollable panel na širokim ekranima
     final showMagColumn = hasMag && width > 1500;
+    // Mobile: bottom tabovi za switch između článka i Magisteriuma.
+    // Bez ovog, Magisterium content je "zakopan" ispod dugačke article liste.
+    final isMobileWithTabs = !isWide && hasMag;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
@@ -665,7 +694,8 @@ class _EpisodeContentState extends State<_EpisodeContent> {
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
                   // Magisterium inline: samo kad NIJE prikazan kao stupac
-                  if (hasMag && !showMagColumn) ...[
+                  // i kad nismo u mobile-tab modu (tamo ima svoj zasebni tab).
+                  if (hasMag && !showMagColumn && !isMobileWithTabs) ...[
                     MagisteriumPanel(
                       variants: magVariants,
                       magisteriumFull: data.magisteriumFull,
@@ -683,6 +713,70 @@ class _EpisodeContentState extends State<_EpisodeContent> {
         ),
       ],
     );
+
+    // Mobile Magisterium tab — zasebni scroll view s istim SliverAppBar patternom
+    Widget? mobileMagScroll;
+    if (isMobileWithTabs) {
+      mobileMagScroll = CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            leading: IconButton(
+              icon: const Icon(Icons.menu),
+              tooltip: 'Sadržaj',
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+            automaticallyImplyLeading: false,
+            title: Text(
+              data.info.channel,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: EdgeInsets.only(
+                  right: _videoReady ? 4 : 16,
+                ),
+                child: Center(
+                  child: Text(
+                    data.info.id,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontFamily: 'monospace',
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              if (_videoReady)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: IconButton(
+                    icon: const Icon(Icons.ondemand_video),
+                    tooltip: 'Video',
+                    onPressed: () =>
+                        _scaffoldKey.currentState?.openEndDrawer(),
+                  ),
+                ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 860),
+                child: MagisteriumPanel(
+                  variants: magVariants,
+                  magisteriumFull: data.magisteriumFull,
+                  magisteriumFullPrompt: data.magisteriumFullPrompt,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     // Magisterium stupac — neovisno scrollable, blog-post stil
     Widget? magColumn;
@@ -796,8 +890,14 @@ class _EpisodeContentState extends State<_EpisodeContent> {
           Expanded(child: scrollBody),
         ],
       );
+    } else if (isMobileWithTabs) {
+      // Mobitel s Magisteriumom: IndexedStack — članak (tab 0) ili Magisterium (tab 1)
+      body = IndexedStack(
+        index: _mobileTab,
+        children: [scrollBody, mobileMagScroll!],
+      );
     } else {
-      // Mobitel: samo scroll content, Drawer za TOC
+      // Mobitel bez Magisteriuma: samo scroll content, Drawer za TOC
       body = scrollBody;
     }
 
@@ -807,31 +907,103 @@ class _EpisodeContentState extends State<_EpisodeContent> {
       drawer: isWide
           ? null
           : Drawer(
-              child: TableOfContents(
-                article: data.article,
-                activeTimestamp: _activeTimestamp,
-                scrollTimestamp: _scrollTimestamp,
-                onSectionTap: _drawerTap,
+              child: SafeArea(
+                child: TableOfContents(
+                  article: data.article,
+                  activeTimestamp: _activeTimestamp,
+                  scrollTimestamp: _scrollTimestamp,
+                  onSectionTap: _drawerTap,
+                ),
               ),
             ),
       endDrawer: _videoReady && !showVideo
           ? Drawer(
               width: 360,
-              child: VideoPanel(
-                player: _player!,
-                controller: _videoController!,
-                chapters: _videoChapters,
-                activeTimestamp: _activeTimestamp,
-                onChapterTap: _seekAndPlay,
-                onSeek: _onVideoSeek,
-                totalDurationSeconds: data.info.duration,
-                speakerTimeline: data.speakerTimeline,
-                speakers: data.summary.summary.speakers,
-                width: null,
+              child: SafeArea(
+                child: VideoPanel(
+                  player: _player!,
+                  controller: _videoController!,
+                  chapters: _videoChapters,
+                  activeTimestamp: _activeTimestamp,
+                  onChapterTap: _seekAndPlay,
+                  onSeek: _onVideoSeek,
+                  totalDurationSeconds: data.info.duration,
+                  speakerTimeline: data.speakerTimeline,
+                  speakers: data.summary.summary.speakers,
+                  width: null,
+                ),
               ),
             )
           : null,
-      body: body,
+      // SliverAppBar (primary: true) respektira top safe area, pa top: false.
+      // Bottom: true samo kad nema bottomNavigationBara (inace bi stvorilo gap).
+      body: SafeArea(
+        top: false,
+        bottom: !isMobileWithTabs,
+        child: body,
+      ),
+      bottomNavigationBar: isMobileWithTabs
+          ? Material(
+              color: theme.colorScheme.surface,
+              elevation: 3,
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 64,
+                  child: Row(
+                    children: [
+                      _BottomBarButton(
+                        icon: Icons.menu,
+                        label: 'Sadržaj',
+                        isActive: false,
+                        onTap: () {
+                          final s = _scaffoldKey.currentState;
+                          if (s == null) return;
+                          if (s.isDrawerOpen) {
+                            s.closeDrawer();
+                          } else {
+                            s.openDrawer();
+                          }
+                        },
+                      ),
+                      _BottomBarButton(
+                        icon: _mobileTab == 0
+                            ? Icons.article
+                            : Icons.article_outlined,
+                        label: 'Članak',
+                        isActive: _mobileTab == 0,
+                        onTap: () => setState(() => _mobileTab = 0),
+                      ),
+                      _BottomBarButton(
+                        icon: _mobileTab == 1
+                            ? Icons.menu_book
+                            : Icons.menu_book_outlined,
+                        label: 'Magisterium',
+                        isActive: _mobileTab == 1,
+                        onTap: () => setState(() => _mobileTab = 1),
+                      ),
+                      _BottomBarButton(
+                        icon: Icons.ondemand_video,
+                        label: 'Video',
+                        isActive: false,
+                        onTap: _videoReady
+                            ? () {
+                                final s = _scaffoldKey.currentState;
+                                if (s == null) return;
+                                if (s.isEndDrawerOpen) {
+                                  s.closeEndDrawer();
+                                } else {
+                                  s.openEndDrawer();
+                                }
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
@@ -876,6 +1048,59 @@ class _MetadataFooter extends StatelessWidget {
           _MetaRow('Tip sadržaja', summary.summary.contentType),
           _MetaRow('Sentiment', summary.summary.sentiment),
         ],
+      ),
+    );
+  }
+}
+
+class _BottomBarButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback? onTap;
+
+  const _BottomBarButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final Color color;
+    if (onTap == null) {
+      color = theme.colorScheme.onSurfaceVariant.withAlpha(80);
+    } else if (isActive) {
+      color = theme.colorScheme.primary;
+    } else {
+      color = theme.colorScheme.onSurfaceVariant;
+    }
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: color),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
