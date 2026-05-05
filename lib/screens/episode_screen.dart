@@ -16,6 +16,7 @@ import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/magisterium_panel.dart';
+import '../widgets/magisterium_v2_view.dart';
 import '../widgets/entities_section.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
@@ -675,22 +676,24 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
     final magVariants = data.magisteriumVariants;
+    final magV2 = data.magisteriumFullV2;
     final hasMag =
         magVariants.isNotEmpty ||
         data.magisteriumFull != null ||
-        data.magisteriumFullPrompt != null;
+        data.magisteriumFullPrompt != null ||
+        magV2 != null;
     // Magisterium stupac: zasebni scrollable panel na širokim ekranima
     final showMagColumn = hasMag && width > 1500;
     // Mobile: bottom tabovi za switch između článka i Magisteriuma.
     // Bez ovog, Magisterium content je "zakopan" ispod dugačke article liste.
+    final showMobileBottomBar = !isWide;
     final isMobileWithTabs = !isWide && hasMag;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
       slivers: [
         SliverAppBar(
-          floating: true,
-          snap: true,
+          pinned: true,
           leading: isWide
               ? null
               : IconButton(
@@ -785,8 +788,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       mobileMagScroll = CustomScrollView(
         slivers: [
           SliverAppBar(
-            floating: true,
-            snap: true,
+            pinned: true,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               tooltip: 'Natrag',
@@ -831,11 +833,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 860),
-                child: MagisteriumPanel(
-                  variants: magVariants,
-                  magisteriumFull: data.magisteriumFull,
-                  magisteriumFullPrompt: data.magisteriumFullPrompt,
-                ),
+                // Preferiraj v2 view ako postoji (noviji format), inace stari Panel.
+                child: magV2 != null
+                    ? MagisteriumV2View(
+                        data: magV2,
+                        padding: const EdgeInsets.all(16),
+                      )
+                    : MagisteriumPanel(
+                        variants: magVariants,
+                        magisteriumFull: data.magisteriumFull,
+                        magisteriumFullPrompt: data.magisteriumFullPrompt,
+                      ),
               ),
             ),
           ),
@@ -1004,10 +1012,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
       // Bottom: true samo kad nema bottomNavigationBara (inace bi stvorilo gap).
       body: SafeArea(
         top: false,
-        bottom: !isMobileWithTabs,
+        bottom: !showMobileBottomBar,
         child: body,
       ),
-      bottomNavigationBar: isMobileWithTabs
+      bottomNavigationBar: showMobileBottomBar
           ? Material(
               color: theme.colorScheme.surface,
               elevation: 3,
@@ -1031,22 +1039,24 @@ class _EpisodeContentState extends State<_EpisodeContent>
                           }
                         },
                       ),
-                      _BottomBarButton(
-                        icon: _mobileTab == 0
-                            ? Icons.article
-                            : Icons.article_outlined,
-                        label: 'Članak',
-                        isActive: _mobileTab == 0,
-                        onTap: () => setState(() => _mobileTab = 0),
-                      ),
-                      _BottomBarButton(
-                        icon: _mobileTab == 1
-                            ? Icons.menu_book
-                            : Icons.menu_book_outlined,
-                        label: 'Magisterium',
-                        isActive: _mobileTab == 1,
-                        onTap: () => setState(() => _mobileTab = 1),
-                      ),
+                      if (isMobileWithTabs) ...[
+                        _BottomBarButton(
+                          icon: _mobileTab == 0
+                              ? Icons.article
+                              : Icons.article_outlined,
+                          label: 'Članak',
+                          isActive: _mobileTab == 0,
+                          onTap: () => setState(() => _mobileTab = 0),
+                        ),
+                        _BottomBarButton(
+                          icon: _mobileTab == 1
+                              ? Icons.menu_book
+                              : Icons.menu_book_outlined,
+                          label: 'Magisterium',
+                          isActive: _mobileTab == 1,
+                          onTap: () => setState(() => _mobileTab = 1),
+                        ),
+                      ],
                       _BottomBarButton(
                         icon: Icons.ondemand_video,
                         label: 'Video',
