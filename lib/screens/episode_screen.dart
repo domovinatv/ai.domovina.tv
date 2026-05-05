@@ -354,9 +354,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
       // Android kill-a SurfaceView kad Video widget ode u bg pa media_kit
       // auto-pauzira. Force-play kratko nakon tranzicije — foreground service
       // iz audio_service-a drzi process zivim, pa play() prodje.
-      Future<void>.delayed(const Duration(milliseconds: 150), () {
-        _player?.play();
-      });
+      // Web: ne force-playamo, browser hendla media sam i user-pauzu treba
+      // postivati kad tab ode u pozadinu.
+      if (!kIsWeb) {
+        Future<void>.delayed(const Duration(milliseconds: 150), () {
+          _player?.play();
+        });
+      }
     } else if (state == AppLifecycleState.resumed) {
       if (_endDrawerWasOpenBeforeBg) {
         _endDrawerWasOpenBeforeBg = false;

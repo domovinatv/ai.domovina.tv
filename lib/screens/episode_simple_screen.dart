@@ -149,6 +149,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     // Android kill-a SurfaceView kad Video widget (u _PlayerTab) ode u bg
     // pa media_kit auto-pauzira. Force-play kratko nakon tranzicije —
     // foreground service iz audio_service-a drzi process zivim.
+    // Web: ne force-playamo — browser hendla media sam, a force-play bi
+    // poništio rucnu Pause kad korisnik prebaci tab.
+    if (kIsWeb) return;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       Future<void>.delayed(const Duration(milliseconds: 150), () {
