@@ -488,19 +488,23 @@ class _ChannelGridView extends StatelessWidget {
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, i) {
-                          final vr = videoResults[i];
-                          return _VideoSearchCard(
-                            video: vr.video,
-                            channelName: vr.channelName,
-                            onTap: () => onVideoTap(vr.video.id),
-                          );
-                        },
-                        childCount: videoResults.length,
-                      ),
-                    ),
+                    sliver: isMobile
+                        ? SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, i) {
+                                final vr = videoResults[i];
+                                return _VideoSearchCard(
+                                  video: vr.video,
+                                  channelName: vr.channelName,
+                                  onTap: () => onVideoTap(vr.video.id),
+                                );
+                              },
+                              childCount: videoResults.length,
+                            ),
+                          )
+                        : SliverToBoxAdapter(
+                            child: _buildVideoWrap(videoResults, width),
+                          ),
                   ),
                 ],
 
@@ -561,6 +565,34 @@ class _ChannelGridView extends StatelessWidget {
               channel: channels[i],
               index: i,
               onTap: () => onChannelTap(channels[i]),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static const double _maxVideoCardWidth = 440;
+
+  Widget _buildVideoWrap(
+    List<({String channelId, String channelName, ChannelVideo video})> results,
+    double screenWidth,
+  ) {
+    final availableWidth = screenWidth - 32;
+    final columns =
+        (availableWidth / _maxVideoCardWidth).floor().clamp(1, 99);
+    final cardWidth = (availableWidth - (columns - 1) * 12) / columns;
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        for (final vr in results)
+          SizedBox(
+            width: cardWidth,
+            child: _VideoSearchCard(
+              video: vr.video,
+              channelName: vr.channelName,
+              onTap: () => onVideoTap(vr.video.id),
             ),
           ),
       ],
