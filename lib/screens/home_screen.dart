@@ -21,6 +21,10 @@ const _croBlue = Color(0xFF002F6C);
 const _channelOrderKey = 'channel_order';
 const _simpleModeKey = 'simple_mode';
 
+/// Module-level cache za search query — prezivljava rebuild HomeScreena
+/// kad user ode na /v/ episode i vrati se. Resetira se tek na restart app-a.
+String _cachedSearchQuery = '';
+
 // ---------------------------------------------------------------------------
 // Channel order persistence
 // ---------------------------------------------------------------------------
@@ -64,11 +68,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _idController = TextEditingController();
-  final _searchController = TextEditingController();
+  final _searchController =
+      TextEditingController(text: _cachedSearchQuery);
   final _formKey = GlobalKey<FormState>();
   final _channelCache = channelCache;
   Timer? _debounce;
-  String _searchQuery = '';
+  String _searchQuery = _cachedSearchQuery;
 
   late Future<ChannelIndex> _indexFuture;
   String? _selectedChannelId;
@@ -252,7 +257,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 _debounce?.cancel();
                 _debounce = Timer(
                   const Duration(milliseconds: 400),
-                  () => setState(() => _searchQuery = q),
+                  () => setState(() {
+                    _searchQuery = q;
+                    _cachedSearchQuery = q;
+                  }),
                 );
               },
               idController: _idController,
@@ -260,6 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onManualOpen: _openManual,
               simpleMode: _simpleMode,
               onSimpleModeChanged: _toggleSimpleMode,
+              onVideoTap: _openVideo,
             ),
       ),
     );
@@ -285,6 +294,7 @@ class _ChannelGridView extends StatelessWidget {
   final VoidCallback onManualOpen;
   final bool simpleMode;
   final ValueChanged<bool> onSimpleModeChanged;
+  final void Function(String videoId) onVideoTap;
 
   const _ChannelGridView({
     required this.indexFuture,
@@ -301,6 +311,7 @@ class _ChannelGridView extends StatelessWidget {
     required this.onManualOpen,
     required this.simpleMode,
     required this.onSimpleModeChanged,
+    required this.onVideoTap,
   });
 
   static const double _maxCardWidth = 530;
@@ -484,7 +495,7 @@ class _ChannelGridView extends StatelessWidget {
                           return _VideoSearchCard(
                             video: vr.video,
                             channelName: vr.channelName,
-                            onTap: () => context.go('/v/${vr.video.id}'),
+                            onTap: () => onVideoTap(vr.video.id),
                           );
                         },
                         childCount: videoResults.length,
