@@ -350,6 +350,18 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Center(
+              child: Text(
+                data.info.id,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontFamily: 'monospace',
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
             tooltip: 'Otvori na YouTube',
