@@ -176,6 +176,23 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       final player = Player();
       final controller = VideoController(player);
 
+      // VAZNO: subscribe-i moraju biti registrirani PRIJE open/play.
+      // media_kit streamovi su broadcast (ne replay) — ako se prvi
+      // playing=true event ispali prije nego sto smo se pretplatili (npr.
+      // pri brzoj internoj navigaciji s vec keshanim Player resursima),
+      // izgubimo event i Play/Pause gumb ostaje u krivom stanju.
+      _positionSub = player.stream.position.listen((pos) {
+        if (mounted) setState(() => _position = pos);
+      });
+
+      player.stream.duration.listen((dur) {
+        if (mounted) setState(() => _duration = dur);
+      });
+
+      player.stream.playing.listen((playing) {
+        if (mounted) setState(() => _isPlaying = playing);
+      });
+
       if (kIsWeb) {
         await player.open(Media(widget.data.videoUri), play: false);
         try {
@@ -193,23 +210,16 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         await player.open(Media(widget.data.videoUri), play: true);
       }
 
-      _positionSub = player.stream.position.listen((pos) {
-        if (mounted) setState(() => _position = pos);
-      });
-
-      player.stream.duration.listen((dur) {
-        if (mounted) setState(() => _duration = dur);
-      });
-
-      player.stream.playing.listen((playing) {
-        if (mounted) setState(() => _isPlaying = playing);
-      });
-
       if (mounted) {
         setState(() {
           _player = player;
           _videoController = controller;
           _videoReady = true;
+          // Safety snapshot — ako je playing event procurio kroz timing
+          // gap (rijetko, ali moguce), sinkroniziraj iz player.state.
+          _isPlaying = player.state.playing;
+          _position = player.state.position;
+          _duration = player.state.duration;
         });
 
         // Background audio session — vidi episode_screen.dart za strategiju artworka.
