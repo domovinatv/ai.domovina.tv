@@ -12,6 +12,7 @@ import '../models/channel_detail.dart';
 import '../services/channel_cache.dart';
 import '../services/local_prefs.dart';
 import '../services/update_notifier.dart';
+import '../services/view_mode.dart';
 import '../widgets/magisterium_section.dart';
 
 /// Croatian flag colours extracted from the logo SVG.
@@ -19,7 +20,6 @@ const _croRed = Color(0xFFFF0000);
 const _croBlue = Color(0xFF002F6C);
 
 const _channelOrderKey = 'channel_order';
-const _simpleModeKey = 'simple_mode';
 
 /// Module-level cache za search query — prezivljava rebuild HomeScreena
 /// kad user ode na /v/ episode i vrati se. Resetira se tek na restart app-a.
@@ -41,20 +41,6 @@ List<String>? _loadOrderWeb() {
 
 void _saveOrderWeb(List<String> ids) {
   setLocalStorageString(_channelOrderKey, ids.join(','));
-}
-
-// ---------------------------------------------------------------------------
-// Simple mode persistence
-// ---------------------------------------------------------------------------
-
-bool? _loadSimpleModeWeb() {
-  final raw = getLocalStorageString(_simpleModeKey);
-  if (raw == null) return null;
-  return raw == 'true';
-}
-
-void _saveSimpleModeWeb(bool value) {
-  setLocalStorageString(_simpleModeKey, value.toString());
 }
 
 class HomeScreen extends StatefulWidget {
@@ -100,13 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadSimpleMode() async {
-    bool? saved;
-    if (kIsWeb) {
-      saved = _loadSimpleModeWeb();
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      saved = prefs.getBool(_simpleModeKey);
-    }
+    final saved = await loadSimpleModePref();
     if (mounted) {
       setState(() {
         // If user has never set preference, auto-detect mobile
@@ -118,12 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleSimpleMode(bool value) async {
     setState(() => _simpleMode = value);
-    if (kIsWeb) {
-      _saveSimpleModeWeb(value);
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_simpleModeKey, value);
-    }
+    await saveSimpleModePref(value);
   }
 
   void _onCacheUpdate() {

@@ -10,6 +10,7 @@ import '../services/background_audio.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/notification_art.dart';
+import '../services/view_mode.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/speaker_chip.dart';
 
@@ -349,9 +350,13 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.open_in_new),
+            icon: const Icon(Icons.unfold_more),
             tooltip: 'Detaljni prikaz',
-            onPressed: () => context.go('/v/${data.youtubeId}'),
+            onPressed: () async {
+              await saveSimpleModePref(false);
+              if (!context.mounted) return;
+              context.go('/v/${data.youtubeId}');
+            },
           ),
         ],
       ),

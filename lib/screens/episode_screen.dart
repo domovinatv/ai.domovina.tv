@@ -11,6 +11,7 @@ import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/cdn_config.dart';
 import '../services/notification_art.dart';
+import '../services/view_mode.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
@@ -710,9 +711,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ),
           actions: [
             Padding(
-              padding: EdgeInsets.only(
-                right: _videoReady && !showVideo ? 4 : 16,
-              ),
+              padding: const EdgeInsets.only(right: 4),
               child: Center(
                 child: Text(
                   data.info.id,
@@ -722,6 +721,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   ),
                 ),
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.unfold_less),
+              tooltip: 'Jednostavni prikaz',
+              onPressed: () async {
+                await saveSimpleModePref(true);
+                if (!context.mounted) return;
+                context.go('/m/${data.youtubeId}');
+              },
             ),
             if (_videoReady && !showVideo)
               Padding(
@@ -806,9 +814,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             ),
             actions: [
               Padding(
-                padding: EdgeInsets.only(
-                  right: _videoReady ? 4 : 16,
-                ),
+                padding: const EdgeInsets.only(right: 4),
                 child: Center(
                   child: Text(
                     data.info.id,
@@ -818,6 +824,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     ),
                   ),
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.unfold_less),
+                tooltip: 'Jednostavni prikaz',
+                onPressed: () async {
+                  await saveSimpleModePref(true);
+                  if (!context.mounted) return;
+                  context.go('/m/${data.youtubeId}');
+                },
               ),
               if (_videoReady)
                 Padding(
