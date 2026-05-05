@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Network access — obavezno eksplicitno navesti za release build
+         (debug build ima automatski, release bez toga crasha na DNS lookupu). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <!-- Background audio playback (audio_service plugin) -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -62,6 +66,16 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- url_launcher: Android 11+ zahtijeva eksplicitnu deklaraciju
+             namjera kako bi launchUrl() mogao pronaci browser za http(s). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
         </intent>
     </queries>
 </manifest>
