@@ -764,11 +764,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   // Magisterium inline: samo kad NIJE prikazan kao stupac
                   // i kad nismo u mobile-tab modu (tamo ima svoj zasebni tab).
                   if (hasMag && !showMagColumn && !isMobileWithTabs) ...[
-                    MagisteriumPanel(
-                      variants: magVariants,
-                      magisteriumFull: data.magisteriumFull,
-                      magisteriumFullPrompt: data.magisteriumFullPrompt,
-                    ),
+                    if (magV2 != null)
+                      MagisteriumV2View(data: magV2)
+                    else
+                      MagisteriumPanel(
+                        variants: magVariants,
+                        magisteriumFull: data.magisteriumFull,
+                        magisteriumFullPrompt: data.magisteriumFullPrompt,
+                      ),
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     const SizedBox(height: 12),
                   ],
@@ -854,6 +857,22 @@ class _EpisodeContentState extends State<_EpisodeContent>
     // Magisterium stupac — neovisno scrollable, blog-post stil
     Widget? magColumn;
     if (showMagColumn) {
+      // V2 view nema fillParent/sectionKeys — wrappamo u SingleChildScrollView
+      // da bi stupac imao vlastiti scroll, isto kao stari Panel s fillParent.
+      final inner = magV2 != null
+          ? SingleChildScrollView(
+              child: MagisteriumV2View(
+                data: magV2,
+                padding: const EdgeInsets.all(20),
+              ),
+            )
+          : MagisteriumPanel(
+              variants: magVariants,
+              magisteriumFull: data.magisteriumFull,
+              magisteriumFullPrompt: data.magisteriumFullPrompt,
+              fillParent: true,
+              sectionKeys: _magSectionKeys,
+            );
       magColumn = Container(
         decoration: BoxDecoration(
           border: Border(
@@ -862,13 +881,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             ),
           ),
         ),
-        child: MagisteriumPanel(
-          variants: magVariants,
-          magisteriumFull: data.magisteriumFull,
-          magisteriumFullPrompt: data.magisteriumFullPrompt,
-          fillParent: true,
-          sectionKeys: _magSectionKeys,
-        ),
+        child: inner,
       );
     }
 
