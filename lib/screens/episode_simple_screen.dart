@@ -344,14 +344,136 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           ),
         ],
       ),
-      body: IndexedStack(index: safeIndex, children: tabs),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: safeIndex,
-        onDestinationSelected: (i) => setState(() => _tabIndex = i),
-        height: 64,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: destinations,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Responzivnost: koliko tabova stane side-by-side?
+          // ~440px je minimum prije nego sadrzaj (video 16:9, lista poglavlja,
+          // markdown clanak) postane previse skucen.
+          const minPanelWidth = 440.0;
+          final visibleCount = (constraints.maxWidth / minPanelWidth)
+              .floor()
+              .clamp(1, tabs.length);
+          return _ResponsiveTabLayout(
+            tabs: tabs,
+            destinations: destinations,
+            selectedIndex: safeIndex,
+            visibleCount: visibleCount,
+            onSelect: (i) => setState(() => _tabIndex = i),
+            theme: theme,
+          );
+        },
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Responsive layout — switcha izmedju single-tab+bottom-nav (mobile portrait)
+// i multi-column rasporeda (desktop landscape) ovisno o dostupnoj sirini.
+//
+// visibleCount == 1: jedan tab + bottom nav s svim destinacijama, max-width 720
+// visibleCount == tabs.length: Row sa svim tabovima side-by-side, bez bottom nava
+// inace: pinanih (visibleCount - 1) tabova s lijeva, zadnji slot je preklopni
+//        preko bottom nava (samo preostali tabovi su u nav-u)
+// ---------------------------------------------------------------------------
+
+class _ResponsiveTabLayout extends StatelessWidget {
+  final List<Widget> tabs;
+  final List<NavigationDestination> destinations;
+  final int selectedIndex;
+  final int visibleCount;
+  final ValueChanged<int> onSelect;
+  final ThemeData theme;
+
+  const _ResponsiveTabLayout({
+    required this.tabs,
+    required this.destinations,
+    required this.selectedIndex,
+    required this.visibleCount,
+    required this.onSelect,
+    required this.theme,
+  });
+
+  Widget _columnDivider() => VerticalDivider(
+        width: 1,
+        thickness: 1,
+        color: theme.colorScheme.outlineVariant.withAlpha(80),
+      );
+
+  Widget _navBar({
+    required int idx,
+    required ValueChanged<int> onTap,
+    required List<NavigationDestination> dests,
+  }) {
+    return NavigationBar(
+      selectedIndex: idx,
+      onDestinationSelected: onTap,
+      height: 64,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: dests,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (visibleCount == 1) {
+      return Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: IndexedStack(index: selectedIndex, children: tabs),
+              ),
+            ),
+          ),
+          _navBar(idx: selectedIndex, onTap: onSelect, dests: destinations),
+        ],
+      );
+    }
+
+    if (visibleCount >= tabs.length) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (int i = 0; i < tabs.length; i++) ...[
+            if (i > 0) _columnDivider(),
+            Expanded(child: tabs[i]),
+          ],
+        ],
+      );
+    }
+
+    final pinnedCount = visibleCount - 1;
+    final swapStart = pinnedCount;
+    final swapTabs = tabs.sublist(swapStart);
+    final swapDestinations = destinations.sublist(swapStart);
+    final swapIndex =
+        (selectedIndex - swapStart).clamp(0, swapTabs.length - 1);
+
+    return Column(
+      children: [
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int i = 0; i < pinnedCount; i++) ...[
+                if (i > 0) _columnDivider(),
+                Expanded(child: tabs[i]),
+              ],
+              _columnDivider(),
+              Expanded(
+                child: IndexedStack(index: swapIndex, children: swapTabs),
+              ),
+            ],
+          ),
+        ),
+        _navBar(
+          idx: swapIndex,
+          onTap: (i) => onSelect(swapStart + i),
+          dests: swapDestinations,
+        ),
+      ],
     );
   }
 }
