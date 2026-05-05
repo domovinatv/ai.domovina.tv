@@ -10,6 +10,7 @@ import '../services/background_audio.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/notification_art.dart';
+import '../services/open_url.dart';
 import '../services/view_mode.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/speaker_chip.dart';
@@ -349,6 +350,12 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
+            tooltip: 'Otvori na YouTube',
+            onPressed: () =>
+                openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
+          ),
           IconButton(
             icon: const Icon(Icons.unfold_more),
             tooltip: 'Detaljni prikaz',

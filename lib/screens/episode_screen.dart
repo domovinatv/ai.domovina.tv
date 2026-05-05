@@ -11,6 +11,7 @@ import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/cdn_config.dart';
 import '../services/notification_art.dart';
+import '../services/open_url.dart';
 import '../services/view_mode.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
@@ -721,6 +722,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   ),
                 ),
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
+              tooltip: 'Otvori na YouTube',
+              onPressed: () =>
+                  openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
             ),
             IconButton(
               icon: const Icon(Icons.unfold_less),
