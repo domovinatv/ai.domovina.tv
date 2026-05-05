@@ -534,16 +534,20 @@ class _CurrentSpeakerRow extends StatelessWidget {
   });
 
   String get _initials {
-    final parts = speaker.suggestedName.split(' ');
-    if (parts.length >= 2) {
+    final name = speaker.displayName ?? speaker.roleLabel;
+    if (name.isEmpty) return '?';
+    final parts = name.split(' ');
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return speaker.suggestedName.substring(0, 1).toUpperCase();
+    return name.substring(0, 1).toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final name = speaker.displayName;
+    final roleLabel = speaker.roleLabel;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -574,18 +578,20 @@ class _CurrentSpeakerRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  speaker.suggestedName,
+                  // Anonymous host (suggested_name == role) → samo roleLabel.
+                  name ?? roleLabel,
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
                 ),
-                Text(
-                  speaker.role,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                if (name != null && roleLabel.isNotEmpty)
+                  Text(
+                    roleLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -648,22 +654,36 @@ class _FullscreenSpeakerLabel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                speaker.suggestedName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              // Anonymous host (suggested_name == role) → samo roleLabel
+              // umjesto duplog "Voditelj voditelj".
+              if (speaker.displayName != null) ...[
+                Text(
+                  speaker.displayName!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                speaker.role,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
+                if (speaker.roleLabel.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '· ${speaker.roleLabel}',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ] else
+                Text(
+                  speaker.roleLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
             ],
           ),
         );

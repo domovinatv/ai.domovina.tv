@@ -11,6 +11,7 @@ import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/notification_art.dart';
 import '../widgets/magisterium_v2_view.dart';
+import '../widgets/speaker_chip.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
 /// Optimiziran za slušanje u autu — 3 taba: Player, Poglavlja, Info.
@@ -694,23 +695,9 @@ class _PlayerTab extends StatelessWidget {
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: summary.speakers.map((s) {
-                      return Chip(
-                        avatar: Icon(
-                          Icons.person,
-                          size: 16,
-                          color: theme.colorScheme.onSecondaryContainer,
-                        ),
-                        label: Text(
-                          s.suggestedName,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                      );
-                    }).toList(),
+                    children: summary.speakers
+                        .map((s) => SpeakerChip(speaker: s))
+                        .toList(),
                   ),
                 ],
               ],
@@ -943,14 +930,17 @@ class _InfoTab extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            s.suggestedName,
+                            // Ako pipeline nije izvukao pravo ime (host se ne
+                            // predstavlja), suggested_name je == role — tada
+                            // prikazi samo capitalized roleLabel.
+                            s.displayName ?? s.roleLabel,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          if (s.role.isNotEmpty)
+                          if (s.displayName != null && s.role.isNotEmpty)
                             Text(
-                              s.role,
+                              s.roleLabel,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),

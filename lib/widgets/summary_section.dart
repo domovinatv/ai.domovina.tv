@@ -42,40 +42,46 @@ class SummarySection extends StatelessWidget {
           // Speakers
           _SectionTitle(title: 'Govornici'),
           const SizedBox(height: 10),
-          ...s.speakers.map((sp) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Text(
-                        sp.suggestedName.isNotEmpty
-                            ? sp.suggestedName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+          ...s.speakers.map((sp) {
+            // Anonymous govornik (npr. host se ne predstavi) → suggested_name
+            // == role. Tada prikazi samo capitalized roleLabel umjesto duplog.
+            final name = sp.displayName;
+            final roleLabel = sp.roleLabel;
+            final primary = name ?? roleLabel;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Text(
+                      primary.isNotEmpty ? primary[0].toUpperCase() : '?',
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(sp.suggestedName,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(primary,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      if (name != null && roleLabel.isNotEmpty)
                         Text(
-                          sp.role,
+                          roleLabel,
                           style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              )),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 24),
 
           // Key Points

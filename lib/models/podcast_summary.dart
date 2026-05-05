@@ -125,4 +125,21 @@ class SummarySpeaker {
       role: json['role'] as String? ?? '',
     );
   }
+
+  /// Capitalized role label: "voditelj" → "Voditelj", "gost" → "Gost".
+  String get roleLabel {
+    if (role.isEmpty) return '';
+    return role[0].toUpperCase() + role.substring(1);
+  }
+
+  /// Pravo ime govornika ako je razlicito od role-a, inace null.
+  /// Pipeline ponekad postavi suggested_name = role kad LLM ne moze izvuci ime
+  /// (npr. host se nikad ne predstavi). U tom slucaju zelimo prikazati samo
+  /// roleLabel umjesto duplog "Voditelj / Voditelj".
+  String? get displayName {
+    final raw = suggestedName.trim();
+    if (raw.isEmpty) return null;
+    if (raw.toLowerCase() == role.toLowerCase()) return null;
+    return raw;
+  }
 }
