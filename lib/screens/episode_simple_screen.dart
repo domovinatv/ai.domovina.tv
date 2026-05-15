@@ -12,6 +12,7 @@ import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
+import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/speaker_chip.dart';
@@ -124,6 +125,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   Duration _duration = Duration.zero;
   bool _isPlaying = false;
 
+  /// URL sync — zadnja sekunda za koju smo update-ali address bar.
+  int _lastUrlSyncedSec = -1;
+
   /// Flat lista svih poglavlja iz outline-a za brz pristup.
   late final List<({String timestamp, String topic, int totalSeconds})>
       _chapters;
@@ -189,6 +193,13 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       // izgubimo event i Play/Pause gumb ostaje u krivom stanju.
       _positionSub = player.stream.position.listen((pos) {
         if (mounted) setState(() => _position = pos);
+        // URL sync: adresna traka prati player na 1Hz (sec granularity).
+        // Stream fira ~5×/s — preskačemo update kad se sec nije promijenio.
+        final sec = pos.inSeconds;
+        if (sec != _lastUrlSyncedSec) {
+          _lastUrlSyncedSec = sec;
+          replaceTimestamp('/m/${widget.data.youtubeId}', sec);
+        }
       });
 
       player.stream.duration.listen((dur) {

@@ -13,6 +13,7 @@ import '../services/data_service.dart';
 import '../services/cdn_config.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
+import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
@@ -295,6 +296,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// dok traje programatski scroll (auto-scroll iz video playbacka).
   DateTime? _scrollLock;
 
+  /// URL sync — zadnja sekunda za koju smo update-ali address bar.
+  /// Razlog: position stream fira ~5×/s; želimo update najviše 1×/s i samo
+  /// kad se sekunda promijenila.
+  int _lastUrlSyncedSec = -1;
+
   @override
   void initState() {
     super.initState();
@@ -521,6 +527,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
   }
 
   void _onVideoPosition(Duration pos) {
+    // URL sync na webu — adresna traka prati player na 1Hz.
+    // Nema veze sa seekLockom; želimo da se address bar updatea i tijekom
+    // ručno-induciranog seeka (čim novi pos stigne).
+    final sec = pos.inSeconds;
+    if (sec != _lastUrlSyncedSec) {
+      _lastUrlSyncedSec = sec;
+      replaceTimestamp('/v/${widget.data.youtubeId}', sec);
+    }
+
     // Preskoči auto-sync tijekom rucnog klika na chapter
     final lock = _seekLock;
     final now = DateTime.now();
