@@ -42,6 +42,23 @@ GoRouter createRouter() {
           );
         },
       ),
+      // Path-based timestamp share — /v/<id>/t/<sec>
+      // Path varijanta postoji da svaki clip ima vlastiti crawler cache entry
+      // (Facebook/LinkedIn/WhatsApp normaliziraju query param verzije).
+      GoRoute(
+        path: '/v/:videoId/t/:seconds',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
+          return NoTransitionPage(
+            key: ValueKey('video-$videoId-${startAt ?? 0}'),
+            child: EpisodeScreen(
+              youtubeId: videoId,
+              startAtSeconds: startAt,
+            ),
+          );
+        },
+      ),
       // Mobile simplified view
       GoRoute(
         path: '/m/:videoId',

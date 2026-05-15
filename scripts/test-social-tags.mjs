@@ -233,16 +233,130 @@ async function testHomepage() {
   return { ytId: 'HOMEPAGE', passed, failed };
 }
 
+/**
+ * Testira timestamp share URL `/v/<id>/t/<sec>` — chapter-aware OG tagovi.
+ * Verificira da je canonical/og:url path-based (nije normaliziran na base URL)
+ * i da title/description signaliziraju da je clip, ne cijela epizoda.
+ */
+async function testTimestamp(ytId, tSec) {
+  const url = `${BASE}/v/${ytId}/t/${tSec}`;
+  console.log(`\n${BOLD}── ${ytId} @ ${tSec}s${RESET}  ${url}`);
+
+  let html;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      console.log(`  ${fail(`HTTP ${res.status}`)}`);
+      return { ytId: `${ytId}@${tSec}`, passed: 0, failed: 1 };
+    }
+    html = await res.text();
+  } catch (e) {
+    console.log(`  ${fail(`Network error: ${e.message}`)}`);
+    return { ytId: `${ytId}@${tSec}`, passed: 0, failed: 1 };
+  }
+
+  let passed = 0;
+  let failed = 0;
+
+  const check = (label, value, expected) => {
+    const label20 = label.padEnd(26);
+    if (value === null || value.trim() === '') {
+      console.log(`  ${fail(label20)} NEDOSTAJE`);
+      failed++;
+      return;
+    }
+    if (expected !== undefined && !expected(value)) {
+      const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+      console.log(`  ${fail(label20)} "${preview}"`);
+      failed++;
+      return;
+    }
+    const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+    console.log(`  ${ok(label20)} "${preview}"`);
+    passed++;
+  };
+
+  const expectedCanonical = `https://domovina.ai/v/${ytId}/t/${tSec}`;
+
+  const title       = extractTitle(html);
+  const ogTitle     = extractMeta(html, 'property', 'og:title');
+  const ogDesc      = extractMeta(html, 'property', 'og:description');
+  const ogUrl       = extractMeta(html, 'property', 'og:url');
+  const ogStart     = extractMeta(html, 'property', 'og:video:start_time');
+  const canonical   = extractCanonical(html);
+
+  // Kritično: og:url i canonical MORAJU sadržavati /t/<sec> — bez toga
+  // crawleri sve clipove istog videa tretiraju kao isti URL.
+  check('og:url path-based',  ogUrl,     (v) => v === expectedCanonical);
+  check('canonical path-based', canonical, (v) => v === expectedCanonical);
+  check('og:video:start_time', ogStart,  (v) => v === String(tSec));
+  // Title/desc moraju biti chapter-aware (sadrže ⏱ marker ili timestamp).
+  check('og:title (clip marker)', ogTitle, (v) => v.includes('⏱') || v.includes(':'));
+  check('og:description (clip)', ogDesc, (v) => v.length > 30);
+  check('<title> (clip)',       title,    (v) => v.includes('⏱') || v.includes('DOMOVINA.ai'));
+
+  return { ytId: `${ytId}@${tSec}`, passed, failed };
+}
+
+/**
+ * Testira simple-view share URL `/m/<id>` — isti OG kao /v/, ali:
+ *  - canonical → /v/<id> (SEO konsolidacija, /m/ je samo alternativni view)
+ *  - og:url → /m/<id> (prati shared URL da crawler ima distinct cache)
+ */
+async function testSimpleView(ytId) {
+  const url = `${BASE}/m/${ytId}`;
+  console.log(`\n${BOLD}── ${ytId} (simple view)${RESET}  ${url}`);
+
+  let html;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      redirect: 'follow',
+    });
+    if (!res.ok) { console.log(`  ${fail(`HTTP ${res.status}`)}`); return { ytId: `${ytId}/m`, passed: 0, failed: 1 }; }
+    html = await res.text();
+  } catch (e) { console.log(`  ${fail(`Network: ${e.message}`)}`); return { ytId: `${ytId}/m`, passed: 0, failed: 1 }; }
+
+  let passed = 0, failed = 0;
+  const check = (label, value, expected) => {
+    const lab = label.padEnd(26);
+    if (value === null || value.trim() === '') { console.log(`  ${fail(lab)} NEDOSTAJE`); failed++; return; }
+    if (expected !== undefined && !expected(value)) { const p = value.length > 70 ? value.slice(0,67)+'…' : value; console.log(`  ${fail(lab)} "${p}"`); failed++; return; }
+    const p = value.length > 70 ? value.slice(0,67)+'…' : value; console.log(`  ${ok(lab)} "${p}"`); passed++;
+  };
+
+  const ogTitle = extractMeta(html, 'property', 'og:title');
+  const ogUrl   = extractMeta(html, 'property', 'og:url');
+  const canon   = extractCanonical(html);
+  const title   = extractTitle(html);
+
+  check('og:title (not default)',  ogTitle, (v) => v !== 'DOMOVINA.ai' && v.length > 5);
+  check('og:url is /m/',           ogUrl,   (v) => v === `https://domovina.ai/m/${ytId}`);
+  check('canonical is /v/',        canon,   (v) => v === `https://domovina.ai/v/${ytId}`);
+  check('<title> (not default)',   title,   (v) => v.includes('DOMOVINA.ai') && v !== '– DOMOVINA.ai');
+
+  return { ytId: `${ytId}/m`, passed, failed };
+}
+
 async function main() {
   console.log(`${BOLD}DOMOVINA.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
-  console.log(`Testira: homepage (18 tagova) + ${VIDEO_IDS.length} epizoda (18 tagova svaka)\n`);
+  console.log(`Testira: homepage + ${VIDEO_IDS.length} epizoda + timestamp shareovi\n`);
 
   const results = [];
   results.push(await testHomepage());
   for (const id of VIDEO_IDS) {
     results.push(await testVideo(id));
   }
+  // Timestamp share testovi — uzmi prvi video, testiraj 2 različita momenta.
+  // 600s = ~10min (vjerojatno unutar chaptera), 60s = rano (early chapter).
+  results.push(await testTimestamp(VIDEO_IDS[0], 600));
+  results.push(await testTimestamp(VIDEO_IDS[0], 60));
+  // Simple view share (/m/<id>) — isti OG, canonical → /v/, og:url → /m/.
+  results.push(await testSimpleView(VIDEO_IDS[0]));
 
   const totalPassed = results.reduce((s, r) => s + r.passed, 0);
   const totalFailed = results.reduce((s, r) => s + r.failed, 0);

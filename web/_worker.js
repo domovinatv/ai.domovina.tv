@@ -30,12 +30,24 @@ export default {
     }
 
     // Izvuci YouTube ID iz URL-a:
-    //   /v/<ytId>  — permalink format
-    //   /?v=<ytId> — query param format
+    //   /v/<ytId>            — permalink format (detailed view)
+    //   /v/<ytId>/t/<sec>    — timestamp clip share (path-based za pouzdan crawler cache)
+    //   /m/<ytId>            — mobile simplified view (isti OG, canonical → /v/<id>)
+    //   /?v=<ytId>           — query param format
     let ytId = null;
-    const vMatch = path.match(/^\/v\/([A-Za-z0-9_-]{6,20})$/);
-    if (vMatch) {
+    let tSec = null;
+    let viewMode = 'v'; // 'v' = detailed, 'm' = simple
+    const tMatch = path.match(/^\/v\/([A-Za-z0-9_-]{6,20})\/t\/(\d+)$/);
+    const vMatch = !tMatch && path.match(/^\/v\/([A-Za-z0-9_-]{6,20})$/);
+    const mMatch = !tMatch && !vMatch && path.match(/^\/m\/([A-Za-z0-9_-]{6,20})$/);
+    if (tMatch) {
+      ytId = tMatch[1];
+      tSec = parseInt(tMatch[2], 10);
+    } else if (vMatch) {
       ytId = vMatch[1];
+    } else if (mMatch) {
+      ytId = mMatch[1];
+      viewMode = 'm';
     } else if (path === '/' || path === '') {
       ytId = url.searchParams.get('v');
     }
@@ -46,19 +58,22 @@ export default {
     );
 
     if (ytId) {
-      // Fetch info + summary + og-share image check paralelno.
-      // og-share.jpg je preferirani format za social (WhatsApp limit 600KB);
-      // ako pipeline ga generira, koristi ga, inače fallback na originalni
-      // thumbnail.png (koji ostaje netaknut za in-app prikaz).
-      const [info, summary, hasOgShare] = await Promise.all([
+      // Fetch info + summary + article + og-share image check paralelno.
+      // article.json je opcionalan (možda ga svi videi nemaju) — fetchJson vraća
+      // null na 404 pa fallback radi sam od sebe.
+      // og-share.jpg je preferirani format za social (WhatsApp limit 600KB).
+      const [info, summary, article, hasOgShare] = await Promise.all([
         fetchJson(`${CDN}/data/${ytId}/info.json`),
         fetchJson(`${CDN}/data/${ytId}/summary.json`),
+        // Article fetchamo SAMO ako je timestamp share — base /v/<id> ne treba
+        // section override (genericki summary je tu već dobar).
+        (typeof tSec === 'number') ? fetchJson(`${CDN}/data/${ytId}/article.json`) : Promise.resolve(null),
         headOk(`${CDN}/images/${ytId}/og-share.jpg`),
       ]);
 
       if (info) {
         const indexHtml = await (await indexPromise).text();
-        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, hasOgShare), 'public, max-age=3600, s-maxage=3600');
+        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode), 'public, max-age=3600, s-maxage=3600');
       }
       // info ne postoji — Flutter će prikazati grešku, servamo plain index
       return htmlResponse(await (await indexPromise).text(), 'no-store');
@@ -111,6 +126,70 @@ function formatUploadDate(yyyymmdd) {
   return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`;
 }
 
+/** Sekunde → "H:MM:SS" ili "M:SS" za prikaz u OG title/description */
+function formatClock(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const pad = (n) => n.toString().padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+}
+
+/** Pronađi chapter koji obuhvaća timestamp; vrati null ako nema chaptera ili tSec izvan range. */
+function findChapter(chapters, tSec) {
+  if (!Array.isArray(chapters) || chapters.length === 0 || tSec == null) return null;
+  return chapters.find((c) =>
+    typeof c.start_time === 'number' &&
+    typeof c.end_time === 'number' &&
+    tSec >= c.start_time &&
+    tSec < c.end_time,
+  ) || null;
+}
+
+/** "HH:MM:SS" → sekunde */
+function clockToSec(clock) {
+  if (!clock || typeof clock !== 'string') return null;
+  const parts = clock.split(':').map((n) => parseInt(n, 10));
+  if (parts.some((n) => Number.isNaN(n))) return null;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return null;
+}
+
+/**
+ * Pronađi article section koji obuhvaća tSec.
+ * Article sections imaju AI-generirane subtitle/description/keywords/entities —
+ * znatno bogatije od info.chapters (samo title).
+ *
+ * Algoritam: poravnaj sve sections po timestampu, pa zadnji čiji secStart <= tSec
+ * (do sljedećeg sectiona ili kraja videa) je match.
+ */
+function findArticleSection(article, tSec, videoDuration) {
+  if (!article || !Array.isArray(article.iterations) || tSec == null) return null;
+  const flat = [];
+  for (const it of article.iterations) {
+    if (!Array.isArray(it.sections)) continue;
+    for (const s of it.sections) {
+      const start = clockToSec(s.screenshot_timestamp);
+      if (start != null) flat.push({ start, section: s });
+    }
+  }
+  if (flat.length === 0) return null;
+  flat.sort((a, b) => a.start - b.start);
+  // Pronađi zadnji section s start <= tSec
+  let match = null;
+  for (let i = 0; i < flat.length; i++) {
+    const next = flat[i + 1];
+    const end = next ? next.start : (typeof videoDuration === 'number' ? videoDuration : Infinity);
+    if (tSec >= flat[i].start && tSec < end) {
+      match = { ...flat[i].section, _start: flat[i].start, _end: end };
+      break;
+    }
+  }
+  return match;
+}
+
 /** Sekunde → ISO-8601 duration npr. 2661 → "PT44M21S" */
 function isoDuration(seconds) {
   if (!seconds || seconds <= 0) return null;
@@ -124,10 +203,53 @@ function isoDuration(seconds) {
   return out;
 }
 
-function injectEpisodeTags(indexHtml, ytId, info, summary, hasOgShare) {
-  const title = info.title || 'DOMOVINA.ai';
+function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode) {
+  const baseTitle = info.title || 'DOMOVINA.ai';
   const rawDesc = pickDescription(info, summary);
-  const desc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
+  const baseDesc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
+
+  // Match prioritet za timestamp share:
+  //   1. Article section — najbogatiji (AI subtitle + screenshot_description + keywords)
+  //   2. info.chapters    — basic (samo title + range)
+  //   3. Plain timestamp  — samo ⏱ marker
+  const section = (typeof tSec === 'number')
+    ? findArticleSection(article, tSec, info.duration)
+    : null;
+  const chapter = (typeof tSec === 'number' && !section)
+    ? findChapter(info.chapters, tSec)
+    : null;
+  const clock = (typeof tSec === 'number') ? formatClock(tSec) : null;
+  let title = baseTitle;
+  let desc = baseDesc;
+  // Specifični tagovi za section/chapter — fallback su summary.key_topics u glavnom blocku ispod.
+  let overrideTopicTags = null;
+
+  if (section) {
+    // Section subtitle je već specifičan ("Uvod i predstavljanje X"), ne treba mu cijeli baseTitle.
+    // Skratimo subtitle ako je predug, da stane u 95 chara s clock+epname.
+    const sub = (section.subtitle || '').replace(/\s+/g, ' ').trim();
+    const subShort = sub.length > 80 ? sub.slice(0, 77) + '…' : sub;
+    title = `⏱ ${clock} · ${subShort}`;
+    const range = `${formatClock(section._start)}–${formatClock(section._end)}`;
+    const sectionDesc = (section.screenshot_description || section.content || '').replace(/\s+/g, ' ').trim();
+    desc = `${sectionDesc} — iz "${baseTitle}" (${range})`;
+    if (desc.length > 300) desc = desc.slice(0, 297) + '…';
+    // Bogatiji article:tag-ovi za ovaj specifični trenutak.
+    const tags = [];
+    if (Array.isArray(section.keywords)) tags.push(...section.keywords);
+    if (Array.isArray(section.entities)) tags.push(...section.entities);
+    if (tags.length > 0) overrideTopicTags = tags.slice(0, 8);
+  } else if (chapter) {
+    title = `⏱ ${clock} · ${chapter.title} — ${baseTitle}`;
+    const range = `${formatClock(chapter.start_time)}–${formatClock(chapter.end_time)}`;
+    desc = `Dio "${chapter.title}" (${range}) iz: ${baseTitle}. ${baseDesc}`;
+    if (desc.length > 300) desc = desc.slice(0, 297) + '…';
+  } else if (typeof tSec === 'number') {
+    title = `⏱ ${clock} — ${baseTitle}`;
+    desc = `Trenutak na ${clock} iz: ${baseTitle}. ${baseDesc}`;
+    if (desc.length > 300) desc = desc.slice(0, 297) + '…';
+  }
+
   const thumb = hasOgShare
     ? `${CDN}/images/${ytId}/og-share.jpg`
     : `${CDN}/images/${ytId}/thumbnail.png`;
@@ -136,17 +258,29 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, hasOgShare) {
   // thumbnail.png je 1280×720 (YouTube native, 16:9)
   const thumbW = hasOgShare ? 1200 : 1280;
   const thumbH = hasOgShare ? 630 : 720;
-  const canonical = `${SITE}/v/${ytId}`;
+  // KRITIČNO: canonical mora biti pun path s /t/<sec> da svaki clip ima vlastiti
+  // crawler cache entry (Facebook/LinkedIn/WhatsApp). Bez ovoga svi timestampovi
+  // dijele isti preview.
+  // Canonical uvijek pokazuje na /v/ (ne /m/) — SEO konsolidacija: /m/ je samo
+  // alternativni view, ne distinct content. og:url, pak, prati share URL da
+  // crawleri ne dignu canonical preko og:url-a i poremete cache.
+  const canonical = (typeof tSec === 'number')
+    ? `${SITE}/v/${ytId}/t/${tSec}`
+    : `${SITE}/v/${ytId}`;
+  const ogUrl = (viewMode === 'm')
+    ? `${SITE}/m/${ytId}`
+    : canonical;
   const channel = info.channel || 'DOMOVINA.ai';
   const releaseDate = formatUploadDate(info.upload_date);
   const isoDur = isoDuration(info.duration);
   const videoUrl = `${CDN}/data/${ytId}/video.mp4`;
   const ytUrl = info.webpage_url || `https://www.youtube.com/watch?v=${ytId}`;
 
-  // Tagovi — preferiraj AI-generirane key_topics (hrvatski, relevantni)
-  const topicTags = summary?.summary?.key_topics?.length
-    ? summary.summary.key_topics.slice(0, 6)
-    : (info.tags || []).slice(0, 6);
+  // Tagovi — section override (section-specifični keywords+entities) > summary.key_topics > info.tags.
+  const topicTags = overrideTopicTags
+    || (summary?.summary?.key_topics?.length
+      ? summary.summary.key_topics.slice(0, 6)
+      : (info.tags || []).slice(0, 6));
 
   const articleTags = topicTags.map((t) => `  <meta property="article:tag" content="${x(t)}">`).join('\n');
 
@@ -161,7 +295,7 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, hasOgShare) {
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
-  <meta property="og:url" content="${canonical}">
+  <meta property="og:url" content="${ogUrl}">
   <meta property="og:image" content="${thumb}">
   <meta property="og:image:type" content="${thumbMime}">
   <meta property="og:image:width" content="${thumbW}">
@@ -173,6 +307,8 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, hasOgShare) {
     info.duration ? `\n  <meta property="og:video:duration" content="${info.duration}">` : ''
   }${
     releaseDate ? `\n  <meta property="og:video:release_date" content="${releaseDate}">` : ''
+  }${
+    typeof tSec === 'number' ? `\n  <meta property="og:video:start_time" content="${tSec}">` : ''
   }
   <meta property="article:author" content="${x(channel)}">${
     releaseDate ? `\n  <meta property="article:published_time" content="${releaseDate}">` : ''
@@ -190,7 +326,7 @@ ${articleTags}
   }
 
   <script type="application/ld+json">
-${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl })}
+${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId })}
   </script>`;
 
   // Ukloni default tagove + bilo koji prethodni JSON-LD; pa injectaj video-specifične.
@@ -204,16 +340,16 @@ ${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channe
   return html.replace('</head>', `${tags}\n</head>`);
 }
 
-function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl }) {
+function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId }) {
   const obj = {
     '@context': 'https://schema.org',
     '@type': 'VideoObject',
-    name: title,
+    name: typeof tSec === 'number' ? (baseTitle || title) : title,
     description: desc,
     thumbnailUrl: thumb,
     contentUrl: videoUrl,
-    embedUrl: canonical,
-    url: canonical,
+    embedUrl: typeof tSec === 'number' ? `${SITE}/v/${ytId}` : canonical,
+    url: typeof tSec === 'number' ? `${SITE}/v/${ytId}` : canonical,
     sameAs: ytUrl,
     inLanguage: 'hr',
     publisher: {
@@ -228,6 +364,34 @@ function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur,
   };
   if (releaseDate) obj.uploadDate = releaseDate;
   if (isoDur) obj.duration = isoDur;
+
+  // Schema.org Clip — signaliziraj Googleu da je ovo specifični trenutak.
+  // Vidi: https://developers.google.com/search/docs/appearance/structured-data/video#clip
+  // Prioritet imena: section.subtitle > chapter.title > generički "Trenutak na X".
+  if (typeof tSec === 'number') {
+    let clipName;
+    let clipEnd;
+    if (section) {
+      clipName = (section.subtitle || '').replace(/\s+/g, ' ').trim() || `Trenutak na ${formatClock(tSec)}`;
+      if (typeof section._end === 'number' && Number.isFinite(section._end)) {
+        clipEnd = Math.floor(section._end);
+      }
+    } else if (chapter) {
+      clipName = chapter.title;
+      if (typeof chapter.end_time === 'number') clipEnd = Math.floor(chapter.end_time);
+    } else {
+      clipName = `Trenutak na ${formatClock(tSec)}`;
+    }
+    const clip = {
+      '@type': 'Clip',
+      name: clipName,
+      url: canonical,
+      startOffset: tSec,
+    };
+    if (typeof clipEnd === 'number') clip.endOffset = clipEnd;
+    obj.hasPart = clip;
+  }
+
   return JSON.stringify(obj, null, 2);
 }
 

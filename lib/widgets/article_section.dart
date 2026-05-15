@@ -164,7 +164,9 @@ class _SectionCardState extends State<_SectionCard> {
 
   void _copyShareLink(BuildContext context) {
     final seconds = _tsToSeconds(widget.section.screenshotTimestamp);
-    final url = 'https://domovina.ai/v/${widget.youtubeId}?t=$seconds';
+    // Path-based URL → distinct crawler cache entry po timestampu.
+    // Vidi web/_worker.js — chapter-aware OG injection na ovaj path.
+    final url = 'https://domovina.ai/v/${widget.youtubeId}/t/$seconds';
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
