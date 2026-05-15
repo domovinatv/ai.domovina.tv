@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -672,6 +673,33 @@ class _EpisodeContentState extends State<_EpisodeContent>
     });
   }
 
+  /// Kopira share link na trenutnu poziciju playera (path-based `/v/<id>/t/<sec>`).
+  /// Ako player nije spreman ili je na ~0s, dijeli base URL bez timestampa.
+  /// Worker injecta chapter-aware OG tagove na ovaj path — vidi web/_worker.js.
+  void _copyMomentLink(BuildContext context, String youtubeId) {
+    final pos = _player?.state.position ?? Duration.zero;
+    final sec = pos.inSeconds;
+    final url = sec > 5
+        ? 'https://domovina.ai/v/$youtubeId/t/$sec'
+        : 'https://domovina.ai/v/$youtubeId';
+    Clipboard.setData(ClipboardData(text: url));
+    final label = sec > 5 ? _formatClock(sec) : 'cijela epizoda';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Link kopiran ($label)'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _formatClock(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    String p(int n) => n.toString().padLeft(2, '0');
+    return h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
+  }
+
   // ---------- build ---------------------------------------------------------
 
   @override
@@ -726,6 +754,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   ),
                 ),
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Kopiraj link na trenutni trenutak',
+              onPressed: () => _copyMomentLink(context, data.youtubeId),
             ),
             IconButton(
               icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),

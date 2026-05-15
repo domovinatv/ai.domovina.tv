@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -264,6 +265,33 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     }
   }
 
+  /// Kopira share link na trenutnu poziciju playera (path-based `/v/<id>/t/<sec>`).
+  /// Vidi web/_worker.js — chapter-aware OG injection na ovaj path.
+  void _copyMomentLink(BuildContext context, String youtubeId) {
+    final pos = _player?.state.position ?? Duration.zero;
+    final sec = pos.inSeconds;
+    final url = sec > 5
+        ? 'https://domovina.ai/v/$youtubeId/t/$sec'
+        : 'https://domovina.ai/v/$youtubeId';
+    Clipboard.setData(ClipboardData(text: url));
+    String label;
+    if (sec > 5) {
+      final h = sec ~/ 3600;
+      final m = (sec % 3600) ~/ 60;
+      final s = sec % 60;
+      String p(int n) => n.toString().padLeft(2, '0');
+      label = h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
+    } else {
+      label = 'cijela epizoda';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Link kopiran ($label)'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   /// Pronađi koji je chapter aktivan na temelju pozicije.
   int _activeChapterIndex() {
     int active = -1;
@@ -364,6 +392,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                 ),
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Kopiraj link na trenutni trenutak',
+            onPressed: () => _copyMomentLink(context, data.youtubeId),
           ),
           IconButton(
             icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
