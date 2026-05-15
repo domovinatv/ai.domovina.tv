@@ -49,6 +49,18 @@ else
   flutter build web --release
 fi
 
+# 3b. Kopiraj fajlove koje Flutter build ne kopira automatski (robots.txt, ...)
+#     Flutter web build kopira samo poznate fajlove iz web/ (index.html, manifest.json,
+#     favicon.png, icons/, _headers, _worker.js, social-test.html). Ostalo dodajemo ovdje.
+echo ""
+echo "--- Copy extra web assets ---"
+for f in robots.txt; do
+  if [[ -f "web/$f" ]]; then
+    cp "web/$f" "build/web/$f"
+    echo "  copied $f"
+  fi
+done
+
 # 4. Deploy na Cloudflare Pages
 echo ""
 echo "--- wrangler pages deploy ---"
