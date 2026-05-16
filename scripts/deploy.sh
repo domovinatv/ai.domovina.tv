@@ -73,22 +73,20 @@ flutter analyze || true
 
 # 3. Build
 # Flagovi:
-#   --pwa-strategy=none: NE generiraj Flutter service worker. SW agresivno
-#     cachira main.dart.js i index.html shell, posebno na iOS Safari, pa
-#     korisnici tjednima vide staru verziju nakon deploya. Bez SW: HTTP cache
-#     + ETag revalidacija po _worker.js definira ponašanje.
-#   --wasm: build dart2wasm + skwasm (Metal/WebGL GPU rendering preko WASM)
-#     s automatskim canvaskit/dart2js fallback-om za browsere bez WasmGC.
-#     Radi smooth scroll i bolji rendering performance. Worker već emita
-#     COOP/COEP (Cross-Origin-Opener-Policy: same-origin, COEP: credentialless)
-#     za SharedArrayBuffer koji skwasm koristi za multi-threading.
+#   --wasm: build dart2wasm + skwasm (GPU rendering preko WebGL/WebGPU,
+#     Safari → Metal) s automatskim canvaskit/dart2js fallback-om za
+#     browsere bez WasmGC. Worker već emita COOP/COEP za SharedArrayBuffer.
+#   (SW se generira default — strategija "offline-first" je preuvjet za
+#   iOS PWA "Add to Home Screen" + standalone display + cross-app
+#   background audio. User feedback 2026-05-17: Media Session API alone
+#   nije dovoljan za audio while in WhatsApp.)
 echo ""
 if [[ "${1:-}" == "--debug" ]]; then
-  echo "--- flutter build web (profile + source-maps + O0, no-SW, wasm) ---"
-  flutter build web --profile --source-maps -O0 --pwa-strategy=none --wasm
+  echo "--- flutter build web (profile + source-maps + O0, wasm) ---"
+  flutter build web --profile --source-maps -O0 --wasm
 else
-  echo "--- flutter build web (release, no-SW, wasm) ---"
-  flutter build web --release --pwa-strategy=none --wasm
+  echo "--- flutter build web (release, wasm) ---"
+  flutter build web --release --wasm
 fi
 
 # 3b. Kopiraj fajlove koje Flutter build ne kopira automatski (robots.txt, ...)
