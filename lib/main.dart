@@ -6,7 +6,7 @@ import 'services/background_audio.dart';
 import 'services/update_notifier.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '2.0.1';
+const String appVersion = '2.0.3';
 
 /// Console logger s verzijom — koristi za debug u release web buildovima
 /// gdje su stack traceovi minificirani. Vidi CLAUDE.md za detalje.

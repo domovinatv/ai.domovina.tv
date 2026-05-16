@@ -24,10 +24,42 @@ if [[ -z "${CLOUDFLARE_ZONE_ID:-}" || -z "${CLOUDFLARE_PURGE_TOKEN:-}" ]]; then
   exit 1
 fi
 
-# Izvuci verziju iz pubspec.yaml
-VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-APP_VERSION=$(echo "$VERSION" | cut -d'+' -f1)
-echo "=== DOMOVINA.ai v${VERSION} ==="
+# Auto-bump verzije na svakom deployu — pomaže korisniku znati treba li
+# hard-refresh: ako footer prikazuje istu verziju kao prije, browser servira
+# stari cache i potrebno je Cmd+Shift+R; ako je verzija nova, deploy je
+# stigao do klijenta.
+#
+# Bumpa PATCH komponentu (treća) + build broj (+N). Skip s --no-bump flagom
+# kad želiš redeployati istu verziju (npr. samo cache purge).
+OLD_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+OLD_APP=$(echo "$OLD_VERSION" | cut -d'+' -f1)
+OLD_BUILD=$(echo "$OLD_VERSION" | cut -d'+' -f2)
+
+if [[ "${1:-}" == "--no-bump" ]]; then
+  VERSION="$OLD_VERSION"
+  APP_VERSION="$OLD_APP"
+  echo "=== DOMOVINA.ai v${VERSION} (no bump) ==="
+  shift
+else
+  # Inkrementiraj patch (treća komponenta) i build broj
+  MAJOR=$(echo "$OLD_APP" | cut -d'.' -f1)
+  MINOR=$(echo "$OLD_APP" | cut -d'.' -f2)
+  PATCH=$(echo "$OLD_APP" | cut -d'.' -f3)
+  NEW_PATCH=$((PATCH + 1))
+  NEW_BUILD=$((OLD_BUILD + 1))
+  APP_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+  VERSION="${APP_VERSION}+${NEW_BUILD}"
+
+  echo "=== DOMOVINA.ai v${OLD_VERSION} → v${VERSION} ==="
+
+  # Sync u pubspec.yaml (.bak fallback za macOS sed kompatibilnost)
+  sed -i.bak "s/^version: ${OLD_VERSION}$/version: ${VERSION}/" pubspec.yaml
+  rm -f pubspec.yaml.bak
+
+  # Sync u lib/main.dart — appVersion konstanta koja se prikazuje u footeru
+  sed -i.bak "s/const String appVersion = '${OLD_APP}';/const String appVersion = '${APP_VERSION}';/" lib/main.dart
+  rm -f lib/main.dart.bak
+fi
 
 # 1. Flutter pub get
 echo ""
