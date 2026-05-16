@@ -485,15 +485,18 @@ class _EpisodeContentState extends State<_EpisodeContent>
           _setInitialChapter(Duration(seconds: startAt));
         }
 
-        // Native mobile (Android/iOS): auto-open video endDrawer cim video postane spreman,
-        // jer je autoplay pa korisnik odmah zeli vidjeti playback. Web je izuzet (autoplay
-        // policy moze biti mutirana). Desktop ima inline video panel, ne endDrawer.
-        if (!kIsWeb && !_endDrawerAutoOpened) {
+        // Mobile (Android/iOS/web): auto-open video endDrawer cim video postane
+        // spreman. Razlog: video je autoplay (na webu možda muted zbog browser
+        // policy-a, ali user vidi vizual), korisnik odmah ima video u fokusu.
+        // Ako mu smeta, swipe-right zatvara endDrawer (Flutter default gesture).
+        // Desktop (width > 900) ima inline video panel/stupac, ne endDrawer —
+        // tu auto-open nije primjenjiv.
+        if (!_endDrawerAutoOpened) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             final width = MediaQuery.sizeOf(context).width;
-            // EndDrawer je renderiran samo kad width <= 1100 (tada !showVideo).
-            if (width <= 1100) {
+            // Mobile threshold — isto kao isWide u build() (width > 900).
+            if (width <= 900) {
               _scaffoldKey.currentState?.openEndDrawer();
               _endDrawerAutoOpened = true;
             }
