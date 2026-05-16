@@ -35,7 +35,10 @@ export default {
     // CF cachiranjem koje je sigurno jer im se URL mijenja na rebuild.
     if (/\.\w{1,8}$/.test(path)) {
       const res = await env.ASSETS.fetch(request);
-      if (/^\/(main\.dart\.js|flutter\.js|flutter_bootstrap\.js|manifest\.json|favicon\.png)$/.test(path)) {
+      // Bootstrap entry-pointi koji se mijenjaju na svaki rebuild ali zadržavaju
+      // isti URL — moraju revalidate-ati. Skwasm build dodaje main.dart.wasm i
+      // *.mjs runtime loadere uz dart2js fallback.
+      if (/^\/(main\.dart\.(?:js|wasm|mjs)|flutter\.js|flutter_bootstrap\.js|skwasm(?:_heavy)?\.(?:js|wasm|worker\.js)|manifest\.json|favicon\.png)$/.test(path)) {
         const headers = new Headers(res.headers);
         headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
         // CDN edge sloj: i CF mora poštovati no-store da ne servira iz vlastitog cache-a
