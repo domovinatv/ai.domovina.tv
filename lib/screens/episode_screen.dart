@@ -506,6 +506,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
   }
 
   /// Postavi activeTimestamp + scrollTimestamp za inicijalnu poziciju.
+  ///
+  /// Re-scroll safety net: nakon initial scrolla zakažemo još 2 scrolla
+  /// (300ms i 1200ms) jer ostali async content (Magisterium content, web
+  /// fonts, late slike koje su tek izračunale visinu nakon prvog frame-a)
+  /// mogu pomaknuti target sekciju izvan viewporta. AspectRatio rezervacija
+  /// na screenshotima rješava 90% slučajeva — ovo pokriva ostatak.
   void _setInitialChapter(Duration pos) {
     String? ts;
     for (final s in _sortedSections) {
@@ -522,6 +528,19 @@ class _EpisodeContentState extends State<_EpisodeContent>
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _scrollToSection(ts!);
+      });
+      // Re-scroll twice da apsorbiramo late layout shifts (slike, fontovi).
+      // Provjeri _lastManualScroll prije svakog poziva — ako je korisnik
+      // počeo ručno scrollati, ne overrideaj.
+      Future<void>.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        if (_lastManualScroll != null) return;
+        _scrollToSection(ts!);
+      });
+      Future<void>.delayed(const Duration(milliseconds: 1200), () {
+        if (!mounted) return;
+        if (_lastManualScroll != null) return;
+        _scrollToSection(ts!);
       });
     }
   }

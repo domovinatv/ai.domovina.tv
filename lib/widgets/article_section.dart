@@ -298,18 +298,33 @@ class _SectionCardState extends State<_SectionCard> {
           ),
           const SizedBox(height: 12),
 
-          // Screenshot
+          // Screenshot — AspectRatio rezervira mjesto PRIJE async load-a slike.
+          // Bez ovoga: section anchor scroll na page load promaši target jer
+          // slike iznad load-aju asinkrono pa layout naraste poslije scrolla,
+          // što je posebno loše na shared timestamp URL-ovima (mobile worst).
+          // 16:9 odgovara originalnim screenshotima (1920×1080 PNG iz pipeline-a).
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              CdnConfig.screenshotUrl(
-                widget.youtubeId,
-                section.screenshotTimestamp,
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: Image.network(
+                  CdnConfig.screenshotUrl(
+                    widget.youtubeId,
+                    section.screenshotTimestamp,
+                  ),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  // Fade-in kad slika stigne — sprječava flash blank → loaded.
+                  frameBuilder: (context, child, frame, wasSyncLoaded) {
+                    if (wasSyncLoaded || frame != null) return child;
+                    return const SizedBox.shrink();
+                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
               ),
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
             ),
           ),
 
