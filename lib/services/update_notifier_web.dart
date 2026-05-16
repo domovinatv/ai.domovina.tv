@@ -2,6 +2,10 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 void listenForAppUpdateImpl(void Function() onUpdateAvailable) {
+  // Legacy `flutter-app-updated` event dolazio je iz SW updatefound handlera u
+  // index.html-u. Od v2.0.5 NEMA SW — event se ne fira. Listener ostaje radi
+  // dual-mode kompatibilnosti: ako se ikad vrati SW (ili neki drugi izvor),
+  // automatski radi. Inače je no-op.
   web.window.addEventListener(
     'flutter-app-updated',
     (web.Event e) { onUpdateAvailable(); }.toJS,

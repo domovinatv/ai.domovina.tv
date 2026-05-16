@@ -68,26 +68,52 @@
   </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
   <script>
-    // Service Worker update detection + forced check on every page load.
-    // Safari iOS caches SW aggressively — reg.update() forces re-fetch.
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(function(reg) {
-        // Force SW update check on every page load
-        reg.update();
+    // ──────────────────────────────────────────────────────────────────
+    // Service Worker kill switch — JEDNOKRATNO za postojeće korisnike.
+    //
+    // Od v2.0.5 buildamo s --pwa-strategy=none pa Flutter više ne emitira
+    // flutter_service_worker.js. Korisnici koji su prethodno posjetili site
+    // imaju aktivnog SW koji control-a fetch i servira stari main.dart.js
+    // shell — iOS Safari posebno tvrdoglavo. Ovaj script unregister-a sve
+    // postojeće SW i čisti Cache Storage, postavlja localStorage flag da
+    // ne radi to opet, pa reloada stranicu. Nakon flag-a, sljedeći page
+    // load preskače kill (no-op) — nema regresije za novije buildove.
+    //
+    // Ide PRIJE flutter_bootstrap.js da SW ne uhvati Flutter assete.
+    (function() {
+      var KILL_KEY = 'domovina_sw_killed_v1';
+      try {
+        if (localStorage.getItem(KILL_KEY) === '1') return;
+      } catch (_) { /* localStorage blocked — proceed anyway */ }
 
-        reg.addEventListener('updatefound', function() {
-          var newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener('statechange', function() {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              window.dispatchEvent(new Event('flutter-app-updated'));
-            }
-          });
+      if (!('serviceWorker' in navigator)) {
+        try { localStorage.setItem(KILL_KEY, '1'); } catch (_) {}
+        return;
+      }
+
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        if (regs.length === 0) {
+          try { localStorage.setItem(KILL_KEY, '1'); } catch (_) {}
+          return; // Nije bilo SW, samo flagaj i nastavi boot.
+        }
+        // Postoji legacy SW — unregister + clear Cache API pa reload.
+        var unregs = Promise.all(regs.map(function(r) { return r.unregister(); }));
+        var clears = ('caches' in window)
+          ? caches.keys().then(function(keys) {
+              return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+            })
+          : Promise.resolve();
+        Promise.all([unregs, clears]).then(function() {
+          try { localStorage.setItem(KILL_KEY, '1'); } catch (_) {}
+          // Cache-bust URL da preskočimo bfcache na iOS Safari.
+          var url = location.origin + location.pathname + '?_swkill=' +
+                    Date.now() + location.hash;
+          location.replace(url);
         });
       });
-    }
+    })();
   </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -72,13 +72,18 @@ echo "--- flutter analyze ---"
 flutter analyze || true
 
 # 3. Build
+# --pwa-strategy=none: NE generiraj Flutter service worker. SW agresivno cachira
+# main.dart.js i index.html shell, posebno na iOS Safari, pa korisnici tjednima
+# vide staru verziju nakon deploya. Bez SW: HTTP cache + ETag revalidacija po
+# web/_headers definira ponašanje (bootstrap files revalidate, hashed assets
+# immutable). Vidi feedback_deploy_version_bump.md i CLAUDE.md.
 echo ""
 if [[ "${1:-}" == "--debug" ]]; then
-  echo "--- flutter build web (profile + source-maps + O0) ---"
-  flutter build web --profile --source-maps -O0
+  echo "--- flutter build web (profile + source-maps + O0, no-SW) ---"
+  flutter build web --profile --source-maps -O0 --pwa-strategy=none
 else
-  echo "--- flutter build web (release) ---"
-  flutter build web --release
+  echo "--- flutter build web (release, no-SW) ---"
+  flutter build web --release --pwa-strategy=none
 fi
 
 # 3b. Kopiraj fajlove koje Flutter build ne kopira automatski (robots.txt, ...)

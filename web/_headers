@@ -1,14 +1,31 @@
-/index.html
-  Cache-Control: no-cache, no-store, must-revalidate
+# Cache strategy:
+#  - Bootstrap files (index.html, flutter_bootstrap.js, flutter.js, main.dart.js,
+#    manifest.json) → revalidate every request via ETag. Browser šalje If-None-Match
+#    pa dobije 304 Not Modified (instant) ili novi sadržaj kad je deploy. Bez ovoga
+#    iOS Safari servira stale main.dart.js (~3.3MB) tjednima jer immutable cache.
+#  - Hashed assets (canvaskit, assets/) → immutable. URL-ovi se mijenjaju kad se
+#    sadržaj promijeni pa je dugotrajno cachiranje sigurno.
+#  - flutter_service_worker.js → no-store. Pipeline ide bez SW od v2.0.5, ali
+#    legacy korisnici trebaju moći nadograditi SW na trenutno aktivnu verziju
+#    (no-store sprjeci browser cache da serva stari SW shell).
 
-/flutter_service_worker.js
-  Cache-Control: no-cache, no-store, must-revalidate
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/manifest.json
+  Cache-Control: no-cache, must-revalidate
 
 /flutter_bootstrap.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
+
+/flutter.js
+  Cache-Control: no-cache, must-revalidate
 
 /main.dart.js
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: no-cache, must-revalidate
+
+/flutter_service_worker.js
+  Cache-Control: no-store
 
 /canvaskit/*
   Cache-Control: public, max-age=31536000, immutable

@@ -24,9 +24,25 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Statički asseti (JS, CSS, slike, fontovi...) — direktno iz ASSETS
+    // Statički asseti (JS, CSS, slike, fontovi...) — direktno iz ASSETS.
+    // KRITIČNO: env.ASSETS.fetch ne aplicira web/_headers automatski kad
+    // worker rukuje requestom (CF Pages Advanced Mode contract). Bootstrap
+    // fajlovi (main.dart.js, flutter*.js, manifest.json) bi inače dobili
+    // default Cache-Control od ~14400s pa bi iOS Safari servirao stari
+    // main.dart.js (~3.3MB) tjednima nakon deploya. Patchamo ih ovdje na
+    // no-cache + must-revalidate (ETag negotiation = 304 na unchanged).
+    // Hashed bundle assets (canvaskit, assets/*) ostaju s default
+    // CF cachiranjem koje je sigurno jer im se URL mijenja na rebuild.
     if (/\.\w{1,8}$/.test(path)) {
-      return env.ASSETS.fetch(request);
+      const res = await env.ASSETS.fetch(request);
+      if (/^\/(main\.dart\.js|flutter\.js|flutter_bootstrap\.js|manifest\.json|favicon\.png)$/.test(path)) {
+        const headers = new Headers(res.headers);
+        headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
+        // CDN edge sloj: i CF mora poštovati no-store da ne servira iz vlastitog cache-a
+        headers.set('CDN-Cache-Control', 'no-store');
+        return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+      }
+      return res;
     }
 
     // Izvuci YouTube ID iz URL-a:
