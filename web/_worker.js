@@ -71,9 +71,28 @@ export default {
         headOk(`${CDN}/images/${ytId}/og-share.jpg`),
       ]);
 
+      // Section-specific screenshot lookup. Pipeline (fetch.domovina.tv) emitira
+      // raw frame captures u images/<ytId>/screenshots/<HH-MM-SS>.png (1920×1080
+      // PNG, ~1MB). Sami screenshotovi nisu kompozirani za OG (još) — Tier B će
+      // dodati 1200×630 JPEG s tekstom. Dotad: raw PNG je dovoljan za većinu
+      // crawlera (FB/LinkedIn/Twitter/Telegram/Discord/Slack). WhatsApp ima
+      // 600KB hard limit pa može odbiti i fallback-ati na link bez slike — to je
+      // OK degradacija s obzirom na specifičnost na ostalim platformama.
+      let sectionScreenshot = null;
+      if (info && article && typeof tSec === 'number') {
+        const sec = findArticleSection(article, tSec, info.duration);
+        if (sec && sec.screenshot_timestamp) {
+          const sanitized = sec.screenshot_timestamp.replace(/:/g, '-');
+          const ssUrl = `${CDN}/images/${ytId}/screenshots/${sanitized}.png`;
+          if (await headOk(ssUrl)) {
+            sectionScreenshot = ssUrl;
+          }
+        }
+      }
+
       if (info) {
         const indexHtml = await (await indexPromise).text();
-        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode), 'public, max-age=3600, s-maxage=3600');
+        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionScreenshot), 'public, max-age=3600, s-maxage=3600');
       }
       // info ne postoji — Flutter će prikazati grešku, servamo plain index
       return htmlResponse(await (await indexPromise).text(), 'no-store');
@@ -203,7 +222,7 @@ function isoDuration(seconds) {
   return out;
 }
 
-function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode) {
+function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionScreenshot) {
   const baseTitle = info.title || 'DOMOVINA.ai';
   const rawDesc = pickDescription(info, summary);
   const baseDesc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
@@ -250,14 +269,28 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
   }
 
-  const thumb = hasOgShare
-    ? `${CDN}/images/${ytId}/og-share.jpg`
-    : `${CDN}/images/${ytId}/thumbnail.png`;
-  const thumbMime = hasOgShare ? 'image/jpeg' : 'image/png';
-  // og-share.jpg je 1200×630 (canonical OG spec, 1.91:1)
-  // thumbnail.png je 1280×720 (YouTube native, 16:9)
-  const thumbW = hasOgShare ? 1200 : 1280;
-  const thumbH = hasOgShare ? 630 : 720;
+  // og:image prioritet:
+  //   1. Section-specific screenshot (raw 1920×1080 PNG iz pipeline-a) — kad je
+  //      tSec unutar poznate sekcije i pipeline ga je kapturirao.
+  //   2. og-share.jpg (1200×630 JPEG, ~100KB) — episode-level brand image, sve OK.
+  //   3. thumbnail.png (1280×720 PNG) — YouTube native, fallback ako gornje nema.
+  let thumb, thumbMime, thumbW, thumbH;
+  if (sectionScreenshot) {
+    thumb = sectionScreenshot;
+    thumbMime = 'image/png';
+    thumbW = 1920;
+    thumbH = 1080;
+  } else if (hasOgShare) {
+    thumb = `${CDN}/images/${ytId}/og-share.jpg`;
+    thumbMime = 'image/jpeg';
+    thumbW = 1200;
+    thumbH = 630;
+  } else {
+    thumb = `${CDN}/images/${ytId}/thumbnail.png`;
+    thumbMime = 'image/png';
+    thumbW = 1280;
+    thumbH = 720;
+  }
   // KRITIČNO: canonical mora biti pun path s /t/<sec> da svaki clip ima vlastiti
   // crawler cache entry (Facebook/LinkedIn/WhatsApp). Bez ovoga svi timestampovi
   // dijele isti preview.
