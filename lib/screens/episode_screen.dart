@@ -841,7 +841,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     youtubeId: data.youtubeId,
                     sectionKeys: _sectionKeys,
                     onPlayTap: _videoReady
-                        ? (ts) => _seekAndPlay(ts, preroll: true)
+                        ? (ts) {
+                            _seekAndPlay(ts, preroll: true);
+                            // Na mobilu (!isWide) korisnik vidi samo text — bez
+                            // drawera, klik na play je "tihi seek" bez vizuala.
+                            // Otvori endDrawer s playerom da odmah vidi video.
+                            // Wide mode ima video panel/stupac side-by-side
+                            // pa drawer otvaranje nije potrebno.
+                            if (!isWide) {
+                              _scaffoldKey.currentState?.openEndDrawer();
+                            }
+                          }
                         : null,
                     magisterium: data.magisteriumPrimary,
                   ),
