@@ -8,6 +8,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../services/background_audio.dart';
+import '../services/media_session.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/cdn_config.dart';
@@ -301,6 +302,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// kad se sekunda promijenila.
   int _lastUrlSyncedSec = -1;
 
+  /// Snapshot stanja playera u trenutku otvaranja endDrawer-a. Kad korisnik
+  /// zatvori drawer, ako je bio playing pri otvaranju, resumeamo — neki
+  /// build pipelines pauziraju Video widget na drawer detach (media_kit
+  /// SurfaceView lifecycle). Bez ovog korisnik gubi zvuk kad swipe-right
+  /// drawer zatvori, što je glavni mobile use case (audio dok scrollaš
+  /// po članku).
+  bool _wasPlayingWhenDrawerOpened = false;
+
   @override
   void initState() {
     super.initState();
@@ -345,6 +354,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _scrollController.dispose();
     _positionSub?.cancel();
     BackgroundAudio.instance.detach();
+    MediaSession.clear();
     _player?.dispose();
     super.dispose();
   }
@@ -480,6 +490,35 @@ class _EpisodeContentState extends State<_EpisodeContent>
           duration: Duration(seconds: widget.data.info.duration),
         );
 
+        // Media Session API — web ekvivalent za background audio. Signal
+        // OS-u (iOS Now Playing, Android media notification) da je tab
+        // "playing media" pa audio nastavlja kad tab izgubi fokus / zaslon
+        // se zaključa / korisnik prijeđe na drugi tab. No-op na native.
+        final mediaTitle =
+            summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title;
+        MediaSession.attachMetadata(
+          title: mediaTitle,
+          artist: channelName,
+          artUrl: squareUrl ?? thumbUrl,
+        );
+        MediaSession.setActionHandlers(
+          onPlay: () => _player?.play(),
+          onPause: () => _player?.pause(),
+          onSeekTo: (pos) => _player?.seek(pos),
+          onSeekBackward: (off) {
+            final cur = _player?.state.position ?? Duration.zero;
+            _player?.seek(cur - off);
+          },
+          onSeekForward: (off) {
+            final cur = _player?.state.position ?? Duration.zero;
+            _player?.seek(cur + off);
+          },
+        );
+        // Track playing state → playbackState
+        player.stream.playing.listen((isPlaying) {
+          MediaSession.setPlaybackState(isPlaying);
+        });
+
         // Postavi inicijalni chapter za startAt
         if (startAt != null) {
           _setInitialChapter(Duration(seconds: startAt));
@@ -556,6 +595,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
     if (sec != _lastUrlSyncedSec) {
       _lastUrlSyncedSec = sec;
       replaceTimestamp('/v/${widget.data.youtubeId}', sec);
+      // Media Session position update — drži lock screen scrub bar u syncu.
+      // Throttled na sec granularnost (isti gate kao URL sync).
+      MediaSession.setPositionState(
+        duration: Duration(seconds: widget.data.info.duration),
+        position: pos,
+      );
     }
 
     // Preskoči auto-sync tijekom rucnog klika na chapter
@@ -1096,6 +1141,24 @@ class _EpisodeContentState extends State<_EpisodeContent>
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.colorScheme.surfaceContainerLow,
+      onEndDrawerChanged: (isOpen) {
+        if (isOpen) {
+          // Snapshot playing state odmah pri otvaranju — service-class
+          // resume detekcija pri close.
+          _wasPlayingWhenDrawerOpened = _player?.state.playing ?? false;
+        } else {
+          // Drawer zatvoren. Ako je bio playing kad je otvoren i sad nije
+          // (media_kit ga pauzirao zbog Video widget detach), resume.
+          if (_wasPlayingWhenDrawerOpened) {
+            Future<void>.delayed(const Duration(milliseconds: 120), () {
+              if (!mounted) return;
+              if (!(_player?.state.playing ?? false)) {
+                _player?.play();
+              }
+            });
+          }
+        }
+      },
       drawer: isWide
           ? null
           : Drawer(
