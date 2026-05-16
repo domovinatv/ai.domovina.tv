@@ -58,41 +58,38 @@ export default {
     );
 
     if (ytId) {
-      // Fetch info + summary + article + og-share image check paralelno.
-      // article.json je opcionalan (možda ga svi videi nemaju) — fetchJson vraća
-      // null na 404 pa fallback radi sam od sebe.
-      // og-share.jpg je preferirani format za social (WhatsApp limit 600KB).
-      const [info, summary, article, hasOgShare] = await Promise.all([
+      // Fetch info + summary + article + og-sections manifest + og-share check
+      // paralelno. article.json i og-sections.json su opcionalni (stariji videi
+      // ih možda nemaju) — fetchJson vraća null na 404 pa fallback radi sam.
+      // og-sections.json je Tier B manifest: { sections: { "<sec>": "og-t-<sec>.jpg" } }
+      // — file po section-u, 1200×630 JPEG ~100KB (WhatsApp-safe < 600KB).
+      const [info, summary, article, ogSections, hasOgShare] = await Promise.all([
         fetchJson(`${CDN}/data/${ytId}/info.json`),
         fetchJson(`${CDN}/data/${ytId}/summary.json`),
-        // Article fetchamo SAMO ako je timestamp share — base /v/<id> ne treba
-        // section override (genericki summary je tu već dobar).
+        // article + og-sections fetchamo SAMO za timestamp shareove — base
+        // /v/<id> koristi episode-level og-share.jpg.
         (typeof tSec === 'number') ? fetchJson(`${CDN}/data/${ytId}/article.json`) : Promise.resolve(null),
+        (typeof tSec === 'number') ? fetchJson(`${CDN}/images/${ytId}/og-sections.json`) : Promise.resolve(null),
         headOk(`${CDN}/images/${ytId}/og-share.jpg`),
       ]);
 
-      // Section-specific screenshot lookup. Pipeline (fetch.domovina.tv) emitira
-      // raw frame captures u images/<ytId>/screenshots/<HH-MM-SS>.png (1920×1080
-      // PNG, ~1MB). Sami screenshotovi nisu kompozirani za OG (još) — Tier B će
-      // dodati 1200×630 JPEG s tekstom. Dotad: raw PNG je dovoljan za većinu
-      // crawlera (FB/LinkedIn/Twitter/Telegram/Discord/Slack). WhatsApp ima
-      // 600KB hard limit pa može odbiti i fallback-ati na link bez slike — to je
-      // OK degradacija s obzirom na specifičnost na ostalim platformama.
-      let sectionScreenshot = null;
-      if (info && article && typeof tSec === 'number') {
+      // Section-specific og:image override. Manifest mapa: { "<startSec>": "og-t-<sec>.jpg" }.
+      // findArticleSection vraća section s _start poljem koji odgovara ključu u manifestu.
+      // Ako manifest postoji i sadrži file za taj section start → koristi ga.
+      let sectionImageUrl = null;
+      if (info && article && ogSections && typeof tSec === 'number') {
         const sec = findArticleSection(article, tSec, info.duration);
-        if (sec && sec.screenshot_timestamp) {
-          const sanitized = sec.screenshot_timestamp.replace(/:/g, '-');
-          const ssUrl = `${CDN}/images/${ytId}/screenshots/${sanitized}.png`;
-          if (await headOk(ssUrl)) {
-            sectionScreenshot = ssUrl;
+        if (sec && typeof sec._start === 'number') {
+          const filename = ogSections.sections?.[String(sec._start)];
+          if (filename) {
+            sectionImageUrl = `${CDN}/images/${ytId}/${filename}`;
           }
         }
       }
 
       if (info) {
         const indexHtml = await (await indexPromise).text();
-        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionScreenshot), 'public, max-age=3600, s-maxage=3600');
+        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl), 'public, max-age=3600, s-maxage=3600');
       }
       // info ne postoji — Flutter će prikazati grešku, servamo plain index
       return htmlResponse(await (await indexPromise).text(), 'no-store');
@@ -222,7 +219,7 @@ function isoDuration(seconds) {
   return out;
 }
 
-function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionScreenshot) {
+function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl) {
   const baseTitle = info.title || 'DOMOVINA.ai';
   const rawDesc = pickDescription(info, summary);
   const baseDesc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
@@ -270,16 +267,17 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   }
 
   // og:image prioritet:
-  //   1. Section-specific screenshot (raw 1920×1080 PNG iz pipeline-a) — kad je
-  //      tSec unutar poznate sekcije i pipeline ga je kapturirao.
-  //   2. og-share.jpg (1200×630 JPEG, ~100KB) — episode-level brand image, sve OK.
-  //   3. thumbnail.png (1280×720 PNG) — YouTube native, fallback ako gornje nema.
+  //   1. og-t-<sec>.jpg (1200×630 JPEG ~100KB, WhatsApp-safe < 600KB) —
+  //      Tier B pipeline output, section-specific frame s brand overlayem.
+  //      Aktivira se kad og-sections.json manifest listira fajl za taj section.
+  //   2. og-share.jpg (1200×630 JPEG ~100KB) — episode-level brand image.
+  //   3. thumbnail.png (1280×720 PNG) — YouTube native, krajnji fallback.
   let thumb, thumbMime, thumbW, thumbH;
-  if (sectionScreenshot) {
-    thumb = sectionScreenshot;
-    thumbMime = 'image/png';
-    thumbW = 1920;
-    thumbH = 1080;
+  if (sectionImageUrl) {
+    thumb = sectionImageUrl;
+    thumbMime = 'image/jpeg';
+    thumbW = 1200;
+    thumbH = 630;
   } else if (hasOgShare) {
     thumb = `${CDN}/images/${ytId}/og-share.jpg`;
     thumbMime = 'image/jpeg';
