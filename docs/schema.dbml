@@ -1,0 +1,435 @@
+// DOMOVINA.ai — Database Schema
+// Self-hosted Supabase (api.domovina.ai) — shared identity sloj za sve
+// domovina produkte + per-produkt sheme.
+//
+// Otvori ovaj fajl na https://dbdiagram.io/d (kopiraj + paste) ili
+// preko dbdocs.io za hostan vizual.
+
+Project domovina_backend {
+  database_type: 'PostgreSQL'
+  Note: '''
+# DOMOVINA.ai Backend Schema (v2)
+
+Multi-product SSO + GitHub-style accounts/orgs.
+
+- **Identity layer** (`auth.*` + `public.profiles`) — Supabase managed + naš extension
+- **Accounts layer** (`public.accounts`, `public.accounts_memberships`, `public.invitations`) — domain core
+- **Permissions** (`public.role_permissions`) — decoupled role→permission mapping
+- **Apps registry** (`public.apps`, `public.app_installations`) — multi-product registar
+- **Domovina.ai** (`domovina_ai.*`) — Netflix-style watch/bookmark/playlist
+
+Vidi `docs/auth-and-database-plan.md` za detaljnu arhitekturu, RLS policies,
+sekvence i migracijski plan.
+'''
+}
+
+// ========================================
+// ENUMS / CUSTOM TYPES
+// ========================================
+
+Enum app_permissions {
+  "members.manage"
+  "settings.manage"
+  "billing.manage"
+}
+
+Enum visibility_level {
+  private
+  unlisted
+  public
+}
+
+Enum member_role {
+  owner
+  admin
+  member
+}
+
+Enum device_type {
+  web
+  ios
+  android
+  macos
+}
+
+Enum playlist_visibility {
+  private
+  members
+  public
+}
+
+// ========================================
+// IDENTITY (Supabase managed + extension)
+// ========================================
+
+Table auth.users [headercolor: #6366F1] {
+  id uuid [pk, note: 'managed by Supabase GoTrue']
+  email text
+  is_anonymous boolean
+  raw_user_meta_data jsonb
+  created_at timestamptz
+  updated_at timestamptz
+
+  Note: '''
+  **Supabase managed** — ne mijenjamo schemu.
+
+  Sve naše tablice referenciraju ovaj id preko FK-a.
+  Triggers `AFTER INSERT/UPDATE` ovdje populiraju naše tablice.
+  '''
+}
+
+Table profiles [headercolor: #6366F1] {
+  id uuid [pk, ref: > auth.users.id, note: 'FK 1:1 s auth.users']
+  locale text [default: "'hr'"]
+  active_account_id uuid [ref: > accounts.id, note: 'UI "act as" kontekst']
+  timezone text [note: 'Europe/Zagreb default']
+  last_seen_at timestamptz
+  onboarding_completed_at timestamptz
+  notification_prefs jsonb
+  deleted_at timestamptz [note: 'soft delete za GDPR']
+  created_at timestamptz
+  updated_at timestamptz
+
+  Note: '''
+  User-specific app context. 1:1 mirror s `auth.users`,
+  generira se triggerom na svaki INSERT u auth.users.
+
+  Source of truth za email/is_anonymous ostaje u auth.users —
+  čita se preko auth.email() / auth.jwt() u policies.
+  '''
+}
+
+// ========================================
+// ACCOUNTS & ORGS
+// ========================================
+
+Table accounts [headercolor: #F59E0B] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  primary_owner_user_id uuid [ref: > auth.users.id, not null]
+  is_personal_account boolean [not null, default: false]
+  slug citext [unique, not null, note: 'GitHub-style, globally unique namespace']
+  name text [not null]
+  avatar_url text
+  bio text
+  website_url text
+  visibility visibility_level [default: "private"]
+  metadata jsonb
+  deleted_at timestamptz [note: 'soft delete']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    primary_owner_user_id [name: 'ix_accounts_primary_owner']
+    slug [name: 'ix_accounts_slug']
+    (primary_owner_user_id) [name: 'ix_one_personal_per_user', unique, note: 'PARTIAL: WHERE is_personal_account = true']
+    name [type: gin, name: 'ix_accounts_name_trgm', note: 'GIN trigram za fuzzy search']
+  }
+
+  Note: '''
+  **★ Central abstraction** — owner može biti user ili org.
+
+  - `is_personal_account = true` → 1:1 s user-om (slug = username)
+  - `is_personal_account = false` → org (slug = org name)
+
+  Personal i org dijele globalni slug namespace (GitHub-style):
+  user `matija` blokira org `matija` i obratno.
+
+  Partial unique index garantira jedan personal account po user-u.
+  Slug format: 1-40 znakova, lowercase + brojke + crtica.
+  '''
+}
+
+Table accounts_memberships [headercolor: #F59E0B] {
+  account_id uuid [pk, ref: > accounts.id, note: 'mora biti org (is_personal_account=false)']
+  user_id uuid [pk, ref: > profiles.id]
+  account_role member_role [not null, default: "member"]
+  display_name_override text [note: 'alias unutar specifičnog orga']
+  invited_by uuid [ref: > profiles.id]
+  joined_at timestamptz [default: `now()`]
+  last_active_at timestamptz
+
+  indexes {
+    user_id [name: 'ix_memberships_user']
+    account_id [name: 'ix_memberships_account']
+  }
+
+  Note: '''
+  N:M user × org × role. Personal account NEMA membership red
+  (user JE primary_owner_user_id direktno).
+
+  Indeksi su kritični za RLS performance — svaka policy provjera
+  membership ide kroz user_id ili account_id.
+  '''
+}
+
+Table invitations [headercolor: #F59E0B] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  account_id uuid [ref: > accounts.id, not null]
+  email text [not null]
+  account_role member_role [not null, default: "member"]
+  invited_by uuid [ref: > profiles.id]
+  token text [unique, not null, note: 'random secure token za invite link']
+  expires_at timestamptz [note: "default now() + interval '7 days'"]
+  accepted_at timestamptz
+  revoked_at timestamptz [note: 'audit log — ne brišemo invite']
+  last_sent_at timestamptz
+  send_count int [default: 1]
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    token [name: 'ix_invitations_token']
+    email [name: 'ix_invitations_email_pending', note: 'PARTIAL: WHERE accepted_at IS NULL AND revoked_at IS NULL']
+    (account_id, email) [name: 'ix_invitations_uniq_pending', unique, note: 'PARTIAL: spriječi duple pending invitee na isti email']
+  }
+
+  Note: '''
+  Pending state između "pozvan" i "član". Email-based jer pozvani
+  možda još nije user. Token se šalje u invite linku.
+
+  `last_sent_at` + `send_count` za resend feature s rate limiting-om.
+  `revoked_at` umjesto DELETE za audit trail.
+  '''
+}
+
+// ========================================
+// PERMISSIONS (decoupled role → permission)
+// ========================================
+
+Table role_permissions [headercolor: #A78BFA] {
+  role member_role [pk]
+  permission app_permissions [pk]
+
+  Note: '''
+  Mapping role → set permissions. Decoupling business logic od
+  hardcoded role check-ova u policies.
+
+  Seed (initial):
+  - owner: members.manage, settings.manage, billing.manage
+  - admin: members.manage, settings.manage
+  - member: (read-only, nema permissions)
+
+  **Napomena:** za MVP može se i preskočiti — hardcoded role check-ovi
+  u helper f-jama. Dodati kad se pojavi prvi custom role zahtjev.
+  '''
+}
+
+// ========================================
+// APPS REGISTRY (multi-product)
+// ========================================
+
+Table apps [headercolor: #34D399] {
+  id text [pk, note: "npr. 'domovina-ai', 'domovina-tv'"]
+  display_name text [not null]
+  base_url text
+  is_active boolean [default: true]
+  version text
+  created_at timestamptz [default: `now()`]
+
+  Note: '''
+  Registar svih domovina produkata. Za MVP samo seed `domovina-ai`.
+
+  Tablicu može se kasnije dodati kad bude drugi produkt.
+  '''
+}
+
+Table app_installations [headercolor: #34D399] {
+  account_id uuid [pk, ref: > accounts.id]
+  app_id text [pk, ref: > apps.id]
+  settings jsonb [note: 'per-account per-app preferences']
+  installed_by uuid [ref: > profiles.id]
+  installed_at timestamptz [default: `now()`]
+  last_active_at timestamptz
+
+  Note: '''
+  Track koji account koristi koji app + per-instance settings.
+  Personal account automatski dobije install za 'domovina-ai' na signup.
+  '''
+}
+
+// ========================================
+// DOMOVINA.AI — Netflix-style watch state
+// ========================================
+
+Table domovina_ai.watch_progress [headercolor: #EF4444] {
+  user_id uuid [pk, ref: > profiles.id]
+  episode_id text [pk, note: 'YouTube videoId (canonical key)']
+  channel_id text [not null]
+  position_seconds int [not null, default: 0]
+  duration_seconds int [not null]
+  percent_complete numeric [note: 'GENERATED: 100 * position / duration']
+  completed boolean [note: 'GENERATED: percent_complete >= 90']
+  playback_rate numeric [default: 1.0, note: '0.5 / 1.0 / 1.5 / 2.0']
+  audio_track text
+  subtitle_track text
+  watch_count int [default: 1, note: 'koliko puta gledao tu epizodu']
+  last_watched_at timestamptz [default: `now()`]
+  last_device device_type
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, last_watched_at) [name: 'ix_continue_watching', note: 'DESC, za "Continue watching" carousel']
+    (user_id, completed, last_watched_at) [name: 'ix_completion_filter']
+  }
+
+  Note: '''
+  **★ Najvažnija tablica.** Denormalizirano "GDJE si stao" stanje.
+
+  Jedan red po (user, episode). Upsert na svaki tick (~5s).
+
+  Razdvojen od watch_sessions namjerno:
+  - watch_progress = stanje (1 red/epizoda, brz lookup)
+  - watch_sessions = log (N redova/epizoda, analytics)
+
+  "Continue watching" UI = single index scan.
+  '''
+}
+
+Table domovina_ai.watch_sessions [headercolor: #EF4444] {
+  id bigserial [pk, note: 'bigserial umjesto uuid — manji indeks za append-heavy log']
+  user_id uuid [ref: > profiles.id, not null]
+  episode_id text [not null]
+  started_at timestamptz [default: `now()`]
+  ended_at timestamptz
+  start_position_seconds int
+  end_position_seconds int
+  pause_count int [default: 0]
+  seek_count int [default: 0]
+  completed_normally boolean [note: 'false ako tab close / network drop']
+  device device_type
+  user_agent text
+
+  indexes {
+    (user_id, started_at) [name: 'ix_sessions_user_history']
+    (episode_id, started_at) [name: 'ix_sessions_episode_analytics']
+  }
+
+  Note: '''
+  Append-only audit log gledanja. Za analytics, NE za UI resume.
+
+  Razmisli o partitioning by month kad preraste milijun redaka.
+  Retention policy: brisati starije od 24 mjeseca preko pg_cron.
+  '''
+}
+
+Table domovina_ai.bookmarks [headercolor: #EF4444] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > profiles.id, not null]
+  episode_id text [not null]
+  position_seconds int [not null]
+  clip_end_seconds int [note: 'optional — pretvara bookmark u clip raspon']
+  title text [note: 'kratki label']
+  note text
+  color text [note: 'tag za vizualnu organizaciju']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, episode_id, position_seconds) [name: 'ix_bookmarks_lookup']
+  }
+
+  Note: '''
+  Privatni timestamp markeri korisnika u epizodi.
+  Slično postojećoj public share-clip arhitekturi (`/v/<id>/t/<sec>`),
+  ali per-user privatno.
+  '''
+}
+
+Table domovina_ai.favorites [headercolor: #EF4444] {
+  owner_id uuid [pk, ref: > accounts.id, note: 'account (user ili org)']
+  episode_id text [pk]
+  created_by uuid [ref: > profiles.id, not null]
+  notes text
+  position int [note: 'custom sort red u listi']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    owner_id [name: 'ix_favorites_owner']
+  }
+
+  Note: '''
+  Quick-save lista epizoda. Owner može biti personal account (osobno)
+  ili org account (team-kurirana lista).
+
+  Za MVP razmisli o downscope-u na user_id-only, da kasnije migriraš
+  na owner_id pattern.
+  '''
+}
+
+Table domovina_ai.playlists [headercolor: #EF4444] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [ref: > accounts.id, not null]
+  created_by uuid [ref: > profiles.id, not null]
+  slug citext [note: 'URL friendly, unique per owner']
+  name text [not null]
+  description text
+  cover_image_url text
+  visibility playlist_visibility [default: "private"]
+  forked_from_id uuid [ref: > domovina_ai.playlists.id, note: 'GitHub-style cloning']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (owner_id, slug) [unique]
+    owner_id
+  }
+
+  Note: '''
+  Kuratirana lista epizoda — može biti private, members-only, ili public.
+
+  Items se drže u zasebnoj tablici `playlist_items` umjesto array-a
+  da bi se izbjegli race condition-i kod paralelnih dodavanja.
+  '''
+}
+
+Table domovina_ai.playlist_items [headercolor: #EF4444] {
+  playlist_id uuid [pk, ref: > domovina_ai.playlists.id]
+  episode_id text [pk]
+  position int [not null, note: 'manual sort order']
+  added_by uuid [ref: > profiles.id]
+  added_at timestamptz [default: `now()`]
+
+  indexes {
+    (playlist_id, position) [name: 'ix_playlist_items_sort']
+  }
+
+  Note: '''
+  N:M epizoda × playlist s manual position ordering.
+  '''
+}
+
+// ========================================
+// TABLE GROUPS (semantic clustering)
+// ========================================
+
+TableGroup identity {
+  auth.users
+  profiles
+  Note: 'Supabase managed identity + 1:1 extension'
+}
+
+TableGroup accounts_and_orgs {
+  accounts
+  accounts_memberships
+  invitations
+  Note: 'GitHub-style unified accounts (user + org)'
+}
+
+TableGroup permissions {
+  role_permissions
+  Note: 'Decoupled role → permission mapping'
+}
+
+TableGroup apps_registry {
+  apps
+  app_installations
+  Note: 'Multi-product registar (lazy add — MVP može preskočiti)'
+}
+
+TableGroup domovina_ai {
+  domovina_ai.watch_progress
+  domovina_ai.watch_sessions
+  domovina_ai.bookmarks
+  domovina_ai.favorites
+  domovina_ai.playlists
+  domovina_ai.playlist_items
+  Note: 'Netflix-style watch state + favorites + curated playlists'
+}

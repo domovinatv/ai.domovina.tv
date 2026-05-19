@@ -114,6 +114,146 @@ flowchart TB
 
 ---
 
+## Unified ERD — sve tablice odjednom
+
+Visual big picture s svim relacijama (color-coded po domenskom grupiranju):
+
+```mermaid
+erDiagram
+    %% IDENTITY (Supabase managed)
+    auth_users ||--|| profiles : "1:1"
+    auth_users ||--o{ accounts : "owns"
+
+    %% ACCOUNTS / ORGS
+    accounts ||--o{ accounts_memberships : "has"
+    profiles ||--o{ accounts_memberships : "is"
+    profiles ||--o| accounts : "active_account"
+    accounts ||--o{ invitations : "issues"
+    profiles ||--o{ invitations : "sent_by"
+    role_permissions }o..o| accounts_memberships : "via role"
+
+    %% APPS REGISTRY
+    apps ||--o{ app_installations : ""
+    accounts ||--o{ app_installations : ""
+
+    %% DOMOVINA_AI (Netflix clone)
+    profiles ||--o{ watch_progress : ""
+    profiles ||--o{ watch_sessions : ""
+    profiles ||--o{ bookmarks : ""
+    accounts ||--o{ favorites : "owns"
+    profiles ||--o{ favorites : "created_by"
+    accounts ||--o{ playlists : "owns"
+    profiles ||--o{ playlists : "created_by"
+    playlists ||--o{ playlist_items : "contains"
+
+    auth_users {
+        uuid id PK
+        text email
+        bool is_anonymous
+    }
+    profiles {
+        uuid id PK
+        text locale
+        uuid active_account_id FK
+        timestamptz last_seen_at
+    }
+    accounts {
+        uuid id PK
+        uuid primary_owner_user_id FK
+        bool is_personal_account
+        citext slug UK
+        text name
+        text visibility
+        timestamptz deleted_at
+    }
+    accounts_memberships {
+        uuid account_id PK
+        uuid user_id PK
+        varchar account_role
+        timestamptz joined_at
+    }
+    invitations {
+        uuid id PK
+        uuid account_id FK
+        text email
+        varchar account_role
+        text token UK
+        timestamptz expires_at
+        timestamptz accepted_at
+        timestamptz revoked_at
+    }
+    role_permissions {
+        varchar role PK
+        app_permission permission PK
+    }
+    apps {
+        text id PK
+        text display_name
+        bool is_active
+    }
+    app_installations {
+        uuid account_id PK
+        text app_id PK
+        jsonb settings
+    }
+    watch_progress {
+        uuid user_id PK
+        text episode_id PK
+        int position_seconds
+        int duration_seconds
+        bool completed
+        timestamptz last_watched_at
+        numeric playback_rate
+    }
+    watch_sessions {
+        bigserial id PK
+        uuid user_id FK
+        text episode_id
+        timestamptz started_at
+        timestamptz ended_at
+        int pause_count
+    }
+    bookmarks {
+        uuid id PK
+        uuid user_id FK
+        text episode_id
+        int position_seconds
+        text note
+    }
+    favorites {
+        uuid owner_id PK
+        text episode_id PK
+        uuid created_by FK
+    }
+    playlists {
+        uuid id PK
+        uuid owner_id FK
+        uuid created_by FK
+        citext slug
+        text visibility
+    }
+    playlist_items {
+        uuid playlist_id PK
+        text episode_id PK
+        int position
+        uuid added_by FK
+    }
+```
+
+### Semantic groups (vizualna organizacija)
+
+| Grupa | Schema | Tablice | Color hint |
+|---|---|---|---|
+| **🔐 Identity** | `auth` (managed) + `public` | `auth.users`, `profiles` | Plava — temelj |
+| **🏢 Accounts & Orgs** | `public` | `accounts`, `accounts_memberships`, `invitations` | Narančasta — domain core |
+| **🔑 Permissions** | `public` | `role_permissions` | Ljubičasta — autorizacija |
+| **📦 Apps registry** | `public` | `apps`, `app_installations` | Zelena — multi-product |
+| **🎬 Domovina.ai** | `domovina_ai` | `watch_progress`, `watch_sessions`, `bookmarks`, `favorites`, `playlists`, `playlist_items` | Crvena — produkt-specifično |
+
+> **Za bolji vizualni pregled** s color-coded TableGroup-ovima, otvori `docs/schema.dbml` na [dbdiagram.io](https://dbdiagram.io). DBML rendering podržava native grouping, indekse, enume i note-ove na jednom canvasu — bolji od mermaida za schema većih od ~10 tablica.
+
+---
+
 ## Core identity layer (`public` schema)
 
 GitHub-inspired model: **unified `accounts` tablica** za usere i orgs, dijele globalni namespace slugova. Pattern preuzet iz [Makerkit production SaaS template-a](https://makerkit.dev/blog/tutorials/supabase-rls-best-practices) jer je battle-tested i pokriva sve scenarije bez tipskog enuma.
@@ -216,16 +356,20 @@ erDiagram
 
 **Constraints:**
 ```sql
-constraint slug_format check (slug ~ '^[a-z0-9][a-z0-9-]{0,38}[a-z0-9]$'),  -- GitHub-style
-constraint personal_uniqueness check (
-  -- jedan user može imati samo jedan personal account
-  not is_personal_account or (
-    select count(*) from accounts a2
-    where a2.primary_owner_user_id = primary_owner_user_id
-      and a2.is_personal_account = true
-  ) <= 1
-)
+-- 1. Slug format (GitHub-style, 1-40 chars, alphanumeric + hyphen, ne počinje/završava crticom)
+constraint slug_format check (slug ~ '^[a-z0-9][a-z0-9-]{0,38}[a-z0-9]$' or length(slug) = 1)
 ```
+
+**Enforcement "jedan personal account po user-u" — partial unique index, ne CHECK:**
+```sql
+-- ⚠️ CHECK constraint s subquery NE radi pouzdano u Postgres-u
+-- (CHECK ne smije referencirati druge redove). Koristi partial unique index:
+create unique index ix_one_personal_per_user
+  on public.accounts(primary_owner_user_id)
+  where is_personal_account = true;
+```
+
+Ovaj index garantira da svaki `auth.users.id` može biti `primary_owner_user_id` na **najviše jednom** `accounts` redu s `is_personal_account = true`. Org accounts (gdje je `is_personal_account = false`) nemaju ovo ograničenje — user može biti primary owner više orgs.
 
 **Slug pravila:** 1–40 znakova, mala slova + brojke + crtica, ne počinje/završava crticom. Identično GitHub-u.
 
