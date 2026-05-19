@@ -254,6 +254,41 @@ erDiagram
 
 ---
 
+## Rendered schema diagrams (iz `schema.dbml`)
+
+Imamo dva renderer pipeline-a iz iste DBML source datoteke. Komitirani su oba, GitHub markdown renderira oba inline.
+
+### 🎨 dbdiagram.io export (vizualno polished)
+
+Dark theme s TableGroup spatial grupiranjem i color-coded header-ima. Generirano ručno iz dbdiagram.io UI-a (Export → SVG).
+
+![DOMOVINA.ai schema — dbdiagram.io render](./schema-dbdiagram.svg)
+
+**Karakteristike:** profesionalan dizajn, jasno spatial grupiranje po `TableGroup`, kratki relationship konektori (smart layout). Najbolje za **arhitekturalni overview** i prezentacije.
+
+### ⚙️ Local render (auto-generirano CI-em)
+
+Vertikalni layout iz `@softwaretechnik/dbml-renderer` (graphviz-based). Generira se automatski GitHub Actionom na svaki push koji mijenja `schema.dbml`.
+
+![DOMOVINA.ai schema — local render](./schema-local.svg)
+
+**Karakteristike:** prikazuje **i enume kao standalone box-ove** (`member_role`, `device_type`, `visibility_level`, …) što dbdiagram skriva, manje polirano ali deterministički i bez external tooling-a. Najbolje za **inline reference u doc-u**, garantirano sync s DBML source-om.
+
+### Workflow
+
+```mermaid
+flowchart LR
+    SRC["docs/schema.dbml<br/>(source of truth)"]
+    SRC -->|"npx dbml-renderer<br/>(automatski na push)"| LOCAL["schema-local.svg"]
+    SRC -->|"manual export iz UI"| DBDIAG["schema-dbdiagram.svg"]
+    LOCAL --> DOC["📄 doc renderira oba inline"]
+    DBDIAG --> DOC
+```
+
+Pri promjeni DBML-a, **local render se auto-update-a** preko CI-a; dbdiagram render treba re-exportati ručno kad želiš osvježiti polished verziju. Za dnevnu sinkronizaciju je local dovoljan.
+
+---
+
 ## Core identity layer (`public` schema)
 
 GitHub-inspired model: **unified `accounts` tablica** za usere i orgs, dijele globalni namespace slugova. Pattern preuzet iz [Makerkit production SaaS template-a](https://makerkit.dev/blog/tutorials/supabase-rls-best-practices) jer je battle-tested i pokriva sve scenarije bez tipskog enuma.
