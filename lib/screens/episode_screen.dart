@@ -428,13 +428,49 @@ class _EpisodeContentState extends State<_EpisodeContent>
     return ts;
   }
 
+  void _showResumeSnack(int positionSeconds, Player player) {
+    final h = positionSeconds ~/ 3600;
+    final m = (positionSeconds % 3600) ~/ 60;
+    final s = positionSeconds % 60;
+    String p(int n) => n.toString().padLeft(2, '0');
+    final label = h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Nastavljam s $label'),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'OD POČETKA',
+          onPressed: () {
+            player.seek(Duration.zero);
+            _lastUrlSyncedSec = -1;
+          },
+        ),
+      ),
+    );
+  }
+
   // ---------- video ---------------------------------------------------------
 
   Future<void> _initVideo() async {
     final videoUri = widget.data.videoUri;
-    final startAt = widget.startAtSeconds;
+    // URL explicit timestamp (`/v/<id>/t/<sec>` ili `?t=`) ima prednost nad
+    // saved progress-om. Inače resume na zadnju poziciju ako > 5s i ako
+    // epizoda nije completed (≥ 90% rewatch konvencija — kreni od početka).
+    int? startAt = widget.startAtSeconds;
+    bool resumedFromSaved = false;
+    if (startAt == null) {
+      final saved = WatchProgressService.instance.getSync(widget.data.youtubeId);
+      if (saved != null && !saved.completed && saved.positionSeconds > 5) {
+        startAt = saved.positionSeconds;
+        resumedFromSaved = true;
+      }
+    }
     debugPrint(
-      'Video: opening $videoUri${startAt != null ? ' @${startAt}s' : ''}',
+      'Video: opening $videoUri'
+      '${startAt != null ? ' @${startAt}s' : ''}'
+      '${resumedFromSaved ? ' (resumed)' : ''}',
     );
 
     try {
@@ -493,6 +529,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
           _videoReady = true;
         });
         debugPrint('Video: ready');
+
+        if (resumedFromSaved && startAt != null) {
+          _showResumeSnack(startAt, player);
+        }
 
         // Background audio session — lock screen + notification na native, no-op na webu.
         // Artwork strategija:

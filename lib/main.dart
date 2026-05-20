@@ -5,6 +5,7 @@ import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
 import 'services/update_notifier.dart';
+import 'services/watch_progress_service.dart';
 
 /// App version — prikazuje se u HomeScreen footer.
 const String appVersion = '2.0.9';
@@ -26,6 +27,7 @@ void main() async {
   MediaKit.ensureInitialized();
   await BackgroundAudio.init();
   await AuthService.instance.init();
+  await WatchProgressService.instance.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {

@@ -200,6 +200,17 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   }
 
   Future<void> _initVideo() async {
+    // Resume na saved progress (osim ako je completed — rewatch konvencija).
+    // Simple screen nema URL timestamp routes (samo /m/<id>), pa nema URL override-a.
+    final saved =
+        WatchProgressService.instance.getSync(widget.data.youtubeId);
+    int? startAt;
+    bool resumedFromSaved = false;
+    if (saved != null && !saved.completed && saved.positionSeconds > 5) {
+      startAt = saved.positionSeconds;
+      resumedFromSaved = true;
+    }
+
     try {
       final player = Player();
       final controller = VideoController(player);
@@ -245,6 +256,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
 
       if (kIsWeb) {
         await player.open(Media(widget.data.videoUri), play: false);
+        if (startAt != null) {
+          await player.seek(Duration(seconds: startAt));
+        }
         try {
           await player.play();
         } catch (_) {
@@ -258,6 +272,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         }
       } else {
         await player.open(Media(widget.data.videoUri), play: true);
+        if (startAt != null) {
+          await player.seek(Duration(seconds: startAt));
+        }
       }
 
       if (mounted) {
@@ -271,6 +288,10 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           _position = player.state.position;
           _duration = player.state.duration;
         });
+
+        if (resumedFromSaved && startAt != null) {
+          _showResumeSnack(startAt, player);
+        }
 
         // Background audio session — vidi episode_screen.dart za strategiju artworka.
         await channelCache.loadIndex();
@@ -296,6 +317,29 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     } catch (e) {
       debugPrint('SimpleEpisode: video init failed — $e');
     }
+  }
+
+  void _showResumeSnack(int positionSeconds, Player player) {
+    final h = positionSeconds ~/ 3600;
+    final m = (positionSeconds % 3600) ~/ 60;
+    final s = positionSeconds % 60;
+    String p(int n) => n.toString().padLeft(2, '0');
+    final label = h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Nastavljam s $label'),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'OD POČETKA',
+          onPressed: () {
+            player.seek(Duration.zero);
+            _lastUrlSyncedSec = -1;
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _seekTo(int seconds) async {

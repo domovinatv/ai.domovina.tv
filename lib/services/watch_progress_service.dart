@@ -3,7 +3,6 @@
 /// docs/backend-prompts/07-flutter-swap-mocks.md).
 library;
 
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show ChangeNotifier, kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,7 +69,9 @@ class WatchProgressService extends ChangeNotifier {
   final Map<String, WatchProgress> _byEpisode = {};
   bool _loaded = false;
 
-  Future<void> _ensureLoaded() async {
+  /// Pozove se jednom iz `main.dart` prije `runApp`. Garantira da `_byEpisode`
+  /// sadrži sve perzistirane progrese prije nego što ih bilo koji screen čita.
+  Future<void> init() async {
     if (_loaded) return;
     final raw = await _read();
     if (raw != null && raw.isNotEmpty) {
@@ -85,13 +86,16 @@ class WatchProgressService extends ChangeNotifier {
     _loaded = true;
   }
 
+  /// Sinkroni lookup — `init()` mora biti pozvan prije.
+  WatchProgress? getSync(String episodeId) => _byEpisode[episodeId];
+
   Future<WatchProgress?> get(String episodeId) async {
-    await _ensureLoaded();
+    await init();
     return _byEpisode[episodeId];
   }
 
   Future<List<WatchProgress>> continueWatching({int limit = 20}) async {
-    await _ensureLoaded();
+    await init();
     final items = _byEpisode.values
         .where((w) => !w.completed && w.positionSeconds > 30)
         .toList()
@@ -99,11 +103,12 @@ class WatchProgressService extends ChangeNotifier {
     return items.take(limit).toList();
   }
 
-  /// Debounce upserts (~5s) da ne dolazi do prevelikih write ciklusa kad pravi
-  /// backend bude live. U mocku ionako pišemo lokalno ali držimo isti API.
-  Timer? _debounce;
-  WatchProgress? _pending;
-
+  /// Sprema progress odmah (lokalni mock). `_onVideoPosition` već gate-a poziv
+  /// na 1×/s pa nema potrebe za dodatnim debounce-om — fire-and-forget dispose
+  /// race iz prethodne implementacije je time eliminiran.
+  ///
+  /// Pravi backend swap zamijenit će ovo s debounced Supabase upsert-om
+  /// (~5s); vidi docs/backend-prompts/07-flutter-swap-mocks.md.
   void scheduleSave({
     required String episodeId,
     required int positionSeconds,
@@ -112,7 +117,7 @@ class WatchProgressService extends ChangeNotifier {
     String? episodeTitle,
     String? episodeThumbnailUrl,
   }) {
-    _pending = WatchProgress(
+    _byEpisode[episodeId] = WatchProgress(
       episodeId: episodeId,
       channelId: channelId,
       positionSeconds: positionSeconds,
@@ -121,33 +126,26 @@ class WatchProgressService extends ChangeNotifier {
       episodeThumbnailUrl: episodeThumbnailUrl,
       lastWatchedAt: DateTime.now(),
     );
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 5), _flush);
+    _persistSync();
   }
 
-  Future<void> flush() async {
-    _debounce?.cancel();
-    await _flush();
-  }
+  /// No-op zadržan zbog backward-compat poziva u dispose-u episode screen-ova.
+  Future<void> flush() async {}
 
-  Future<void> _flush() async {
-    if (_pending == null) return;
-    await _ensureLoaded();
-    _byEpisode[_pending!.episodeId] = _pending!;
-    _pending = null;
-    await _persist();
-    notifyListeners();
-  }
-
-  Future<void> _persist() async {
+  void _persistSync() {
     final list = _byEpisode.values.map((w) => w.toJson()).toList();
     final raw = jsonEncode(list);
-    await _write(raw);
+    if (kIsWeb) {
+      setLocalStorageString(_kKey, raw);
+      return;
+    }
+    // Native: best-effort async (web je kritični path za dispose race).
+    SharedPreferences.getInstance().then((p) => p.setString(_kKey, raw));
   }
 
   Future<void> clearAll() async {
     _byEpisode.clear();
-    await _persist();
+    _persistSync();
     notifyListeners();
   }
 
@@ -155,14 +153,5 @@ class WatchProgressService extends ChangeNotifier {
     if (kIsWeb) return getLocalStorageString(_kKey);
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_kKey);
-  }
-
-  Future<void> _write(String value) async {
-    if (kIsWeb) {
-      setLocalStorageString(_kKey, value);
-      return;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kKey, value);
   }
 }
