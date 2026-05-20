@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
 import 'services/update_notifier.dart';
 import 'services/watch_progress_service.dart';
+
+/// Supabase backend (self-hosted na Coolify, Kong gateway).
+/// Konfiguracija dolazi preko --dart-define u build/run komandi; vidi
+/// .env za lokalni dev i scripts/deploy.sh za production propagation.
+const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+const String _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// App version — prikazuje se u HomeScreen footer.
 const String appVersion = '2.0.9';
@@ -26,6 +33,33 @@ void main() async {
 
   MediaKit.ensureInitialized();
   await BackgroundAudio.init();
+
+  // Supabase init MORA biti prije AuthService.init() — auth service sluša
+  // Supabase auth state changes. Bez konfiguracije app radi u offline mode
+  // (mock fallback ostaje, ali pravi backend pozivi su no-op).
+  if (_supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty) {
+    await Supabase.initialize(
+      url: _supabaseUrl,
+      anonKey: _supabaseAnonKey,
+      debug: false,
+    );
+    // Anonymous sign-in ako nema postojeće sesije. Trigger backend-side
+    // (on_auth_user_created) automatski kreira profile red.
+    final client = Supabase.instance.client;
+    if (client.auth.currentUser == null) {
+      try {
+        await client.auth.signInAnonymously();
+        log('Supabase: signed in anonymously');
+      } catch (e) {
+        log('Supabase: anonymous sign-in failed — $e');
+      }
+    } else {
+      log('Supabase: restored session for ${client.auth.currentUser?.id}');
+    }
+  } else {
+    log('Supabase: SUPABASE_URL / SUPABASE_ANON_KEY not set; running offline');
+  }
+
   await AuthService.instance.init();
   await WatchProgressService.instance.init();
 

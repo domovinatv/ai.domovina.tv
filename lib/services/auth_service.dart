@@ -1,17 +1,18 @@
-/// MOCK auth servis — simulira Supabase anonymous + linkIdentity flow.
-/// Sve linkIdentity metode prikazuju SnackBar i postavljaju in-memory "logged-in"
-/// state. Pravi backend swap je dokumentiran u docs/backend-prompts/07-flutter-swap-mocks.md.
+/// Real Supabase auth servis — preservira public API mock varijante
+/// (currentUser/isAnonymous/isSignedIn/linkIdentity/signOut/forceSignIn)
+/// tako da pozivajući widgeti (AccountChip, auth_sheet, M2/M3/M4) rade
+/// bez izmjena.
+///
+/// PII princip (v3): email i is_anonymous žive samo u auth.users.
+/// Display name iz user_metadata['name'] (postavlja ga OAuth provider).
 library;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'local_prefs.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 
-const _kAuthMockUserKey = 'auth_mock_user';
-
-/// Provider info — kakav identitet je linkan u mocku.
+/// Provider info — kakav identitet je linkan. Mapira na sb.OAuthProvider
+/// za Google/Apple; email i passkey su custom flow-ovi.
 enum AuthProvider { google, apple, email, passkey }
 
 extension AuthProviderLabel on AuthProvider {
@@ -21,16 +22,26 @@ extension AuthProviderLabel on AuthProvider {
         AuthProvider.email => 'E-mail',
         AuthProvider.passkey => 'Passkey',
       };
+
+  /// Najbliži supabase_flutter OAuth provider za ovaj enum (null za email/passkey).
+  sb.OAuthProvider? get oauthProvider => switch (this) {
+        AuthProvider.google => sb.OAuthProvider.google,
+        AuthProvider.apple => sb.OAuthProvider.apple,
+        AuthProvider.email => null,
+        AuthProvider.passkey => null,
+      };
 }
 
-class MockUser {
+/// View model nad sb.User — ostaje isti shape kao mock MockUser tako
+/// da pozivajući kod ne treba mijenjati.
+class AppUser {
   final String id;
   final bool isAnonymous;
   final String? email;
   final String? displayName;
   final AuthProvider? provider;
 
-  const MockUser({
+  const AppUser({
     required this.id,
     required this.isAnonymous,
     this.email,
@@ -38,165 +49,240 @@ class MockUser {
     this.provider,
   });
 
-  Map<String, String> toMap() {
-    final m = <String, String>{
-      'id': id,
-      'isAnonymous': isAnonymous.toString(),
-    };
-    if (email != null) m['email'] = email!;
-    if (displayName != null) m['displayName'] = displayName!;
-    if (provider != null) m['provider'] = provider!.name;
-    return m;
-  }
-
-  static MockUser? fromRaw(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final parts = raw.split('|');
-      final map = <String, String>{};
-      for (final p in parts) {
-        final i = p.indexOf('=');
-        if (i > 0) map[p.substring(0, i)] = p.substring(i + 1);
-      }
-      return MockUser(
-        id: map['id'] ?? '',
-        isAnonymous: map['isAnonymous'] == 'true',
-        email: map['email'],
-        displayName: map['displayName'],
-        provider: map['provider'] != null
-            ? AuthProvider.values.firstWhere(
-                (p) => p.name == map['provider'],
-                orElse: () => AuthProvider.email,
-              )
-            : null,
-      );
-    } catch (_) {
-      return null;
+  factory AppUser.fromSupabase(sb.User u) {
+    final meta = u.userMetadata ?? const {};
+    String? displayName = meta['name'] as String?
+        ?? meta['full_name'] as String?
+        ?? meta['preferred_username'] as String?;
+    if (displayName == null || displayName.isEmpty) {
+      displayName = u.email?.split('@').firstOrNull;
     }
-  }
 
-  String serialize() => toMap()
-      .entries
-      .map((e) => '${e.key}=${e.value}')
-      .join('|');
+    // Detektiraj koji je provider linked. Identities sadrži OAuth providere;
+    // ako nema OAuth identiteta a postoji email → magic link.
+    AuthProvider? provider;
+    final identities = u.identities ?? const [];
+    final providerNames = identities
+        .map((i) => i.provider)
+        .where((p) => p != 'email')
+        .toList();
+    if (providerNames.contains('google')) {
+      provider = AuthProvider.google;
+    } else if (providerNames.contains('apple')) {
+      provider = AuthProvider.apple;
+    } else if (u.email != null && !u.isAnonymous) {
+      provider = AuthProvider.email;
+    }
+
+    return AppUser(
+      id: u.id,
+      isAnonymous: u.isAnonymous,
+      email: u.email,
+      displayName: displayName,
+      provider: provider,
+    );
+  }
 }
 
 class AuthService extends ChangeNotifier {
   static final AuthService instance = AuthService._();
   AuthService._();
 
-  MockUser? _user;
+  AppUser? _user;
 
-  MockUser? get currentUser => _user;
+  AppUser? get currentUser => _user;
   bool get isAnonymous => _user?.isAnonymous ?? true;
   bool get isSignedIn => _user != null && !_user!.isAnonymous;
   String get userId => _user?.id ?? '';
 
-  Future<void> init() async {
-    // Restore persisted user (simulira Supabase session restore)
-    final raw = await _load();
-    _user = MockUser.fromRaw(raw);
+  bool _initialized = false;
 
-    if (_user == null) {
-      // signInAnonymously simulacija
-      _user = MockUser(
-        id: 'anon-${DateTime.now().millisecondsSinceEpoch}',
-        isAnonymous: true,
-      );
-      await _save(_user!.serialize());
-      log('AuthService: created anonymous user ${_user!.id}');
-    } else {
-      log('AuthService: restored user ${_user!.id} (anon=${_user!.isAnonymous})');
+  /// Pozove se iz main.dart NAKON Supabase.initialize() + signInAnonymously().
+  /// Pretplaća se na auth state changes i drži _user u syncu.
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+
+    try {
+      final client = sb.Supabase.instance.client;
+      _setUser(client.auth.currentUser);
+
+      client.auth.onAuthStateChange.listen((data) {
+        log('AuthService: auth event ${data.event} '
+            'user=${data.session?.user.id} '
+            'anon=${data.session?.user.isAnonymous}');
+        _setUser(data.session?.user);
+      });
+    } catch (e) {
+      // Supabase nije inicijaliziran (no env) — ostani s null user-om;
+      // mock fallback opisno bi mogao biti dodatak, ali za sad samo log.
+      log('AuthService.init: Supabase unavailable — $e');
     }
+  }
+
+  void _setUser(sb.User? u) {
+    final next = u == null ? null : AppUser.fromSupabase(u);
+    if (next?.id == _user?.id && next?.isAnonymous == _user?.isAnonymous) {
+      // Manje stvarne promjene (npr. metadata) — i dalje refresh
+      // jer chip moze imati novi displayName.
+    }
+    _user = next;
     notifyListeners();
   }
 
-  /// Mock linkIdentity — pokaže SnackBar, postavi user na permanent.
+  /// Anonymous → permanent flow. Za Google/Apple koristi linkIdentity
+  /// (Supabase otvori OAuth redirect). Za email šalje magic link / OTP.
+  /// Passkey je još uvijek mock fallback dok ne ide nativni WebAuthn flow
+  /// kroz custom edge function — vidi docs/backend-prompts/05-auth-providers.md.
   Future<void> linkIdentity(
     BuildContext context,
     AuthProvider provider, {
     String? mockEmail,
   }) async {
     log('AuthService.linkIdentity($provider)');
-    _showSnack(
-      context,
-      'MOCK: linkIdentity(${provider.displayName})… '
-      '(pravi backend bi sad otvorio OAuth)',
-    );
-
-    // Simuliraj network latency
-    await Future.delayed(const Duration(milliseconds: 700));
-
-    final fakeEmail = mockEmail ?? _fakeEmailFor(provider);
-    final fakeName = _fakeNameFor(provider);
-
-    _user = MockUser(
-      id: _user?.id ?? 'mock-${DateTime.now().millisecondsSinceEpoch}',
-      isAnonymous: false,
-      email: fakeEmail,
-      displayName: fakeName,
-      provider: provider,
-    );
-    await _save(_user!.serialize());
-
-    if (context.mounted) {
-      _showSnack(
-        context,
-        'MOCK: prijavljen kao $fakeName ($fakeEmail) preko ${provider.displayName}',
-        actionLabel: 'OK',
-      );
+    final client = _client();
+    if (client == null) {
+      _snack(context, 'Supabase nije konfiguriran — nije moguće povezati račun.');
+      return;
     }
-    notifyListeners();
+
+    try {
+      switch (provider) {
+        case AuthProvider.google:
+        case AuthProvider.apple:
+          final oauth = provider.oauthProvider!;
+          if (client.auth.currentUser?.isAnonymous == true) {
+            await client.auth.linkIdentity(oauth);
+          } else {
+            await client.auth.signInWithOAuth(oauth);
+          }
+          // OAuth flow je redirect-based na webu → app će se reload-ati,
+          // session listener iz init() će handlati state.
+          if (context.mounted) {
+            _snack(context, 'Otvaram ${provider.displayName} prijavu…');
+          }
+          break;
+
+        case AuthProvider.email:
+          final email = await _promptForEmail(context, mockEmail);
+          if (email == null || !context.mounted) return;
+          await client.auth.signInWithOtp(
+            email: email,
+            shouldCreateUser: true,
+          );
+          if (context.mounted) {
+            _snack(
+              context,
+              'Magic link je poslan na $email — provjeri inbox.',
+              actionLabel: 'OK',
+            );
+          }
+          break;
+
+        case AuthProvider.passkey:
+          // TODO: implementirati WebAuthn preko passkeys package + custom
+          // /passkey/register/start endpoint. Vidi 05-auth-providers.md §Passkey.
+          _snack(
+            context,
+            'Passkey još nije dostupan — koristi Google, Apple ili e-mail za sada.',
+          );
+          break;
+      }
+    } on sb.AuthException catch (e) {
+      log('linkIdentity error: ${e.message}');
+      if (context.mounted) {
+        _snack(context, 'Greška: ${e.message}');
+      }
+    } catch (e) {
+      log('linkIdentity error: $e');
+      if (context.mounted) {
+        _snack(context, 'Greška pri prijavi.');
+      }
+    }
   }
 
   Future<void> signOut(BuildContext context) async {
     log('AuthService.signOut');
-    _user = MockUser(
-      id: 'anon-${DateTime.now().millisecondsSinceEpoch}',
-      isAnonymous: true,
-    );
-    await _save(_user!.serialize());
-    if (context.mounted) {
-      _showSnack(context, 'Odjavljen — nastavljaš kao gost');
+    final client = _client();
+    if (client == null) return;
+    try {
+      await client.auth.signOut();
+      // Odmah kreiraj novu anonymous sesiju da app ostane funkcionalan.
+      await client.auth.signInAnonymously();
+      if (context.mounted) {
+        _snack(context, 'Odjavljen — nastavljaš kao gost');
+      }
+    } on sb.AuthException catch (e) {
+      log('signOut error: ${e.message}');
     }
-    notifyListeners();
   }
 
-  /// Force-promote bez UI feedback-a (interno korišteno nakon M4 handoff consume).
+  /// FALLBACK za M4 handoff kad edge function /handoff/consume nije available.
+  /// Pravi flow je: edge function consume RPC + generira magic link → session
+  /// se prebaci preko onAuthStateChange listenera u init(). Dok edge function
+  /// ne postoji, handoff_service poziva forceSignIn nakon RPC consume da
+  /// barem prikaže success screen (no real session switch — UI-only).
   Future<void> forceSignIn({
     required String id,
     required String displayName,
     required String email,
     required AuthProvider provider,
   }) async {
-    _user = MockUser(
+    log('AuthService.forceSignIn (UI fallback): $id');
+    // Ne mijenjamo stvarnu Supabase sesiju — to mora ići preko magic link-a
+    // iz edge function-a. Samo updateamo UI state s prikazom target user-a.
+    _user = AppUser(
       id: id,
       isAnonymous: false,
       email: email,
       displayName: displayName,
       provider: provider,
     );
-    await _save(_user!.serialize());
     notifyListeners();
   }
 
   // -- helpers --
 
-  String _fakeEmailFor(AuthProvider p) => switch (p) {
-        AuthProvider.google => 'matija.test@gmail.com',
-        AuthProvider.apple => 'matija.test@privaterelay.appleid.com',
-        AuthProvider.email => 'matija@example.com',
-        AuthProvider.passkey => 'matija.test@passkey.local',
-      };
+  sb.SupabaseClient? _client() {
+    try {
+      return sb.Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
 
-  String _fakeNameFor(AuthProvider p) => switch (p) {
-        AuthProvider.google => 'Matija (Google)',
-        AuthProvider.apple => 'Matija (Apple)',
-        AuthProvider.email => 'Matija',
-        AuthProvider.passkey => 'Matija (Passkey)',
-      };
+  Future<String?> _promptForEmail(BuildContext context, String? prefill) async {
+    final controller = TextEditingController(text: prefill ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('E-mail za magic link'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            hintText: 'ime@primjer.com',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Odustani'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Pošalji'),
+          ),
+        ],
+      ),
+    );
+    return result == null || result.isEmpty ? null : result;
+  }
 
-  void _showSnack(BuildContext context, String msg, {String? actionLabel}) {
+  void _snack(BuildContext context, String msg, {String? actionLabel}) {
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
@@ -206,20 +292,5 @@ class AuthService extends ChangeNotifier {
             : null,
       ),
     );
-  }
-
-  Future<String?> _load() async {
-    if (kIsWeb) return getLocalStorageString(_kAuthMockUserKey);
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kAuthMockUserKey);
-  }
-
-  Future<void> _save(String value) async {
-    if (kIsWeb) {
-      setLocalStorageString(_kAuthMockUserKey, value);
-      return;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kAuthMockUserKey, value);
   }
 }
