@@ -1,0 +1,32 @@
+name: Render DBML v3 to SVG
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/schema-v3.dbml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Render DBML v3 → SVG
+        run: npx --yes @softwaretechnik/dbml-renderer@latest -i docs/schema-v3.dbml -o docs/schema-v3-local.svg
+
+      - name: Commit rendered SVG if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(docs): re-render schema-v3-local.svg from DBML'
+          file_pattern: 'docs/schema-v3-local.svg'
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com

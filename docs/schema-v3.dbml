@@ -1,0 +1,427 @@
+// DOMOVINA.ai — Database Schema v3
+//
+// Architectural refinement nakon "step back" review-a:
+//   - Drop apps/app_installations (schema = app boundary)
+//   - Drop role_permissions (3 hardcoded roles ne traže decoupling)
+//   - Drop profiles.email/is_anonymous (PII separation princip)
+//   - Drop playlists.forked_from_id (speculativni feature)
+//   + Add activity_events (event sourcing seam)
+//   + Add watch_progress.episode_title/thumbnail_url (denorm cache)
+//   + Add accounts.search_text (GENERATED + GIN trgm)
+//
+// Vidi docs/auth-and-database-plan-v3.md za detaljnu argumentaciju.
+// v2 sheme i doc ostaju netaknuti kao historical reference.
+
+Project domovina_backend_v3 {
+  database_type: 'PostgreSQL'
+  Note: '''
+# DOMOVINA.ai Backend Schema (v3)
+
+Architectural principles:
+
+1. **PII isključivo u auth.users** — naše tablice drže FK i non-PII data.
+   GDPR delete = DELETE FROM auth.users → ON DELETE CASCADE.
+
+2. **Slug je immutable u v1** — postavi na create, nikad ne mijenja.
+   Trigger BEFORE UPDATE odbija promjenu. Slug history (GitHub-style)
+   se može dodati u v2 ako značajan use case zahtjeva.
+
+3. **Soft-delete samo na `accounts`** — sve drugo hard-delete preko
+   ON DELETE CASCADE. "What happened" pitanja → activity_events.
+
+MVP scope (faze 0-5): 6 tablica
+  - profiles, accounts, accounts_memberships, activity_events
+  - domovina_ai.watch_progress, domovina_ai.watch_sessions
+
+Faze 6+ dodaju: invitations, bookmarks, favorites, playlists, playlist_items.
+'''
+}
+
+// ========================================
+// ENUMS / CUSTOM TYPES
+// ========================================
+
+Enum member_role {
+  owner
+  admin
+  member
+}
+
+Enum visibility_level {
+  private
+  unlisted
+  public
+}
+
+Enum device_type {
+  web
+  ios
+  android
+  macos
+}
+
+Enum playlist_visibility {
+  private
+  members
+  public
+}
+
+// ========================================
+// IDENTITY (Supabase managed + extension)
+// ========================================
+
+Table auth.users [headercolor: #6366F1] {
+  id uuid [pk, note: 'managed by Supabase GoTrue']
+  email text [note: '★ SOLE PII LOCATION (Princip 1)']
+  is_anonymous boolean
+  raw_user_meta_data jsonb [note: 'OAuth provider data; PII']
+  created_at timestamptz
+  updated_at timestamptz
+
+  Note: '''
+  **Supabase managed** — ne mijenjamo schemu.
+
+  ★ **Princip 1:** Sva PII (email, OAuth identifiers, telefon, raw metadata)
+  lives ONLY here. Druge tablice drže pointer (FK) i non-PII data.
+
+  GDPR "delete my data" = DELETE FROM auth.users → ON DELETE CASCADE
+  riješi sve ostalo. Single audit point.
+  '''
+}
+
+Table profiles [headercolor: #6366F1] {
+  id uuid [pk, ref: > auth.users.id, note: 'FK 1:1 s auth.users']
+  locale text [default: "'hr'"]
+  timezone text [default: "'Europe/Zagreb'"]
+  active_account_id uuid [ref: > accounts.id, note: 'UI "act as" kontekst']
+  notification_prefs jsonb
+  onboarding_completed_at timestamptz
+  last_seen_at timestamptz
+  deleted_at timestamptz [note: 'soft delete za GDPR']
+  created_at timestamptz
+  updated_at timestamptz
+
+  Note: '''
+  User-specific NON-PII app context. 1:1 s auth.users via trigger.
+
+  v3 change: drop `email` i `is_anonymous` mirror.
+  Koristi `auth.email()` i `auth.jwt() ->> 'is_anonymous'` u queries.
+  '''
+}
+
+// ========================================
+// ACCOUNTS & ORGS
+// ========================================
+
+Table accounts [headercolor: #F59E0B] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  primary_owner_user_id uuid [ref: > auth.users.id, not null]
+  is_personal_account boolean [not null, default: false]
+  slug citext [unique, not null, note: '★ IMMUTABLE (Princip 2); GitHub-style namespace']
+  name text [not null]
+  avatar_url text
+  bio text
+  website_url text
+  search_text text [note: 'GENERATED: lower(name || slug || coalesce(bio,))']
+  visibility visibility_level [default: "private"]
+  metadata jsonb [note: 'product-specific account settings']
+  deleted_at timestamptz [note: '★ soft delete (Princip 3 — sole table)']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    primary_owner_user_id [name: 'ix_accounts_primary_owner']
+    slug [name: 'ix_accounts_slug']
+    (primary_owner_user_id) [name: 'ix_one_personal_per_user', unique, note: 'PARTIAL: WHERE is_personal_account = true']
+    search_text [type: gin, name: 'ix_accounts_search', note: 'gin_trgm_ops — sub-ms fuzzy search']
+  }
+
+  Note: '''
+  **★ Central abstraction** — owner = user ili org.
+
+  Princip 2: slug je IMMUTABLE u v1.
+    Trigger BEFORE UPDATE odbija promjenu slug-a.
+    Slug history se može dodati kasnije ako bude need.
+
+  Princip 3: deleted_at — JEDINA tablica s soft-delete.
+    Sve drugo hard-delete preko ON DELETE CASCADE.
+    Cleanup cron periodični hard-delete starije od 30 dana.
+
+  search_text GENERATED stupac kombinira name + slug + bio za
+  fuzzy typeahead "find user/org" — GIN trigram index daje
+  sub-ms search čak na milijun redaka.
+  '''
+}
+
+Table accounts_memberships [headercolor: #F59E0B] {
+  account_id uuid [pk, ref: > accounts.id, note: 'mora biti org (is_personal=false)']
+  user_id uuid [pk, ref: > profiles.id]
+  account_role member_role [not null, default: "member"]
+  display_name_override text [note: 'alias unutar specifičnog orga']
+  invited_by uuid [ref: > profiles.id]
+  joined_at timestamptz [default: `now()`]
+  last_active_at timestamptz
+
+  indexes {
+    user_id [name: 'ix_memberships_user']
+    account_id [name: 'ix_memberships_account']
+  }
+
+  Note: '''
+  N:M user × org × role. Personal account NEMA membership red
+  (user JE primary_owner_user_id direktno).
+
+  v3: nepromijenjen od v2. role_permissions tablica je uklonjena —
+  hierarchy owner > admin > member je hardcoded u has_role_on_account()
+  helper f-ji.
+  '''
+}
+
+Table invitations [headercolor: #F59E0B] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  account_id uuid [ref: > accounts.id, not null]
+  email text [not null, note: 'email POZVANE osobe (možda još nije user)']
+  account_role member_role [not null, default: "member"]
+  invited_by uuid [ref: > profiles.id]
+  token text [unique, not null]
+  expires_at timestamptz [note: "default now() + interval '7 days'"]
+  accepted_at timestamptz
+  revoked_at timestamptz [note: 'audit log — ne brišemo invite']
+  last_sent_at timestamptz
+  send_count int [default: 1]
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    token [name: 'ix_invitations_token']
+    email [name: 'ix_invitations_email_pending', note: 'PARTIAL: WHERE accepted_at IS NULL AND revoked_at IS NULL']
+    (account_id, email) [name: 'ix_invitations_uniq_pending', unique, note: 'PARTIAL: spriječi duple pending']
+  }
+
+  Note: '''
+  Pending state između "pozvan" i "član". Email-based jer pozvani
+  možda još nije user.
+
+  **Izuzetak od Principa 1:** invitations.email je nužno PII —
+  pozvani user ne mora postojati u auth.users yet.
+
+  Tablica se dodaje u Fazi 8, ne u MVP-u.
+  '''
+}
+
+// ========================================
+// ACTIVITY EVENTS (novo u v3)
+// ========================================
+
+Table activity_events [headercolor: #14B8A6] {
+  id bigserial [pk]
+  actor_user_id uuid [ref: > auth.users.id, note: 'tko je izveo akciju (može NULL nakon delete)']
+  target_account_id uuid [ref: > accounts.id, note: 'na kojem accountu se akcija dogodila']
+  event_type text [not null, note: 'kategorizirani naziv eventa']
+  payload jsonb [note: 'event-specific data']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (target_account_id, created_at) [name: 'ix_activity_account_recent', note: 'DESC za activity feed']
+    (actor_user_id, created_at) [name: 'ix_activity_actor', note: 'DESC za "my actions"']
+    (event_type, created_at) [name: 'ix_activity_type', note: 'DESC za type-filtered analytics']
+  }
+
+  Note: '''
+  **★ Architectural seam za 4 buduća features-a:**
+
+  1. Notifications feed ("Ana joined your org")
+  2. Audit log (compliance — "kad je promijenjen role?")
+  3. What's new feed (per-account activity stream)
+  4. Recommendations training (anonimizirana watch completion)
+
+  **Strategija:** writes se postavljaju od DANA 1 (Faza 0) preko
+  log_event() helpera + triggera. Reads (UI feed) dolazi u Fazi 7+.
+  Backlog povijesti je gotov kad UI bude potreban.
+
+  Event type vocabulary (početni):
+    org.created, member.invited, member.invite_accepted,
+    member.joined, member.role_changed, member.removed,
+    account.deleted, episode.completed
+
+  ON DELETE CASCADE na target_account_id (audit nestane s accountom).
+  ON DELETE SET NULL na actor_user_id (event ostaje, actor je anoniman).
+  '''
+}
+
+// ========================================
+// DOMOVINA.AI — Netflix-style watch state
+// ========================================
+
+Table domovina_ai.watch_progress [headercolor: #EF4444] {
+  user_id uuid [pk, ref: > profiles.id]
+  episode_id text [pk, note: 'YouTube videoId (canonical key)']
+  channel_id text [not null]
+  position_seconds int [not null, default: 0]
+  duration_seconds int [not null]
+  percent_complete numeric [note: 'GENERATED: 100 * position / duration']
+  completed boolean [note: 'GENERATED: percent_complete >= 90']
+  episode_title text [note: '★ v3: denorm cache iz CDN (skida sekundarni fetch)']
+  episode_thumbnail_url text [note: '★ v3: denorm cache iz CDN']
+  playback_rate numeric [default: 1.0]
+  audio_track text
+  subtitle_track text
+  watch_count int [default: 1]
+  last_watched_at timestamptz [default: `now()`]
+  last_device device_type
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, last_watched_at) [name: 'ix_continue_watching', note: 'DESC za "Continue watching"']
+    (user_id, completed, last_watched_at) [name: 'ix_completion_filter']
+  }
+
+  Note: '''
+  **★ Najvažnija tablica.** Denormalizirano "GDJE si stao" stanje.
+
+  v3 change: dodani episode_title + episode_thumbnail_url.
+  Klijent ih piše u istom upsert tick-u (već zna title/thumbnail iz
+  CDN data za reprodukciju). Skida sekundarni fetch za "Continue
+  watching" carousel — single Postgres query daje cijeli UI state.
+
+  Stale risk: ako CDN rename-a title, naš cache je stale do sljedećeg
+  gledanja. Prihvatljivo trade-off.
+  '''
+}
+
+Table domovina_ai.watch_sessions [headercolor: #EF4444] {
+  id bigserial [pk]
+  user_id uuid [ref: > profiles.id, not null]
+  episode_id text [not null]
+  started_at timestamptz [default: `now()`]
+  ended_at timestamptz
+  start_position_seconds int
+  end_position_seconds int
+  pause_count int [default: 0]
+  seek_count int [default: 0]
+  completed_normally boolean
+  device device_type
+  user_agent text
+
+  indexes {
+    (user_id, started_at) [name: 'ix_sessions_user_history']
+    (episode_id, started_at) [name: 'ix_sessions_episode_analytics']
+  }
+
+  Note: '''
+  Append-only audit log gledanja. Za analytics, NE za UI resume.
+
+  v3: nepromijenjen od v2.
+  '''
+}
+
+Table domovina_ai.bookmarks [headercolor: #EF4444] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > profiles.id, not null]
+  episode_id text [not null]
+  position_seconds int [not null]
+  clip_end_seconds int [note: 'optional — pretvara u clip raspon']
+  title text
+  note text
+  color text
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, episode_id, position_seconds) [name: 'ix_bookmarks_lookup']
+  }
+
+  Note: '''
+  Privatni timestamp markeri korisnika u epizodi.
+
+  v3: nepromijenjen od v2. Dodaje se u Fazi 10, ne u MVP-u.
+  '''
+}
+
+Table domovina_ai.favorites [headercolor: #EF4444] {
+  owner_id uuid [pk, ref: > accounts.id, note: 'account (user ili org)']
+  episode_id text [pk]
+  created_by uuid [ref: > profiles.id, not null]
+  notes text
+  position int
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    owner_id [name: 'ix_favorites_owner']
+  }
+
+  Note: '''
+  Quick-save lista epizoda. Owner = user (osobno) ili org (team-kurirano).
+
+  v3: nepromijenjen od v2. Dodaje se u Fazi 10.
+  '''
+}
+
+Table domovina_ai.playlists [headercolor: #EF4444] {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [ref: > accounts.id, not null]
+  created_by uuid [ref: > profiles.id, not null]
+  slug citext [note: 'URL friendly, unique per owner']
+  name text [not null]
+  description text
+  cover_image_url text
+  visibility playlist_visibility [default: "private"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (owner_id, slug) [unique]
+    owner_id
+  }
+
+  Note: '''
+  Kuratirana lista epizoda — može biti private, members-only, ili public.
+
+  v3 change: drop forked_from_id (speculativni feature).
+  Re-add kad fork UI postoji.
+  '''
+}
+
+Table domovina_ai.playlist_items [headercolor: #EF4444] {
+  playlist_id uuid [pk, ref: > domovina_ai.playlists.id]
+  episode_id text [pk]
+  position int [not null]
+  added_by uuid [ref: > profiles.id]
+  added_at timestamptz [default: `now()`]
+
+  indexes {
+    (playlist_id, position) [name: 'ix_playlist_items_sort']
+  }
+
+  Note: 'N:M epizoda × playlist s manual position ordering.'
+}
+
+// ========================================
+// TABLE GROUPS (semantic clustering)
+// ========================================
+
+TableGroup identity {
+  auth.users
+  profiles
+  Note: 'Supabase managed identity + 1:1 extension (PII živi SAMO u auth.users)'
+}
+
+TableGroup accounts_and_orgs {
+  accounts
+  accounts_memberships
+  invitations
+  Note: 'GitHub-style unified accounts. Slug je immutable u v1. Soft-delete samo na accounts.'
+}
+
+TableGroup activity_log {
+  activity_events
+  Note: '★ NOVO u v3 — append-only event stream. Seam za notifications/audit/feed.'
+}
+
+TableGroup domovina_ai {
+  domovina_ai.watch_progress
+  domovina_ai.watch_sessions
+  domovina_ai.bookmarks
+  domovina_ai.favorites
+  domovina_ai.playlists
+  domovina_ai.playlist_items
+  Note: 'Netflix-style watch state + favorites + curated playlists'
+}
