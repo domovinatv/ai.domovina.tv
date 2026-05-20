@@ -13,6 +13,7 @@ import '../services/channel_cache.dart';
 import '../services/local_prefs.dart';
 import '../services/update_notifier.dart';
 import '../services/view_mode.dart';
+import '../widgets/account_chip.dart';
 import '../widgets/magisterium_section.dart';
 
 /// Croatian flag colours extracted from the logo SVG.
@@ -623,19 +624,31 @@ class _HomeHeader extends StatelessWidget {
           color: _croBlue.withAlpha(isDark ? 50 : 30),
         ),
       ),
-      child: Column(
+      child: Stack(
         children: [
-          // Croatian tricolour accent bar
-          Row(
+          Column(
             children: [
-              Expanded(child: Container(height: 4, color: _croRed)),
-              Expanded(child: Container(height: 4, color: Colors.white)),
-              Expanded(child: Container(height: 4, color: _croBlue)),
+              // Croatian tricolour accent bar
+              Row(
+                children: [
+                  Expanded(child: Container(height: 4, color: _croRed)),
+                  Expanded(child: Container(height: 4, color: Colors.white)),
+                  Expanded(child: Container(height: 4, color: _croBlue)),
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.all(isMobile ? 20 : 28),
+                child: isMobile
+                    ? _buildMobile(theme, isDark)
+                    : _buildDesktop(theme, isDark),
+              ),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.all(isMobile ? 20 : 28),
-            child: isMobile ? _buildMobile(theme, isDark) : _buildDesktop(theme, isDark),
+          // Account chip — top-right overlay
+          Positioned(
+            top: 12,
+            right: 12,
+            child: const AccountChip(),
           ),
         ],
       ),

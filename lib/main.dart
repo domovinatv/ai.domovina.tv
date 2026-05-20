@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'router/app_router.dart';
+import 'services/auth_service.dart';
 import 'services/background_audio.dart';
 import 'services/update_notifier.dart';
 
@@ -24,6 +25,7 @@ void main() async {
 
   MediaKit.ensureInitialized();
   await BackgroundAudio.init();
+  await AuthService.instance.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {

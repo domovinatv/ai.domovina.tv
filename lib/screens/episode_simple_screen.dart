@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../onboarding/moments/m1_save_progress_toast.dart';
+import '../onboarding/moments/m2_link_identity_sheet.dart';
+import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
@@ -14,6 +17,8 @@ import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
+import '../services/watch_progress_service.dart';
+import '../widgets/favorite_button.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/speaker_chip.dart';
 
@@ -132,11 +137,22 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   late final List<({String timestamp, String topic, int totalSeconds})>
       _chapters;
 
+  late final WatchSecondsTracker _watchTracker;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _chapters = _buildChapters();
+    _watchTracker = WatchSecondsTracker(
+      triggerAt: 30,
+      onThreshold: () {
+        if (mounted) maybeShowM2(context);
+      },
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowM1(context);
+    });
     _initVideo();
   }
 
@@ -144,6 +160,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _positionSub?.cancel();
+    _watchTracker.dispose();
+    WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     _player?.dispose();
     super.dispose();
@@ -199,6 +217,16 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         if (sec != _lastUrlSyncedSec) {
           _lastUrlSyncedSec = sec;
           replaceTimestamp('/m/${widget.data.youtubeId}', sec);
+          WatchProgressService.instance.scheduleSave(
+            episodeId: widget.data.youtubeId,
+            positionSeconds: sec,
+            durationSeconds: widget.data.info.duration,
+            channelId: widget.data.info.channelId,
+            episodeTitle: widget.data.summary.summary.titleHr.isNotEmpty
+                ? widget.data.summary.summary.titleHr
+                : widget.data.info.title,
+            episodeThumbnailUrl: widget.data.info.thumbnail,
+          );
         }
       });
 
@@ -208,6 +236,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
 
       player.stream.playing.listen((playing) {
         if (mounted) setState(() => _isPlaying = playing);
+        if (playing) {
+          _watchTracker.start();
+        } else {
+          _watchTracker.pause();
+        }
       });
 
       if (kIsWeb) {
@@ -404,6 +437,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
               ),
             ),
           ),
+          FavoriteButton(episodeId: data.youtubeId),
           IconButton(
             icon: const Icon(Icons.share_outlined),
             tooltip: 'Kopiraj link na trenutni trenutak',

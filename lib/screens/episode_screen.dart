@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../onboarding/moments/m1_save_progress_toast.dart';
+import '../onboarding/moments/m2_link_identity_sheet.dart';
+import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
 import '../services/media_session.dart';
 import '../services/channel_cache.dart';
@@ -16,6 +19,8 @@ import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
+import '../services/watch_progress_service.dart';
+import '../widgets/favorite_button.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
@@ -310,10 +315,23 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// po članku).
   bool _wasPlayingWhenDrawerOpened = false;
 
+  // Onboarding — broji sekunde slušanja, okida M2 nakon 30s.
+  late final WatchSecondsTracker _watchTracker;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _watchTracker = WatchSecondsTracker(
+      triggerAt: 30,
+      onThreshold: () {
+        if (mounted) maybeShowM2(context);
+      },
+    );
+    // M1 toast — prvo otvaranje bilo koje epizode.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowM1(context);
+    });
 
     _sectionKeys = {
       for (final iter in widget.data.article.iterations)
@@ -353,6 +371,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _positionSub?.cancel();
+    _watchTracker.dispose();
+    WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     MediaSession.clear();
     _player?.dispose();
@@ -455,6 +475,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
       }
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
+
+      // Onboarding watch tracker — broji "kvalitetne" sekunde slušanja
+      // (pauza pauzira). Okida M2 nakon 30s aktivnog slušanja.
+      player.stream.playing.listen((playing) {
+        if (playing) {
+          _watchTracker.start();
+        } else {
+          _watchTracker.pause();
+        }
+      });
 
       if (mounted) {
         setState(() {
@@ -600,6 +630,19 @@ class _EpisodeContentState extends State<_EpisodeContent>
       MediaSession.setPositionState(
         duration: Duration(seconds: widget.data.info.duration),
         position: pos,
+      );
+      // Watch progress — debounced 5s upsert u localStorage (mock).
+      // v3: prosljedjujemo title + thumbnail kao denorm cache (skida sekundarni
+      // CDN fetch za "Continue watching" carousel kad backend ode live).
+      WatchProgressService.instance.scheduleSave(
+        episodeId: widget.data.youtubeId,
+        positionSeconds: sec,
+        durationSeconds: widget.data.info.duration,
+        channelId: widget.data.info.channelId,
+        episodeTitle: widget.data.summary.summary.titleHr.isNotEmpty
+            ? widget.data.summary.summary.titleHr
+            : widget.data.info.title,
+        episodeThumbnailUrl: widget.data.info.thumbnail,
       );
     }
 
@@ -837,6 +880,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 ),
               ),
             ),
+            FavoriteButton(episodeId: data.youtubeId),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: 'Kopiraj link na trenutni trenutak',
@@ -961,6 +1005,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   ),
                 ),
               ),
+              FavoriteButton(episodeId: data.youtubeId),
               IconButton(
                 icon: const Icon(Icons.unfold_less),
                 tooltip: 'Jednostavni prikaz',

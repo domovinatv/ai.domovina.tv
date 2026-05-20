@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import '../onboarding/moments/m4_handoff_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
@@ -67,6 +68,24 @@ GoRouter createRouter() {
           return NoTransitionPage(
             key: ValueKey('mobile-$videoId'),
             child: EpisodeSimpleScreen(youtubeId: videoId),
+          );
+        },
+      ),
+      // M4 handoff — cross-device sign-in transfer
+      GoRoute(
+        path: '/handoff',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('handoff'),
+          child: HandoffScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/handoff/:code',
+        pageBuilder: (context, state) {
+          final code = state.pathParameters['code'];
+          return NoTransitionPage(
+            key: ValueKey('handoff-$code'),
+            child: HandoffScreen(prefilledCode: code),
           );
         },
       ),
