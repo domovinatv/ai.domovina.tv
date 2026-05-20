@@ -4,8 +4,11 @@
 library;
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show ChangeNotifier, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show ChangeNotifier, TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../main.dart' show log;
 import 'local_prefs.dart';
 
 const _kKey = 'watch_progress_v1';
@@ -94,6 +97,9 @@ class WatchProgressService extends ChangeNotifier {
     return _byEpisode[episodeId];
   }
 
+  /// Lokalni "Continue watching" (offline-first fallback). Real source-of-truth
+  /// za logged-in usere je `domovina_ai.v_continue_watching` view — koristi
+  /// [continueWatchingRemote] da ga povučeš direktno iz Supabase-a.
   Future<List<WatchProgress>> continueWatching({int limit = 20}) async {
     await init();
     final items = _byEpisode.values
@@ -103,12 +109,47 @@ class WatchProgressService extends ChangeNotifier {
     return items.take(limit).toList();
   }
 
-  /// Sprema progress odmah (lokalni mock). `_onVideoPosition` već gate-a poziv
-  /// na 1×/s pa nema potrebe za dodatnim debounce-om — fire-and-forget dispose
-  /// race iz prethodne implementacije je time eliminiran.
+  /// Cross-device "Continue watching" iz Supabase `v_continue_watching` view.
+  /// View već filtrira `not completed AND position_seconds > 30` i sortira
+  /// po `last_watched_at desc`. Za anonymous usere ovo vraća prazno (jer
+  /// nemaju pisanog progresa) — Home carousel može fallback-ati na lokalni
+  /// `continueWatching()` u tom slučaju.
+  Future<List<WatchProgress>> continueWatchingRemote({int limit = 20}) async {
+    try {
+      final client = sb.Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user == null) return [];
+      final rows = await client
+          .schema('domovina_ai')
+          .from('v_continue_watching')
+          .select()
+          .limit(limit);
+      return rows
+          .map<WatchProgress?>((r) => WatchProgress(
+                episodeId: r['episode_id'] as String,
+                channelId: r['channel_id'] as String?,
+                positionSeconds: (r['position_seconds'] as num).toInt(),
+                durationSeconds: (r['duration_seconds'] as num).toInt(),
+                episodeTitle: r['episode_title'] as String?,
+                episodeThumbnailUrl: r['episode_thumbnail_url'] as String?,
+                lastWatchedAt: DateTime.parse(r['last_watched_at'] as String),
+              ))
+          .whereType<WatchProgress>()
+          .toList();
+    } catch (e) {
+      log('continueWatchingRemote failed: $e');
+      return [];
+    }
+  }
+
+  /// Sprema progress odmah lokalno (1×/s gate je u `_onVideoPosition`), plus
+  /// debounced upsert u Supabase domovina_ai.watch_progress (5s) tako da
+  /// kontinualno gledanje ne radi spam u DB. Dispose flushuje pending upsert.
   ///
-  /// Pravi backend swap zamijenit će ovo s debounced Supabase upsert-om
-  /// (~5s); vidi docs/backend-prompts/07-flutter-swap-mocks.md.
+  /// Anonymous bring-up mode: trenutno DOPUŠTAMO upsert i za anonymous usere
+  /// (RLS to dopušta — anonymous ima auth.uid()). Kasnije u onboarding fazi
+  /// možemo gate-irati pisanje samo na permanent usere da ne polutiramo DB
+  /// pre-link state-om.
   void scheduleSave({
     required String episodeId,
     required int positionSeconds,
@@ -117,7 +158,7 @@ class WatchProgressService extends ChangeNotifier {
     String? episodeTitle,
     String? episodeThumbnailUrl,
   }) {
-    _byEpisode[episodeId] = WatchProgress(
+    final wp = WatchProgress(
       episodeId: episodeId,
       channelId: channelId,
       positionSeconds: positionSeconds,
@@ -126,11 +167,68 @@ class WatchProgressService extends ChangeNotifier {
       episodeThumbnailUrl: episodeThumbnailUrl,
       lastWatchedAt: DateTime.now(),
     );
+    _byEpisode[episodeId] = wp;
     _persistSync();
+
+    // Supabase upsert je debounced 5s — ne želimo spam. flush() pri dispose
+    // gurne pending odmah.
+    _pendingRemote = wp;
+    _scheduleRemoteFlush();
   }
 
-  /// No-op zadržan zbog backward-compat poziva u dispose-u episode screen-ova.
-  Future<void> flush() async {}
+  WatchProgress? _pendingRemote;
+  bool _remoteFlushScheduled = false;
+
+  void _scheduleRemoteFlush() {
+    if (_remoteFlushScheduled) return;
+    _remoteFlushScheduled = true;
+    Future.delayed(const Duration(seconds: 5), () async {
+      _remoteFlushScheduled = false;
+      await _flushRemote();
+    });
+  }
+
+  Future<void> _flushRemote() async {
+    final wp = _pendingRemote;
+    if (wp == null) return;
+    _pendingRemote = null;
+    try {
+      final client = sb.Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user == null) return;
+      await client.schema('domovina_ai').from('watch_progress').upsert({
+        'user_id': user.id,
+        'episode_id': wp.episodeId,
+        if (wp.channelId != null) 'channel_id': wp.channelId,
+        'position_seconds': wp.positionSeconds,
+        'duration_seconds': wp.durationSeconds,
+        if (wp.episodeTitle != null) 'episode_title': wp.episodeTitle,
+        if (wp.episodeThumbnailUrl != null)
+          'episode_thumbnail_url': wp.episodeThumbnailUrl,
+        'last_watched_at': wp.lastWatchedAt.toUtc().toIso8601String(),
+        'last_device': _detectDevice(),
+      }, onConflict: 'user_id,episode_id');
+    } catch (e) {
+      log('watch_progress upsert failed: $e');
+      // Lokalna kopija je već spremljena — pri sljedećem tick-u ćemo
+      // pokušati opet.
+    }
+  }
+
+  /// Forsiraj odmah remote upsert (npr. iz dispose hook-a episode screen-a).
+  Future<void> flush() async {
+    await _flushRemote();
+  }
+
+  String _detectDevice() {
+    if (kIsWeb) return 'web';
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.android => 'android',
+      TargetPlatform.macOS => 'macos',
+      _ => 'web',
+    };
+  }
 
   void _persistSync() {
     final list = _byEpisode.values.map((w) => w.toJson()).toList();
