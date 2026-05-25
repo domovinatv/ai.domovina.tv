@@ -1473,8 +1473,10 @@ Widget _videoMeta(ThemeData theme, ChannelVideo video, bool hasArticle) =>
               _metaChip(theme, Icons.calendar_today, video.date!),
             if (video.durationDisplay != null)
               _metaChip(theme, Icons.schedule, video.durationDisplay!),
-            if (video.views != null && video.views! > 0)
-              _metaChip(theme, Icons.visibility, _formatCount(video.views!)),
+            // YouTube view count hidden — snapshot data, not live-synced.
+            // Re-enable once we have our own internal statistics.
+            // if (video.views != null && video.views! > 0)
+            //   _metaChip(theme, Icons.visibility, _formatCount(video.views!)),
           ],
         ),
         const SizedBox(height: 4),
@@ -1559,6 +1561,7 @@ Widget _metaChip(ThemeData theme, IconData icon, String text) => Row(
       ],
     );
 
+// ignore: unused_element
 String _formatCount(int n) {
   if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
   if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';

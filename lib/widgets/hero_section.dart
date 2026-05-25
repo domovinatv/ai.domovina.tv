@@ -80,19 +80,21 @@ class HeroSection extends StatelessWidget {
                           ? info.durationString
                           : _formatDuration(info.duration),
                     ),
-                    _Stat(
-                      icon: Icons.visibility_outlined,
-                      label: _formatCount(info.viewCount),
-                    ),
-                    _Stat(
-                      icon: Icons.thumb_up_outlined,
-                      label: _formatCount(info.likeCount),
-                    ),
-                    if (info.commentCount != null)
-                      _Stat(
-                        icon: Icons.comment_outlined,
-                        label: _formatCount(info.commentCount!),
-                      ),
+                    // YouTube view/like/comment counts hidden — snapshot data, not live-synced.
+                    // Re-enable once we have our own internal statistics.
+                    // _Stat(
+                    //   icon: Icons.visibility_outlined,
+                    //   label: _formatCount(info.viewCount),
+                    // ),
+                    // _Stat(
+                    //   icon: Icons.thumb_up_outlined,
+                    //   label: _formatCount(info.likeCount),
+                    // ),
+                    // if (info.commentCount != null)
+                    //   _Stat(
+                    //     icon: Icons.comment_outlined,
+                    //     label: _formatCount(info.commentCount!),
+                    //   ),
                   ],
                 ),
               ],
@@ -113,6 +115,7 @@ class HeroSection extends StatelessWidget {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
+  // ignore: unused_element
   String _formatCount(int count) {
     if (count >= 1000000) {
       return '${(count / 1000000).toStringAsFixed(1)}M';

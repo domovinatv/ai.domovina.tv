@@ -1128,18 +1128,20 @@ class _InfoTab extends StatelessWidget {
           value: info.durationString,
           theme: theme,
         ),
-        _MetaRow(
-          icon: Icons.visibility,
-          label: 'Pregledi',
-          value: _formatCount(info.viewCount),
-          theme: theme,
-        ),
-        _MetaRow(
-          icon: Icons.thumb_up,
-          label: 'Lajkovi',
-          value: _formatCount(info.likeCount),
-          theme: theme,
-        ),
+        // YouTube view/like counts hidden — snapshot data, not live-synced.
+        // Re-enable once we have our own internal statistics.
+        // _MetaRow(
+        //   icon: Icons.visibility,
+        //   label: 'Pregledi',
+        //   value: _formatCount(info.viewCount),
+        //   theme: theme,
+        // ),
+        // _MetaRow(
+        //   icon: Icons.thumb_up,
+        //   label: 'Lajkovi',
+        //   value: _formatCount(info.likeCount),
+        //   theme: theme,
+        // ),
         const SizedBox(height: 24),
       ],
     );
@@ -1152,6 +1154,7 @@ class _InfoTab extends StatelessWidget {
     return yyyymmdd;
   }
 
+  // ignore: unused_element
   String _formatCount(int n) {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
