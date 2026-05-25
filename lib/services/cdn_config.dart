@@ -5,14 +5,26 @@
 class CdnConfig {
   static const String base = 'https://cdn.domovina.ai';
 
+  // Channel listing files se mijenjaju kako stižu novi videi, ali backend
+  // uploader trenutno postavlja Cache-Control: immutable na sve fajlove.
+  // Defensive frontend mjera: cache-buster s 5-minutnim bucket-om — dovoljno
+  // svjeze da novi video bude vidljiv brzo, dovoljno stabilno da CDN moze
+  // servirati istu URL verziju vise klijenata. Per-video JSON (article,
+  // summary, info, ...) su pravo immutable pa nemaju cache-buster.
+  static String _channelCacheBuster() {
+    final bucket = DateTime.now().millisecondsSinceEpoch ~/ 300000;
+    return 'v=$bucket';
+  }
+
   // Channels
-  static String channelsIndexUrl() => '$base/channels/data/index.json';
+  static String channelsIndexUrl() =>
+      '$base/channels/data/index.json?${_channelCacheBuster()}';
   static String channelUrl(String channelId) =>
-      '$base/channels/data/$channelId.json';
+      '$base/channels/data/$channelId.json?${_channelCacheBuster()}';
   static String channelAvatarUrl(String channelId) =>
-      '$base/channels/images/$channelId/avatar_square.jpg';
+      '$base/channels/images/$channelId/avatar_square.jpg?${_channelCacheBuster()}';
   static String channelCoverUrl(String channelId) =>
-      '$base/channels/images/$channelId/avatar_cover.jpg';
+      '$base/channels/images/$channelId/avatar_cover.jpg?${_channelCacheBuster()}';
 
   // JSON podaci
   static String infoUrl(String ytId) => '$base/data/$ytId/info.json';
