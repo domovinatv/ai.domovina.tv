@@ -184,9 +184,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   }
 
   List<({String timestamp, String topic, int totalSeconds})> _buildChapters() {
+    final outline = widget.data.outline;
+    if (outline == null) return const [];
     final list =
         <({String timestamp, String topic, int totalSeconds})>[];
-    for (final iter in widget.data.outline.iterations) {
+    for (final iter in outline.iterations) {
       for (final ch in iter.chapters) {
         list.add((
           timestamp: ch.timestamp,
@@ -233,9 +235,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             positionSeconds: sec,
             durationSeconds: widget.data.info.duration,
             channelId: widget.data.info.channelId,
-            episodeTitle: widget.data.summary.summary.titleHr.isNotEmpty
-                ? widget.data.summary.summary.titleHr
-                : widget.data.info.title,
+            episodeTitle: widget.data.displayTitle,
             episodeThumbnailUrl: widget.data.info.thumbnail,
           );
         }
@@ -305,10 +305,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                 thumbnail16x9Url: thumbUrl,
               )
             : null;
-        final summaryTitle = widget.data.summary.summary.titleHr;
         BackgroundAudio.instance.attach(
           player: player,
-          title: summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title,
+          title: widget.data.displayTitle,
           artist: channelName,
           artUri: composed ?? squareUrl ?? thumbUrl,
           duration: Duration(seconds: widget.data.info.duration),
@@ -677,7 +676,7 @@ class _PlayerTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final info = data.info;
-    final summary = data.summary.summary;
+    final summary = data.summary?.summary;
 
     return SingleChildScrollView(
       child: Column(
@@ -807,7 +806,7 @@ class _PlayerTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  summary.titleHr.isNotEmpty ? summary.titleHr : info.title,
+                  data.displayTitle,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -849,7 +848,7 @@ class _PlayerTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (summary.speakers.isNotEmpty) ...[
+                if (summary != null && summary.speakers.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -983,22 +982,58 @@ class _InfoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final info = data.info;
-    final summary = data.summary.summary;
+    final summary = data.summary?.summary;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Title
         Text(
-          summary.titleHr.isNotEmpty ? summary.titleHr : info.title,
+          data.displayTitle,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 12),
 
+        // Pending pipeline banner — only when AI nije gotov.
+        if (summary == null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.tertiaryContainer.withAlpha(140),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.tertiary.withAlpha(80),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.auto_awesome_outlined,
+                  size: 18,
+                  color: theme.colorScheme.onTertiaryContainer,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'AI obrada još nije gotova — prikazujem samo osnovne podatke. '
+                    'Sažetak, poglavlja i članak dolaze kad pipeline završi.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onTertiaryContainer,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // Abstract
-        if (summary.abstractHr.isNotEmpty) ...[
+        if (summary != null && summary.abstractHr.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -1016,7 +1051,7 @@ class _InfoTab extends StatelessWidget {
         ],
 
         // Key topics
-        if (summary.keyTopics.isNotEmpty) ...[
+        if (summary != null && summary.keyTopics.isNotEmpty) ...[
           _SectionTitle(icon: Icons.topic, label: 'Ključne teme'),
           const SizedBox(height: 8),
           Wrap(
@@ -1035,7 +1070,7 @@ class _InfoTab extends StatelessWidget {
         ],
 
         // Key points
-        if (summary.keyPoints.isNotEmpty) ...[
+        if (summary != null && summary.keyPoints.isNotEmpty) ...[
           _SectionTitle(icon: Icons.format_list_bulleted, label: 'Ključne točke'),
           const SizedBox(height: 8),
           ...summary.keyPoints.map((kp) => Padding(
@@ -1067,7 +1102,7 @@ class _InfoTab extends StatelessWidget {
         ],
 
         // Speakers
-        if (summary.speakers.isNotEmpty) ...[
+        if (summary != null && summary.speakers.isNotEmpty) ...[
           _SectionTitle(icon: Icons.people, label: 'Govornici'),
           const SizedBox(height: 8),
           ...summary.speakers.map((s) => Padding(

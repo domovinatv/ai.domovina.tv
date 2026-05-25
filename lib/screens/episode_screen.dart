@@ -333,9 +333,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
       if (mounted) maybeShowM1(context);
     });
 
+    final article = widget.data.article;
     _sectionKeys = {
-      for (final iter in widget.data.article.iterations)
-        for (final sec in iter.sections) sec.screenshotTimestamp: GlobalKey(),
+      if (article != null)
+        for (final iter in article.iterations)
+          for (final sec in iter.sections)
+            sec.screenshotTimestamp: GlobalKey(),
     };
 
     // Keys za Magisterium stupac — scroll sync (primary variant)
@@ -348,12 +351,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     };
 
     _sortedSections = [
-      for (final iter in widget.data.article.iterations)
-        for (final sec in iter.sections)
-          (
-            dur: _parseDuration(sec.screenshotTimestamp),
-            ts: sec.screenshotTimestamp,
-          ),
+      if (article != null)
+        for (final iter in article.iterations)
+          for (final sec in iter.sections)
+            (
+              dur: _parseDuration(sec.screenshotTimestamp),
+              ts: sec.screenshotTimestamp,
+            ),
     ]..sort((a, b) => a.dur.compareTo(b.dur));
 
     _videoChapters = _sortedSections.map((s) {
@@ -420,7 +424,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
   }
 
   String _subtitleForTimestamp(String ts) {
-    for (final iter in widget.data.article.iterations) {
+    final article = widget.data.article;
+    if (article == null) return ts;
+    for (final iter in article.iterations) {
       for (final sec in iter.sections) {
         if (sec.screenshotTimestamp == ts) return sec.subtitle;
       }
@@ -551,10 +557,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 thumbnail16x9Url: thumbUrl,
               )
             : null;
-        final summaryTitle = widget.data.summary.summary.titleHr;
+        final mediaTitle = widget.data.displayTitle;
         BackgroundAudio.instance.attach(
           player: player,
-          title: summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title,
+          title: mediaTitle,
           artist: channelName,
           artUri: composed ?? squareUrl ?? thumbUrl,
           duration: Duration(seconds: widget.data.info.duration),
@@ -564,8 +570,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
         // OS-u (iOS Now Playing, Android media notification) da je tab
         // "playing media" pa audio nastavlja kad tab izgubi fokus / zaslon
         // se zaključa / korisnik prijeđe na drugi tab. No-op na native.
-        final mediaTitle =
-            summaryTitle.isNotEmpty ? summaryTitle : widget.data.info.title;
         MediaSession.attachMetadata(
           title: mediaTitle,
           artist: channelName,
@@ -679,9 +683,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         positionSeconds: sec,
         durationSeconds: widget.data.info.duration,
         channelId: widget.data.info.channelId,
-        episodeTitle: widget.data.summary.summary.titleHr.isNotEmpty
-            ? widget.data.summary.summary.titleHr
-            : widget.data.info.title,
+        episodeTitle: widget.data.displayTitle,
         episodeThumbnailUrl: widget.data.info.thumbnail,
       );
     }
@@ -870,6 +872,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    // Basic path — video je dostupan ali AI pipeline jos nije producirao
+    // clanak/sazetak/poglavlja. Renderiramo samo player + osnovne info.
+    if (!data.hasAiContent) {
+      return _buildBasicLayout(context);
+    }
     final theme = Theme.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
@@ -962,14 +969,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 children: [
                   HeroSection(info: data.info, youtubeId: data.youtubeId),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                  SummarySection(summary: data.summary),
+                  SummarySection(summary: data.summary!),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
-                  ChaptersSection(outline: data.outline),
+                  ChaptersSection(outline: data.outline!),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
                   ArticleSection(
-                    article: data.article,
+                    article: data.article!,
                     youtubeId: data.youtubeId,
                     sectionKeys: _sectionKeys,
                     onPlayTap: _videoReady
@@ -1003,7 +1010,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     const SizedBox(height: 12),
                   ],
-                  EntitiesSection(summary: data.summary.summary),
+                  EntitiesSection(summary: data.summary!.summary),
                   _MetadataFooter(data: data),
                 ],
               ),
@@ -1128,7 +1135,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article,
+            article: data.article!,
             activeTimestamp: _activeTimestamp,
             scrollTimestamp: _scrollTimestamp,
             onSectionTap: _seekAndPlay,
@@ -1145,7 +1152,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             onSeek: _onVideoSeek,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
-            speakers: data.summary.summary.speakers,
+            speakers: data.summary!.summary.speakers,
             mutedAutoplay: _mutedAutoplay,
             onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
@@ -1157,7 +1164,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article,
+            article: data.article!,
             activeTimestamp: _activeTimestamp,
             onSectionTap: (ts) {
               setState(() => _activeTimestamp = ts);
@@ -1174,7 +1181,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article,
+            article: data.article!,
             activeTimestamp: _activeTimestamp,
             scrollTimestamp: _scrollTimestamp,
             onSectionTap: _seekAndPlay,
@@ -1190,7 +1197,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             onSeek: _onVideoSeek,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
-            speakers: data.summary.summary.speakers,
+            speakers: data.summary!.summary.speakers,
             mutedAutoplay: _mutedAutoplay,
             onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
@@ -1202,7 +1209,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article,
+            article: data.article!,
             activeTimestamp: _activeTimestamp,
             onSectionTap: (ts) {
               setState(() => _activeTimestamp = ts);
@@ -1249,7 +1256,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           : Drawer(
               child: SafeArea(
                 child: TableOfContents(
-                  article: data.article,
+                  article: data.article!,
                   activeTimestamp: _activeTimestamp,
                   scrollTimestamp: _scrollTimestamp,
                   onSectionTap: _drawerTap,
@@ -1269,7 +1276,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   onSeek: _onVideoSeek,
                   totalDurationSeconds: data.info.duration,
                   speakerTimeline: data.speakerTimeline,
-                  speakers: data.summary.summary.speakers,
+                  speakers: data.summary!.summary.speakers,
                   width: null,
                 ),
               ),
@@ -1348,6 +1355,232 @@ class _EpisodeContentState extends State<_EpisodeContent>
           : null,
     );
   }
+
+  // ---------- basic layout (video without AI pipeline content) -------------
+
+  /// Renderiranje epizode koja jos nije prosla AI obradu — samo player +
+  /// osnovne info iz info.json. Trigger: `data.hasAiContent == false`
+  /// (article.json je 404 na CDN-u).
+  Widget _buildBasicLayout(BuildContext context) {
+    final data = widget.data;
+    final theme = Theme.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width > 900;
+    final showVideo = _videoReady && width > 1100;
+
+    final scrollBody = CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Natrag',
+            onPressed: () => context.go('/'),
+          ),
+          automaticallyImplyLeading: false,
+          title: Text(
+            data.info.channel,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Center(
+                child: Text(
+                  data.info.id,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+            FavoriteButton(episodeId: data.youtubeId),
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Kopiraj link na trenutni trenutak',
+              onPressed: () => _copyMomentLink(context, data.youtubeId),
+            ),
+            IconButton(
+              icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
+              tooltip: 'Otvori na YouTube',
+              onPressed: () =>
+                  openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
+            ),
+            if (_videoReady && !showVideo)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  icon: const Icon(Icons.ondemand_video),
+                  tooltip: 'Video',
+                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                ),
+              ),
+          ],
+        ),
+        SliverToBoxAdapter(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    HeroSection(info: data.info, youtubeId: data.youtubeId),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.tertiaryContainer.withAlpha(140),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.colorScheme.tertiary.withAlpha(80),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome_outlined,
+                            size: 20,
+                            color: theme.colorScheme.onTertiaryContainer,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AI obrada još nije gotova',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onTertiaryContainer,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Prikazujem samo video i osnovne podatke s YouTube-a. '
+                                  'Sažetak, poglavlja, članak i teološka analiza dolaze '
+                                  'kad pipeline obradi epizodu.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onTertiaryContainer,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    Widget body;
+    if (showVideo) {
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: scrollBody),
+          VideoPanel(
+            player: _player!,
+            controller: _videoController!,
+            chapters: const [],
+            onChapterTap: (_) {},
+            onSeek: _onVideoSeek,
+            totalDurationSeconds: data.info.duration,
+            speakerTimeline: data.speakerTimeline,
+            mutedAutoplay: _mutedAutoplay,
+            onUnmute: () => setState(() => _mutedAutoplay = false),
+          ),
+        ],
+      );
+    } else {
+      body = scrollBody;
+    }
+
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      onEndDrawerChanged: (isOpen) {
+        if (isOpen) {
+          _wasPlayingWhenDrawerOpened = _player?.state.playing ?? false;
+        } else if (_wasPlayingWhenDrawerOpened) {
+          Future<void>.delayed(const Duration(milliseconds: 120), () {
+            if (!mounted) return;
+            if (!(_player?.state.playing ?? false)) {
+              _player?.play();
+            }
+          });
+        }
+      },
+      endDrawer: _videoReady && !showVideo
+          ? Drawer(
+              width: 360,
+              child: SafeArea(
+                child: VideoPanel(
+                  player: _player!,
+                  controller: _videoController!,
+                  chapters: const [],
+                  onChapterTap: (_) {},
+                  onSeek: _onVideoSeek,
+                  totalDurationSeconds: data.info.duration,
+                  speakerTimeline: data.speakerTimeline,
+                  width: null,
+                ),
+              ),
+            )
+          : null,
+      body: SafeArea(
+        top: false,
+        bottom: !isWide,
+        child: body,
+      ),
+      bottomNavigationBar: !isWide
+          ? Material(
+              color: theme.colorScheme.surface,
+              elevation: 3,
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 64,
+                  child: Row(
+                    children: [
+                      _BottomBarButton(
+                        icon: Icons.ondemand_video,
+                        label: 'Video',
+                        isActive: false,
+                        onTap: _videoReady
+                            ? () {
+                                final s = _scaffoldKey.currentState;
+                                if (s == null) return;
+                                if (s.isEndDrawerOpen) {
+                                  s.closeEndDrawer();
+                                } else {
+                                  s.openEndDrawer();
+                                }
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1360,7 +1593,11 @@ class _MetadataFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final summary = data.summary;
+    // Footer se renderira samo iz full layout-a, koji je guarded
+    // `data.hasAiContent` granom na vrhu _EpisodeContent.build() — pa su
+    // summary/article ovdje garantirano non-null.
+    final summary = data.summary!;
+    final article = data.article!;
 
     return Container(
       color: theme.colorScheme.surfaceContainerHighest,
@@ -1379,7 +1616,7 @@ class _MetadataFooter extends StatelessWidget {
           _MetaRow('YouTube ID', data.info.id),
           _MetaRow('Kanal', data.info.channel),
           _MetaRow('Model (sažetak)', summary.model),
-          _MetaRow('Model (članak)', data.article.metadata.model),
+          _MetaRow('Model (članak)', article.metadata.model),
           if (data.magisteriumPrimary != null)
             _MetaRow('Model (teologija)', data.magisteriumPrimary!.model),
           _MetaRow(

@@ -67,19 +67,41 @@ class DataService {
     return PodcastInfo.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  Future<PodcastSummary> loadSummary() async {
-    final raw = await _fetch(CdnConfig.summaryUrl(youtubeId));
-    return PodcastSummary.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  /// Summary — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
+  /// Prave HTTP greske propagira dalje.
+  Future<PodcastSummary?> loadSummary() async {
+    final url = CdnConfig.summaryUrl(youtubeId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return PodcastSummary.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  Future<PodcastOutline> loadOutline() async {
-    final raw = await _fetch(CdnConfig.outlineUrl(youtubeId));
-    return PodcastOutline.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  /// Outline — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
+  Future<PodcastOutline?> loadOutline() async {
+    final url = CdnConfig.outlineUrl(youtubeId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return PodcastOutline.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  Future<PodcastArticle> loadArticle() async {
-    final raw = await _fetch(CdnConfig.articleUrl(youtubeId));
-    return PodcastArticle.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  /// Article — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
+  Future<PodcastArticle?> loadArticle() async {
+    final url = CdnConfig.articleUrl(youtubeId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return PodcastArticle.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   /// Magisterium teološko obogaćivanje — opcionalno (nije obavezan asset).
@@ -208,12 +230,18 @@ SpeakerTimeline _parseSrt(String raw) {
 }
 
 /// Svi podaci za jednu podcast epizodu, ucitani s CDN-a.
+///
+/// `info` i `videoUri` su uvijek prisutni — to su minimum za reprodukciju.
+/// Ostali AI-generirani asseti (`summary`, `outline`, `article`, magisterium*,
+/// speakerTimeline) su nullable jer pipeline zna kasniti za par sati/dana
+/// nakon sto se video pojavi na YouTube-u. Screens trebaju gracefully
+/// renderirati basic view (samo player + osnovne info) kad ovih nema.
 class EpisodeData {
   final String youtubeId;
   final PodcastInfo info;
-  final PodcastSummary summary;
-  final PodcastOutline outline;
-  final PodcastArticle article;
+  final PodcastSummary? summary;
+  final PodcastOutline? outline;
+  final PodcastArticle? article;
   final MagisteriumData? magisterium;
   final MagisteriumData? magisteriumBatch;
   final MagisteriumFullData? magisteriumFull;
@@ -226,9 +254,9 @@ class EpisodeData {
   const EpisodeData({
     required this.youtubeId,
     required this.info,
-    required this.summary,
-    required this.outline,
-    required this.article,
+    this.summary,
+    this.outline,
+    this.article,
     this.magisterium,
     this.magisteriumBatch,
     this.magisteriumFull,
@@ -238,6 +266,17 @@ class EpisodeData {
     this.speakerTimeline,
     required this.videoUri,
   });
+
+  /// True kad AI pipeline (clanak) nije produkcijski gotov. UI tada pokazuje
+  /// samo player + basic info i opcionalno YouTube chapters iz info.json.
+  bool get hasAiContent => article != null;
+
+  /// Helper za naslov: preferira HR summary, fallback na YouTube info.title.
+  String get displayTitle {
+    final hr = summary?.summary.titleHr;
+    if (hr != null && hr.isNotEmpty) return hr;
+    return info.title;
+  }
 
   /// All available Magisterium variants as (label, data) pairs.
   List<(String, MagisteriumData)> get magisteriumVariants {
@@ -254,10 +293,10 @@ class EpisodeData {
   static Future<EpisodeData> load({required String youtubeId}) async {
     final svc = DataService(youtubeId: youtubeId);
     final results = await Future.wait([
-      svc.loadInfo(),           // 0
-      svc.loadSummary(),        // 1
-      svc.loadOutline(),        // 2
-      svc.loadArticle(),        // 3
+      svc.loadInfo(),           // 0 — required (VideoNotFoundException ako 404)
+      svc.loadSummary(),        // 1 — nullable (404 → null)
+      svc.loadOutline(),        // 2 — nullable
+      svc.loadArticle(),        // 3 — nullable
       svc.loadMagisterium(),    // 4
       svc.loadMagisteriumBatch(), // 5
       svc.loadSpeakerTimeline(),  // 6
@@ -269,9 +308,9 @@ class EpisodeData {
     return EpisodeData(
       youtubeId: youtubeId,
       info: results[0] as PodcastInfo,
-      summary: results[1] as PodcastSummary,
-      outline: results[2] as PodcastOutline,
-      article: results[3] as PodcastArticle,
+      summary: results[1] as PodcastSummary?,
+      outline: results[2] as PodcastOutline?,
+      article: results[3] as PodcastArticle?,
       magisterium: results[4] as MagisteriumData?,
       magisteriumBatch: results[5] as MagisteriumData?,
       speakerTimeline: results[6] as SpeakerTimeline?,
@@ -315,11 +354,12 @@ class EpisodeData {
       }
     }
 
-    // Start all in parallel
+    // Start all in parallel — info je jedini required, AI asseti su nullable
+    // (404 → null = pipeline jos nije obradio video).
     final infoF = track('Info', svc.loadInfo());
-    final summaryF = track('Sažetak', svc.loadSummary());
-    final outlineF = track('Poglavlja', svc.loadOutline());
-    final articleF = track('Članak', svc.loadArticle());
+    final summaryF = trackOptional('Sažetak', svc.loadSummary());
+    final outlineF = trackOptional('Poglavlja', svc.loadOutline());
+    final articleF = trackOptional('Članak', svc.loadArticle());
     final magF = trackOptional('Magisterium', svc.loadMagisterium());
     final magBatchF =
         trackOptional('Magisterium batch', svc.loadMagisteriumBatch());
