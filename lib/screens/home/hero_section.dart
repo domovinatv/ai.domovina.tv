@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/cdn_config.dart';
-import '../../theme/app_theme.dart';
+
 import '../../theme/typography.dart';
 import 'home_feed.dart';
 
@@ -131,19 +131,19 @@ class HeroSection extends StatelessWidget {
     return Image.network(
       CdnConfig.thumbnailUrl(featured.video.video.id),
       fit: BoxFit.cover,
-      errorBuilder: (c, e, s) => _backdropFallback(),
+      errorBuilder: (c, e, s) => _backdropFallback(Theme.of(c)),
     );
   }
 
-  Widget _backdropFallback() {
+  Widget _backdropFallback(ThemeData theme) {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.croBlue,
-            AppTheme.croBlue.withValues(alpha: 0.7),
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withValues(alpha: 0.7),
           ],
         ),
       ),
@@ -165,7 +165,7 @@ class HeroSection extends StatelessWidget {
         // Eyebrow + "Zašto?" info gumb
         Row(
           children: [
-            Container(width: 24, height: 2, color: AppTheme.croRed),
+            Container(width: 24, height: 2, color: theme.colorScheme.tertiary),
             const SizedBox(width: 10),
             Text(
               'ISTAKNUTO',
@@ -221,8 +221,8 @@ class HeroSection extends StatelessWidget {
               icon: const Icon(Icons.play_arrow, size: 20),
               label: const Text('Slusaj'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.croBlue,
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 18, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -367,7 +367,7 @@ class _WhyDialog extends StatelessWidget {
       contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
       title: Row(
         children: [
-          Container(width: 24, height: 2, color: AppTheme.croRed),
+          Container(width: 24, height: 2, color: theme.colorScheme.tertiary),
           const SizedBox(width: 10),
           Text(
             'KRITERIJI ZA ISTAKNUTO',
@@ -533,8 +533,8 @@ class _WhyDialog extends StatelessWidget {
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: t.$1 == activeTier
-                        ? AppTheme.croRed
+                     color: t.$1 == activeTier
+                        ? theme.colorScheme.tertiary
                         : theme.colorScheme.outlineVariant,
                   ),
                 ),

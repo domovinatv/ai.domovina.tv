@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+
 import '../../theme/typography.dart';
 import '../../widgets/account_chip.dart';
 
@@ -75,7 +75,7 @@ class _Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = isDark ? Colors.white : AppTheme.croBlue;
+    final baseColor = isDark ? Colors.white : Theme.of(context).colorScheme.primary;
 
     return Text.rich(
       TextSpan(
@@ -87,7 +87,7 @@ class _Wordmark extends StatelessWidget {
           TextSpan(
             text: '.ai',
             style: AppTypography.wordmarkStyle(
-                color: AppTheme.croRed, fontSize: 22),
+                color: Theme.of(context).colorScheme.tertiary, fontSize: 22),
           ),
         ],
       ),

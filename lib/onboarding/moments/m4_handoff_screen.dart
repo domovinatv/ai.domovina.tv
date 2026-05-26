@@ -13,8 +13,6 @@ import '../../services/auth_service.dart';
 import '../../services/handoff_service.dart';
 import '../ui/auth_sheet.dart';
 
-const _croRed = Color(0xFFFF0000);
-const _croBlue = Color(0xFF002F6C);
 
 class HandoffScreen extends StatefulWidget {
   final String? prefilledCode;
@@ -63,9 +61,9 @@ class _HandoffScreenState extends State<HandoffScreen>
         ),
         bottom: TabBar(
           controller: _tabs,
-          labelColor: _croBlue,
+          labelColor: theme.colorScheme.primary,
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          indicatorColor: _croRed,
+          indicatorColor: theme.colorScheme.tertiary,
           tabs: const [
             Tab(icon: Icon(Icons.upload), text: 'Pošalji'),
             Tab(icon: Icon(Icons.download), text: 'Primi'),
@@ -118,7 +116,7 @@ class _SendTabState extends State<_SendTab> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            Icon(Icons.devices_other, size: 56, color: _croBlue),
+            Icon(Icons.devices_other, size: 56, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text(
               'Pošalji prijavu na drugi uređaj',
@@ -147,8 +145,8 @@ class _SendTabState extends State<_SendTab> {
                     : const Icon(Icons.bolt),
                 label: const Text('Generiraj kod'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: _croBlue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 28, vertical: 14),
                 ),
@@ -238,15 +236,15 @@ class _CodeDisplay extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: _croBlue.withAlpha(15),
-        border: Border.all(color: _croBlue.withAlpha(80), width: 2),
+        color: theme.colorScheme.primaryContainer,
+        border: Border.all(color: theme.colorScheme.primary, width: 2),
       ),
       child: Text(
         pretty,
         style: theme.textTheme.displayMedium?.copyWith(
           fontFamily: 'monospace',
           fontWeight: FontWeight.bold,
-          color: _croBlue,
+          color: theme.colorScheme.onPrimaryContainer,
           letterSpacing: 8,
         ),
       ),
@@ -302,7 +300,7 @@ class _ReceiveTabState extends State<_ReceiveTab> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 16),
-            Icon(Icons.phone_iphone, size: 56, color: _croRed),
+            Icon(Icons.phone_iphone, size: 56, color: theme.colorScheme.tertiary),
             const SizedBox(height: 16),
             Text(
               'Imaš kod s drugog uređaja?',
@@ -345,8 +343,8 @@ class _ReceiveTabState extends State<_ReceiveTab> {
             FilledButton(
               onPressed: _loading ? null : _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: _croRed,
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.tertiary,
+                foregroundColor: theme.colorScheme.onTertiary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: _loading
@@ -452,8 +450,8 @@ class _ConsumedSuccess extends StatelessWidget {
             FilledButton(
               onPressed: () => context.go('/'),
               style: FilledButton.styleFrom(
-                backgroundColor: _croBlue,
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
               ),
               child: const Text('Idi na početnu'),
             ),
@@ -478,7 +476,7 @@ class _NotSignedInPrompt extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.lock_outline, size: 56, color: _croBlue),
+            Icon(Icons.lock_outline, size: 56, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text(
               title,
@@ -499,8 +497,8 @@ class _NotSignedInPrompt extends StatelessWidget {
               icon: const Icon(Icons.login),
               label: const Text('Prijavi se'),
               style: FilledButton.styleFrom(
-                backgroundColor: _croBlue,
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 14),
               ),

@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart'
     show PointerDeviceKind, PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard;
-import '../../theme/app_theme.dart';
+
 import '../../theme/typography.dart';
 
 /// Sekcija s eyebrow naslovom i horizontalnim scrollom kartica.
@@ -83,7 +83,7 @@ class _EpisodesRailState extends State<EpisodesRail> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = widget.eyebrowAccentColor ?? AppTheme.croBlue;
+    final accent = widget.eyebrowAccentColor ?? theme.colorScheme.primary;
     final railHeight = widget.isMobile ? 240.0 : 270.0;
     // Drag devices: touch (mobile swipe), trackpad (Mac 2-finger swipe),
     // stylus. NE mouse — mouse drag preko InkWell-iranih kartica je

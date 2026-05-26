@@ -495,7 +495,7 @@ class _ChannelGridView extends StatelessWidget {
                           Container(
                             width: 24,
                             height: 2,
-                            color: const Color(0xFF002F6C),
+                            color: theme.colorScheme.primary,
                           ),
                           const SizedBox(width: 10),
                           Text(

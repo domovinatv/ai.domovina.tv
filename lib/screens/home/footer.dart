@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart' show appVersion;
 import '../../models/channel_index.dart';
 import '../../services/update_notifier.dart';
-import '../../theme/app_theme.dart';
+
 import '../../theme/typography.dart';
 
 /// 3-kolonski footer na dnu home screen-a.
@@ -109,7 +109,7 @@ class HomeFooter extends StatelessWidget {
           Container(
             width: 20,
             height: 2,
-            color: AppTheme.croBlue,
+            color: theme.colorScheme.primary,
           ),
           const SizedBox(width: 8),
           Text(

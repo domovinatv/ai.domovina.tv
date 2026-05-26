@@ -21,6 +21,7 @@ Future<void> maybeShowM1(BuildContext context) async {
           const Expanded(
             child: Text(
               'Tvoj napredak se sprema na ovaj uređaj. Prijavi se da se sinkronizira.',
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],

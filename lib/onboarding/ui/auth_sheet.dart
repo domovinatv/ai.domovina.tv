@@ -6,8 +6,6 @@ library;
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 
-const _croRed = Color(0xFFFF0000);
-const _croBlue = Color(0xFF002F6C);
 
 enum AuthSheetOrigin { account, moment2, moment3, handoff }
 
@@ -66,7 +64,7 @@ class _AuthSheetContent extends StatelessWidget {
               headline,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: _croBlue,
+                color: theme.colorScheme.primary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -83,7 +81,7 @@ class _AuthSheetContent extends StatelessWidget {
               icon: Icons.fingerprint,
               label: 'Passkey',
               subtitle: 'Najsigurnije, bez lozinke',
-              accent: _croBlue,
+              accent: theme.colorScheme.primary,
               isPrimary: true,
               onTap: () => _doLink(context, AuthProvider.passkey),
             ),
@@ -114,13 +112,13 @@ class _AuthSheetContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _croBlue.withAlpha(15),
+                color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _croBlue.withAlpha(40)),
+                border: Border.all(color: theme.colorScheme.primary.withAlpha(40)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: _croBlue),
+                  Icon(Icons.info_outline, size: 16, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -246,7 +244,7 @@ class _ProviderButton extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _croRed,
+                    color: theme.colorScheme.tertiary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(

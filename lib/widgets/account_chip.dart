@@ -7,8 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../onboarding/ui/auth_sheet.dart';
 import '../services/auth_service.dart';
 
-const _croBlue = Color(0xFF002F6C);
-const _croRed = Color(0xFFFF0000);
 
 class AccountChip extends StatelessWidget {
   const AccountChip({super.key});
@@ -45,7 +43,7 @@ class _AnonymousChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _croBlue.withAlpha(80)),
+            border: Border.all(color: theme.colorScheme.primary.withAlpha(80)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -66,7 +64,7 @@ class _AnonymousChip extends StatelessWidget {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: _croRed,
+                      color: theme.colorScheme.tertiary,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: theme.colorScheme.surface,
@@ -91,7 +89,7 @@ class _AnonymousChip extends StatelessWidget {
               Text(
                 'Prijava',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: _croBlue,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -174,7 +172,7 @@ class _SignedInChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: CircleAvatar(
           radius: 14,
-          backgroundColor: _croBlue,
+          backgroundColor: theme.colorScheme.primary,
           child: Text(
             initial,
             style: const TextStyle(

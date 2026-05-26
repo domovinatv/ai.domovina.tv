@@ -6,7 +6,7 @@ import '../../models/channel_index.dart';
 import '../../models/channel_detail.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
-import '../../theme/app_theme.dart';
+
 import '../../theme/typography.dart';
 
 /// Otvori search overlay (modal) povrh home screen-a.
@@ -448,8 +448,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                   FilledButton(
                     onPressed: _openVideoId,
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.croBlue,
-                      foregroundColor: Colors.white,
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
                     ),
                     child: const Icon(Icons.play_arrow, size: 18),
                   ),
