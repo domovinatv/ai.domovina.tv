@@ -48,6 +48,18 @@ export default {
       return res;
     }
 
+    // Trailing-slash kanonikalizacija — 301 na verziju bez "/".
+    // Bez ovoga route matcheri ispod (/v/<id>, /v/<id>/t/<n>, /m/<id>) i
+    // pretty-URL .html lookup propuste request s "/" sufiksom pa fall-through
+    // na SPA fallback servira generic OG tagove. New URL preservira search +
+    // hash, pa query params (?utm_source=..., ?ref=..., interni app params)
+    // ostaju netaknuti kroz redirect.
+    if (path !== '/' && path.endsWith('/')) {
+      const canonicalUrl = new URL(request.url);
+      canonicalUrl.pathname = path.replace(/\/+$/, '');
+      return Response.redirect(canonicalUrl.toString(), 301);
+    }
+
     // Izvuci YouTube ID iz URL-a:
     //   /v/<ytId>            — permalink format (detailed view)
     //   /v/<ytId>/t/<sec>    — timestamp clip share (path-based za pouzdan crawler cache)
