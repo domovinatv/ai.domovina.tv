@@ -1,0 +1,356 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../models/channel_detail.dart';
+import '../../services/channel_cache.dart';
+import '../../widgets/magisterium_section.dart';
+
+/// Channel detail screen — prikazuje listu video zapisa za određeni kanal.
+///
+/// Ruta: `/c/:slug` (slug = channel ID s `-` umjesto `_`).
+///
+/// Razdvojeno iz `lib/screens/home_screen.dart` u Korak 2 redizajna kao
+/// move-only refactor. Funkcionalno identično `_VideoGridView` widgetu koji
+/// je prije bio dio HomeScreen-a.
+class ChannelScreen extends StatefulWidget {
+  final String channelId;
+
+  const ChannelScreen({super.key, required this.channelId});
+
+  @override
+  State<ChannelScreen> createState() => _ChannelScreenState();
+}
+
+class _ChannelScreenState extends State<ChannelScreen> {
+  late final Future<ChannelDetail> _detailFuture;
+  String? _resolvedName;
+
+  @override
+  void initState() {
+    super.initState();
+    _detailFuture = channelCache.loadChannel(widget.channelId);
+  }
+
+  void _back() {
+    context.go('/');
+  }
+
+  void _openVideo(String videoId) {
+    context.go('/v/$videoId');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: 'Natrag',
+                    onPressed: _back,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      _resolvedName ??
+                          widget.channelId.replaceAll('_', ' '),
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: FutureBuilder<ChannelDetail>(
+                future: _detailFuture,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snap.hasError) {
+                    return Center(child: Text('Greska: ${snap.error}'));
+                  }
+                  final detail = snap.data!;
+                  if (detail.name != _resolvedName) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() => _resolvedName = detail.name);
+                      }
+                    });
+                  }
+                  return _ResponsiveVideoList(
+                    videos: detail.videos,
+                    onVideoTap: _openVideo,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResponsiveVideoList extends StatelessWidget {
+  final List<ChannelVideo> videos;
+  final void Function(String videoId) onVideoTap;
+
+  const _ResponsiveVideoList({
+    required this.videos,
+    required this.onVideoTap,
+  });
+
+  static const double _maxCardWidth = 300;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        if (width < 600) {
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            itemCount: videos.length,
+            itemBuilder: (context, i) => _VideoCard(
+              video: videos[i],
+              onTap: () => onVideoTap(videos[i].id),
+            ),
+          );
+        }
+        final availableWidth = width - 32;
+        final columns = (availableWidth / _maxCardWidth).floor().clamp(2, 99);
+        final cardWidth = (availableWidth - (columns - 1) * 12) / columns;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: videos
+                .map((v) => SizedBox(
+                      width: cardWidth,
+                      child: _VideoGridCard(
+                        video: v,
+                        onTap: () => onVideoTap(v.id),
+                      ),
+                    ))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _VideoCard extends StatelessWidget {
+  final ChannelVideo video;
+  final VoidCallback onTap;
+
+  const _VideoCard({required this.video, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasArticle = video.pipeline?.hasArticle ?? false;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: video.thumbnail != null
+                    ? Image.network(
+                        video.thumbnail!,
+                        width: 120,
+                        height: 68,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) =>
+                            videoPlaceholder(theme, 120, 68),
+                      )
+                    : videoPlaceholder(theme, 120, 68),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: videoMeta(theme, video, hasArticle)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoGridCard extends StatelessWidget {
+  final ChannelVideo video;
+  final VoidCallback onTap;
+
+  const _VideoGridCard({required this.video, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasArticle = video.pipeline?.hasArticle ?? false;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: video.thumbnail != null
+                  ? Image.network(
+                      video.thumbnail!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (c, e, s) => videoPlaceholder(theme),
+                    )
+                  : videoPlaceholder(theme),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: videoMeta(theme, video, hasArticle),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared video card helpers — koriste se i u channel screenu i u home search
+// rezultatima. Public da `lib/screens/home/*` može isto reusati.
+// ---------------------------------------------------------------------------
+
+Widget videoPlaceholder(ThemeData theme, [double? w, double? h]) => Container(
+      width: w,
+      height: h,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(Icons.ondemand_video,
+            color: theme.colorScheme.onSurfaceVariant),
+      ),
+    );
+
+Widget videoMeta(ThemeData theme, ChannelVideo video, bool hasArticle) =>
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          video.displayTitle,
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            if (video.date != null)
+              videoMetaChip(theme, Icons.calendar_today, video.date!),
+            if (video.durationDisplay != null)
+              videoMetaChip(theme, Icons.schedule, video.durationDisplay!),
+          ],
+        ),
+        const SizedBox(height: 4),
+        if (video.speakers.isNotEmpty)
+          Text(
+            video.speakers.join(', '),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            if (video.magisteriumScore != null) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: MagisteriumSection.scoreColor(video.magisteriumScore)
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: MagisteriumSection.scoreColor(video.magisteriumScore)
+                          .withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.church,
+                        size: 11,
+                        color: MagisteriumSection.scoreColor(
+                            video.magisteriumScore)),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${video.magisteriumScore}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: MagisteriumSection.scoreColor(
+                            video.magisteriumScore),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            if (!hasArticle)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'U obradi',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+
+Widget videoMetaChip(ThemeData theme, IconData icon, String text) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 3),
+        Text(
+          text,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );

@@ -11,6 +11,7 @@ import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
+import '../services/cdn_config.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/notification_art.dart';
@@ -230,13 +231,16 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         if (sec != _lastUrlSyncedSec) {
           _lastUrlSyncedSec = sec;
           replaceTimestamp('/m/${widget.data.youtubeId}', sec);
+          // CDN URL (ne i.ytimg.com) da home rail "Nastavi slusati" moze
+          // renderati thumbnail bez CORS bloka.
           WatchProgressService.instance.scheduleSave(
             episodeId: widget.data.youtubeId,
             positionSeconds: sec,
             durationSeconds: widget.data.info.duration,
             channelId: widget.data.info.channelId,
             episodeTitle: widget.data.displayTitle,
-            episodeThumbnailUrl: widget.data.info.thumbnail,
+            episodeThumbnailUrl:
+                CdnConfig.thumbnailUrl(widget.data.youtubeId),
           );
         }
       });

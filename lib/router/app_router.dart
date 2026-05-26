@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../onboarding/moments/m4_handoff_screen.dart';
-import '../screens/home_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/channel/channel_screen.dart';
 import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
+import '../screens/legal/privacy_screen.dart';
+import '../screens/legal/terms_screen.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
 /// Svaka ruta ima ValueKey da go_router zna rebuildat kad se mijenja path.
@@ -24,7 +27,7 @@ GoRouter createRouter() {
           final channelId = slug.replaceAll('-', '_');
           return NoTransitionPage(
             key: ValueKey('channel-$slug'),
-            child: HomeScreen(initialChannelId: channelId),
+            child: ChannelScreen(channelId: channelId),
           );
         },
       ),
@@ -88,6 +91,21 @@ GoRouter createRouter() {
             child: HandoffScreen(prefilledCode: code),
           );
         },
+      ),
+      // Legalne stranice — placeholderi za Google OAuth consent screen.
+      GoRoute(
+        path: '/privacy',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('privacy'),
+          child: PrivacyScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/terms',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('terms'),
+          child: TermsScreen(),
+        ),
       ),
       // Legacy format
       GoRoute(

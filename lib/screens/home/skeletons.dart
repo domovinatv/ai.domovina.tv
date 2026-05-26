@@ -1,0 +1,295 @@
+import 'package:flutter/material.dart';
+
+/// Animated shimmer box — koristi se kao loading placeholder.
+///
+/// Custom implementacija bez paketa: AnimationController + LinearGradient
+/// koji se animira preko Container-a.
+class ShimmerBox extends StatefulWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+
+  const ShimmerBox({
+    super.key,
+    this.width,
+    this.height,
+    this.borderRadius,
+  });
+
+  @override
+  State<ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseColor = theme.colorScheme.surfaceContainerHigh;
+    final highlightColor = theme.colorScheme.surfaceContainerHighest;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+            gradient: LinearGradient(
+              begin: Alignment(-1.0 + 2 * t, -0.3),
+              end: Alignment(1.0 + 2 * t, 0.3),
+              colors: [
+                baseColor,
+                highlightColor,
+                baseColor,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Skeleton za horizontalni rail — eyebrow + 4 kartice s placeholderom.
+class RailSkeleton extends StatelessWidget {
+  final bool isMobile;
+
+  const RailSkeleton({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final cardWidth = isMobile ? 180.0 : 220.0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ShimmerBox(
+              height: 12,
+              width: 140,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: isMobile ? 240 : 270,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: 5,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) {
+                final coverH = cardWidth * 9 / 16;
+                return SizedBox(
+                  width: cardWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerBox(
+                        height: coverH,
+                        width: cardWidth,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      const SizedBox(height: 10),
+                      ShimmerBox(
+                        height: 11,
+                        width: cardWidth * 0.5,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 8),
+                      ShimmerBox(
+                        height: 14,
+                        width: cardWidth,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 6),
+                      ShimmerBox(
+                        height: 14,
+                        width: cardWidth * 0.7,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton za channel grid — N kartica u Wrap-u.
+class ChannelGridSkeleton extends StatelessWidget {
+  final bool isMobile;
+  final int count;
+
+  const ChannelGridSkeleton({
+    super.key,
+    required this.isMobile,
+    this.count = 6,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth - 32;
+        final columns = isMobile ? 1 : (width / 360).floor().clamp(2, 99);
+        final cardWidth =
+            columns == 1 ? width : (width - (columns - 1) * 16) / columns;
+        final coverH = cardWidth * 9 / 16;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: List.generate(count, (_) {
+              return SizedBox(
+                width: cardWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerBox(
+                      height: coverH,
+                      width: cardWidth,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    const SizedBox(height: 14),
+                    ShimmerBox(
+                      height: 11,
+                      width: cardWidth * 0.6,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 10),
+                    ShimmerBox(
+                      height: 22,
+                      width: cardWidth * 0.85,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Hero skeleton — split layout (slika lijevo, text desno) na desktop,
+/// stack (slika gore, text dolje) na mobile.
+class HeroSkeleton extends StatelessWidget {
+  final bool isMobile;
+
+  const HeroSkeleton({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: isMobile ? _mobile() : _desktop(),
+      ),
+    );
+  }
+
+  Widget _desktop() {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 460,
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: const ShimmerBox(borderRadius: BorderRadius.zero),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
+              child: _textLines(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mobile() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: const ShimmerBox(borderRadius: BorderRadius.zero),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: _textLines(),
+        ),
+      ],
+    );
+  }
+
+  Widget _textLines() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ShimmerBox(
+          height: 12,
+          width: 80,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 12),
+        ShimmerBox(
+          height: 22,
+          width: 320,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 8),
+        ShimmerBox(
+          height: 22,
+          width: 240,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 16),
+        ShimmerBox(
+          height: 14,
+          width: 200,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
+    );
+  }
+}

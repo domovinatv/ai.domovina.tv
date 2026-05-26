@@ -45,6 +45,13 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
   <link rel="manifest" href="manifest.json">
 
+  <!-- Editorial typography — Playfair (display), Lora (serif body), Inter (UI).
+       Preconnect + display=swap minimizira FOUT na Cloudflare-served buildu. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">
   {

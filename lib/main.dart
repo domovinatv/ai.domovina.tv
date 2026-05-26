@@ -7,6 +7,7 @@ import 'services/auth_service.dart';
 import 'services/background_audio.dart';
 import 'services/update_notifier.dart';
 import 'services/watch_progress_service.dart';
+import 'theme/app_theme.dart';
 
 /// Supabase backend (self-hosted na Coolify, Kong gateway).
 /// Konfiguracija dolazi preko --dart-define u build/run komandi; vidi
@@ -110,20 +111,8 @@ class _DominovinaAppState extends State<DominovinaApp> {
       scaffoldMessengerKey: _messengerKey,
       title: 'DOMOVINA.ai',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF002F6C), // Croatian navy blue
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF002F6C),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       routerConfig: _router,
     );

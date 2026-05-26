@@ -678,13 +678,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
       // Watch progress — debounced 5s upsert u localStorage (mock).
       // v3: prosljedjujemo title + thumbnail kao denorm cache (skida sekundarni
       // CDN fetch za "Continue watching" carousel kad backend ode live).
+      // Spremi CDN thumbnail URL umjesto `info.thumbnail` koji pokazuje na
+      // i.ytimg.com — taj host blokira CORS, pa NetworkImage failirao kad bi
+      // se rail "Nastavi slusati" pokusao renderati.
       WatchProgressService.instance.scheduleSave(
         episodeId: widget.data.youtubeId,
         positionSeconds: sec,
         durationSeconds: widget.data.info.duration,
         channelId: widget.data.info.channelId,
         episodeTitle: widget.data.displayTitle,
-        episodeThumbnailUrl: widget.data.info.thumbnail,
+        episodeThumbnailUrl: CdnConfig.thumbnailUrl(widget.data.youtubeId),
       );
     }
 
