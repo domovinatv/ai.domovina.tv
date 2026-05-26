@@ -220,6 +220,68 @@ class WatchProgressService extends ChangeNotifier {
     await _flushRemote();
   }
 
+  /// Backfill: gurni svu lokalnu povijest u Supabase za danog user-a.
+  /// Trigger: AuthService detektira non-anonymous user-a i pozove ovo jednom
+  /// per user_id (gate flag u localStorage). Idempotent — upsert s
+  /// onConflict=user_id,episode_id ne duplicira redove.
+  ///
+  /// Razlog: anonymous user vec pise u Supabase (per Step 4 caveat) pa je
+  /// migracija dupla mostly za:
+  ///  1. pre-Supabase-rollout localStorage entries (anonymous nije pisao)
+  ///  2. offline period prije nego se anonymous JWT instalirao
+  Future<void> migrateToSupabase(String userId) async {
+    final flagKey = 'watch_progress_migrated_$userId';
+    if (await _readFlag(flagKey)) return; // already migrated for this user
+
+    await init();
+    final entries = _byEpisode.values.toList();
+    if (entries.isEmpty) {
+      await _writeFlag(flagKey);
+      return;
+    }
+
+    try {
+      final client = sb.Supabase.instance.client;
+      final rows = entries.map((wp) => {
+            'user_id': userId,
+            'episode_id': wp.episodeId,
+            if (wp.channelId != null) 'channel_id': wp.channelId,
+            'position_seconds': wp.positionSeconds,
+            'duration_seconds': wp.durationSeconds,
+            if (wp.episodeTitle != null) 'episode_title': wp.episodeTitle,
+            if (wp.episodeThumbnailUrl != null)
+              'episode_thumbnail_url': wp.episodeThumbnailUrl,
+            'last_watched_at': wp.lastWatchedAt.toUtc().toIso8601String(),
+            'last_device': _detectDevice(),
+          }).toList();
+
+      await client
+          .schema('domovina_ai')
+          .from('watch_progress')
+          .upsert(rows, onConflict: 'user_id,episode_id');
+
+      await _writeFlag(flagKey);
+      log('watch_progress: migrated ${entries.length} local entries for $userId');
+    } catch (e) {
+      log('watch_progress migrate failed (will retry next session): $e');
+    }
+  }
+
+  Future<bool> _readFlag(String key) async {
+    if (kIsWeb) return getLocalStorageString(key) == '1';
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key) == '1';
+  }
+
+  Future<void> _writeFlag(String key) async {
+    if (kIsWeb) {
+      setLocalStorageString(key, '1');
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, '1');
+  }
+
   String _detectDevice() {
     if (kIsWeb) return 'web';
     return switch (defaultTargetPlatform) {

@@ -115,6 +115,67 @@ class FavoritesService extends ChangeNotifier {
     _personalAccountId = null;
   }
 
+  /// Backfill: gurni sve lokalne favorite u Supabase za danog user-a.
+  /// Trigger: AuthService detektira non-anonymous user-a (npr. nakon
+  /// linkIdentity ili re-login). Anonymous users ne piše remote favorite
+  /// (per FavoritesService dizajnu — vidi _syncRemote) pa svaki anon→permanent
+  /// flow treba ovaj backfill. Gate flag u localStorage per user_id.
+  ///
+  /// Idempotent: upsert s onConflict=owner_id,episode_id.
+  Future<void> migrateToSupabase(String userId) async {
+    final flagKey = 'favorites_migrated_$userId';
+    if (await _readFlag(flagKey)) return;
+
+    await _ensureLoaded();
+    final episodeIds = _set.toList();
+    if (episodeIds.isEmpty) {
+      await _writeFlag(flagKey);
+      return;
+    }
+
+    try {
+      final ownerId = await _personalAccountIdFor(userId);
+      if (ownerId == null) {
+        // Personal account jos nije kreiran (trigger ceka da is_anonymous
+        // postane false + propagation lag). Ne markiraj kao migrated —
+        // sljedeci session ce ponovo pokusati.
+        log('favorites migrate skipped: no personal account yet');
+        return;
+      }
+
+      final rows = episodeIds.map((id) => {
+            'owner_id': ownerId,
+            'episode_id': id,
+            'created_by': userId,
+          }).toList();
+
+      await sb.Supabase.instance.client
+          .schema('domovina_ai')
+          .from('favorites')
+          .upsert(rows, onConflict: 'owner_id,episode_id');
+
+      await _writeFlag(flagKey);
+      log('favorites: migrated ${episodeIds.length} local entries for $userId');
+    } catch (e) {
+      log('favorites migrate failed (will retry next session): $e');
+    }
+  }
+
+  Future<bool> _readFlag(String key) async {
+    if (kIsWeb) return getLocalStorageString(key) == '1';
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key) == '1';
+  }
+
+  Future<void> _writeFlag(String key) async {
+    if (kIsWeb) {
+      setLocalStorageString(key, '1');
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, '1');
+  }
+
   Future<void> _persist() async {
     final raw = jsonEncode(_set.toList());
     if (kIsWeb) {

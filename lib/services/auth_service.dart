@@ -10,6 +10,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
+import 'favorites_service.dart';
+import 'watch_progress_service.dart';
 
 /// Provider info — kakav identitet je linkan. Mapira na sb.OAuthProvider
 /// za Google/Apple; email i passkey su custom flow-ovi.
@@ -128,6 +130,20 @@ class AuthService extends ChangeNotifier {
     }
     _user = next;
     notifyListeners();
+
+    // Step 9 (handoff prompt): backfill localStorage → Supabase za non-anon
+    // user-a. Per-user gate flag u localStorage cini ovo idempotent;
+    // pokriva i transition anon→permanent i restore-sa-permanent-session
+    // (npr. korisnik koji se logirao na drugom uredjaju ima local povijest
+    // koja jos nije sinkronizirana). Fire-and-forget — UI ne ceka.
+    if (next != null && !next.isAnonymous) {
+      _runMigrations(next.id);
+    }
+  }
+
+  void _runMigrations(String userId) {
+    WatchProgressService.instance.migrateToSupabase(userId);
+    FavoritesService.instance.migrateToSupabase(userId);
   }
 
   /// Anonymous → permanent flow. Za Google/Apple koristi linkIdentity
