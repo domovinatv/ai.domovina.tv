@@ -24,6 +24,17 @@ if [[ -z "${CLOUDFLARE_ZONE_ID:-}" || -z "${CLOUDFLARE_PURGE_TOKEN:-}" ]]; then
   exit 1
 fi
 
+# Supabase env varijable — embedaju se u Flutter web build preko --dart-define.
+# Anon key je javan (designed for client embed) ali ga držimo izvan repo-a
+# radi rotation discipline. Ako env nije postavljen, build prolazi ali
+# Supabase init je no-op (offline mode).
+if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
+  echo "UPOZORENJE: SUPABASE_URL/ANON_KEY nije u .env — build ide bez Supabase integracije"
+  SUPABASE_DEFINES=""
+else
+  SUPABASE_DEFINES="--dart-define=SUPABASE_URL=${SUPABASE_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
+fi
+
 # Auto-bump verzije na svakom deployu — pomaže korisniku znati treba li
 # hard-refresh: ako footer prikazuje istu verziju kao prije, browser servira
 # stari cache i potrebno je Cmd+Shift+R; ako je verzija nova, deploy je
@@ -83,10 +94,12 @@ flutter analyze || true
 echo ""
 if [[ "${1:-}" == "--debug" ]]; then
   echo "--- flutter build web (profile + source-maps + O0, wasm) ---"
-  flutter build web --profile --source-maps -O0 --wasm
+  # shellcheck disable=SC2086
+  flutter build web --profile --source-maps -O0 --wasm $SUPABASE_DEFINES
 else
   echo "--- flutter build web (release, wasm) ---"
-  flutter build web --release --wasm
+  # shellcheck disable=SC2086
+  flutter build web --release --wasm $SUPABASE_DEFINES
 fi
 
 # 3b. Kopiraj fajlove koje Flutter build ne kopira automatski (robots.txt, ...)
