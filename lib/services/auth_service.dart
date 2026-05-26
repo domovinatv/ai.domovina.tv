@@ -7,6 +7,7 @@
 /// Display name iz user_metadata['name'] (postavlja ga OAuth provider).
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
@@ -166,15 +167,30 @@ class AuthService extends ChangeNotifier {
       switch (provider) {
         case AuthProvider.google:
         case AuthProvider.apple:
+          log('AuthService.linkIdentity: Zapoceto za $provider (isWeb: $kIsWeb)');
           final oauth = provider.oauthProvider!;
-          if (client.auth.currentUser?.isAnonymous == true) {
-            await client.auth.linkIdentity(oauth);
+          final isAnon = client.auth.currentUser?.isAnonymous == true;
+          log('AuthService.linkIdentity: currentUser anon=$isAnon, id=${client.auth.currentUser?.id}');
+          
+          if (isAnon) {
+            log('AuthService.linkIdentity: Pozivam client.auth.linkIdentity($oauth)...');
+            final res = await client.auth.linkIdentity(
+              oauth,
+              redirectTo: kIsWeb ? '${Uri.base.origin}/auth/callback' : 'ai.domovina://auth/callback',
+            );
+            log('AuthService.linkIdentity: linkIdentity zavrsen. Rezultat: $res');
           } else {
-            await client.auth.signInWithOAuth(oauth);
+            log('AuthService.linkIdentity: Pozivam client.auth.signInWithOAuth($oauth)...');
+            final res = await client.auth.signInWithOAuth(
+              oauth,
+              redirectTo: kIsWeb ? '${Uri.base.origin}/auth/callback' : 'ai.domovina://auth/callback',
+            );
+            log('AuthService.linkIdentity: signInWithOAuth zavrsen. Rezultat: $res');
           }
           // OAuth flow je redirect-based na webu → app će se reload-ati,
           // session listener iz init() će handlati state.
           if (context.mounted) {
+            log('AuthService.linkIdentity: Prikazujem snackbar o otvaranju prijave');
             _snack(context, 'Otvaram ${provider.displayName} prijavu…');
           }
           break;
@@ -185,6 +201,7 @@ class AuthService extends ChangeNotifier {
           await client.auth.signInWithOtp(
             email: email,
             shouldCreateUser: true,
+            emailRedirectTo: kIsWeb ? null : 'ai.domovina://auth/callback',
           );
           if (context.mounted) {
             _snack(
@@ -205,14 +222,14 @@ class AuthService extends ChangeNotifier {
           break;
       }
     } on sb.AuthException catch (e) {
-      log('linkIdentity error: ${e.message}');
+      log('linkIdentity AuthException: ${e.message} (status: ${e.statusCode})');
       if (context.mounted) {
-        _snack(context, 'Greška: ${e.message}');
+        _snack(context, 'Greška (AuthException): ${e.message}');
       }
-    } catch (e) {
-      log('linkIdentity error: $e');
+    } catch (e, stackTrace) {
+      log('linkIdentity neocekivana greska: $e\n$stackTrace');
       if (context.mounted) {
-        _snack(context, 'Greška pri prijavi.');
+        _snack(context, 'Neočekivana greška pri prijavi.');
       }
     }
   }

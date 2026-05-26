@@ -7,6 +7,8 @@ import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
+import '../screens/auth/auth_callback_screen.dart';
+import '../screens/auth/invite_screen.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
 /// Svaka ruta ima ValueKey da go_router zna rebuildat kad se mijenja path.
@@ -89,6 +91,30 @@ GoRouter createRouter() {
           return NoTransitionPage(
             key: ValueKey('handoff-$code'),
             child: HandoffScreen(prefilledCode: code),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/auth/callback',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('auth_callback'),
+          child: AuthCallbackScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/login-callback',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('login_callback'),
+          child: AuthCallbackScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/invite',
+        pageBuilder: (context, state) {
+          final token = state.uri.queryParameters['token'];
+          return NoTransitionPage(
+            key: ValueKey('invite'),
+            child: InviteScreen(token: token),
           );
         },
       ),
