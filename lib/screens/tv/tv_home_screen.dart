@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../main.dart' show log;
+import '../../models/channel_index.dart';
+import '../../screens/home/home_feed.dart';
+import '../../services/channel_cache.dart';
+import '../../services/watch_progress_service.dart';
+import 'widgets/tv_channel_card.dart';
+import 'widgets/tv_episode_card.dart';
+import 'widgets/tv_focus.dart';
+import 'widgets/tv_hero.dart';
+import 'widgets/tv_rail.dart';
 
-/// Faza 1 skeleton TV home screena.
+/// Faza 2 TV home screen.
 ///
-/// Cilj ovog koraka: dokazati da TV detekcija, theme branching i D-pad fokus
-/// rade end-to-end na pravom Android TV uredjaju (Philips 7303). Sadrzaj je
-/// placeholder — pravi rail-ovi, hero featured, "Nastavi slusati" i kanali
-/// dolaze u Fazi 2 (vidi plan u razgovoru).
+/// Layout (vertikalan scroll, jer EON SDSTB02 daje 540 dp visine pa hero +
+/// 3 rail-a ne stane bez scrolla):
 ///
-/// Focus model: hero "POKRENI" gumb dobiva autofocus pri startu. D-pad UP
-/// vodi na app bar (Pretraga), D-pad DOWN na placeholder rail. Sve interakcije
-/// trenutno samo logiraju — nema navigacije.
+///   AppBar (kompaktan: wordmark + Pretraga gumb)
+///   Hero (45% min(540, height), HomeFeed.pickFeatured) — autofocus PLAY
+///   Rail: "Nastavi slušati" (samo ako WatchProgress ima itema)
+///   Rail: "Najnovije epizode" (HomeFeed.latestEpisodes, 12 itema)
+///   Rail: "Kanali" (sortirano po videoCount desc)
+///
+/// Sve interakcije su navigation:
+/// - Hero PLAY → `/v/<id>`
+/// - Episode card → `/v/<id>`
+/// - Channel card → `/c/<slug>`
+///
+/// Pretraga je placeholder za Fazu 2.5 (vidi docs/android-tv.md).
 class TvHomeScreen extends StatefulWidget {
   const TvHomeScreen({super.key});
 
@@ -20,58 +37,223 @@ class TvHomeScreen extends StatefulWidget {
 }
 
 class _TvHomeScreenState extends State<TvHomeScreen> {
+  final _channelCache = channelCache;
+
+  late final Future<ChannelIndex> _indexFuture = _channelCache.loadIndex();
+
+  // "Nastavi slušati" rail — uživo iz WatchProgressService.
+  List<WatchProgress> _continueWatching = [];
+
+  // FocusNode-ovi za stabilan focus restore (npr. kad se vratimo sa episode
+  // screena). U Faza 2 ne implementiramo restore — to je Faza 5 polish — ali
+  // node-ove drzimo da fokus nije lost between rebuilds.
   final _searchFocus = FocusNode(debugLabel: 'tv-appbar-search');
   final _heroPlayFocus = FocusNode(debugLabel: 'tv-hero-play');
-  final List<FocusNode> _railFocuses = List.generate(
-    6,
-    (i) => FocusNode(debugLabel: 'tv-rail-card-$i'),
-  );
 
   @override
   void initState() {
     super.initState();
-    log('TvHomeScreen.init (Faza 1 skeleton)');
+    log('TvHomeScreen.init (Faza 2 — real data wiring)');
+    _channelCache.addListener(_onCacheUpdate);
+    WatchProgressService.instance.addListener(_loadContinueWatching);
+    _loadContinueWatching();
   }
 
   @override
   void dispose() {
+    _channelCache.removeListener(_onCacheUpdate);
+    WatchProgressService.instance.removeListener(_loadContinueWatching);
     _searchFocus.dispose();
     _heroPlayFocus.dispose();
-    for (final n in _railFocuses) {
-      n.dispose();
-    }
     super.dispose();
+  }
+
+  void _onCacheUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadContinueWatching() async {
+    final list =
+        await WatchProgressService.instance.continueWatching(limit: 12);
+    if (mounted) setState(() => _continueWatching = list);
+  }
+
+  void _openEpisode(String videoId) {
+    log('TvHome: navigate /v/$videoId');
+    context.go('/v/$videoId');
+  }
+
+  void _openChannel(ChannelSummary channel) {
+    final slug = channel.id.replaceAll('_', '-');
+    log('TvHome: navigate /c/$slug');
+    context.go('/c/$slug');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final mediaSize = MediaQuery.of(context).size;
+    // EON: density 320 → 960×540 dp. Mac/Chrome: varira. Hero 45% visine,
+    // clamp da ostane razuman za male i velike ekrane.
+    final heroHeight = (mediaSize.height * 0.45).clamp(220.0, 380.0);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // EON SDSTB02 reportira density 320 → 960×540 dp na 1080p TV-u.
-            // Philips MT5891 zna biti slican. Hero se skalira proporcionalno
-            // visini ekrana da rail uvijek ima ~280 dp.
-            final h = constraints.maxHeight;
-            final heroHeight = (h * 0.45).clamp(220.0, 380.0);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildAppBar(theme),
-                _buildHero(theme, heroHeight),
-                const SizedBox(height: 20),
-                Expanded(child: _buildPlaceholderRail(theme)),
-                const SizedBox(height: 20),
-              ],
-            );
+        child: FutureBuilder<ChannelIndex>(
+          future: _indexFuture,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return _buildLoading(theme, heroHeight);
+            }
+            if (snap.hasError) {
+              return _buildError(theme, snap.error);
+            }
+            // Index ucitan — kick off per-channel prefetch.
+            final channels = snap.data!.channels;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _channelCache.prefetchAll(channels);
+            });
+            return _buildContent(theme, heroHeight, channels);
           },
         ),
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // States
+  // ---------------------------------------------------------------------------
+
+  Widget _buildLoading(ThemeData theme, double heroHeight) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildAppBar(theme),
+          _buildHeroSkeleton(theme, heroHeight),
+          const SizedBox(height: 24),
+          _buildRailSkeleton(theme, 'Učitavam…'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError(ThemeData theme, Object? err) {
+    log('TvHomeScreen: index ERROR — $err');
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Text(
+          'Greška pri učitavanju kanala:\n$err',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyLarge,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(
+    ThemeData theme,
+    double heroHeight,
+    List<ChannelSummary> channels,
+  ) {
+    final allVids = _channelCache.allVideos;
+    final hasMinData = HomeFeed.hasMinimumData(_channelCache);
+    final featured = hasMinData ? HomeFeed.pickFeatured(allVids) : null;
+    final latest = featured != null
+        ? HomeFeed.latestEpisodes(allVids,
+            limit: 12, excludeFeatured: featured.video)
+        : <FeedVideo>[];
+
+    // Channels sortirani po videoCount desc — bogatiji kanali prvi u rail-u.
+    final sortedChannels = List<ChannelSummary>.from(channels)
+      ..sort((a, b) => b.videoCount.compareTo(a.videoCount));
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildAppBar(theme),
+          if (featured != null)
+            TvHero(
+              featured: featured,
+              height: heroHeight,
+              playFocusNode: _heroPlayFocus,
+              autofocusPlay: true,
+              onPlay: () => _openEpisode(featured.video.video.id),
+            )
+          else
+            _buildHeroSkeleton(theme, heroHeight),
+
+          const SizedBox(height: 24),
+
+          if (_continueWatching.isNotEmpty) ...[
+            TvRail(
+              eyebrow: 'Nastavi slušati',
+              height: 240,
+              cards: [
+                for (final wp in _continueWatching)
+                  TvEpisodeCard(
+                    episodeId: wp.episodeId,
+                    title: wp.episodeTitle ?? wp.episodeId,
+                    progress: wp.durationSeconds > 0
+                        ? wp.positionSeconds / wp.durationSeconds
+                        : null,
+                    width: 280,
+                    onTap: () => _openEpisode(wp.episodeId),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          if (latest.isNotEmpty)
+            TvRail(
+              eyebrow: 'Najnovije epizode',
+              height: 240,
+              cards: [
+                for (final fv in latest)
+                  TvEpisodeCard(
+                    episodeId: fv.video.id,
+                    title: fv.video.displayTitle,
+                    subtitle: fv.channelName,
+                    magisteriumScore: fv.video.magisteriumScore,
+                    width: 280,
+                    onTap: () => _openEpisode(fv.video.id),
+                  ),
+              ],
+            )
+          else if (!hasMinData)
+            _buildRailSkeleton(theme, 'Najnovije epizode'),
+
+          const SizedBox(height: 24),
+
+          if (sortedChannels.isNotEmpty)
+            TvRail(
+              eyebrow: 'Kanali (${sortedChannels.length})',
+              height: 260,
+              cards: [
+                for (final c in sortedChannels)
+                  TvChannelCard(
+                    channel: c,
+                    size: 200,
+                    onTap: () => _openChannel(c),
+                  ),
+              ],
+            ),
+
+          const SizedBox(height: 32),
+          _buildCacheStatus(theme),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // App bar
+  // ---------------------------------------------------------------------------
 
   Widget _buildAppBar(ThemeData theme) {
     return Padding(
@@ -86,81 +268,66 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             ),
           ),
           const Spacer(),
-          _TvFocusableButton(
-            label: 'Pretraga',
-            icon: Icons.search,
+          TvFocusable(
+            style: TvFocusStyle.subtleButton,
             focusNode: _searchFocus,
-            variant: _ButtonVariant.subtle,
-            onPressed: () => log('TvHomeScreen: pretraga (Faza 2.5)'),
+            borderRadius: BorderRadius.circular(12),
+            onActivate: () => log('TvHome: pretraga (Faza 2.5)'),
+            builder: (context, focused) => AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: focused
+                    ? theme.colorScheme.primaryContainer
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.search,
+                    size: 22,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pretraga',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHero(ThemeData theme, double heroHeight) {
-    final compact = heroHeight < 300;
+  // ---------------------------------------------------------------------------
+  // Skeletons (minimal — full editorial skeleton je u home_screen.dart;
+  // za TV cilj je tek 'nije prazno' indikacija dok prefetch traje).
+  // ---------------------------------------------------------------------------
+
+  Widget _buildHeroSkeleton(ThemeData theme, double height) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(48, 16, 48, 0),
       child: Container(
-        height: heroHeight,
+        height: height,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primary.withValues(alpha: 0.25),
-              theme.colorScheme.surfaceContainerHighest,
-            ],
-          ),
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
         ),
-        padding: EdgeInsets.all(compact ? 28 : 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'NAJBOLJI IZBOR',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.tertiary,
-                letterSpacing: 2,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: compact ? 6 : 12),
-            Text(
-              'Android TV — Faza 1 skeleton',
-              style: (compact
-                      ? theme.textTheme.titleLarge
-                      : theme.textTheme.headlineMedium)
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            SizedBox(height: compact ? 6 : 12),
-            if (!compact)
-              Text(
-                'TV detekcija, focus model i theme branching su zive. '
-                'Pravi hero (featured epizoda) dolazi u Fazi 2.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            SizedBox(height: compact ? 14 : 28),
-            _TvFocusableButton(
-              label: 'POKRENI',
-              icon: Icons.play_arrow,
-              focusNode: _heroPlayFocus,
-              variant: _ButtonVariant.primary,
-              autofocus: true,
-              onPressed: () => log('TvHomeScreen: hero play (Faza 4)'),
-            ),
-          ],
+        alignment: Alignment.center,
+        child: CircularProgressIndicator(
+          color: theme.colorScheme.primary,
+          strokeWidth: 2,
         ),
       ),
     );
   }
 
-  Widget _buildPlaceholderRail(ThemeData theme) {
+  Widget _buildRailSkeleton(ThemeData theme, String eyebrow) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 48),
       child: Column(
@@ -171,28 +338,31 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               Container(
                 width: 32,
                 height: 3,
-                color: theme.colorScheme.primary,
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
               ),
               const SizedBox(width: 12),
               Text(
-                'NAJNOVIJE (PLACEHOLDER)',
+                eyebrow.toUpperCase(),
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 1.6,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Expanded(
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 240,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _railFocuses.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 24),
-              itemBuilder: (context, i) => _TvPlaceholderCard(
-                index: i,
-                focusNode: _railFocuses[i],
+              itemCount: 4,
+              separatorBuilder: (_, _) => const SizedBox(width: 20),
+              itemBuilder: (context, i) => Container(
+                width: 280,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -200,202 +370,29 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       ),
     );
   }
-}
 
-// ---------------------------------------------------------------------------
-// Reusable focus widgets — bit ce promovirani u lib/screens/tv/widgets/ kad
-// pocnu sluziti drugim TV screenovima (Channel, Episode, Search).
-// ---------------------------------------------------------------------------
-
-enum _ButtonVariant { primary, subtle }
-
-class _TvFocusableButton extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final FocusNode focusNode;
-  final _ButtonVariant variant;
-  final bool autofocus;
-  final VoidCallback onPressed;
-
-  const _TvFocusableButton({
-    required this.label,
-    required this.icon,
-    required this.focusNode,
-    required this.variant,
-    required this.onPressed,
-    this.autofocus = false,
-  });
-
-  @override
-  State<_TvFocusableButton> createState() => _TvFocusableButtonState();
-}
-
-class _TvFocusableButtonState extends State<_TvFocusableButton> {
-  bool _focused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(_onFocusChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(_onFocusChanged);
-    super.dispose();
-  }
-
-  void _onFocusChanged() {
-    if (mounted) setState(() => _focused = widget.focusNode.hasFocus);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isPrimary = widget.variant == _ButtonVariant.primary;
-    final bg = isPrimary
-        ? theme.colorScheme.tertiary
-        : (_focused
-            ? theme.colorScheme.primaryContainer
-            : Colors.transparent);
-    final fg = isPrimary
-        ? theme.colorScheme.onTertiary
-        : theme.colorScheme.onSurface;
-    final ringColor = isPrimary
-        ? theme.colorScheme.onSurface
-        : theme.colorScheme.primary;
-
-    return FocusableActionDetector(
-      focusNode: widget.focusNode,
-      autofocus: widget.autofocus,
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) {
-            widget.onPressed();
-            return null;
-          },
-        ),
-      },
-      child: AnimatedScale(
-        scale: _focused && isPrimary ? 1.06 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(
-            horizontal: isPrimary ? 32 : 20,
-            vertical: isPrimary ? 16 : 12,
-          ),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _focused ? ringColor : Colors.transparent,
-              width: 4,
+  Widget _buildCacheStatus(ThemeData theme) {
+    if (_channelCache.done) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 48),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.icon,
-                size: isPrimary ? 28 : 22,
-                color: fg,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                widget.label,
-                style: (isPrimary
-                        ? theme.textTheme.titleLarge
-                        : theme.textTheme.titleMedium)
-                    ?.copyWith(
-                  color: fg,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: isPrimary ? 1.2 : 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TvPlaceholderCard extends StatefulWidget {
-  final int index;
-  final FocusNode focusNode;
-
-  const _TvPlaceholderCard({required this.index, required this.focusNode});
-
-  @override
-  State<_TvPlaceholderCard> createState() => _TvPlaceholderCardState();
-}
-
-class _TvPlaceholderCardState extends State<_TvPlaceholderCard> {
-  bool _focused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(_onFocusChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(_onFocusChanged);
-    super.dispose();
-  }
-
-  void _onFocusChanged() {
-    if (mounted) {
-      setState(() => _focused = widget.focusNode.hasFocus);
-      if (widget.focusNode.hasFocus) {
-        // Auto-scroll card into view when focused via D-pad.
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.5,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return FocusableActionDetector(
-      focusNode: widget.focusNode,
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) {
-            log('TvHomeScreen: card ${widget.index} activated');
-            return null;
-          },
-        ),
-      },
-      child: AnimatedScale(
-        scale: _focused ? 1.08 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 320,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _focused
-                  ? theme.colorScheme.primary
-                  : Colors.transparent,
-              width: 4,
+          const SizedBox(width: 8),
+          Text(
+            'Učitavam ${_channelCache.loaded}/${_channelCache.total} kanala…',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          alignment: Alignment.center,
-          child: Text(
-            'Card ${widget.index + 1}',
-            style: theme.textTheme.titleLarge,
-          ),
-        ),
+        ],
       ),
     );
   }

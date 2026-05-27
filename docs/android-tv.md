@@ -61,8 +61,8 @@ Provjera: `nc -zv <ip> 5555`.
 | Faza | Status | Sadržaj |
 |---|---|---|
 | 1 | ✅ Done | TV detekcija (MethodChannel + FORCE_TV), `AppTheme.tv()`, skeleton `TvHomeScreen` s autofocus hero gumbom + jednim placeholder rail-om, Leanback launcher manifest |
-| 2 | ⏳ Next | Pravi rail-ovi (Featured hero + Nastavi slušati + Najnovije + Kanali) wired-up na `HomeFeed`/`ChannelCache`/`WatchProgressService` |
-| 2.5 | Planned | TV search ekran s on-screen IME tipkovnicom |
+| 2 | ✅ Done | Pravi rail-ovi wired-up na `HomeFeed.pickFeatured` / `HomeFeed.latestEpisodes` / `WatchProgressService.continueWatching` / `ChannelCache`. `TvFocusable` + `TvRail` + `TvHero` + `TvEpisodeCard` + `TvChannelCard` reusable widget set. Skeleton states tijekom prefetch-a. Navigation na `/v/<id>` i `/c/<slug>`. |
+| 2.5 | ⏳ Next | TV search ekran s on-screen IME tipkovnicom |
 | 3 | Planned | `TvChannelScreen` (`/c/:slug` TV varijanta) — 4×N grid s D-pad nav, sort chips |
 | 4 | Planned | `TvEpisodeScreen` (`/v/:id` TV varijanta) — fullscreen player s overlay kontrolama, MEDIA_PLAY_PAUSE handling, BACK overlay-aware |
 | 4.5 | Planned | TV handoff ekran (`/handoff` TV varijanta) — XL kod + QR za cross-device sign-in |
@@ -115,15 +115,26 @@ u Fazi 2+).
   ključ. Workaround: jednokratni USB visit s `adb tcpip 5555` +
   `setprop persist.adb.tcp.port 5555` preživi reboot.
 
-## Files added/modified u Fazi 1
+## Files added/modified
 
+**Faza 1** (commit `52096ed`):
 ```
 lib/services/tv_mode.dart                                  +new
-lib/screens/tv/tv_home_screen.dart                         +new
+lib/screens/tv/tv_home_screen.dart                         +new (placeholder skeleton)
 lib/theme/app_theme.dart                                   +tv() factory
 lib/main.dart                                              +TvMode.init() + theme branch
 lib/router/app_router.dart                                 +TV import + / route + error branch
 android/app/src/main/AndroidManifest.xml                   +leanback features + LEANBACK_LAUNCHER + banner
 android/app/src/main/kotlin/ai/domovina/MainActivity.kt    +MethodChannel handler
 android/app/src/main/res/drawable/tv_banner.xml            +new placeholder
+```
+
+**Faza 2**:
+```
+lib/screens/tv/tv_home_screen.dart                         refactor — data wiring
+lib/screens/tv/widgets/tv_focus.dart                       +new (TvFocusable + TvFocusStyle)
+lib/screens/tv/widgets/tv_rail.dart                        +new (eyebrow + horizontal ListView)
+lib/screens/tv/widgets/tv_episode_card.dart                +new (16:9 thumb + score badge + progress)
+lib/screens/tv/widgets/tv_channel_card.dart                +new (square avatar + name + count)
+lib/screens/tv/widgets/tv_hero.dart                        +new (backdrop + gradient + PLAY CTA)
 ```
