@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
+import 'services/tv_mode.dart';
 import 'services/update_notifier.dart';
 import 'services/watch_progress_service.dart';
 import 'theme/app_theme.dart';
@@ -31,6 +32,10 @@ void main() async {
 
   // ensureSemantics ZABRANJENO na webu — crasha release build.
   // Vidi CLAUDE.md "Known Issues".
+
+  // TV detekcija mora biti prije runApp jer router i theme citaju TvMode.isTv
+  // sinkrono. Override: --dart-define=FORCE_TV=true za desktop iteraciju.
+  await TvMode.init();
 
   MediaKit.ensureInitialized();
   await BackgroundAudio.init();
@@ -107,13 +112,16 @@ class _DominovinaAppState extends State<DominovinaApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Na Android TV-u forsiramo dark TV temu (10-foot UI uvijek tamno);
+    // mobile/desktop/web prate system theme mode kao i prije.
+    final isTv = TvMode.isTv;
     return MaterialApp.router(
       scaffoldMessengerKey: _messengerKey,
       title: 'DOMOVINA.ai',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      theme: isTv ? AppTheme.tv() : AppTheme.light(),
+      darkTheme: isTv ? AppTheme.tv() : AppTheme.dark(),
+      themeMode: isTv ? ThemeMode.dark : ThemeMode.system,
       routerConfig: _router,
     );
   }

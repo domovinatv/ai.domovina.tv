@@ -45,6 +45,26 @@ class AppTheme {
     return _build(scheme);
   }
 
+  /// Android TV (10-foot UI) theme. Forsira dark surface (TV se uvijek gleda
+  /// u tamnoj sobi), skalira tipografiju 1.3× za citljivost s ~3m udaljenosti
+  /// i drzi crveni akcent za primarne CTA (PLAY).
+  ///
+  /// Detaljnije focus dekoracije (border ring + scale) zive na widget razini
+  /// u lib/screens/tv/ — theme samo daje tokeni i tipografski skok.
+  static ThemeData tv() {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: croBlue,
+      brightness: Brightness.dark,
+    ).copyWith(
+      tertiary: croRed,
+      onTertiary: Colors.white,
+    );
+    final base = _build(scheme);
+    return base.copyWith(
+      textTheme: base.textTheme.apply(fontSizeFactor: 1.3),
+    );
+  }
+
   static ThemeData _build(ColorScheme scheme) {
     final textTheme = AppTypography.textTheme(scheme);
 

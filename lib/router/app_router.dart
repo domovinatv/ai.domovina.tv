@@ -9,6 +9,8 @@ import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
+import '../screens/tv/tv_home_screen.dart';
+import '../services/tv_mode.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
 /// Svaka ruta ima ValueKey da go_router zna rebuildat kad se mijenja path.
@@ -17,9 +19,12 @@ GoRouter createRouter() {
     routes: [
       GoRoute(
         path: '/',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          key: ValueKey('home'),
-          child: HomeScreen(),
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: const ValueKey('home'),
+          // Android TV (Leanback) dobiva vlastiti 10-foot UI home. Ostale
+          // rute u Fazi 1 jos uvijek koriste desktop/mobile ekran — TV
+          // varijante stizu u Fazi 2-4. Vidi lib/services/tv_mode.dart.
+          child: TvMode.isTv ? const TvHomeScreen() : const HomeScreen(),
         ),
       ),
       GoRoute(
@@ -148,9 +153,9 @@ GoRouter createRouter() {
       }
       return null;
     },
-    errorPageBuilder: (context, state) => const NoTransitionPage(
-      key: ValueKey('error'),
-      child: HomeScreen(),
+    errorPageBuilder: (context, state) => NoTransitionPage(
+      key: const ValueKey('error'),
+      child: TvMode.isTv ? const TvHomeScreen() : const HomeScreen(),
     ),
   );
 }
