@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../main.dart' show log;
@@ -100,22 +101,39 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
-        child: FutureBuilder<ChannelIndex>(
-          future: _indexFuture,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return _buildLoading(theme, heroHeight);
-            }
-            if (snap.hasError) {
-              return _buildError(theme, snap.error);
-            }
-            // Index ucitan — kick off per-channel prefetch.
-            final channels = snap.data!.channels;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _channelCache.prefetchAll(channels);
-            });
-            return _buildContent(theme, heroHeight, channels);
+        // Flutter web ne mapira arrow keys na DirectionalFocusIntent po
+        // defaultu (native Android TV salje DPAD_* keyeve koji Flutter okvir
+        // sam hendla, ali u Chrome buildu samo Tab radi). Eksplicitno
+        // bindamo arrow keys ovdje da TV layout radi i u Chrome/Mac dev
+        // okruzenju. WidgetsApp.defaultShortcuts ne pokriva ovo na webu.
+        child: Shortcuts(
+          shortcuts: const {
+            SingleActivator(LogicalKeyboardKey.arrowUp):
+                DirectionalFocusIntent(TraversalDirection.up),
+            SingleActivator(LogicalKeyboardKey.arrowDown):
+                DirectionalFocusIntent(TraversalDirection.down),
+            SingleActivator(LogicalKeyboardKey.arrowLeft):
+                DirectionalFocusIntent(TraversalDirection.left),
+            SingleActivator(LogicalKeyboardKey.arrowRight):
+                DirectionalFocusIntent(TraversalDirection.right),
           },
+          child: FutureBuilder<ChannelIndex>(
+            future: _indexFuture,
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return _buildLoading(theme, heroHeight);
+              }
+              if (snap.hasError) {
+                return _buildError(theme, snap.error);
+              }
+              // Index ucitan — kick off per-channel prefetch.
+              final channels = snap.data!.channels;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _channelCache.prefetchAll(channels);
+              });
+              return _buildContent(theme, heroHeight, channels);
+            },
+          ),
         ),
       ),
     );
@@ -191,7 +209,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           if (_continueWatching.isNotEmpty) ...[
             TvRail(
               eyebrow: 'Nastavi slušati',
-              height: 240,
+              height: 280,
               cards: [
                 for (final wp in _continueWatching)
                   TvEpisodeCard(
@@ -211,7 +229,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           if (latest.isNotEmpty)
             TvRail(
               eyebrow: 'Najnovije epizode',
-              height: 240,
+              height: 280,
               cards: [
                 for (final fv in latest)
                   TvEpisodeCard(
@@ -232,7 +250,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           if (sortedChannels.isNotEmpty)
             TvRail(
               eyebrow: 'Kanali (${sortedChannels.length})',
-              height: 260,
+              height: 290,
               cards: [
                 for (final c in sortedChannels)
                   TvChannelCard(
@@ -352,7 +370,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 240,
+            height: 280,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: 4,
