@@ -51,11 +51,17 @@ class TvRail extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         SizedBox(
           height: height,
+          // `Clip.none` — bez ovoga focused card scale 1.18 + glow shadow se
+          // odrezu na gornjem i donjem rubu rail-a (ListView default je
+          // hardEdge). Pozivatelj mora osigurati da je rail height >= card
+          // height i da iznad/ispod rail-a postoji dovoljan vertical spacing
+          // da scaled card ne ulazi u susjedne sekcije.
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
             padding: horizontalPadding is EdgeInsets
                 ? horizontalPadding as EdgeInsets
                 : const EdgeInsets.symmetric(horizontal: 48),

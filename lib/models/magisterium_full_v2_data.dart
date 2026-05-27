@@ -13,7 +13,9 @@ class MagisteriumFullV2Data {
   final int? promptLengthChars;
   final int overallScore;
   final String scoreInterpretation;
+  final String? scoreInterpretationEn;
   final String evaluation;
+  final String? evaluationEn;
   final List<MagisteriumFullV2Citation> citations;
 
   const MagisteriumFullV2Data({
@@ -26,7 +28,9 @@ class MagisteriumFullV2Data {
     this.promptLengthChars,
     required this.overallScore,
     required this.scoreInterpretation,
+    this.scoreInterpretationEn,
     required this.evaluation,
+    this.evaluationEn,
     required this.citations,
   });
 
@@ -41,7 +45,9 @@ class MagisteriumFullV2Data {
       promptLengthChars: json['prompt_length_chars'] as int?,
       overallScore: json['overall_score'] as int? ?? 0,
       scoreInterpretation: json['score_interpretation'] as String? ?? '',
+      scoreInterpretationEn: json['score_interpretation_en'] as String?,
       evaluation: json['evaluation'] as String? ?? '',
+      evaluationEn: json['evaluation_en'] as String?,
       citations: (json['citations'] as List<dynamic>?)
               ?.map((e) => MagisteriumFullV2Citation.fromJson(
                   e as Map<String, dynamic>))

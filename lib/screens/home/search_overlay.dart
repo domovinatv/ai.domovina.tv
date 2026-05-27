@@ -159,7 +159,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 filled: false,
-                hintText: 'Pretrazi kanale i epizode...',
+                hintText: 'Pretraži kanale i epizode…',
                 hintStyle: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant
                       .withValues(alpha: 0.5),
@@ -268,7 +268,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Pocni tipkati da pretrazis',
+              'Počni tipkati za pretragu',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

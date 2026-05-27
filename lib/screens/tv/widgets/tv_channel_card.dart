@@ -32,8 +32,7 @@ class TvChannelCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+            ClipRect(
               child: SizedBox(
                 width: size,
                 height: size,
@@ -62,13 +61,17 @@ class TvChannelCard extends StatelessWidget {
                       ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+            // Do 2 reda imena kanala — bez ellipsis-a. Kratka imena ostaju
+            // jednoredna; duga (npr. "Centar za duhovna zvanja") se prelijevaju
+            // bez odsijecanja.
             Text(
               channel.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall?.copyWith(
+              maxLines: 2,
+              softWrap: true,
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                height: 1.2,
               ),
             ),
             const SizedBox(height: 2),

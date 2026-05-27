@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
 import '../services/cdn_config.dart';
+import '../services/episode_language.dart';
 import 'magisterium_section.dart';
 import 'citation_helpers.dart';
 import '../services/open_url.dart';
@@ -27,6 +28,8 @@ class ArticleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = EpisodeLanguageScope.of(context);
+    final title = lang == EpisodeLanguage.en ? 'Article' : 'Članak';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,7 +37,7 @@ class ArticleSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Text(
-            'Članak',
+            title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -73,6 +76,8 @@ class _IterationBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = EpisodeLanguageScope.of(context);
+    final themeText = pickLang(lang, iteration.theme, iteration.themeEn);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -108,7 +113,7 @@ class _IterationBlock extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    iteration.theme,
+                    themeText,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -181,6 +186,15 @@ class _SectionCardState extends State<_SectionCard> {
     final theme = Theme.of(context);
     final section = widget.section;
     final mag = widget.sectionMagisterium;
+    final lang = EpisodeLanguageScope.of(context);
+    final subtitle = pickLang(lang, section.subtitle, section.subtitleEn);
+    final content = pickLang(lang, section.content, section.contentEn);
+    final screenshotDesc = pickLang(
+      lang,
+      section.screenshotDescription,
+      section.screenshotDescriptionEn,
+    );
+    final keywords = pickLangList(lang, section.keywords, section.keywordsEn);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 56, top: 80),
@@ -288,7 +302,7 @@ class _SectionCardState extends State<_SectionCard> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  section.subtitle,
+                  subtitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -328,11 +342,11 @@ class _SectionCardState extends State<_SectionCard> {
             ),
           ),
 
-          if (section.screenshotDescription.isNotEmpty)
+          if (screenshotDesc.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
               child: Text(
-                section.screenshotDescription,
+                screenshotDesc,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
@@ -343,7 +357,7 @@ class _SectionCardState extends State<_SectionCard> {
 
           // Article content — markdown
           MarkdownBody(
-            data: section.content,
+            data: content,
             styleSheet: MarkdownStyleSheet.fromTheme(
               theme,
             ).copyWith(p: theme.textTheme.bodyMedium?.copyWith(height: 1.65)),
@@ -353,11 +367,11 @@ class _SectionCardState extends State<_SectionCard> {
           ),
           const SizedBox(height: 10),
 
-          if (section.keywords.isNotEmpty)
+          if (keywords.isNotEmpty)
             Wrap(
               spacing: 6,
               runSpacing: 4,
-              children: section.keywords
+              children: keywords
                   .map(
                     (k) => Container(
                       padding: const EdgeInsets.symmetric(
@@ -415,6 +429,13 @@ class _MagisteriumEnrichment extends StatelessWidget {
     final mdStyle = MarkdownStyleSheet.fromTheme(
       theme,
     ).copyWith(p: theme.textTheme.bodySmall?.copyWith(height: 1.5));
+    final lang = EpisodeLanguageScope.of(context);
+    final assessment = pickLang(lang, mag.assessment, mag.assessmentEn);
+    final enrichment = pickLang(lang, mag.enrichment, mag.enrichmentEn);
+    final concerns = pickLangList(lang, mag.concerns, mag.concernsEn);
+    final heading = lang == EpisodeLanguage.en
+        ? 'Theological assessment'
+        : 'Teoloska procjena';
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -432,7 +453,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
               Icon(Icons.church, size: 16, color: color),
               const SizedBox(width: 6),
               Text(
-                'Teoloska procjena',
+                heading,
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: color,
@@ -443,13 +464,13 @@ class _MagisteriumEnrichment extends StatelessWidget {
           const SizedBox(height: 8),
 
           // Assessment — markdown
-          MarkdownBody(data: mag.assessment, styleSheet: mdStyle),
+          MarkdownBody(data: assessment, styleSheet: mdStyle),
 
           // Enrichment — markdown
-          if (mag.enrichment.isNotEmpty) ...[
+          if (enrichment.isNotEmpty) ...[
             const SizedBox(height: 8),
             MarkdownBody(
-              data: mag.enrichment,
+              data: enrichment,
               styleSheet: mdStyle.copyWith(
                 p: theme.textTheme.bodySmall?.copyWith(
                   height: 1.5,
@@ -461,9 +482,9 @@ class _MagisteriumEnrichment extends StatelessWidget {
           ],
 
           // Concerns
-          if (mag.concerns.isNotEmpty) ...[
+          if (concerns.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...mag.concerns.map(
+            ...concerns.map(
               (c) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(

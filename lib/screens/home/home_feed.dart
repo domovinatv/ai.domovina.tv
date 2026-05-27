@@ -25,7 +25,7 @@ enum FeaturedReason {
       case FeaturedReason.hiQuality:
         return 'Visoka Magisterium ocjena';
       case FeaturedReason.anyMagisterium:
-        return 'AI-obradeno';
+        return 'AI-obrađeno';
       case FeaturedReason.newest:
         return 'Najnovije';
     }

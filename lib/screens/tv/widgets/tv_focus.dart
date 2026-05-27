@@ -30,6 +30,10 @@ class TvFocusable extends StatefulWidget {
   final VoidCallback? onActivate;
   final TvFocusStyle style;
   final BorderRadius borderRadius;
+  /// Ako `false`, fokus ne skalira widget — koristi se za liste gdje horizontal
+  /// "pop" izgleda lose (chapter rows, sidebar liste). Ring + glow + bg-promjena
+  /// i dalje rade.
+  final bool scaleOnFocus;
   final Widget Function(BuildContext context, bool focused) builder;
 
   const TvFocusable({
@@ -38,7 +42,8 @@ class TvFocusable extends StatefulWidget {
     this.autofocus = false,
     this.onActivate,
     this.style = TvFocusStyle.card,
-    this.borderRadius = const BorderRadius.all(Radius.circular(14)),
+    this.borderRadius = BorderRadius.zero,
+    this.scaleOnFocus = true,
     required this.builder,
   });
 
@@ -83,21 +88,28 @@ class _TvFocusableState extends State<TvFocusable> {
   }
 
   double get _scale {
-    if (!_focused) return 1.0;
-    return widget.style == TvFocusStyle.card ? 1.08 : 1.06;
+    if (!_focused || !widget.scaleOnFocus) return 1.0;
+    // Card scale 1.18 — Play Movies-style dramatic pop tako da je razlika
+    // izmedju focused/unfocused jasna na 3m udaljenosti. Buttoni se manje
+    // skaliraju jer su vec dovoljno istaknuti tertiary/onSurface bg-om.
+    return widget.style == TvFocusStyle.card ? 1.18 : 1.05;
   }
 
   Color _ringColor(ColorScheme scheme) {
+    // Card fokus = tertiary (croRed) jer primary (croBlue-derived) gotovo
+    // nestaje na dark TV pozadini s 3m udaljenosti. Tertiary + glow daje
+    // unmistakable "ovo je aktivno" signal koji se vidi s kauca.
     return switch (widget.style) {
-      TvFocusStyle.card => scheme.primary,
+      TvFocusStyle.card => scheme.tertiary,
       TvFocusStyle.primaryButton => scheme.onSurface,
-      TvFocusStyle.subtleButton => scheme.primary,
+      TvFocusStyle.subtleButton => scheme.tertiary,
     };
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ringColor = _ringColor(theme.colorScheme);
 
     return FocusableActionDetector(
       focusNode: _node,
@@ -119,11 +131,18 @@ class _TvFocusableState extends State<TvFocusable> {
           decoration: BoxDecoration(
             borderRadius: widget.borderRadius,
             border: Border.all(
-              color: _focused
-                  ? _ringColor(theme.colorScheme)
-                  : Colors.transparent,
-              width: 4,
+              color: _focused ? ringColor : Colors.transparent,
+              width: 5,
             ),
+            boxShadow: _focused
+                ? [
+                    BoxShadow(
+                      color: ringColor.withValues(alpha: 0.55),
+                      blurRadius: 18,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
           ),
           child: widget.builder(context, _focused),
         ),

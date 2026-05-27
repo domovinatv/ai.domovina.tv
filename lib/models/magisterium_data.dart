@@ -8,6 +8,7 @@ class MagisteriumData {
   final String sourceArticle;
   final int? overallScore;
   final String? scoreInterpretation;
+  final String? scoreInterpretationEn;
   final List<MagisteriumScoreBreakdown> scoreBreakdown;
   final int totalConcerns;
   final List<MagisteriumIteration> iterations;
@@ -19,6 +20,7 @@ class MagisteriumData {
     required this.sourceArticle,
     required this.overallScore,
     required this.scoreInterpretation,
+    this.scoreInterpretationEn,
     required this.scoreBreakdown,
     required this.totalConcerns,
     required this.iterations,
@@ -33,6 +35,7 @@ class MagisteriumData {
       sourceArticle: json['source_article'] as String? ?? '',
       overallScore: json['overall_score'] as int?,
       scoreInterpretation: json['score_interpretation'] as String?,
+      scoreInterpretationEn: json['score_interpretation_en'] as String?,
       scoreBreakdown: (json['score_breakdown'] as List<dynamic>? ?? [])
           .map((e) => MagisteriumScoreBreakdown.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -57,11 +60,13 @@ class MagisteriumData {
 class MagisteriumScoreBreakdown {
   final int iteration;
   final String theme;
+  final String? themeEn;
   final int? score;
 
   const MagisteriumScoreBreakdown({
     required this.iteration,
     required this.theme,
+    this.themeEn,
     required this.score,
   });
 
@@ -69,6 +74,7 @@ class MagisteriumScoreBreakdown {
     return MagisteriumScoreBreakdown(
       iteration: json['iteration'] as int? ?? 0,
       theme: json['theme'] as String? ?? '',
+      themeEn: json['theme_en'] as String?,
       score: json['score'] as int?,
     );
   }
@@ -78,12 +84,14 @@ class MagisteriumIteration {
   final int iterationNumber;
   final int? iterationScore;
   final String theme;
+  final String? themeEn;
   final List<MagisteriumSectionEntry> sections;
 
   const MagisteriumIteration({
     required this.iterationNumber,
     required this.iterationScore,
     required this.theme,
+    this.themeEn,
     required this.sections,
   });
 
@@ -92,6 +100,7 @@ class MagisteriumIteration {
       iterationNumber: json['iteration_number'] as int? ?? 0,
       iterationScore: json['iteration_score'] as int?,
       theme: json['theme'] as String? ?? '',
+      themeEn: json['theme_en'] as String?,
       sections: (json['sections'] as List<dynamic>? ?? [])
           .map((e) => MagisteriumSectionEntry.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -101,11 +110,13 @@ class MagisteriumIteration {
 
 class MagisteriumSectionEntry {
   final String subtitle;
+  final String? subtitleEn;
   final String screenshotTimestamp;
   final SectionMagisterium? magisterium;
 
   const MagisteriumSectionEntry({
     required this.subtitle,
+    this.subtitleEn,
     required this.screenshotTimestamp,
     required this.magisterium,
   });
@@ -114,6 +125,7 @@ class MagisteriumSectionEntry {
     final mag = json['magisterium'];
     return MagisteriumSectionEntry(
       subtitle: json['subtitle'] as String? ?? '',
+      subtitleEn: json['subtitle_en'] as String?,
       screenshotTimestamp: json['screenshot_timestamp'] as String? ?? '',
       magisterium: mag != null && mag is Map<String, dynamic>
           ? SectionMagisterium.fromJson(mag)
@@ -125,15 +137,21 @@ class MagisteriumSectionEntry {
 class SectionMagisterium {
   final int? score;
   final String assessment;
+  final String? assessmentEn;
   final List<String> concerns;
+  final List<String>? concernsEn;
   final String enrichment;
+  final String? enrichmentEn;
   final List<MagisteriumCitation> citations;
 
   const SectionMagisterium({
     required this.score,
     required this.assessment,
+    this.assessmentEn,
     required this.concerns,
+    this.concernsEn,
     required this.enrichment,
+    this.enrichmentEn,
     required this.citations,
   });
 
@@ -167,11 +185,19 @@ class SectionMagisterium {
       }
     }
 
+    final rawConcernsEn = json['concerns_en'];
+    final concernsEn = rawConcernsEn is List
+        ? rawConcernsEn.whereType<String>().toList()
+        : null;
+
     return SectionMagisterium(
       score: score,
       assessment: assessment,
+      assessmentEn: json['assessment_en'] as String?,
       concerns: concerns,
+      concernsEn: concernsEn,
       enrichment: enrichment,
+      enrichmentEn: json['enrichment_en'] as String?,
       citations: (json['citations'] as List<dynamic>? ?? [])
           .map((e) => MagisteriumCitation.fromJson(e as Map<String, dynamic>))
           .toList(),

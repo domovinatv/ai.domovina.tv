@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/magisterium_full_v2_data.dart';
+import '../services/episode_language.dart';
 
 /// Renders MagisteriumFullV2Data: score badge + evaluation markdown + lista
 /// citata s expansion tiles.
@@ -22,6 +23,15 @@ class MagisteriumV2View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = EpisodeLanguageScope.of(context);
+    final interpretation =
+        pickLang(lang, data.scoreInterpretation, data.scoreInterpretationEn);
+    final evaluation = pickLang(lang, data.evaluation, data.evaluationEn);
+    final sourcesLabel = lang == EpisodeLanguage.en ? 'Sources' : 'Izvori';
+    final sourcesSubtitle = lang == EpisodeLanguage.en
+        ? '${data.citations.length} citations from Church documents'
+        : '${data.citations.length} citata iz crkvenih dokumenata';
+
     return Padding(
       padding: padding,
       child: Column(
@@ -29,12 +39,12 @@ class MagisteriumV2View extends StatelessWidget {
         children: [
         _ScoreBadge(
           score: data.overallScore,
-          interpretation: data.scoreInterpretation,
+          interpretation: interpretation,
           theme: theme,
         ),
         const SizedBox(height: 20),
         MarkdownBody(
-          data: data.evaluation,
+          data: evaluation,
           selectable: true,
           styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
             p: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
@@ -52,10 +62,10 @@ class MagisteriumV2View extends StatelessWidget {
         ),
         if (data.citations.isNotEmpty) ...[
           const SizedBox(height: 24),
-          _SectionTitle(icon: Icons.library_books, label: 'Izvori'),
+          _SectionTitle(icon: Icons.library_books, label: sourcesLabel),
           const SizedBox(height: 8),
           Text(
-            '${data.citations.length} citata iz crkvenih dokumenata',
+            sourcesSubtitle,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

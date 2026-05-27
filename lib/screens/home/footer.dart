@@ -129,9 +129,9 @@ class HomeFooter extends StatelessWidget {
       children: [
         _columnHeader(theme, 'O PROJEKTU'),
         Text(
-          'DOMOVINA.ai transkribira, sazima i analizira hrvatske katolicke '
-          'podcaste pomocu umjetne inteligencije. Magisterium AI agent '
-          'ocjenjuje uskladenost s katolickim naukom.',
+          'DOMOVINA.ai transkribira, sažima i analizira hrvatske katoličke '
+          'podcaste pomoću umjetne inteligencije. Magisterium AI agent '
+          'ocjenjuje usklađenost s katoličkim naukom.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.6,
@@ -149,7 +149,7 @@ class HomeFooter extends StatelessWidget {
           _columnHeader(theme, 'LINKOVI'),
           _link(
             theme,
-            label: 'Posalji epizodu',
+            label: 'Pošalji epizodu',
             onTap: () => _launchMail(
               'stepanic.matija@gmail.com',
               subject: 'DOMOVINA.ai — prijedlog epizode',
@@ -160,7 +160,11 @@ class HomeFooter extends StatelessWidget {
             label: 'Kontakt',
             onTap: () => _launchMail('stepanic.matija@gmail.com'),
           ),
-          _link(theme, label: 'GitHub', comingSoon: true),
+          _link(
+            theme,
+            label: 'GitHub',
+            onTap: () => _launchUrl('https://github.com/domovinatv'),
+          ),
           _link(
             theme,
             label: 'Privatnost',
@@ -168,7 +172,7 @@ class HomeFooter extends StatelessWidget {
           ),
           _link(
             theme,
-            label: 'Uvjeti koristenja',
+            label: 'Uvjeti korištenja',
             onTap: () => context.go('/terms'),
           ),
         ],
@@ -190,10 +194,10 @@ class HomeFooter extends StatelessWidget {
         const SizedBox(height: 6),
         _stat(theme, _formatNumber(totalEpisodes), 'epizoda'),
         const SizedBox(height: 6),
-        _stat(theme, _formatNumber(totalHours), 'sati obradjeno'),
+        _stat(theme, _formatNumber(totalHours), 'sati obrađeno'),
         if (avgScore != null) ...[
           const SizedBox(height: 6),
-          _stat(theme, '$avgScore', 'prosjecni Magisterium score'),
+          _stat(theme, '$avgScore', 'prosječni Magisterium score'),
         ],
       ],
     );
@@ -369,6 +373,13 @@ class HomeFooter extends StatelessWidget {
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }

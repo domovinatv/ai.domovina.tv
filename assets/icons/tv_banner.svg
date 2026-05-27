@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#003B82"/>
+      <stop offset="100%" stop-color="#001A47"/>
+    </linearGradient>
+    <linearGradient id="croFlag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF0000"/>
+      <stop offset="33.333%" stop-color="#FF0000"/>
+      <stop offset="33.333%" stop-color="#FFFFFF"/>
+      <stop offset="66.667%" stop-color="#FFFFFF"/>
+      <stop offset="66.667%" stop-color="#002F6C"/>
+      <stop offset="100%" stop-color="#002F6C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="320" height="180" fill="url(#bg)"/>
+
+  <!-- Bottom Croatian flag accent strip (subtle brand signature) -->
+  <rect x="0" y="174" width="106.67" height="6" fill="#FF0000"/>
+  <rect x="106.67" y="174" width="106.67" height="6" fill="#FFFFFF"/>
+  <rect x="213.33" y="174" width="106.67" height="6" fill="#1758A8"/>
+
+  <!-- Logo mark: 108x108 at (16, 36), scaled from 512x512 source -->
+  <g transform="translate(16, 36) scale(0.211)">
+    <!-- white rounded card -->
+    <rect width="512" height="512" rx="56" fill="white"/>
+
+    <!-- D-shape (Croatian flag fill) -->
+    <path d="M72 64H248C354.071 64 440 149.929 440 256C440 362.071 354.071 448 248 448H72V64Z"
+          fill="url(#croFlag)"/>
+
+    <!-- inner white knockout -->
+    <path d="M168 160H248C301.019 160 344 202.981 344 256C344 309.019 301.019 352 248 352H168V160Z"
+          fill="white"/>
+
+    <!-- AI knot lines -->
+    <g stroke="#002F6C" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <line x1="205" y1="205" x2="295" y2="225"/>
+      <line x1="295" y1="225" x2="285" y2="285"/>
+      <line x1="285" y1="285" x2="205" y2="307"/>
+      <line x1="205" y1="307" x2="205" y2="205"/>
+      <line x1="205" y1="205" x2="245" y2="256"/>
+      <line x1="295" y1="225" x2="245" y2="256"/>
+      <line x1="285" y1="285" x2="245" y2="256"/>
+      <line x1="205" y1="307" x2="245" y2="256"/>
+    </g>
+
+    <!-- AI knot nodes -->
+    <g fill="#002F6C">
+      <circle cx="205" cy="205" r="18"/>
+      <circle cx="295" cy="225" r="18"/>
+      <circle cx="205" cy="307" r="18"/>
+      <circle cx="285" cy="285" r="18"/>
+      <circle cx="245" cy="256" r="22"/>
+    </g>
+  </g>
+
+  <!-- Wordmark "DOMOVINA" — full width sad kad nema ".ai" appendix-a;
+       velicina i tezina usporediva s "YouTube" / "Google Play Movies & TV"
+       u Android TV Favorite Apps redu. -->
+  <text x="138" y="94"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="30"
+        font-weight="700"
+        fill="white"
+        letter-spacing="0.2">DOMOVINA</text>
+
+  <!-- Tagline "HRVATSKI PODCASTI" — sad puno citljivije, sluzi kao kategorijski
+       deskriptor (kao i Liga Endesa logo + tip podataka u banneru). -->
+  <text x="138" y="122"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="15"
+        font-weight="600"
+        fill="#FF3B3B"
+        letter-spacing="1.5">HRVATSKI PODCASTI</text>
+</svg>

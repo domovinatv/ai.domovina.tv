@@ -12,7 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 import 'favorites_service.dart';
+import 'local_prefs.dart';
 import 'watch_progress_service.dart';
+
+/// localStorage ključ — anon user UUID koji čeka migraciju u permanent
+/// account-u. Stavi se prije OAuth redirecta, čita se nakon signedIn evenata.
+/// Brišemo postavljanjem na prazan string (vidi local_prefs API).
+const String _anonPendingMigrationKey = 'auth_anon_pending_migration_id';
 
 /// Provider info — kakav identitet je linkan. Mapira na sb.OAuthProvider
 /// za Google/Apple; email i passkey su custom flow-ovi.
@@ -132,13 +138,14 @@ class AuthService extends ChangeNotifier {
     _user = next;
     notifyListeners();
 
-    // Step 9 (handoff prompt): backfill localStorage → Supabase za non-anon
-    // user-a. Per-user gate flag u localStorage cini ovo idempotent;
-    // pokriva i transition anon→permanent i restore-sa-permanent-session
-    // (npr. korisnik koji se logirao na drugom uredjaju ima local povijest
-    // koja jos nije sinkronizirana). Fire-and-forget — UI ne ceka.
+    // Backfill + anon→permanent merge. Pokriva tri scenarija:
+    //   1. Transition anon → permanent (linkIdentity ili signInWithOAuth)
+    //   2. Restore permanent session (drugi browser, postojeci OAuth user)
+    //   3. Cross-device sign-in s lokalnom poviješću koja nije sinkronizirana
+    // Fire-and-forget — UI ne čeka.
     if (next != null && !next.isAnonymous) {
       _runMigrations(next.id);
+      _migrateAnonDataIfPending(next.id);
     }
   }
 
@@ -147,10 +154,60 @@ class AuthService extends ChangeNotifier {
     FavoritesService.instance.migrateToSupabase(userId);
   }
 
-  /// Anonymous → permanent flow. Za Google/Apple koristi linkIdentity
-  /// (Supabase otvori OAuth redirect). Za email šalje magic link / OTP.
-  /// Passkey je još uvijek mock fallback dok ne ide nativni WebAuthn flow
-  /// kroz custom edge function — vidi docs/backend-prompts/05-auth-providers.md.
+  /// Anon UUID je spremljen u localStorage prije OAuth redirecta (vidi
+  /// linkIdentity). Nakon povratka na permanent sesiju pozovi server RPC
+  /// koji prebaci watch_progress / sessions / handoff / onboarding redove
+  /// s anon → permanent userom i obriše anon auth.users red.
+  ///
+  /// RPC spec: `docs/backend-prompts/08-anon-data-migration-rpc.md`.
+  Future<void> _migrateAnonDataIfPending(String permanentId) async {
+    final pendingAnonId = getLocalStorageString(_anonPendingMigrationKey);
+    if (pendingAnonId == null) return;
+    if (pendingAnonId == permanentId) {
+      // Returning user signed in s istim ID-em — anon nikad nije bio kreiran
+      // ili je već migriran. Cleanup ključa.
+      setLocalStorageString(_anonPendingMigrationKey, '');
+      return;
+    }
+
+    log('AuthService: migrating anon data $pendingAnonId → $permanentId');
+    try {
+      final client = sb.Supabase.instance.client;
+      final result = await client
+          .schema('domovina_ai')
+          .rpc('migrate_anon_data', params: {'p_anon_id': pendingAnonId});
+      log('AuthService: migrate_anon_data result=$result');
+      setLocalStorageString(_anonPendingMigrationKey, '');
+    } on sb.PostgrestException catch (e) {
+      // RPC još ne postoji na backendu (PGRST202) ili je vratio business error.
+      // Nije fatalno — anon data ostaje u DB-u, može se cleanupati kasnije.
+      log('AuthService: migrate_anon_data Postgrest error: '
+          '${e.code} ${e.message}');
+      // Ne brišemo ključ ako je transient error — pokušaj će se ponoviti
+      // pri sljedećem _setUser pozivu. Brišemo ga samo za poznate "ne pokušavaj
+      // ponovo" slučajeve (RPC ne postoji još).
+      if (e.code == 'PGRST202') {
+        // Function not found. Cleanup da ne loop-amo.
+        setLocalStorageString(_anonPendingMigrationKey, '');
+      }
+    } catch (e) {
+      log('AuthService: migrate_anon_data unexpected: $e');
+    }
+  }
+
+  /// Sign-in s OAuth/email providerom. Naziv je legacy ("linkIdentity")
+  /// ali ponašanje je sad: UVIJEK signInWithOAuth, nikad GoTrue manual linking.
+  ///
+  /// Razlog: linkIdentity ne radi za "returning user u novom browseru" slučaj
+  /// jer GoTrue baca identity_already_exists ako je Google account već vezan
+  /// na nekog user-a. Umjesto toga koristimo:
+  ///   1. Save trenutni anon UUID u localStorage
+  ///   2. signInWithOAuth → Google → callback s novom permanent sesijom
+  ///      (ili sign-in postojećeg permanent user-a)
+  ///   3. Nakon signedIn evenata, _migrateAnonDataIfPending poziva server RPC
+  ///      koji prebaci watch_progress/sessions/handoff iz anon → permanent.
+  ///
+  /// Spec migracije: docs/backend-prompts/08-anon-data-migration-rpc.md.
   Future<void> linkIdentity(
     BuildContext context,
     AuthProvider provider, {
@@ -167,30 +224,26 @@ class AuthService extends ChangeNotifier {
       switch (provider) {
         case AuthProvider.google:
         case AuthProvider.apple:
-          log('AuthService.linkIdentity: Zapoceto za $provider (isWeb: $kIsWeb)');
           final oauth = provider.oauthProvider!;
-          final isAnon = client.auth.currentUser?.isAnonymous == true;
-          log('AuthService.linkIdentity: currentUser anon=$isAnon, id=${client.auth.currentUser?.id}');
-          
-          if (isAnon) {
-            log('AuthService.linkIdentity: Pozivam client.auth.linkIdentity($oauth)...');
-            final res = await client.auth.linkIdentity(
-              oauth,
-              redirectTo: kIsWeb ? '${Uri.base.origin}/auth/callback' : 'ai.domovina://auth/callback',
-            );
-            log('AuthService.linkIdentity: linkIdentity zavrsen. Rezultat: $res');
-          } else {
-            log('AuthService.linkIdentity: Pozivam client.auth.signInWithOAuth($oauth)...');
-            final res = await client.auth.signInWithOAuth(
-              oauth,
-              redirectTo: kIsWeb ? '${Uri.base.origin}/auth/callback' : 'ai.domovina://auth/callback',
-            );
-            log('AuthService.linkIdentity: signInWithOAuth zavrsen. Rezultat: $res');
+          final currentUser = client.auth.currentUser;
+          final isAnon = currentUser?.isAnonymous == true;
+          log('AuthService.linkIdentity: $provider isWeb=$kIsWeb '
+              'currentUser=${currentUser?.id} anon=$isAnon');
+
+          if (isAnon && currentUser != null) {
+            setLocalStorageString(_anonPendingMigrationKey, currentUser.id);
+            log('AuthService.linkIdentity: saved pending anon=${currentUser.id}');
           }
+
+          await client.auth.signInWithOAuth(
+            oauth,
+            redirectTo: kIsWeb
+                ? '${Uri.base.origin}/auth/callback'
+                : 'ai.domovina://auth/callback',
+          );
           // OAuth flow je redirect-based na webu → app će se reload-ati,
-          // session listener iz init() će handlati state.
+          // session listener iz init() će handlati state + migraciju.
           if (context.mounted) {
-            log('AuthService.linkIdentity: Prikazujem snackbar o otvaranju prijave');
             _snack(context, 'Otvaram ${provider.displayName} prijavu…');
           }
           break;
@@ -198,6 +251,11 @@ class AuthService extends ChangeNotifier {
         case AuthProvider.email:
           final email = await _promptForEmail(context, mockEmail);
           if (email == null || !context.mounted) return;
+          final currentUser = client.auth.currentUser;
+          if (currentUser?.isAnonymous == true && currentUser != null) {
+            setLocalStorageString(_anonPendingMigrationKey, currentUser.id);
+            log('AuthService.linkIdentity(email): saved pending anon=${currentUser.id}');
+          }
           await client.auth.signInWithOtp(
             email: email,
             shouldCreateUser: true,

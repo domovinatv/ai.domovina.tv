@@ -7,7 +7,7 @@ All data loads from CDN (`cdn.domovina.ai`). Deployed on Cloudflare Pages.
 
 - **Package ID**: `ai.domovina`
 - **Display name**: `DOMOVINA.ai`
-- **Platforms**: Web (primary), Android, iOS, macOS
+- **Platforms**: Web (primary), Android (+ Android TV / Leanback), iOS, macOS
 
 ## Build & Deploy
 
@@ -49,6 +49,39 @@ Cloudflare auto-strips `.html` extensions (`/social-test.html` → `/social-test
 ### Cache purge required after deploy
 
 Cloudflare CDN caches aggressively. Always purge cache after deploy (the deploy script does this automatically). Without purge, users may see stale versions.
+
+### Android TV — AV1 codec ne-radi u hardware decoder-u
+
+EON SDSTB02 (Amlogic, Android 11) i većina Android TV box-ova prije ~2024.
+godine **nemaju funkcionalan AV1 hardware decoder** unatoč tome što
+`av1_mediacodec` postoji u sistemu. Pokušaj otvaranja AV1 streama daje:
+
+```
+ffmpeg/video: av1_mediacodec: Both surface and native_window are NULL
+ffmpeg/video: av1_mediacodec: Unsupported or unknown profile
+```
+
+**Trenutni video.mp4 na CDN-u je AV1 Main @ 640×360**. Software decode
+radi (bitrate je nizak ~94 kbps), ali zahtijeva eksplicitno `hwdec=no`
+u libmpv konfiguraciji. Vidi `lib/screens/tv/tv_episode_screen.dart`
+gdje se to setira preko `player.platform.setProperty('hwdec', 'no')`.
+
+**Production deployment strategija** (TODO): pipeline bi trebao producirati
+i H.264 fallback verziju (`video.h264.mp4` paralelno s `video.mp4`/AV1).
+App bi onda pickao codec ovisno o platformi/device-u. H.264 hardware
+decode radi univerzalno od Android 4 nadalje. Bez ovoga, novi 720p/1080p
+AV1 sadržaj neće glatko playati na većini Android TV box-ova.
+
+### Native Android splash je static (nije rotirajuc)
+
+Pokušali smo runtime rotaciju biblijskih citata u native splash-u (4
+različita pristupa), ali Android <12 starting window se ne može
+runtime-modificirati. Rotacija je premjestena u Flutter splash. Detalji
+u `docs/splash-bible-citations.md`.
+
+**Rule**: ne dirati `MainActivity.kt` `setTheme()` logiku za splash — ne
+radi. Za promjenu native splash teksta, regeneriraj
+`drawable-nodpi/splash_tagline_1.png` i rebuild.
 
 ## Logging
 

@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../../main.dart' show log;
 import '../../models/channel_index.dart';
 import '../../screens/home/home_feed.dart';
+import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/watch_progress_service.dart';
 import 'widgets/tv_channel_card.dart';
 import 'widgets/tv_episode_card.dart';
 import 'widgets/tv_focus.dart';
 import 'widgets/tv_hero.dart';
+import 'widgets/tv_loading_tips.dart';
 import 'widgets/tv_rail.dart';
 
 /// Faza 2 TV home screen.
@@ -45,6 +47,16 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // "Nastavi slušati" rail — uživo iz WatchProgressService.
   List<WatchProgress> _continueWatching = [];
 
+  // Drzimo loading screen (tips) sve dok cijela startup sekvenca ne zavrsi:
+  //   1. channel index ucitan (FutureBuilder vec hendla)
+  //   2. ChannelCache.done — svih 40 kanala prefetchano
+  //   3. HomeFeed.pickFeatured vrati featured pick (algoritam)
+  //   4. Thumbnail tog feature pick-a je preloadan (precacheImage)
+  // Bez ovoga korisnik vidi tips → onda hero skeleton → onda featured popne
+  // gore (dvostruki "flash"). S ovime: tips → instant featured.
+  bool _bootReady = false;
+  bool _preloadingFeatured = false;
+
   // FocusNode-ovi za stabilan focus restore (npr. kad se vratimo sa episode
   // screena). U Faza 2 ne implementiramo restore — to je Faza 5 polish — ali
   // node-ove drzimo da fokus nije lost between rebuilds.
@@ -70,7 +82,33 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   }
 
   void _onCacheUpdate() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    _maybeBootstrapFeatured();
+  }
+
+  /// Pri svakom cache update-u provjeri jesmo li dosegli boot-ready state.
+  /// Kada `_channelCache.done` AND `pickFeatured != null`, preload-aj thumb
+  /// i tek tad postavi `_bootReady = true` — UI prebaci na pravi content.
+  Future<void> _maybeBootstrapFeatured() async {
+    if (_bootReady || _preloadingFeatured) return;
+    if (!_channelCache.done) return;
+    final all = _channelCache.allVideos;
+    final pick = HomeFeed.pickFeatured(all);
+    if (pick == null) return;
+    _preloadingFeatured = true;
+    final thumbUrl = CdnConfig.thumbnailUrl(pick.video.video.id);
+    log('TvHome: featured ${pick.video.video.id} — preloading thumbnail');
+    try {
+      await precacheImage(NetworkImage(thumbUrl), context);
+    } catch (e) {
+      log('TvHome: featured thumbnail preload failed: $e');
+      // Ne blokiramo bootstrap na ovome — radije nudi content sa fallback
+      // ikonom nego da forever zaglavi na loading screenu.
+    }
+    if (!mounted) return;
+    setState(() => _bootReady = true);
+    log('TvHome: boot ready — switching to content');
   }
 
   Future<void> _loadContinueWatching() async {
@@ -130,7 +168,11 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               final channels = snap.data!.channels;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _channelCache.prefetchAll(channels);
+                _maybeBootstrapFeatured();
               });
+              // Tips karousel ostaje vidljiv sve dok featured nije picked
+              // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
+              if (!_bootReady) return _buildLoading(theme, heroHeight);
               return _buildContent(theme, heroHeight, channels);
             },
           ),
@@ -144,16 +186,12 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildLoading(ThemeData theme, double heroHeight) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildAppBar(theme),
-          _buildHeroSkeleton(theme, heroHeight),
-          const SizedBox(height: 24),
-          _buildRailSkeleton(theme, 'Učitavam…'),
-        ],
-      ),
+    // Channel index prefetch + featured pick + thumbnail preload trazi 3-10s.
+    // Full-screen Slack-style tips karousel s 10s progress loaderom — bez
+    // appbar-a / skeleton-a iza, zelimo da fokus bude na sadrzaju cekanja.
+    return const TvLoadingTips(
+      tips: defaultTvTips,
+      progressDuration: Duration(seconds: 10),
     );
   }
 
@@ -177,8 +215,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     List<ChannelSummary> channels,
   ) {
     final allVids = _channelCache.allVideos;
-    final hasMinData = HomeFeed.hasMinimumData(_channelCache);
-    final featured = hasMinData ? HomeFeed.pickFeatured(allVids) : null;
+    // Cekamo full prefetch prije nego pick-amo featured — bez ovoga
+    // HomeFeed.pickFeatured se rebuilda na svakom channel cache update-u
+    // (30% threshold pa onda done), pa korisnik vidi flash izmedju kandidata
+    // 1-2s nakon load-a. S done-gate-om hero ostaje skeleton dok ne stigne
+    // stabilan izbor.
+    final cacheReady = _channelCache.done;
+    final featured = cacheReady ? HomeFeed.pickFeatured(allVids) : null;
     final latest = featured != null
         ? HomeFeed.latestEpisodes(allVids,
             limit: 12, excludeFeatured: featured.video)
@@ -196,7 +239,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           if (featured != null)
             TvHero(
               featured: featured,
-              height: heroHeight,
+              maxHeight: heroHeight,
               playFocusNode: _heroPlayFocus,
               autofocusPlay: true,
               onPlay: () => _openEpisode(featured.video.video.id),
@@ -204,12 +247,15 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           else
             _buildHeroSkeleton(theme, heroHeight),
 
-          const SizedBox(height: 24),
+          // Veci gap izmedju hero-a i prvog rail-a — focused card scale 1.18
+          // + glow shadow s `Clip.none` na rail-u overflowa vertikalno, pa
+          // bez ovog prostora gornji rub kartice udara u hero ispod.
+          const SizedBox(height: 40),
 
           if (_continueWatching.isNotEmpty) ...[
             TvRail(
               eyebrow: 'Nastavi slušati',
-              height: 280,
+              height: 200,
               cards: [
                 for (final wp in _continueWatching)
                   TvEpisodeCard(
@@ -218,18 +264,18 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                     progress: wp.durationSeconds > 0
                         ? wp.positionSeconds / wp.durationSeconds
                         : null,
-                    width: 280,
+                    width: 160,
                     onTap: () => _openEpisode(wp.episodeId),
                   ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 36),
           ],
 
           if (latest.isNotEmpty)
             TvRail(
               eyebrow: 'Najnovije epizode',
-              height: 280,
+              height: 200,
               cards: [
                 for (final fv in latest)
                   TvEpisodeCard(
@@ -237,25 +283,25 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                     title: fv.video.displayTitle,
                     subtitle: fv.channelName,
                     magisteriumScore: fv.video.magisteriumScore,
-                    width: 280,
+                    width: 160,
                     onTap: () => _openEpisode(fv.video.id),
                   ),
               ],
             )
-          else if (!hasMinData)
+          else if (!cacheReady)
             _buildRailSkeleton(theme, 'Najnovije epizode'),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 36),
 
           if (sortedChannels.isNotEmpty)
             TvRail(
               eyebrow: 'Kanali (${sortedChannels.length})',
-              height: 290,
+              height: 215,
               cards: [
                 for (final c in sortedChannels)
                   TvChannelCard(
                     channel: c,
-                    size: 200,
+                    size: 130,
                     onTap: () => _openChannel(c),
                   ),
               ],
@@ -327,19 +373,75 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // za TV cilj je tek 'nije prazno' indikacija dok prefetch traje).
   // ---------------------------------------------------------------------------
 
-  Widget _buildHeroSkeleton(ThemeData theme, double height) {
+  /// Skeleton koji prati `TvHero` shape (max 1200dp wide, slika lijevo / blok
+  /// desno) — bez ovoga bi layout poskocio kad real hero stigne.
+  Widget _buildHeroSkeleton(ThemeData theme, double maxHeight) {
+    final compact = maxHeight < 280;
+    final imageWidth = (maxHeight * 16 / 9).clamp(360.0, 540.0);
+    final block = theme.colorScheme.surfaceContainerHighest;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(48, 16, 48, 0),
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.center,
-        child: CircularProgressIndicator(
-          color: theme.colorScheme.primary,
-          strokeWidth: 2,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: theme.colorScheme.surfaceContainerLowest,
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      width: imageWidth,
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Container(
+                          color: block,
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(
+                              color: theme.colorScheme.primary,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          compact ? 24 : 36,
+                          compact ? 20 : 28,
+                          compact ? 24 : 36,
+                          compact ? 20 : 28,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _SkeletonBar(width: 140, height: 14, color: block),
+                            SizedBox(height: compact ? 14 : 18),
+                            _SkeletonBar(
+                                width: double.infinity, height: 22, color: block),
+                            const SizedBox(height: 10),
+                            _SkeletonBar(width: 260, height: 22, color: block),
+                            SizedBox(height: compact ? 14 : 18),
+                            _SkeletonBar(width: 200, height: 14, color: block),
+                            SizedBox(height: compact ? 18 : 26),
+                            _SkeletonBar(width: 180, height: 44, color: block),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -368,15 +470,15 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           SizedBox(
-            height: 280,
+            height: 182,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: 4,
               separatorBuilder: (_, _) => const SizedBox(width: 20),
               itemBuilder: (context, i) => Container(
-                width: 280,
+                width: 160,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
@@ -411,6 +513,30 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SkeletonBar extends StatelessWidget {
+  final double width;
+  final double height;
+  final Color color;
+
+  const _SkeletonBar({
+    required this.width,
+    required this.height,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
       ),
     );
   }

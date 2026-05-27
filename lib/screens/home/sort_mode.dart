@@ -28,7 +28,7 @@ enum ChannelSortMode {
       case ChannelSortMode.newest:
         return 'Najnoviji';
       case ChannelSortMode.mostEpisodes:
-        return 'Najvise epizoda';
+        return 'Najviše epizoda';
       case ChannelSortMode.magisterium:
         return 'Magisterium score';
       case ChannelSortMode.alphabetical:

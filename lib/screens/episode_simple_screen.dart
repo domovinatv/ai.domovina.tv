@@ -14,13 +14,16 @@ import '../services/background_audio.dart';
 import '../services/cdn_config.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
+import '../services/episode_language.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
 import '../widgets/favorite_button.dart';
+import '../widgets/language_toggle_chip.dart';
 import '../widgets/magisterium_v2_view.dart';
+import '../widgets/resume_hint_banner.dart';
 import '../widgets/speaker_chip.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
@@ -28,7 +31,14 @@ import '../widgets/speaker_chip.dart';
 class EpisodeSimpleScreen extends StatefulWidget {
   final String youtubeId;
 
-  const EpisodeSimpleScreen({super.key, required this.youtubeId});
+  /// True kad URL ima `/en` sufix (npr. `/m/<id>/en`).
+  final bool initialLanguageEn;
+
+  const EpisodeSimpleScreen({
+    super.key,
+    required this.youtubeId,
+    this.initialLanguageEn = false,
+  });
 
   @override
   State<EpisodeSimpleScreen> createState() => _EpisodeSimpleScreenState();
@@ -56,7 +66,10 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
   @override
   Widget build(BuildContext context) {
     if (_data != null) {
-      return _SimpleEpisodeContent(data: _data!);
+      return _SimpleEpisodeContent(
+        data: _data!,
+        initialLanguageEn: widget.initialLanguageEn,
+      );
     }
 
     if (_error != null) {
@@ -111,8 +124,12 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
 
 class _SimpleEpisodeContent extends StatefulWidget {
   final EpisodeData data;
+  final bool initialLanguageEn;
 
-  const _SimpleEpisodeContent({required this.data});
+  const _SimpleEpisodeContent({
+    required this.data,
+    this.initialLanguageEn = false,
+  });
 
   @override
   State<_SimpleEpisodeContent> createState() => _SimpleEpisodeContentState();
@@ -121,6 +138,7 @@ class _SimpleEpisodeContent extends StatefulWidget {
 class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     with WidgetsBindingObserver {
   int _tabIndex = 0;
+  EpisodeLanguage _language = EpisodeLanguage.hr;
 
   // Video
   Player? _player;
@@ -133,6 +151,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
 
   /// URL sync — zadnja sekunda za koju smo update-ali address bar.
   int _lastUrlSyncedSec = -1;
+
+  /// Inline resume hint — vidi episode_screen.dart za razlog (SnackBar lingera).
+  int? _resumeHintSeconds;
+  Timer? _resumeHintTimer;
+  static const _resumeHintDuration = Duration(seconds: 4);
 
   /// Flat lista svih poglavlja iz outline-a za brz pristup.
   late final List<({String timestamp, String topic, int totalSeconds})>
@@ -154,13 +177,43 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) maybeShowM1(context);
     });
+
+    if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
+      _language = EpisodeLanguage.en;
+    } else {
+      loadPreferredLanguage().then((saved) {
+        if (!mounted) return;
+        if (saved == EpisodeLanguage.en && widget.data.hasTranslationEn) {
+          setState(() => _language = EpisodeLanguage.en);
+          _syncLanguageUrl(EpisodeLanguage.en);
+        }
+      });
+    }
     _initVideo();
+  }
+
+  void _onLanguageChanged(EpisodeLanguage lang) {
+    if (lang == _language) return;
+    setState(() => _language = lang);
+    savePreferredLanguage(lang);
+    _syncLanguageUrl(lang);
+  }
+
+  void _syncLanguageUrl(EpisodeLanguage lang) {
+    final sec = _position.inSeconds;
+    replaceLanguage(
+      '/m/${widget.data.youtubeId}',
+      isEn: lang == EpisodeLanguage.en,
+      seconds: sec,
+    );
+    _lastUrlSyncedSec = sec;
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _positionSub?.cancel();
+    _resumeHintTimer?.cancel();
     _watchTracker.dispose();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
@@ -230,7 +283,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         final sec = pos.inSeconds;
         if (sec != _lastUrlSyncedSec) {
           _lastUrlSyncedSec = sec;
-          replaceTimestamp('/m/${widget.data.youtubeId}', sec);
+          replaceTimestamp(
+            '/m/${widget.data.youtubeId}',
+            sec,
+            langSuffix: _language == EpisodeLanguage.en ? '/en' : null,
+          );
           // CDN URL (ne i.ytimg.com) da home rail "Nastavi slusati" moze
           // renderati thumbnail bez CORS bloka.
           WatchProgressService.instance.scheduleSave(
@@ -294,7 +351,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         });
 
         if (resumedFromSaved && startAt != null) {
-          _showResumeSnack(startAt, player);
+          _showResumeHint(startAt);
         }
 
         // Background audio session — vidi episode_screen.dart za strategiju artworka.
@@ -322,27 +379,13 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     }
   }
 
-  void _showResumeSnack(int positionSeconds, Player player) {
-    final h = positionSeconds ~/ 3600;
-    final m = (positionSeconds % 3600) ~/ 60;
-    final s = positionSeconds % 60;
-    String p(int n) => n.toString().padLeft(2, '0');
-    final label = h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
+  void _showResumeHint(int positionSeconds) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Nastavljam s $label'),
-        duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'OD POČETKA',
-          onPressed: () {
-            player.seek(Duration.zero);
-            _lastUrlSyncedSec = -1;
-          },
-        ),
-      ),
-    );
+    _resumeHintTimer?.cancel();
+    setState(() => _resumeHintSeconds = positionSeconds);
+    _resumeHintTimer = Timer(_resumeHintDuration, () {
+      if (mounted) setState(() => _resumeHintSeconds = null);
+    });
   }
 
   Future<void> _seekTo(int seconds) async {
@@ -399,7 +442,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final data = widget.data;
-    final magV2 = data.magisteriumFullV2;
+    final wantEn = _language == EpisodeLanguage.en;
+    final magV2 = data.magisteriumFullV2For(wantEn: wantEn);
 
     // Dinamicke tabove — Magisterium tab se prikazuje samo ako postoji v2 JSON.
     final tabs = <Widget>[
@@ -457,7 +501,10 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     // Clamp selected index ako se broj tabova promjeni (npr. v2 loada nakon rebuilda).
     final safeIndex = _tabIndex.clamp(0, tabs.length - 1);
 
-    return Scaffold(
+    return EpisodeLanguageScope(
+      language: _language,
+      hasTranslationEn: data.hasTranslationEn,
+      child: Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
         leading: IconButton(
@@ -485,6 +532,17 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             ),
           ),
           FavoriteButton(episodeId: data.youtubeId),
+          if (data.hasTranslationEn)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Center(
+                child: LanguageToggleChip(
+                  current: _language,
+                  onChanged: _onLanguageChanged,
+                  compact: true,
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.share_outlined),
             tooltip: 'Kopiraj link na trenutni trenutak',
@@ -502,30 +560,66 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             onPressed: () async {
               await saveSimpleModePref(false);
               if (!context.mounted) return;
-              context.go('/v/${data.youtubeId}');
+              final target = _language == EpisodeLanguage.en
+                  ? '/v/${data.youtubeId}/en'
+                  : '/v/${data.youtubeId}';
+              context.go(target);
             },
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Responzivnost: koliko tabova stane side-by-side?
-          // ~440px je minimum prije nego sadrzaj (video 16:9, lista poglavlja,
-          // markdown clanak) postane previse skucen.
-          const minPanelWidth = 440.0;
-          final visibleCount = (constraints.maxWidth / minPanelWidth)
-              .floor()
-              .clamp(1, tabs.length);
-          return _ResponsiveTabLayout(
-            tabs: tabs,
-            destinations: destinations,
-            selectedIndex: safeIndex,
-            visibleCount: visibleCount,
-            onSelect: (i) => setState(() => _tabIndex = i),
-            theme: theme,
-          );
-        },
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Responzivnost: koliko tabova stane side-by-side?
+              // ~440px je minimum prije nego sadrzaj (video 16:9, lista poglavlja,
+              // markdown clanak) postane previse skucen.
+              const minPanelWidth = 440.0;
+              final visibleCount = (constraints.maxWidth / minPanelWidth)
+                  .floor()
+                  .clamp(1, tabs.length);
+              return _ResponsiveTabLayout(
+                tabs: tabs,
+                destinations: destinations,
+                selectedIndex: safeIndex,
+                visibleCount: visibleCount,
+                onSelect: (i) => setState(() => _tabIndex = i),
+                theme: theme,
+              );
+            },
+          ),
+          Positioned(
+            top: 12,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.2),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
+                  ),
+                  child: _resumeHintSeconds == null
+                      ? const SizedBox.shrink()
+                      : ResumeHintBanner(
+                          key: ValueKey(_resumeHintSeconds),
+                          seconds: _resumeHintSeconds!,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    ),
     );
   }
 }
@@ -680,7 +774,16 @@ class _PlayerTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final info = data.info;
-    final summary = data.summary?.summary;
+    final lang = EpisodeLanguageScope.of(context);
+    final summaryHr = data.summary?.summary;
+    final summary =
+        lang == EpisodeLanguage.en ? (data.summaryEn?.summary ?? summaryHr) : summaryHr;
+    // Lokalizirani naslov: prefer EN summary.titleEn → HR summary.titleHr → YouTube original.
+    String displayTitle = data.displayTitle;
+    if (lang == EpisodeLanguage.en && summary != null) {
+      final en = summary.titleEn;
+      if (en != null && en.isNotEmpty) displayTitle = en;
+    }
 
     return SingleChildScrollView(
       child: Column(
@@ -810,7 +913,7 @@ class _PlayerTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data.displayTitle,
+                  displayTitle,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -986,14 +1089,23 @@ class _InfoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final info = data.info;
-    final summary = data.summary?.summary;
+    final lang = EpisodeLanguageScope.of(context);
+    final isEn = lang == EpisodeLanguage.en;
+    final summaryHr = data.summary?.summary;
+    final summary =
+        isEn ? (data.summaryEn?.summary ?? summaryHr) : summaryHr;
+    String displayTitle = data.displayTitle;
+    if (isEn && summary != null) {
+      final en = summary.titleEn;
+      if (en != null && en.isNotEmpty) displayTitle = en;
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Title
         Text(
-          data.displayTitle,
+          displayTitle,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -1037,47 +1149,71 @@ class _InfoTab extends StatelessWidget {
         ],
 
         // Abstract
-        if (summary != null && summary.abstractHr.isNotEmpty) ...[
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              summary.abstractHr,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+        if (summary != null) ...[
+          Builder(builder: (_) {
+            final abstractText =
+                pickLang(lang, summary.abstractHr, summary.abstractEn);
+            if (abstractText.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withAlpha(120),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    abstractText,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            );
+          }),
         ],
 
         // Key topics
-        if (summary != null && summary.keyTopics.isNotEmpty) ...[
-          _SectionTitle(icon: Icons.topic, label: 'Ključne teme'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: summary.keyTopics.map((t) {
-              return Chip(
-                label: Text(t, style: const TextStyle(fontSize: 12)),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
+        if (summary != null) ...[
+          Builder(builder: (_) {
+            final topics =
+                pickLangList(lang, summary.keyTopics, summary.keyTopicsEn);
+            if (topics.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionTitle(
+                    icon: Icons.topic,
+                    label: isEn ? 'Key topics' : 'Ključne teme'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: topics.map((t) {
+                    return Chip(
+                      label: Text(t, style: const TextStyle(fontSize: 12)),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+            );
+          }),
         ],
 
         // Key points
         if (summary != null && summary.keyPoints.isNotEmpty) ...[
-          _SectionTitle(icon: Icons.format_list_bulleted, label: 'Ključne točke'),
+          _SectionTitle(
+              icon: Icons.format_list_bulleted,
+              label: isEn ? 'Key takeaways' : 'Ključne točke'),
           const SizedBox(height: 8),
-          ...summary.keyPoints.map((kp) => Padding(
+          ...pickLangList(lang, summary.keyPoints, summary.keyPointsEn)
+              .map((kp) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1107,9 +1243,13 @@ class _InfoTab extends StatelessWidget {
 
         // Speakers
         if (summary != null && summary.speakers.isNotEmpty) ...[
-          _SectionTitle(icon: Icons.people, label: 'Govornici'),
+          _SectionTitle(
+              icon: Icons.people,
+              label: isEn ? 'Speakers' : 'Govornici'),
           const SizedBox(height: 8),
-          ...summary.speakers.map((s) => Padding(
+          ...summary.speakers.map((s) {
+            final roleLabel = isEn ? s.roleLabelEn() : s.roleLabel;
+            return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
@@ -1131,14 +1271,14 @@ class _InfoTab extends StatelessWidget {
                             // Ako pipeline nije izvukao pravo ime (host se ne
                             // predstavlja), suggested_name je == role — tada
                             // prikazi samo capitalized roleLabel.
-                            s.displayName ?? s.roleLabel,
+                            s.displayName ?? roleLabel,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           if (s.displayName != null && s.role.isNotEmpty)
                             Text(
-                              s.roleLabel,
+                              roleLabel,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -1148,7 +1288,8 @@ class _InfoTab extends StatelessWidget {
                     ),
                   ],
                 ),
-              )),
+              );
+          }),
           const SizedBox(height: 16),
         ],
 
@@ -1157,13 +1298,13 @@ class _InfoTab extends StatelessWidget {
         const SizedBox(height: 8),
         _MetaRow(
           icon: Icons.calendar_today,
-          label: 'Datum',
+          label: isEn ? 'Date' : 'Datum',
           value: _formatDate(info.uploadDate),
           theme: theme,
         ),
         _MetaRow(
           icon: Icons.schedule,
-          label: 'Trajanje',
+          label: isEn ? 'Duration' : 'Trajanje',
           value: info.durationString,
           theme: theme,
         ),

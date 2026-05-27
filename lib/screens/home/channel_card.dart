@@ -226,7 +226,7 @@ class _ChannelCardState extends State<ChannelCard> {
     final label = MagisteriumSection.scoreLabel(score);
     return Tooltip(
       message:
-          '$label\nProcjena uskladenosti s katolickim naukom (0-100).',
+          '$label\nProcjena usklađenosti s katoličkim naukom (0–100).',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(

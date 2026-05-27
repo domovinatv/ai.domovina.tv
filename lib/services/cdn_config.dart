@@ -43,6 +43,19 @@ class CdnConfig {
       '$base/data/$ytId/article.magisterium_full_v2.json';
   static String magisteriumFullV2PromptUrl(String ytId) =>
       '$base/data/$ytId/article.magisterium_full_v2_prompt.md';
+
+  // English translation overlays — superset HR + dodana `_en` polja.
+  // 404 dok pipeline jos nije producirao prijevod za dani video.
+  static String summaryEnUrl(String ytId) =>
+      '$base/data/$ytId/summary.en.json';
+  static String articleEnUrl(String ytId) =>
+      '$base/data/$ytId/article.en.json';
+  static String magisteriumEnUrl(String ytId) =>
+      '$base/data/$ytId/article.magisterium.en.json';
+  static String magisteriumBatchEnUrl(String ytId) =>
+      '$base/data/$ytId/article.magisterium_batch.en.json';
+  static String magisteriumFullV2EnUrl(String ytId) =>
+      '$base/data/$ytId/article.magisterium_full_v2.en.json';
   static String diarizedSrtUrl(String ytId) => '$base/data/$ytId/diarized.srt';
 
   /// Video MP4 — CDN podržava HTTP 206 range requeste za seeking

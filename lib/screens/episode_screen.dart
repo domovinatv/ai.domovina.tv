@@ -11,6 +11,7 @@ import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
+import '../services/episode_language.dart';
 import '../services/media_session.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
@@ -22,12 +23,14 @@ import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/hero_section.dart';
+import '../widgets/language_toggle_chip.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/magisterium_panel.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/entities_section.dart';
+import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
 
@@ -37,10 +40,15 @@ class EpisodeScreen extends StatefulWidget {
   /// Start at position in seconds (from ?t= query param, like YouTube).
   final int? startAtSeconds;
 
+  /// Postavljeno na true kad URL eksplicitno sadrzi `/en` sufiks — overrideuje
+  /// sticky pref. Ostavljeno null/false znaci: koristi sticky pref ili HR default.
+  final bool initialLanguageEn;
+
   const EpisodeScreen({
     super.key,
     required this.youtubeId,
     this.startAtSeconds,
+    this.initialLanguageEn = false,
   });
 
   @override
@@ -78,6 +86,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
       return _EpisodeContent(
         data: _data!,
         startAtSeconds: widget.startAtSeconds,
+        initialLanguageEn: widget.initialLanguageEn,
       );
     }
 
@@ -245,8 +254,13 @@ class _LoadingScreen extends StatelessWidget {
 class _EpisodeContent extends StatefulWidget {
   final EpisodeData data;
   final int? startAtSeconds;
+  final bool initialLanguageEn;
 
-  const _EpisodeContent({required this.data, this.startAtSeconds});
+  const _EpisodeContent({
+    required this.data,
+    this.startAtSeconds,
+    this.initialLanguageEn = false,
+  });
 
   @override
   State<_EpisodeContent> createState() => _EpisodeContentState();
@@ -307,6 +321,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// kad se sekunda promijenila.
   int _lastUrlSyncedSec = -1;
 
+  /// Inline resume hint — nije SnackBar (lingera preko ekrana), nego widget
+  /// u Stack-u koji se uništava s screenom. null = sakriven.
+  int? _resumeHintSeconds;
+  Timer? _resumeHintTimer;
+  static const _resumeHintDuration = Duration(seconds: 4);
+
   /// Snapshot stanja playera u trenutku otvaranja endDrawer-a. Kad korisnik
   /// zatvori drawer, ako je bio playing pri otvaranju, resumeamo — neki
   /// build pipelines pauziraju Video widget na drawer detach (media_kit
@@ -318,10 +338,29 @@ class _EpisodeContentState extends State<_EpisodeContent>
   // Onboarding — broji sekunde slušanja, okida M2 nakon 30s.
   late final WatchSecondsTracker _watchTracker;
 
+  /// Per-episode jezik prikaza. URL `/en` sufix ima prednost nad sticky pref.
+  /// Inicijalno HR; ako URL nije EN, ucitaj sticky pref iz prefs-a.
+  EpisodeLanguage _language = EpisodeLanguage.hr;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // 1) URL forsiranje (npr. /v/<id>/en) — najjaci signal.
+    if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
+      _language = EpisodeLanguage.en;
+    } else {
+      // 2) Sticky pref iz prosle sesije — samo ako EN prijevod postoji.
+      // Bez prijevoda toggle se i ne prikazuje, pa nema smisla startati u EN.
+      loadPreferredLanguage().then((saved) {
+        if (!mounted) return;
+        if (saved == EpisodeLanguage.en && widget.data.hasTranslationEn) {
+          setState(() => _language = EpisodeLanguage.en);
+          _syncLanguageUrl(EpisodeLanguage.en);
+        }
+      });
+    }
     _watchTracker = WatchSecondsTracker(
       triggerAt: 30,
       onThreshold: () {
@@ -375,6 +414,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _positionSub?.cancel();
+    _resumeHintTimer?.cancel();
     _watchTracker.dispose();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
@@ -414,6 +454,27 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
   // ---------- helpers -------------------------------------------------------
 
+  /// Toggle handler — sticky pref + URL sync + setState rebuild kroz scope.
+  void _onLanguageChanged(EpisodeLanguage lang) {
+    if (lang == _language) return;
+    setState(() => _language = lang);
+    savePreferredLanguage(lang);
+    _syncLanguageUrl(lang);
+  }
+
+  /// Update adresne trake za novi jezik bez triggera router refresha.
+  /// Cuva timestamp iz playera ako je >0.
+  void _syncLanguageUrl(EpisodeLanguage lang) {
+    final pos = _player?.state.position ?? Duration.zero;
+    final sec = pos.inSeconds;
+    replaceLanguage(
+      '/v/${widget.data.youtubeId}',
+      isEn: lang == EpisodeLanguage.en,
+      seconds: sec,
+    );
+    _lastUrlSyncedSec = sec;
+  }
+
   Duration _parseDuration(String ts) {
     // "HH:MM:SS" → Duration
     final parts = ts.split(':').map(int.parse).toList();
@@ -434,27 +495,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     return ts;
   }
 
-  void _showResumeSnack(int positionSeconds, Player player) {
-    final h = positionSeconds ~/ 3600;
-    final m = (positionSeconds % 3600) ~/ 60;
-    final s = positionSeconds % 60;
-    String p(int n) => n.toString().padLeft(2, '0');
-    final label = h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
+  void _showResumeHint(int positionSeconds) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Nastavljam s $label'),
-        duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'OD POČETKA',
-          onPressed: () {
-            player.seek(Duration.zero);
-            _lastUrlSyncedSec = -1;
-          },
-        ),
-      ),
-    );
+    _resumeHintTimer?.cancel();
+    setState(() => _resumeHintSeconds = positionSeconds);
+    _resumeHintTimer = Timer(_resumeHintDuration, () {
+      if (mounted) setState(() => _resumeHintSeconds = null);
+    });
   }
 
   // ---------- video ---------------------------------------------------------
@@ -537,7 +584,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         debugPrint('Video: ready');
 
         if (resumedFromSaved && startAt != null) {
-          _showResumeSnack(startAt, player);
+          _showResumeHint(startAt);
         }
 
         // Background audio session — lock screen + notification na native, no-op na webu.
@@ -668,7 +715,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final sec = pos.inSeconds;
     if (sec != _lastUrlSyncedSec) {
       _lastUrlSyncedSec = sec;
-      replaceTimestamp('/v/${widget.data.youtubeId}', sec);
+      replaceTimestamp(
+        '/v/${widget.data.youtubeId}',
+        sec,
+        langSuffix: _language == EpisodeLanguage.en ? '/en' : null,
+      );
       // Media Session position update — drži lock screen scrub bar u syncu.
       // Throttled na sec granularnost (isti gate kao URL sync).
       MediaSession.setPositionState(
@@ -878,14 +929,26 @@ class _EpisodeContentState extends State<_EpisodeContent>
     // Basic path — video je dostupan ali AI pipeline jos nije producirao
     // clanak/sazetak/poglavlja. Renderiramo samo player + osnovne info.
     if (!data.hasAiContent) {
-      return _buildBasicLayout(context);
+      return EpisodeLanguageScope(
+        language: _language,
+        hasTranslationEn: data.hasTranslationEn,
+        child: _buildBasicLayout(context),
+      );
     }
     final theme = Theme.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
-    final magVariants = data.magisteriumVariants;
-    final magV2 = data.magisteriumFullV2;
+    final wantEn = _language == EpisodeLanguage.en;
+    // EN je superset HR-a — kad je toggle na EN, koristi EN verzije asseta
+    // (sadrze i HR polja za fallback per-field). Inace HR original.
+    // hasAiContent guard gore garantira data.article != null; summary postoji
+    // zajedno (pipeline ih producira u istom batchu) — pa `!` assertion.
+    final summaryForUi = data.summaryFor(wantEn)!;
+    final articleForUi = data.articleFor(wantEn)!;
+    final magVariants = data.magisteriumVariantsFor(wantEn: wantEn);
+    final magV2 = data.magisteriumFullV2For(wantEn: wantEn);
+    final magPrimary = data.magisteriumPrimaryFor(wantEn: wantEn);
     final hasMag =
         magVariants.isNotEmpty ||
         data.magisteriumFull != null ||
@@ -931,6 +994,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
               ),
             ),
             FavoriteButton(episodeId: data.youtubeId),
+            if (data.hasTranslationEn)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Center(
+                  child: LanguageToggleChip(
+                    current: _language,
+                    onChanged: _onLanguageChanged,
+                    compact: true,
+                  ),
+                ),
+              ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: 'Kopiraj link na trenutni trenutak',
@@ -948,7 +1022,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
               onPressed: () async {
                 await saveSimpleModePref(true);
                 if (!context.mounted) return;
-                context.go('/m/${data.youtubeId}');
+                final target = _language == EpisodeLanguage.en
+                    ? '/m/${data.youtubeId}/en'
+                    : '/m/${data.youtubeId}';
+                context.go(target);
               },
             ),
             if (_videoReady && !showVideo)
@@ -970,16 +1047,41 @@ class _EpisodeContentState extends State<_EpisodeContent>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  HeroSection(info: data.info, youtubeId: data.youtubeId),
+                  HeroSection(
+                    info: data.info,
+                    youtubeId: data.youtubeId,
+                    summary: summaryForUi.summary,
+                  ),
+                  if (data.hasTranslationEn)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Row(
+                        children: [
+                          Text(
+                            _language == EpisodeLanguage.en
+                                ? 'Language:'
+                                : 'Jezik:',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          LanguageToggleChip(
+                            current: _language,
+                            onChanged: _onLanguageChanged,
+                          ),
+                        ],
+                      ),
+                    ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                  SummarySection(summary: data.summary!),
+                  SummarySection(summary: summaryForUi),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
                   ChaptersSection(outline: data.outline!),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
                   ArticleSection(
-                    article: data.article!,
+                    article: articleForUi,
                     youtubeId: data.youtubeId,
                     sectionKeys: _sectionKeys,
                     onPlayTap: _videoReady
@@ -995,7 +1097,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             }
                           }
                         : null,
-                    magisterium: data.magisteriumPrimary,
+                    magisterium: magPrimary,
                   ),
                   Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
@@ -1013,7 +1115,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     const SizedBox(height: 12),
                   ],
-                  EntitiesSection(summary: data.summary!.summary),
+                  EntitiesSection(summary: summaryForUi.summary),
                   _MetadataFooter(data: data),
                 ],
               ),
@@ -1138,7 +1240,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article!,
+            article: articleForUi,
             activeTimestamp: _activeTimestamp,
             scrollTimestamp: _scrollTimestamp,
             onSectionTap: _seekAndPlay,
@@ -1155,7 +1257,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             onSeek: _onVideoSeek,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
-            speakers: data.summary!.summary.speakers,
+            speakers: summaryForUi.summary.speakers,
             mutedAutoplay: _mutedAutoplay,
             onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
@@ -1167,7 +1269,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article!,
+            article: articleForUi,
             activeTimestamp: _activeTimestamp,
             onSectionTap: (ts) {
               setState(() => _activeTimestamp = ts);
@@ -1184,7 +1286,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article!,
+            article: articleForUi,
             activeTimestamp: _activeTimestamp,
             scrollTimestamp: _scrollTimestamp,
             onSectionTap: _seekAndPlay,
@@ -1200,7 +1302,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             onSeek: _onVideoSeek,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
-            speakers: data.summary!.summary.speakers,
+            speakers: summaryForUi.summary.speakers,
             mutedAutoplay: _mutedAutoplay,
             onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
@@ -1212,7 +1314,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TableOfContents(
-            article: data.article!,
+            article: articleForUi,
             activeTimestamp: _activeTimestamp,
             onSectionTap: (ts) {
               setState(() => _activeTimestamp = ts);
@@ -1233,7 +1335,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
       body = scrollBody;
     }
 
-    return Scaffold(
+    return EpisodeLanguageScope(
+      language: _language,
+      hasTranslationEn: data.hasTranslationEn,
+      child: Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       onEndDrawerChanged: (isOpen) {
@@ -1259,7 +1364,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           : Drawer(
               child: SafeArea(
                 child: TableOfContents(
-                  article: data.article!,
+                  article: articleForUi,
                   activeTimestamp: _activeTimestamp,
                   scrollTimestamp: _scrollTimestamp,
                   onSectionTap: _drawerTap,
@@ -1279,7 +1384,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   onSeek: _onVideoSeek,
                   totalDurationSeconds: data.info.duration,
                   speakerTimeline: data.speakerTimeline,
-                  speakers: data.summary!.summary.speakers,
+                  speakers: summaryForUi.summary.speakers,
                   width: null,
                 ),
               ),
@@ -1290,7 +1395,37 @@ class _EpisodeContentState extends State<_EpisodeContent>
       body: SafeArea(
         top: false,
         bottom: !showMobileBottomBar,
-        child: body,
+        child: Stack(
+          children: [
+            body,
+            Positioned(
+              top: 12,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.2),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
+                  ),
+                  child: _resumeHintSeconds == null
+                      ? const SizedBox.shrink()
+                      : ResumeHintBanner(
+                          key: ValueKey(_resumeHintSeconds),
+                          seconds: _resumeHintSeconds!,
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: showMobileBottomBar
           ? Material(
@@ -1356,6 +1491,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               ),
             )
           : null,
+    ),
     );
   }
 
@@ -1548,7 +1684,37 @@ class _EpisodeContentState extends State<_EpisodeContent>
       body: SafeArea(
         top: false,
         bottom: !isWide,
-        child: body,
+        child: Stack(
+          children: [
+            body,
+            Positioned(
+              top: 12,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.2),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
+                  ),
+                  child: _resumeHintSeconds == null
+                      ? const SizedBox.shrink()
+                      : ResumeHintBanner(
+                          key: ValueKey(_resumeHintSeconds),
+                          seconds: _resumeHintSeconds!,
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: !isWide
           ? Material(

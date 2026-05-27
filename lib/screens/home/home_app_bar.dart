@@ -44,7 +44,7 @@ class HomeAppBar extends StatelessWidget {
                 Expanded(
                   child: _SearchTrigger(
                     onTap: onSearchTap,
-                    placeholder: 'Pretrazi kanale i epizode',
+                    placeholder: 'Pretraži kanale i epizode',
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -52,7 +52,7 @@ class HomeAppBar extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.search, size: 20),
-                  tooltip: 'Pretrazi',
+                  tooltip: 'Pretraži',
                   onPressed: onSearchTap,
                 ),
                 const SizedBox(width: 4),

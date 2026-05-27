@@ -219,7 +219,7 @@ class HeroSection extends StatelessWidget {
             FilledButton.icon(
               onPressed: onPlay,
               icon: const Icon(Icons.play_arrow, size: 20),
-              label: const Text('Slusaj'),
+              label: const Text('Slušaj'),
               style: FilledButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
@@ -286,7 +286,7 @@ class HeroSection extends StatelessWidget {
       final d = DateTime.parse(iso);
       final days = DateTime.now().difference(d).inDays;
       if (days == 0) return 'danas';
-      if (days == 1) return 'jucer';
+      if (days == 1) return 'jučer';
       if (days < 7) return 'prije $days dana';
       if (days < 30) {
         final weeks = (days / 7).floor();
@@ -329,7 +329,7 @@ class _WhyButton extends StatelessWidget {
               Icon(Icons.help_outline, size: 11, color: color),
               const SizedBox(width: 4),
               Text(
-                'ZASTO?',
+                'ZAŠTO?',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -408,9 +408,10 @@ class _WhyDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Featured se mijenja svaki dan u ponoc — algoritam izvlaci '
-              'top 5 kandidata iz aktivnog tiera i bira jedan prema danu u '
-              'godini. Tijekom dana je isti izbor (deterministicki).',
+              'Istaknuto se mijenja svaki dan u ponoć — algoritam izvlači '
+              'pet najboljih kandidata iz aktivnog razreda i bira jednoga '
+              'prema danu u godini. Tijekom dana izbor ostaje isti '
+              '(deterministički).',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.45,
@@ -431,11 +432,11 @@ class _WhyDialog extends StatelessWidget {
   String _reasonHeadline(FeaturedReason reason) {
     switch (reason) {
       case FeaturedReason.hiQualityRecent:
-        return 'Visoka ocjena, svjeza epizoda';
+        return 'Visoka ocjena, svježa epizoda';
       case FeaturedReason.hiQuality:
         return 'Visoka Magisterium ocjena';
       case FeaturedReason.anyMagisterium:
-        return 'AI-obradena epizoda';
+        return 'AI-obrađena epizoda';
       case FeaturedReason.newest:
         return 'Najnovija epizoda';
     }
@@ -450,13 +451,13 @@ class _WhyDialog extends StatelessWidget {
       (
         'AI obrada',
         (pick.video.video.pipeline?.hasMagisterium ?? false)
-            ? 'Da (transkript + sazetak + Magisterium analiza)'
+            ? 'Da (transkript + sažetak + Magisterium analiza)'
             : 'Ne'
       ),
       if (pick.combinedScore != null)
-        ('Algoritamska tezina',
-            '${pick.combinedScore!.toStringAsFixed(1)} (score*0.6 + svjezina*0.4)'),
-      ('Tier-pool', '${pick.candidatePool} epizoda u istom tieru'),
+        ('Algoritamska težina',
+            '${pick.combinedScore!.toStringAsFixed(1)} (score × 0,6 + svježina × 0,4)'),
+      ('Skupina kandidata', '${pick.candidatePool} epizoda u istom razredu'),
     ];
 
     return Column(
@@ -497,24 +498,24 @@ class _WhyDialog extends StatelessWidget {
       (
         FeaturedReason.hiQualityRecent,
         '1. Najbolji izbor',
-        'AI obrada + score >=70 + objavljeno u zadnjih 14 dana. '
-            'Sortirano po (score*0.6 + svjezina*0.4). Top 5 ulazi u dnevnu '
-            'rotaciju.',
+        'AI obrada + ocjena ≥ 70 + objavljeno u zadnjih 14 dana. '
+            'Sortirano po (score × 0,6 + svježina × 0,4). Pet najboljih ulazi '
+            'u dnevnu rotaciju.',
       ),
       (
         FeaturedReason.hiQuality,
         '2. Visoka ocjena',
-        'AI obrada + score >=70 (bilo koji datum). Sortirano po score-u.',
+        'AI obrada + ocjena ≥ 70 (bilo koji datum). Sortirano po ocjeni.',
       ),
       (
         FeaturedReason.anyMagisterium,
-        '3. AI-obradeno',
+        '3. AI-obrađeno',
         'Bilo koja epizoda s AI obradom. Sortirano po datumu.',
       ),
       (
         FeaturedReason.newest,
         '4. Najnovije',
-        'Fallback — najnovija epizoda bez ikakve obrade.',
+        'Pričuva — najnovija epizoda bez ikakve obrade.',
       ),
     ];
 
@@ -574,7 +575,7 @@ class _WhyDialog extends StatelessWidget {
 
   String _daysAgoLabel(int days) {
     if (days == 0) return 'danas';
-    if (days == 1) return 'jucer';
+    if (days == 1) return 'jučer';
     if (days < 7) return 'prije $days dana';
     if (days < 30) {
       final w = (days / 7).floor();

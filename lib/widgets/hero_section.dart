@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_info.dart';
+import '../models/podcast_summary.dart';
 import '../services/cdn_config.dart';
+import '../services/episode_language.dart';
 
 class HeroSection extends StatelessWidget {
   final PodcastInfo info;
   final String youtubeId;
 
+  /// Ako prosljeden, preferira lokalizirani title (HR ili EN) iz pipeline-a
+  /// nad YouTube `info.title`. Bez summary-a (npr. basic layout dok AI nije
+  /// gotov) fallback je `info.title`.
+  final SummaryContent? summary;
+
   const HeroSection({
     super.key,
     required this.info,
     required this.youtubeId,
+    this.summary,
   });
 
   @override
@@ -18,6 +26,22 @@ class HeroSection extends StatelessWidget {
     final uploadDt = info.uploadDateTime;
     final dateStr =
         '${uploadDt.day}.${uploadDt.month}.${uploadDt.year}.';
+    final lang = EpisodeLanguageScope.of(context);
+
+    // Prefer lokalizirani naslov iz summary-a (HR ili EN), fallback YouTube original.
+    String displayTitle = info.title;
+    final s = summary;
+    if (s != null) {
+      if (lang == EpisodeLanguage.en) {
+        if (s.titleEn != null && s.titleEn!.isNotEmpty) {
+          displayTitle = s.titleEn!;
+        } else if (s.titleHr.isNotEmpty) {
+          displayTitle = s.titleHr;
+        }
+      } else if (s.titleHr.isNotEmpty) {
+        displayTitle = s.titleHr;
+      }
+    }
 
     return Container(
       color: theme.colorScheme.surface,
@@ -60,7 +84,7 @@ class HeroSection extends StatelessWidget {
 
                 // Title
                 Text(
-                  info.title,
+                  displayTitle,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     height: 1.3,

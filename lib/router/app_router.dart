@@ -9,6 +9,8 @@ import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
+import '../screens/tv/tv_channel_screen.dart';
+import '../screens/tv/tv_episode_screen.dart';
 import '../screens/tv/tv_home_screen.dart';
 import '../services/tv_mode.dart';
 
@@ -34,7 +36,9 @@ GoRouter createRouter() {
           final channelId = slug.replaceAll('-', '_');
           return NoTransitionPage(
             key: ValueKey('channel-$slug'),
-            child: ChannelScreen(channelId: channelId),
+            child: TvMode.isTv
+                ? TvChannelScreen(channelId: channelId)
+                : ChannelScreen(channelId: channelId),
           );
         },
       ),
@@ -45,11 +49,44 @@ GoRouter createRouter() {
           final t = state.uri.queryParameters['t'];
           final startAt = t != null ? int.tryParse(t) : null;
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-${startAt ?? 0}'),
-            child: EpisodeScreen(
-              youtubeId: videoId,
-              startAtSeconds: startAt,
-            ),
+            key: ValueKey('video-$videoId-${startAt ?? 0}-hr'),
+            // Android TV (Leanback): standalone 10-foot UI. EN toggle nije jos
+            // u TV varijanti (Faza 4.5), pa /v/<id>/en za sada renderira isti
+            // TvEpisodeScreen (vidi tv ruta /en ispod).
+            child: TvMode.isTv
+                ? TvEpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  )
+                : EpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  ),
+          );
+        },
+      ),
+      // Per-episode jezik — /v/<id>/en. Sufix umjesto ?lang=en jer social
+      // crawleri (Facebook, LinkedIn, WhatsApp) cesto droppaju query parametre
+      // pri normalizaciji URL-a, sto bi ulinkano resharanjima izgubilo
+      // engleski OG title/description.
+      GoRoute(
+        path: '/v/:videoId/en',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          final t = state.uri.queryParameters['t'];
+          final startAt = t != null ? int.tryParse(t) : null;
+          return NoTransitionPage(
+            key: ValueKey('video-$videoId-${startAt ?? 0}-en'),
+            child: TvMode.isTv
+                ? TvEpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  )
+                : EpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                    initialLanguageEn: true,
+                  ),
           );
         },
       ),
@@ -62,11 +99,37 @@ GoRouter createRouter() {
           final videoId = state.pathParameters['videoId']!;
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-${startAt ?? 0}'),
-            child: EpisodeScreen(
-              youtubeId: videoId,
-              startAtSeconds: startAt,
-            ),
+            key: ValueKey('video-$videoId-${startAt ?? 0}-hr'),
+            child: TvMode.isTv
+                ? TvEpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  )
+                : EpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  ),
+          );
+        },
+      ),
+      // Engleski + timestamp — /v/<id>/t/<sec>/en
+      GoRoute(
+        path: '/v/:videoId/t/:seconds/en',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
+          return NoTransitionPage(
+            key: ValueKey('video-$videoId-${startAt ?? 0}-en'),
+            child: TvMode.isTv
+                ? TvEpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  )
+                : EpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                    initialLanguageEn: true,
+                  ),
           );
         },
       ),
@@ -76,8 +139,21 @@ GoRouter createRouter() {
         pageBuilder: (context, state) {
           final videoId = state.pathParameters['videoId']!;
           return NoTransitionPage(
-            key: ValueKey('mobile-$videoId'),
+            key: ValueKey('mobile-$videoId-hr'),
             child: EpisodeSimpleScreen(youtubeId: videoId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/m/:videoId/en',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          return NoTransitionPage(
+            key: ValueKey('mobile-$videoId-en'),
+            child: EpisodeSimpleScreen(
+              youtubeId: videoId,
+              initialLanguageEn: true,
+            ),
           );
         },
       ),

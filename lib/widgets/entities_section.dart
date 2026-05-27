@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_summary.dart';
+import '../services/episode_language.dart';
 
 class EntitiesSection extends StatelessWidget {
   final SummaryContent summary;
@@ -8,6 +9,15 @@ class EntitiesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = EpisodeLanguageScope.of(context);
+    final isEn = lang == EpisodeLanguage.en;
+    final people =
+        pickLangList(lang, summary.mentionedPeople, summary.mentionedPeopleEn);
+    final places =
+        pickLangList(lang, summary.mentionedPlaces, summary.mentionedPlacesEn);
+    final orgs = pickLangList(
+        lang, summary.mentionedOrganizations, summary.mentionedOrganizationsEn);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       child: Column(
@@ -15,22 +25,22 @@ class EntitiesSection extends StatelessWidget {
         children: [
           _EntityGroup(
             icon: Icons.person_outline,
-            title: 'Osobe',
-            items: summary.mentionedPeople,
+            title: isEn ? 'People' : 'Osobe',
+            items: people,
             color: Colors.blue,
           ),
           const SizedBox(height: 16),
           _EntityGroup(
             icon: Icons.place_outlined,
-            title: 'Mjesta',
-            items: summary.mentionedPlaces,
+            title: isEn ? 'Places' : 'Mjesta',
+            items: places,
             color: Colors.green,
           ),
           const SizedBox(height: 16),
           _EntityGroup(
             icon: Icons.business_outlined,
-            title: 'Organizacije',
-            items: summary.mentionedOrganizations,
+            title: isEn ? 'Organizations' : 'Organizacije',
+            items: orgs,
             color: Colors.orange,
           ),
         ],

@@ -48,7 +48,7 @@ void _saveOrderWeb(List<String> ids) {
 void _showComingSoon(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(
-      content: Text('Funkcija stize uskoro'),
+      content: Text('Funkcija stiže uskoro'),
       duration: Duration(seconds: 2),
     ),
   );
@@ -360,7 +360,7 @@ class _ChannelGridView extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                        'Greska pri ucitavanju kanala:\n${snap.error}',
+                        'Greška pri učitavanju kanala:\n${snap.error}',
                         textAlign: TextAlign.center),
                   ),
                 ),
@@ -442,7 +442,7 @@ class _ChannelGridView extends StatelessWidget {
                 if (continueWatching.isNotEmpty)
                   SliverToBoxAdapter(
                     child: EpisodesRail(
-                      eyebrow: 'Nastavi slusati',
+                      eyebrow: 'Nastavi slušati',
                       isMobile: isMobile,
                       cards: continueWatching
                           .map((wp) => EpisodeRailCard(
@@ -605,7 +605,7 @@ class _HomeHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Ucitavam ${cacheProgress!.$1}/${cacheProgress!.$2} kanala...',
+                    'Učitavam ${cacheProgress!.$1}/${cacheProgress!.$2} kanala…',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -758,7 +758,7 @@ class _SortDropdown extends StatelessWidget {
               Icon(Icons.shuffle,
                   size: 14, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 10),
-              Text('Promijesaj', style: theme.textTheme.bodyMedium),
+              Text('Promiješaj', style: theme.textTheme.bodyMedium),
             ],
           ),
         ),

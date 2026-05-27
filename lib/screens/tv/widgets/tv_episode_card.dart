@@ -16,6 +16,8 @@ class TvEpisodeCard extends StatelessWidget {
   final int? magisteriumScore;
   final double? progress; // 0.0–1.0 ako je "Nastavi slušati" rail
   final double width;
+  final FocusNode? focusNode;
+  final bool autofocus;
   final VoidCallback onTap;
 
   const TvEpisodeCard({
@@ -26,6 +28,8 @@ class TvEpisodeCard extends StatelessWidget {
     this.magisteriumScore,
     this.progress,
     required this.width,
+    this.focusNode,
+    this.autofocus = false,
     required this.onTap,
   });
 
@@ -35,6 +39,8 @@ class TvEpisodeCard extends StatelessWidget {
     final thumbHeight = width * 9 / 16;
 
     return TvFocusable(
+      focusNode: focusNode,
+      autofocus: autofocus,
       onActivate: onTap,
       builder: (context, focused) => SizedBox(
         width: width,
@@ -42,8 +48,7 @@ class TvEpisodeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+            ClipRect(
               child: Stack(
                 children: [
                   Image.network(
@@ -65,15 +70,12 @@ class TvEpisodeCard extends StatelessWidget {
                   ),
                   if (magisteriumScore != null && magisteriumScore! >= 70)
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: 0,
+                      right: 0,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.tertiary,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                        color: theme.colorScheme.tertiary,
                         child: Text(
                           '⭐ $magisteriumScore',
                           style: theme.textTheme.labelSmall?.copyWith(
@@ -98,22 +100,26 @@ class TvEpisodeCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
+            // Maksimalno 3 reda titla — kratki naslovi ostaju 1-2 reda; dugi
+            // se ne odsijecaju. Bez `overflow: ellipsis` jer korisnik zeli
+            // vidjeti cijeli naslov, makar to znacilo da neke kartice budu
+            // visocije (rail height je dimenzioniran za 3-line worst case).
             Text(
               title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleMedium?.copyWith(
+              maxLines: 3,
+              softWrap: true,
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                height: 1.2,
               ),
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 subtitle!,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),

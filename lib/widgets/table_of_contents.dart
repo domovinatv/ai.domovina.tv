@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_article.dart';
+import '../services/episode_language.dart';
 
 class TableOfContents extends StatefulWidget {
   final PodcastArticle article;
@@ -86,7 +87,9 @@ class _TableOfContentsState extends State<TableOfContents> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             alignment: Alignment.centerLeft,
             child: Text(
-              'Sadržaj',
+              EpisodeLanguageScope.of(context) == EpisodeLanguage.en
+                  ? 'Contents'
+                  : 'Sadržaj',
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurfaceVariant,
@@ -151,6 +154,8 @@ class _IterationGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = EpisodeLanguageScope.of(context);
+    final themeText = pickLang(lang, iteration.theme, iteration.themeEn);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,7 +188,7 @@ class _IterationGroup extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    iteration.theme,
+                    themeText,
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSurface,
@@ -209,7 +214,7 @@ class _IterationGroup extends StatelessWidget {
             return _SectionItem(
               key: itemKeys[ts],
               timestamp: ts,
-              subtitle: sec.subtitle,
+              subtitle: pickLang(lang, sec.subtitle, sec.subtitleEn),
               isPlaying: ts == activeTimestamp,
               isScrolled: ts == scrollTimestamp && ts != activeTimestamp,
               onTap: () => onSectionTap(ts),

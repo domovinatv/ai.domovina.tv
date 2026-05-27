@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- v21+ varijanta — drzati u sync s /drawable/launch_background.xml. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <item android:drawable="@color/splash_bg" />
+    <item
+        android:width="180dp"
+        android:height="180dp"
+        android:gravity="top|center_horizontal"
+        android:top="40dp"
+        android:drawable="@drawable/splash_logo" />
+    <item
+        android:width="900dp"
+        android:height="280dp"
+        android:gravity="bottom|center_horizontal"
+        android:bottom="20dp"
+        android:drawable="@drawable/splash_tagline_1" />
 </layer-list>

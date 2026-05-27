@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+<!-- Native Android splash drawable. Static.
+     Sadrzaj: Croatian navy bg + DOMOVINA.ai logo (gornja trecina) +
+     Matej 10,26-28 citat (donja trecina).
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+     Vazno: ovo SE NE moze runtime-rotirati na Android <12 — vidi
+     docs/splash-bible-citations.md, sekcija "Tehnicka arhitektura". -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_bg" />
+    <item
+        android:width="180dp"
+        android:height="180dp"
+        android:gravity="top|center_horizontal"
+        android:top="40dp"
+        android:drawable="@drawable/splash_logo" />
+    <item
+        android:width="900dp"
+        android:height="280dp"
+        android:gravity="bottom|center_horizontal"
+        android:bottom="20dp"
+        android:drawable="@drawable/splash_tagline_1" />
 </layer-list>

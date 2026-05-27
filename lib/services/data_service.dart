@@ -80,6 +80,19 @@ class DataService {
         jsonDecode(response.body) as Map<String, dynamic>);
   }
 
+  /// EN-overlay verzija summary.json — sadrzi HR polja + dodana `_en` polja.
+  /// Vraca null ako prijevod za ovaj video jos nije producran (404).
+  Future<PodcastSummary?> loadSummaryEn() async {
+    final url = CdnConfig.summaryEnUrl(youtubeId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return PodcastSummary.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   /// Outline — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
   Future<PodcastOutline?> loadOutline() async {
     final url = CdnConfig.outlineUrl(youtubeId);
@@ -104,6 +117,18 @@ class DataService {
         jsonDecode(response.body) as Map<String, dynamic>);
   }
 
+  /// EN-overlay verzija article.json — vraca null ako prijevod ne postoji.
+  Future<PodcastArticle?> loadArticleEn() async {
+    final url = CdnConfig.articleEnUrl(youtubeId);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $url');
+    }
+    return PodcastArticle.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   /// Magisterium teološko obogaćivanje — opcionalno (nije obavezan asset).
   Future<MagisteriumData?> loadMagisterium() async {
     try {
@@ -114,10 +139,30 @@ class DataService {
     }
   }
 
+  /// EN-overlay verzija article.magisterium.json — opcionalno.
+  Future<MagisteriumData?> loadMagisteriumEn() async {
+    try {
+      final raw = await _fetch(CdnConfig.magisteriumEnUrl(youtubeId));
+      return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Magisterium batch varijanta — opcionalno.
   Future<MagisteriumData?> loadMagisteriumBatch() async {
     try {
       final raw = await _fetch(CdnConfig.magisteriumBatchUrl(youtubeId));
+      return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// EN-overlay verzija article.magisterium_batch.json — opcionalno.
+  Future<MagisteriumData?> loadMagisteriumBatchEn() async {
+    try {
+      final raw = await _fetch(CdnConfig.magisteriumBatchEnUrl(youtubeId));
       return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       return null;
@@ -148,6 +193,17 @@ class DataService {
   Future<MagisteriumFullV2Data?> loadMagisteriumFullV2() async {
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullV2Url(youtubeId));
+      return MagisteriumFullV2Data.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// EN-overlay verzija article.magisterium_full_v2.json — opcionalno.
+  Future<MagisteriumFullV2Data?> loadMagisteriumFullV2En() async {
+    try {
+      final raw = await _fetch(CdnConfig.magisteriumFullV2EnUrl(youtubeId));
       return MagisteriumFullV2Data.fromJson(
           jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
@@ -240,13 +296,18 @@ class EpisodeData {
   final String youtubeId;
   final PodcastInfo info;
   final PodcastSummary? summary;
+  final PodcastSummary? summaryEn;
   final PodcastOutline? outline;
   final PodcastArticle? article;
+  final PodcastArticle? articleEn;
   final MagisteriumData? magisterium;
+  final MagisteriumData? magisteriumEn;
   final MagisteriumData? magisteriumBatch;
+  final MagisteriumData? magisteriumBatchEn;
   final MagisteriumFullData? magisteriumFull;
   final String? magisteriumFullPrompt;
   final MagisteriumFullV2Data? magisteriumFullV2;
+  final MagisteriumFullV2Data? magisteriumFullV2En;
   final String? magisteriumFullV2Prompt;
   final SpeakerTimeline? speakerTimeline;
   final String videoUri;
@@ -255,13 +316,18 @@ class EpisodeData {
     required this.youtubeId,
     required this.info,
     this.summary,
+    this.summaryEn,
     this.outline,
     this.article,
+    this.articleEn,
     this.magisterium,
+    this.magisteriumEn,
     this.magisteriumBatch,
+    this.magisteriumBatchEn,
     this.magisteriumFull,
     this.magisteriumFullPrompt,
     this.magisteriumFullV2,
+    this.magisteriumFullV2En,
     this.magisteriumFullV2Prompt,
     this.speakerTimeline,
     required this.videoUri,
@@ -271,6 +337,24 @@ class EpisodeData {
   /// samo player + basic info i opcionalno YouTube chapters iz info.json.
   bool get hasAiContent => article != null;
 
+  /// True kad za ovaj video postoji EN prijevod na CDN-u. Trigger za toggle UI.
+  /// Article je core artifact — bez njega nema sto prevodi. Summary je nice-to-have
+  /// ali ne kriticno (worst case summary section pokazuje HR).
+  bool get hasTranslationEn => articleEn != null;
+
+  /// Vraca summary varijantu za dani jezik. EN je superset (sadrzi i HR polja),
+  /// pa kad postoji koristi se i za HR-only fields. Kad EN ne postoji, fallback
+  /// na HR summary.
+  PodcastSummary? summaryFor(bool wantEn) {
+    if (wantEn && summaryEn != null) return summaryEn;
+    return summary;
+  }
+
+  PodcastArticle? articleFor(bool wantEn) {
+    if (wantEn && articleEn != null) return articleEn;
+    return article;
+  }
+
   /// Helper za naslov: preferira HR summary, fallback na YouTube info.title.
   String get displayTitle {
     final hr = summary?.summary.titleHr;
@@ -279,31 +363,58 @@ class EpisodeData {
   }
 
   /// All available Magisterium variants as (label, data) pairs.
-  List<(String, MagisteriumData)> get magisteriumVariants {
+  /// [wantEn] swap-a u EN-superset verziju ako postoji prijevod.
+  List<(String, MagisteriumData)> magisteriumVariantsFor({bool wantEn = false}) {
+    final mag = wantEn ? (magisteriumEn ?? magisterium) : magisterium;
+    final magBatch =
+        wantEn ? (magisteriumBatchEn ?? magisteriumBatch) : magisteriumBatch;
     return [
-      if (magisterium != null) ('Po sekciji', magisterium!),
-      if (magisteriumBatch != null) ('Po bloku', magisteriumBatch!),
+      if (mag != null) ('Po sekciji', mag),
+      if (magBatch != null) ('Po bloku', magBatch),
     ];
   }
 
+  /// Backwards-compatible getter (HR only). Postojeci pozivi ne moraju znati za jezik.
+  List<(String, MagisteriumData)> get magisteriumVariants =>
+      magisteriumVariantsFor(wantEn: false);
+
   /// Preferred (first available) Magisterium data for inline enrichment.
-  MagisteriumData? get magisteriumPrimary =>
-      magisteriumBatch ?? magisterium;
+  /// [wantEn] swap-a u EN-superset verziju (sadrzi HR + _en polja) ako postoji.
+  MagisteriumData? magisteriumPrimaryFor({bool wantEn = false}) {
+    if (wantEn) {
+      return (magisteriumBatchEn ?? magisteriumBatch) ??
+          (magisteriumEn ?? magisterium);
+    }
+    return magisteriumBatch ?? magisterium;
+  }
+
+  MagisteriumData? get magisteriumPrimary => magisteriumPrimaryFor();
+
+  MagisteriumFullV2Data? magisteriumFullV2For({bool wantEn = false}) {
+    if (wantEn && magisteriumFullV2En != null) return magisteriumFullV2En;
+    return magisteriumFullV2;
+  }
 
   static Future<EpisodeData> load({required String youtubeId}) async {
     final svc = DataService(youtubeId: youtubeId);
     final results = await Future.wait([
-      svc.loadInfo(),           // 0 — required (VideoNotFoundException ako 404)
-      svc.loadSummary(),        // 1 — nullable (404 → null)
-      svc.loadOutline(),        // 2 — nullable
-      svc.loadArticle(),        // 3 — nullable
-      svc.loadMagisterium(),    // 4
-      svc.loadMagisteriumBatch(), // 5
-      svc.loadSpeakerTimeline(),  // 6
-      svc.loadMagisteriumFull(),  // 7
-      svc.loadMagisteriumFullPrompt(), // 8
-      svc.loadMagisteriumFullV2(),     // 9
-      svc.loadMagisteriumFullV2Prompt(), // 10
+      svc.loadInfo(),                   // 0 — required (VideoNotFoundException ako 404)
+      svc.loadSummary(),                // 1 — nullable (404 → null)
+      svc.loadOutline(),                // 2 — nullable
+      svc.loadArticle(),                // 3 — nullable
+      svc.loadMagisterium(),            // 4
+      svc.loadMagisteriumBatch(),       // 5
+      svc.loadSpeakerTimeline(),        // 6
+      svc.loadMagisteriumFull(),        // 7
+      svc.loadMagisteriumFullPrompt(),  // 8
+      svc.loadMagisteriumFullV2(),      // 9
+      svc.loadMagisteriumFullV2Prompt(),// 10
+      // EN overlays — 404 → null kad prijevod nije producran.
+      svc.loadSummaryEn(),              // 11
+      svc.loadArticleEn(),              // 12
+      svc.loadMagisteriumEn(),          // 13
+      svc.loadMagisteriumBatchEn(),     // 14
+      svc.loadMagisteriumFullV2En(),    // 15
     ]);
     return EpisodeData(
       youtubeId: youtubeId,
@@ -318,6 +429,11 @@ class EpisodeData {
       magisteriumFullPrompt: results[8] as String?,
       magisteriumFullV2: results[9] as MagisteriumFullV2Data?,
       magisteriumFullV2Prompt: results[10] as String?,
+      summaryEn: results[11] as PodcastSummary?,
+      articleEn: results[12] as PodcastArticle?,
+      magisteriumEn: results[13] as MagisteriumData?,
+      magisteriumBatchEn: results[14] as MagisteriumData?,
+      magisteriumFullV2En: results[15] as MagisteriumFullV2Data?,
       videoUri: svc.resolveVideoUri(),
     );
   }
@@ -372,6 +488,17 @@ class EpisodeData {
     final magV2PromptF = trackOptional(
         'Magisterium v2 prompt', svc.loadMagisteriumFullV2Prompt());
     final srtF = trackOptional('Transkript', svc.loadSpeakerTimeline());
+    // EN overlays — kreni paralelno; 404 → null kad prijevod nije producran.
+    final summaryEnF =
+        trackOptional('Sažetak (EN)', svc.loadSummaryEn());
+    final articleEnF =
+        trackOptional('Članak (EN)', svc.loadArticleEn());
+    final magEnF =
+        trackOptional('Magisterium (EN)', svc.loadMagisteriumEn());
+    final magBatchEnF = trackOptional(
+        'Magisterium batch (EN)', svc.loadMagisteriumBatchEn());
+    final magFullV2EnF = trackOptional(
+        'Magisterium v2 (EN)', svc.loadMagisteriumFullV2En());
 
     // Await all (required ones may throw)
     final info = await infoF;
@@ -385,18 +512,28 @@ class EpisodeData {
     final magFullV2 = await magFullV2F;
     final magV2Prompt = await magV2PromptF;
     final srt = await srtF;
+    final summaryEn = await summaryEnF;
+    final articleEn = await articleEnF;
+    final magEn = await magEnF;
+    final magBatchEn = await magBatchEnF;
+    final magFullV2En = await magFullV2EnF;
 
     return EpisodeData(
       youtubeId: youtubeId,
       info: info,
       summary: summary,
+      summaryEn: summaryEn,
       outline: outline,
       article: article,
+      articleEn: articleEn,
       magisterium: mag,
+      magisteriumEn: magEn,
       magisteriumBatch: magBatch,
+      magisteriumBatchEn: magBatchEn,
       magisteriumFull: magFull,
       magisteriumFullPrompt: magPrompt,
       magisteriumFullV2: magFullV2,
+      magisteriumFullV2En: magFullV2En,
       magisteriumFullV2Prompt: magV2Prompt,
       speakerTimeline: srt,
       videoUri: svc.resolveVideoUri(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_summary.dart';
+import '../services/episode_language.dart';
 
 class SummarySection extends StatelessWidget {
   final PodcastSummary summary;
@@ -10,6 +11,13 @@ class SummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final s = summary.summary;
+    final lang = EpisodeLanguageScope.of(context);
+    final isEn = lang == EpisodeLanguage.en;
+
+    final l = isEn ? _Labels.en : _Labels.hr;
+    final abstractText = pickLang(lang, s.abstractHr, s.abstractEn);
+    final keyTopics = pickLangList(lang, s.keyTopics, s.keyTopicsEn);
+    final keyPoints = pickLangList(lang, s.keyPoints, s.keyPointsEn);
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -17,18 +25,18 @@ class SummarySection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Abstract
-          _SectionTitle(title: 'Sažetak'),
+          _SectionTitle(title: l.summary),
           const SizedBox(height: 8),
-          Text(s.abstractHr, style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
+          Text(abstractText, style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
           const SizedBox(height: 24),
 
           // Key Topics
-          _SectionTitle(title: 'Ključne teme'),
+          _SectionTitle(title: l.keyTopics),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: s.keyTopics
+            children: keyTopics
                 .map((t) => Chip(
                       label: Text(t, style: theme.textTheme.labelSmall),
                       side: BorderSide(color: theme.colorScheme.outline),
@@ -40,13 +48,13 @@ class SummarySection extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Speakers
-          _SectionTitle(title: 'Govornici'),
+          _SectionTitle(title: l.speakers),
           const SizedBox(height: 10),
           ...s.speakers.map((sp) {
             // Anonymous govornik (npr. host se ne predstavi) → suggested_name
             // == role. Tada prikazi samo capitalized roleLabel umjesto duplog.
             final name = sp.displayName;
-            final roleLabel = sp.roleLabel;
+            final roleLabel = isEn ? sp.roleLabelEn() : sp.roleLabel;
             final primary = name ?? roleLabel;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -85,9 +93,9 @@ class SummarySection extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Key Points
-          _SectionTitle(title: 'Ključni zaključci'),
+          _SectionTitle(title: l.keyPoints),
           const SizedBox(height: 10),
-          ...s.keyPoints.asMap().entries.map((e) => Padding(
+          ...keyPoints.asMap().entries.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,4 +147,34 @@ class _SectionTitle extends StatelessWidget {
           ),
     );
   }
+}
+
+/// UI label-i za section headere — interno (ne ide kroz CDN translation jer
+/// su to nase Material chrome label-i, ne LLM output).
+class _Labels {
+  final String summary;
+  final String keyTopics;
+  final String speakers;
+  final String keyPoints;
+
+  const _Labels({
+    required this.summary,
+    required this.keyTopics,
+    required this.speakers,
+    required this.keyPoints,
+  });
+
+  static const hr = _Labels(
+    summary: 'Sažetak',
+    keyTopics: 'Ključne teme',
+    speakers: 'Govornici',
+    keyPoints: 'Ključni zaključci',
+  );
+
+  static const en = _Labels(
+    summary: 'Summary',
+    keyTopics: 'Key topics',
+    speakers: 'Speakers',
+    keyPoints: 'Key takeaways',
+  );
 }

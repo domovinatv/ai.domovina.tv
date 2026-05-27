@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/magisterium_data.dart';
+import '../services/episode_language.dart';
 
 /// Overall Magisterium score card with iteration breakdown.
 class MagisteriumSection extends StatelessWidget {
@@ -30,6 +31,16 @@ class MagisteriumSection extends StatelessWidget {
     final theme = Theme.of(context);
     final score = magisterium.overallScore;
     final color = scoreColor(score);
+    final lang = EpisodeLanguageScope.of(context);
+    final isEn = lang == EpisodeLanguage.en;
+    final interpretation = pickLang(
+      lang,
+      magisterium.scoreInterpretation ?? scoreLabel(score),
+      magisterium.scoreInterpretationEn,
+    );
+    final subtitleText = isEn
+        ? 'Alignment with Catholic teaching and Sacred Scripture'
+        : 'Uskladenost s katolickim naukom i Svetim pismom';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
@@ -85,7 +96,7 @@ class MagisteriumSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        magisterium.scoreInterpretation ?? scoreLabel(score),
+                        interpretation,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: color,
@@ -93,7 +104,7 @@ class MagisteriumSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Uskladenost s katolickim naukom i Svetim pismom',
+                        subtitleText,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -101,7 +112,9 @@ class MagisteriumSection extends StatelessWidget {
                       if (magisterium.totalConcerns > 0) ...[
                         const SizedBox(height: 4),
                         Text(
-                          '${magisterium.totalConcerns} teoloskih zabrinutosti',
+                          isEn
+                              ? '${magisterium.totalConcerns} theological concerns'
+                              : '${magisterium.totalConcerns} teoloskih zabrinutosti',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: const Color(0xFFEF6C00),
                             fontWeight: FontWeight.w500,
@@ -143,7 +156,7 @@ class MagisteriumSection extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          b.theme,
+                          pickLang(lang, b.theme, b.themeEn),
                           style: theme.textTheme.bodySmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
