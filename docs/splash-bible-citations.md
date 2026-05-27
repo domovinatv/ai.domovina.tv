@@ -108,6 +108,23 @@ runtime setTheme/setBackground nikad ne dobije vizualni efekt.
 omogućio i na nižim verzijama, ali bi zahtijevao značajan refactor manifest
 theme strukture. Trenutno odluka: ne uvodimo dodatnu dependency.
 
+#### Retest verifikacija (2026-05-27)
+
+Originalna istraga oslanjala se na ADB `screencap` koji je vraćao crni PNG
+i za splash i za launcher home screen. Nakon što je korisnik uključio
+Philips TV (HDMI sink), screencap je proradio (Amlogic Surface\-Flinger
+ne compose-a framebuffer bez aktivnog sink-a).
+
+Pristup #1 (setTheme prije super.onCreate) ponovno je testiran s
+hardcoded targetom `LaunchTheme_7` i tagline_7 PNG-om. Logcat potvrdio
+da je `setTheme(LaunchTheme_7)` izvršen prije super.onCreate, ali
+screencap je svejedno prikazao **default tagline_1**. Md5 hash identičan
+s prijašnjim screencap-ovima koji nemaju setTheme — zero visual impact.
+
+Verdict iz originalne istrage je **potvrđen pravim screencap-om**.
+Starting window se kompozit-a iz manifesta i ne reagira na runtime
+override. Sva 5 pristupa dijele isti fundamentalni problem.
+
 ### Static native implementacija
 
 ```
