@@ -236,3 +236,237 @@ HIT ratio: 95% images/video, 90% per-video JSON, 99% return useri (SW).
 - [R2 Public Buckets & Custom Domains](https://developers.cloudflare.com/r2/buckets/public-buckets/)
 - [CF Default Cache Behavior](https://developers.cloudflare.com/cache/concepts/default-cache-behavior/)
 - [Cache-Control & CDN-Cache-Control](https://developers.cloudflare.com/cache/concepts/cache-control/)
+
+---
+
+# Dio II — Arhitektonska analiza: zašto je R2+CDN za ovaj use case (skoro) nedostižan
+
+> Materijal za budući blog post o **content-addressable static-first
+> arhitekturi** i tome zašto je za content-distribution aplikacije
+> kombinacija immutable-static-na-CDN + DB-samo-za-mutable-user-state
+> najskalabilniji moguci model 2026. godine.
+
+## 11. Pitanje
+
+Je li R2 (objektni storage) + Cloudflare Edge cache stvarno optimalan
+izbor za serviranje AI-enriched podataka po video epizodi, ili bi
+"normalna" arhitektura (DB + HTTP API) bila bolja?
+
+Intuicija koja je vodila odluku: **svaka DB+API arhitektura uvodi
+single-point-of-failure i probleme s vertikalnim/horizontalnim
+skaliranjem. Statične konfiguracije se mogu jednom definirati i
+distribuirati svijetu bez infrastrukturnih problema.**
+
+Ova intuicija je točna — ali zaslužuje razložiti zašto, i gdje su
+granice tog modela.
+
+## 12. Zašto je R2+CDN tu strogo dominantan
+
+Per-episode podaci imaju 4 svojstva koja čine static-files-on-CDN
+**strogo dominantnim** rješenjem:
+
+### 12.1 Content-addressed i immutable
+
+URL je deterministička funkcija YouTube ID-a. `info.json` za
+`dQw4w9WgXcQ` je uvijek `info.json` za `dQw4w9WgXcQ`. Nema "show me
+latest version of X" semantike — kad pipeline jednom proizvede fajl,
+ne mijenja se.
+
+To je idealan slučaj za HTTP caching jer **cache invalidacija je
+trivijalna (= nikad ne invalidira)**. Cache invalidacija je jedan od
+dva najteža problema u računarstvu — kad ga jednostavno nemaš,
+arhitektura postaje radikalno jednostavnija.
+
+### 12.2 Read-heavy, write-rare
+
+Pipeline napiše fajl jednom (1 Class A op), čita ga potencijalno
+milijunima puta (0 Class A; eventualno N Class B prije nego edge
+cachira). Asimetrija writes:reads je realno 1:10⁶+.
+
+DB+API ima **konstantne CPU + memory + connection troškove po readu**,
+čak i kad je u potpunosti cached u Postgres shared_buffers. CDN edge
+HIT je literalno 0 CPU na origin strani.
+
+### 12.3 Bez per-user customizacije
+
+Article za jednu epizodu jednak je za sve korisnike. Nema
+personalizacije, RLS provjera, A/B varijanti. Znači **jedan cached
+response u edge POP-u opslužuje sve usere u toj geografiji.**
+
+Multi-tenant DB API ovo **ne može** jer mora barem provjeriti auth
+token. Čak i s aggressive query caching-om, svaki request konzumira
+backend resurse.
+
+### 12.4 Geo-distribuirana publika
+
+HR + BIH + dijaspora. Cloudflare ima ~30 POP-ova u 1000km radijusu od
+većine HR usera. Edge HIT u Zagrebu je <20ms.
+
+Bilo koja DB+API arhitektura ima single-region origin (npr. Coolify
+Oracle VM u jednoj zoni = ~50-200ms za usere izvan te zone). Multi-region
+DB je dramatično složeniji (replikacija, conflict resolution, eventual
+consistency tradeoffi).
+
+## 13. Što DB+API daje, a CDN ne može
+
+Trenutna arhitektura već radi ovaj split ispravno — Supabase postoji za
+stvari gdje DB pobjeđuje:
+
+| Property | Bolje na CDN | Bolje u DB |
+|---|---|---|
+| Mutable per-user state (favorites, watch_progress, onboarding) | — | ✅ Supabase |
+| Real-time updates (live counts, presence) | — | ✅ Postgres LISTEN/NOTIFY |
+| Cross-document upiti ("svi videi koji spominju X") | — | ✅ SQL/full-text |
+| Granularna autorizacija (RLS, per-row policies) | — | ✅ Supabase RLS |
+| Agregacije (top trending, creator stats) | teško | ✅ SQL aggregate |
+| Atomic mutations (inkrement broja gledanja, voting) | nemoguće | ✅ ACID |
+| Static read-only sadržaj | ✅ R2+CDN | overkill |
+| Velike binarne datoteke (video, slike) | ✅ R2 | catastrophic |
+| Search-driven discovery koji počinje s ID-em | ✅ CDN | OK ali skuplje |
+| Search bez ID-a ("episodes about X") | nemoguće | ✅ DB + pgvector |
+
+**Trenutna arhitektura je konceptualno čista:**
+
+- **CDN sloj** = "the catalogue" (immutable AI-enriched podaci po video ID-u)
+- **DB sloj** = "the user layer" (sve što se mijenja per-user / per-time)
+
+To je textbook **JAMstack** / **content-addressable static-first**
+pattern. Netflix katalog metadata, Spotify album metadata, Wikipedia
+static dumps, npm package tarballs — svi imaju istu strukturu.
+
+## 14. Granice — gdje bi morao prebaciti dio u DB
+
+Tri scenarija u kojima CDN-only model puca:
+
+### 14.1 Search/discovery koji ne počinje s YT ID-em
+
+"Pronađi sve epizode koje spominju ‘Bartulović’" — to **ne možeš** iz
+CDN-a bez fetchanja svih `article.json` fajlova.
+
+- **Opcija A (jeftino, do nekih 10k epizoda):** generiraj static
+  `search-index.json` (~5-50MB) jednom kad pipeline završi, hostaj na
+  CDN, client-side full-text. Skalira do ~10k epizoda × ~5KB indexirani
+  podataka = 50MB index.
+- **Opcija B (kad A pukne):** Supabase `pg_trgm` ili `pgvector`
+  embedding tablica + RPC.
+
+MCP toolset `count_mentions` već implicira postojeci search backend —
+to **mora** biti DB jer CDN model to ne podržava elegantno.
+
+### 14.2 Per-user feed / preporuke
+
+"Pokaži useru epizode preporučene baš za njega" → ne možeš servirati
+jedan cached response svima.
+
+Rješenje je hibrid: **personalisation API** koji vraća **listu ID-eva**,
+client onda fetcha pune podatke iz CDN-a po ID-u. API ostaje lightweight
+(low ops), CDN handla težak read tonnage. Ovo je arhitektonski najljepši
+pattern — **DB radi rangiranje, CDN radi serviranje**.
+
+### 14.3 Stvarni real-time
+
+Live chat, live broj gledatelja, push notifikacije. CDN nije rješenje
+— SSE/WebSocket s backenda.
+
+## 15. SPOF analiza — gdje je rizik manji
+
+DB+API arhitektura ima 4 SPOF-a koje R2+CDN nema:
+
+1. **Connection pool** (PgBouncer/Supavisor limit, najčešće 500–2000
+   konekcija). Viral moment = pool exhaustion. CDN nema connection pool
+   — TCP terminira na edge-u, milijuni konkurentnih konekcija su
+   normalan throughput.
+
+2. **Origin DB CPU/RAM** — DDoS ili viral moment zatrpa origin. CDN
+   edge absorbira spike-ove (Reddit hug of death = ne primijetiš).
+
+3. **Single region latency** — Oracle VM u jednoj zoni = svi useri
+   izvan te zone pate. CDN je 300+ POP-ova po defaultu.
+
+4. **Migracije, restartovi, deploy downtime** — DB zahtijeva maintenance
+   prozore. R2 objekt ima 11-nine durability bez ikakvog maintenance-a.
+
+Jedini SPOF kod CDN+R2 modela: **Cloudflare sam**. To je realan, ali
+distribuiran rizik — kad CF padne (zadnji veliki outage ~1h u 2024)
+padne i pol interneta, što je drugačija (kratko-trajna) vrsta problema
+od "moj single VM se srušio".
+
+## 16. Konkurentske opcije
+
+Provjera tržišta (svibanj 2026):
+
+| Kandidat | Egress | Read ops cijena | Edge POPs | Verdict |
+|---|---|---|---|---|
+| **R2 + CF CDN** | $0 | $0.36/1M | ~310 | ✅ tvoj choice |
+| AWS S3 + CloudFront | $0.085/GB egress + S3 ops | $0.40/1M | ~600 | egress te ubije |
+| Backblaze B2 + bunny.net | $0.01/GB egress | $0 (bunny) | ~120 | egress nije free |
+| GCS + Cloud CDN | $0.08/GB egress | $0.40/10k (!) | ~200 | catastrophic ops cost |
+| Bunny Storage + Bunny CDN | $0.01/GB egress | $0 | ~120 | OK za EU-only |
+| Vlastiti nginx + Hetzner | bandwidth limited | varies | 1 | gubitak svih CDN benefita |
+
+**R2+CF je jedini koji ima $0 egress + $0 edge cache HIT + free tier
+10M reads/mj.** Za HR/EU audience, jedina realna alternativa je Bunny
+(jeftiniji ops, ali plaća egress).
+
+## 17. Praktičan zaključak (i naslov budućeg blog posta)
+
+**"Immutable static content na CDN, mutable user state u DB" je literalno
+najbolja praksa 2026. godine za content-distribution aplikacije.**
+
+Razlog zašto je ovaj pattern superioran:
+
+1. **Cache invalidacija nestaje kao problem** kad URL je
+   content-addressed i sadržaj immutable.
+2. **Skaliranje nestaje kao problem** kad edge HIT je free i bez
+   origin involvement.
+3. **Multi-region nestaje kao problem** kad CDN je default geo-distribuiran.
+4. **SPOF se distribuira** s tvog origina na CF, što je inherentno
+   distribuirano i izdržava DDoS.
+5. **Cijena skalira s broj-novih-objekata, ne s broj-readova** — što
+   je obrnuto od svih klasičnih cloud arhitektura.
+
+Trenutna domovina.ai arhitektura već radi ovaj split ispravno. Jedino
+što treba popraviti je **postaviti edge cache da konačno radi** (vidi
+sekciju A–G iznad) — trenutno se plaća "DB+API" cijena u Class B
+operacijama dok se ima "CDN" arhitektura, što je worst-of-both-worlds.
+
+**Future-additive promjene** (ne zamjenjuju trenutni model):
+
+- **Search index** kao zaseban static fajl (`search-index.json` na
+  CDN-u) ili DB tablica — ovisno o veličini kataloga.
+- **Recommendation API** kad/ako dođe personalizacija — minimalan
+  endpoint koji vraća listu ID-eva, sav težak read i dalje ide na CDN.
+
+## 18. Blog post outline (za kasnije)
+
+Naslov kandidati:
+- "Zašto je 10MB statičnih JSON fajlova skalabilnije od bilo koje API arhitekture"
+- "Content-addressable static-first: arhitektura koja ne pada"
+- "$0 do 30k DAU: kako smo izgradili domovina.ai na R2 i Cloudflare edge-u"
+
+Glavne teze:
+1. Cache invalidation je riješen problem kad URL je content-hash.
+2. Edge je nova "database" za read-only sadržaj.
+3. SPOF-ove premiještaš s vlastite infrastrukture na inherentno
+   distribuirane CF/AWS edge mreže.
+4. DB je sloj **samo za mutable user state**, ne za content delivery.
+5. Razdvajanje "catalogue" (CDN) od "user layer" (DB) je tekstbook
+   JAMstack — ali za AI-enriched dinamičan sadržaj, ne samo za statične
+   site-ove.
+6. Anti-pattern: koristiti DB+API za read-only content jer "lakše je
+   za query-ati" — zapravo dobijaš sve troškove DB-a + ništa od benefita
+   edge-a.
+
+Materijali za blog (iz ovog repoa):
+- `lib/services/cdn_config.dart` — kompletna mapa file layouta
+- `lib/services/data_service.dart` — fetch logika
+- `web/_worker.js` — OG injection pattern (single Worker fetch s
+  `cacheEverything: true`)
+- Sekcije 5 i 7 ovog dokumenta — konkretne brojke troška po DAU
+- Memory `cdn_file_layout.md` — file taksonomija
+
+Vizuali:
+- Tablica iz sekcije 13 (CDN vs DB tradeoffs)
+- Graf "trošak / DAU" prije i poslije Cache Rules
+- Diagram "request flow": client → CF edge HIT (95%) → R2 (5%)
+- Tablica iz sekcije 16 (konkurentske opcije)
