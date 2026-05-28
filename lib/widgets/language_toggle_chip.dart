@@ -10,7 +10,7 @@ class LanguageToggleChip extends StatelessWidget {
   final EpisodeLanguage current;
   final ValueChanged<EpisodeLanguage> onChanged;
 
-  /// Kompaktna varijanta (samo flag emoji, bez teksta) za AppBar action slot.
+  /// Kompaktna varijanta (manji padding/font) za AppBar action slot.
   final bool compact;
 
   const LanguageToggleChip({
@@ -45,7 +45,6 @@ class LanguageToggleChip extends StatelessWidget {
             children: [
               _Segment(
                 label: 'HR',
-                flag: '🇭🇷',
                 isSelected: current == EpisodeLanguage.hr,
                 semanticLabel: 'Prebaci na hrvatski',
                 compact: compact,
@@ -57,7 +56,6 @@ class LanguageToggleChip extends StatelessWidget {
               ),
               _Segment(
                 label: 'EN',
-                flag: '🇬🇧',
                 isSelected: current == EpisodeLanguage.en,
                 semanticLabel: 'Switch to English',
                 compact: compact,
@@ -77,7 +75,6 @@ class LanguageToggleChip extends StatelessWidget {
 
 class _Segment extends StatelessWidget {
   final String label;
-  final String flag;
   final bool isSelected;
   final String semanticLabel;
   final bool compact;
@@ -85,7 +82,6 @@ class _Segment extends StatelessWidget {
 
   const _Segment({
     required this.label,
-    required this.flag,
     required this.isSelected,
     required this.semanticLabel,
     required this.compact,
@@ -98,7 +94,7 @@ class _Segment extends StatelessWidget {
     final bg = isSelected ? theme.colorScheme.primary : Colors.transparent;
     final fg = isSelected
         ? theme.colorScheme.onPrimary
-        : theme.colorScheme.onSurface.withAlpha(180);
+        : theme.colorScheme.onSurface.withAlpha(160);
 
     return Semantics(
       selected: isSelected,
@@ -112,28 +108,21 @@ class _Segment extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 8 : 12,
+              horizontal: compact ? 10 : 14,
               vertical: compact ? 4 : 6,
             ),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(flag, style: const TextStyle(fontSize: 14)),
-                if (!compact) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: fg,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
+            child: Text(
+              label,
+              style: (compact ? theme.textTheme.labelSmall : theme.textTheme.labelMedium)
+                  ?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
