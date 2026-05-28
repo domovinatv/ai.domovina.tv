@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../main.dart' show log;
+import '../../onboarding/ui/auth_ui.dart';
 import '../../services/auth_service.dart';
 
 class AuthCallbackScreen extends StatefulWidget {
@@ -43,14 +44,33 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final theme = Theme.of(context);
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Prijava u tijeku...'),
+            const DomovinaLogoMark(size: 72),
+            const SizedBox(height: 18),
+            const DomovinaWordmark(fontSize: 22),
+            const SizedBox(height: 14),
+            const TricolorAccent(width: 52),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Prijava u tijeku…',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),

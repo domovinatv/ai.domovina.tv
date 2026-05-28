@@ -1,11 +1,12 @@
-/// Shared bottom sheet za sign-in. Pokazuje 4 providera (Passkey first, Google,
-/// Apple, e-mail magic link). U mocku svaki gumb okida AuthService.linkIdentity()
-/// koji prikazuje SnackBar i postavi user kao logged-in.
+/// Premium sign-in bottom sheet. Brandiran (logo + trikolora + editorial
+/// typography); nudi Passkey (preporučeno) + Google/Apple/e-mail magic link,
+/// te "Već imaš passkey? Prijavi se".
 library;
 
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
-
+import 'auth_ui.dart';
 
 enum AuthSheetOrigin { account, moment2, moment3, handoff }
 
@@ -20,8 +21,9 @@ Future<void> showAuthSheet(
     isScrollControlled: true,
     showDragHandle: true,
     backgroundColor: Theme.of(context).colorScheme.surface,
+    barrierColor: Colors.black.withValues(alpha: 0.5),
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     builder: (ctx) => _AuthSheetContent(
       origin: origin,
@@ -45,121 +47,106 @@ class _AuthSheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final headline = headlineOverride ?? _defaultHeadline();
-    final subtitle = subtitleOverride ?? _defaultSubtitle();
+    final cs = theme.colorScheme;
 
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 8,
-          bottom: 20 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              headline,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            _ProviderButton(
-              icon: Icons.fingerprint,
-              label: 'Kreiraj passkey',
-              subtitle: 'Najsigurnije, bez lozinke',
-              accent: theme.colorScheme.primary,
-              isPrimary: true,
-              onTap: () => _doLink(context, AuthProvider.passkey),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(
-                onPressed: () async {
-                  await AuthService.instance.signInWithPasskey(context);
-                  if (context.mounted) Navigator.of(context).pop();
-                },
-                child: Text(
-                  'Već imaš passkey? Prijavi se',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 22,
+            right: 22,
+            top: 4,
+            bottom: 18 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthBrandHeader(
+                  title: headlineOverride ?? _defaultHeadline(),
+                  subtitle: subtitleOverride ?? _defaultSubtitle(),
+                ),
+                const SizedBox(height: 24),
+
+                // Passkey — preporučena metoda.
+                AuthProviderTile(
+                  primary: true,
+                  badge: 'PREPORUČENO',
+                  iconBg: Colors.white.withValues(alpha: 0.16),
+                  iconChild: const Icon(Icons.fingerprint,
+                      color: Colors.white, size: 22),
+                  label: 'Kreiraj passkey',
+                  subtitle: 'Najsigurnije — bez lozinke, uz Face ID / otisak',
+                  onTap: () => _doLink(context, AuthProvider.passkey),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.center,
+                  child: TextButton(
+                    onPressed: () async {
+                      await AuthService.instance.signInWithPasskey(context);
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: cs.primary,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('Već imaš passkey? Prijavi se'),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            _ProviderButton(
-              icon: Icons.account_circle,
-              label: 'Nastavi s Google računom',
-              accent: const Color(0xFFEA4335),
-              onTap: () => _doLink(context, AuthProvider.google),
-            ),
-            const SizedBox(height: 10),
-            _ProviderButton(
-              icon: Icons.apple,
-              label: 'Nastavi s Apple ID',
-              accent: theme.brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
-              onTap: () => _doLink(context, AuthProvider.apple),
-            ),
-            const SizedBox(height: 10),
-            _ProviderButton(
-              icon: Icons.mail_outline,
-              label: 'E-mail magic link',
-              accent: theme.colorScheme.onSurfaceVariant,
-              onTap: () => _doLink(context, AuthProvider.email),
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: theme.colorScheme.primary.withAlpha(40)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tvoj trenutni napredak ostaje sačuvan i povezuje se s računom.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
+
+                const SizedBox(height: 12),
+                const LabeledDivider(),
+                const SizedBox(height: 16),
+
+                AuthProviderTile(
+                  iconBg: const Color(0xFFF1F3F4),
+                  iconChild: const Text(
+                    'G',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 19,
+                      color: Color(0xFF4285F4),
+                      height: 1,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                origin == AuthSheetOrigin.moment2
-                    ? 'Možda kasnije'
-                    : 'Zatvori',
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  label: 'Nastavi s Google računom',
+                  onTap: () => _doLink(context, AuthProvider.google),
                 ),
-              ),
+                const SizedBox(height: 10),
+                AuthProviderTile(
+                  iconBg: const Color(0xFF111111),
+                  iconChild:
+                      const Icon(Icons.apple, color: Colors.white, size: 24),
+                  label: 'Nastavi s Apple ID',
+                  onTap: () => _doLink(context, AuthProvider.apple),
+                ),
+                const SizedBox(height: 10),
+                AuthProviderTile(
+                  iconBg: AppTheme.croBlue.withValues(alpha: 0.10),
+                  iconChild: const Icon(Icons.alternate_email,
+                      color: AppTheme.croBlue, size: 21),
+                  label: 'E-mail magic link',
+                  subtitle: 'Pošaljemo ti link i kod za prijavu',
+                  onTap: () => _doLink(context, AuthProvider.email),
+                ),
+
+                const SizedBox(height: 18),
+                _ReassuranceNote(origin: origin),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    origin == AuthSheetOrigin.moment2 ? 'Možda kasnije' : 'Zatvori',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -167,17 +154,14 @@ class _AuthSheetContent extends StatelessWidget {
 
   String _defaultHeadline() => switch (origin) {
         AuthSheetOrigin.account => 'Prijavi se na DOMOVINA.ai',
-        AuthSheetOrigin.moment2 =>
-          'Spremi napredak na sve uređaje',
-        AuthSheetOrigin.moment3 =>
-          'Spremi favorite u svoj račun',
-        AuthSheetOrigin.handoff =>
-          'Završi prijavu na ovom uređaju',
+        AuthSheetOrigin.moment2 => 'Spremi napredak na sve uređaje',
+        AuthSheetOrigin.moment3 => 'Spremi favorite u svoj račun',
+        AuthSheetOrigin.handoff => 'Završi prijavu na ovom uređaju',
       };
 
   String _defaultSubtitle() => switch (origin) {
         AuthSheetOrigin.account =>
-          'Bez lozinke. Passkey ili tvoj postojeći Google/Apple račun.',
+          'Bez lozinke. Passkey ili tvoj postojeći Google / Apple račun.',
         AuthSheetOrigin.moment2 =>
           'Trenutno tvoja pozicija reprodukcije ostaje samo na ovom uređaju.',
         AuthSheetOrigin.moment3 =>
@@ -187,99 +171,44 @@ class _AuthSheetContent extends StatelessWidget {
       };
 
   Future<void> _doLink(BuildContext context, AuthProvider p) async {
-    // NE popati sheet prije async rada — time bi se context unmountao pa bi
-    // linkIdentity (email/passkey) rano izašao na `context.mounted` guardu i
-    // nikad ne pozvao signInWithOtp / passkey registraciju. Sheet ostaje otvoren
-    // dok traje operacija (email dialog / WebAuthn ide preko njega), pop poslije.
+    // NE popati sheet prije async rada — context bi se unmountao pa bi
+    // linkIdentity rano izašao na `context.mounted` guardu. Sheet ostaje
+    // otvoren tijekom operacije (dialozi/WebAuthn idu preko njega), pop poslije.
     await AuthService.instance.linkIdentity(context, p);
     if (context.mounted) Navigator.of(context).pop();
   }
 }
 
-class _ProviderButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final Color accent;
-  final bool isPrimary;
-  final VoidCallback onTap;
-
-  const _ProviderButton({
-    required this.icon,
-    required this.label,
-    this.subtitle,
-    required this.accent,
-    this.isPrimary = false,
-    required this.onTap,
-  });
+/// Suptilna "papirnata" napomena o privatnosti / čuvanju napretka.
+class _ReassuranceNote extends StatelessWidget {
+  final AuthSheetOrigin origin;
+  const _ReassuranceNote({required this.origin});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bg = isPrimary
-        ? accent.withAlpha(20)
-        : theme.colorScheme.surfaceContainerHighest.withAlpha(120);
-    final border = isPrimary ? accent : theme.colorScheme.outlineVariant;
-
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
+    final cs = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: border, width: isPrimary ? 2 : 1),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: accent, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock_outline, size: 17, color: cs.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Tvoj trenutni napredak ostaje sačuvan i sigurno se povezuje s računom.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface,
+                height: 1.4,
               ),
-              if (isPrimary)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.tertiary,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'PREPORUČENO',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

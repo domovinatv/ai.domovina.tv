@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log, rootScaffoldMessengerKey;
+import '../onboarding/ui/auth_ui.dart';
 import 'favorites_service.dart';
 import 'local_prefs.dart';
 import 'passkey_service.dart';
@@ -372,36 +373,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<String?> _promptForEmail(BuildContext context, String? prefill) async {
-    final controller = TextEditingController(text: prefill ?? '');
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('E-mail za magic link'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
-          decoration: const InputDecoration(
-            hintText: 'ime@primjer.com',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Odustani'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Pošalji'),
-          ),
-        ],
-      ),
+  Future<String?> _promptForEmail(BuildContext context, String? prefill) {
+    return showAuthInputDialog(
+      context,
+      title: 'Tvoj e-mail',
+      message: 'Pošaljemo ti link i 6-znamenkasti kod za prijavu.',
+      hint: 'ime@primjer.com',
+      icon: Icons.alternate_email,
+      keyboardType: TextInputType.emailAddress,
+      confirmLabel: 'Pošalji',
     );
-    return result == null || result.isEmpty ? null : result;
   }
 
   /// Prikaži SnackBar preko GLOBALNOG ScaffoldMessenger key-a (ne preko
@@ -414,46 +395,16 @@ class AuthService extends ChangeNotifier {
   Future<void> _promptForOtpAndVerify(BuildContext context, String email) async {
     final client = _client();
     if (client == null) return;
-    final controller = TextEditingController();
-    final code = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Unesi kod iz e-maila'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Poslali smo 6-znamenkasti kod na $email. '
-              'Upiši ga ovdje — ili samo klikni link u e-mailu.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              maxLength: 6,
-              onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
-              decoration: const InputDecoration(
-                hintText: '123456',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Odustani'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Potvrdi'),
-          ),
-        ],
-      ),
+    final code = await showAuthInputDialog(
+      context,
+      title: 'Unesi kod',
+      message: 'Poslali smo 6-znamenkasti kod na $email. '
+          'Upiši ga ovdje — ili klikni link u e-mailu.',
+      hint: '••••••',
+      icon: Icons.mark_email_read_outlined,
+      keyboardType: TextInputType.number,
+      maxLength: 6,
+      confirmLabel: 'Potvrdi',
     );
     if (code == null || code.isEmpty) return;
     log('AuthService: verifyOTP email=$email');

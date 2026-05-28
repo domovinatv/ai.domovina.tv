@@ -34,63 +34,37 @@ class _AnonymousChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    // Filled navy pill — visok kontrast na cream/dark surface (raniji "Prijava"
+    // u bijelom na transparentnom bio je nevidljiv na svijetloj pozadini).
     return Material(
-      color: Colors.transparent,
+      color: cs.primary,
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
         onTap: () => showAuthSheet(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.colorScheme.primary.withAlpha(80)),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.person_outline,
-                      size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.tertiary,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.colorScheme.surface,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '?',
-                        style: TextStyle(
-                          fontSize: 7,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person_outline,
+                    size: 14, color: Colors.white),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 7),
               Text(
                 'Prijava',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
             ],
