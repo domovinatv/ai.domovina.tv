@@ -10,6 +10,7 @@ import '../screens/legal/terms_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
 import '../screens/tv/tv_channel_screen.dart';
+import '../screens/tv/tv_episode_reader_screen.dart';
 import '../screens/tv/tv_episode_screen.dart';
 import '../screens/tv/tv_home_screen.dart';
 import '../services/tv_mode.dart';
@@ -55,6 +56,29 @@ GoRouter createRouter() {
             // TvEpisodeScreen (vidi tv ruta /en ispod).
             child: TvMode.isTv
                 ? TvEpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  )
+                : EpisodeScreen(
+                    youtubeId: videoId,
+                    startAtSeconds: startAt,
+                  ),
+          );
+        },
+      ),
+      // Android TV reader mode — "Čitaj kao blog" prikaz s PiP videom u
+      // kutu. Samo TV: na desktopu/mobitelu se redirecta na klasični
+      // episode screen (na webu nema D-pad-a, nema smisla).
+      GoRoute(
+        path: '/v/:videoId/read',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          final t = state.uri.queryParameters['t'];
+          final startAt = t != null ? int.tryParse(t) : null;
+          return NoTransitionPage(
+            key: ValueKey('reader-$videoId-${startAt ?? 0}'),
+            child: TvMode.isTv
+                ? TvEpisodeReaderScreen(
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                   )

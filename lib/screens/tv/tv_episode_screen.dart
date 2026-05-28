@@ -11,6 +11,7 @@ import '../../models/podcast_outline.dart';
 import '../../services/cdn_config.dart';
 import '../../services/data_service.dart';
 import '../../services/watch_progress_service.dart';
+import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
 
 /// Faza 4 — TV episode screen.
@@ -24,12 +25,15 @@ import 'widgets/tv_focus.dart';
 ///   Abstract (kompaktan, 4 retka clamp)
 ///   "Poglavlja" rail — focusable cards, OK = seek
 ///
-/// D-pad model (Netflix/YouTube TV konvencija):
+/// D-pad model:
 ///   - OK na playeru = play/pause
-///   - LEFT/RIGHT = seek -10s / +10s
-///   - UP/DOWN izlaze iz playera (default focus traversal → chapter rail)
-///   - MEDIA_PLAY_PAUSE / MEDIA_REWIND / MEDIA_FAST_FORWARD podržani
+///   - ◀▲▶▼ = default focus traversal (UP → toolbar Čitaj/Fullscreen)
+///   - MEDIA_PLAY_PAUSE podržan
 ///   - BACK = `context.go('/')` (vraca na TvHomeScreen)
+///
+/// Seek je NAMJERNO maknut s D-pad arrow keys jer je bio nepredvidljiv —
+/// korisnik bi pokušao navigirati do toolbar gumba i slučajno seek-ao.
+/// Ako seek bude trebao, eksplicitni -10s/+10s gumbi idu u toolbar.
 ///
 /// Reuse: ista `EpisodeData.load` data layer kao `EpisodeScreen`, isti
 /// `WatchProgressService.scheduleSave` resume/save flow. Magisterium panel
@@ -112,6 +116,11 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
   // zauzeti seek-om pa je UP/DOWN jedini razuman put do overlay action-a.
   final FocusNode _fullscreenFocus =
       FocusNode(debugLabel: 'tv-episode-fullscreen-btn');
+  // "Čitaj" gumb — vodi u TvEpisodeReaderScreen ("blog reader" mode). Isti
+  // D-pad pattern kao fullscreen (UP s playera → toolbar, LEFT/RIGHT
+  // izmedju toolbar buttona). Vidljiv samo kad data.hasAiContent.
+  final FocusNode _readerFocus =
+      FocusNode(debugLabel: 'tv-episode-reader-btn');
 
   // Fullscreen toggle — gumb u overlay-u + key 'F'. U fullscreen modu skrivamo
   // title/abstract/chapter list i video popunjava cijeli SafeArea. BACK u
@@ -352,6 +361,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     _player?.dispose();
     _playerFocus.dispose();
     _fullscreenFocus.dispose();
+    _readerFocus.dispose();
     _chaptersScroll.dispose();
     super.dispose();
   }
@@ -400,24 +410,6 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     } else {
       await p.play();
     }
-    _scheduleOverlayHide();
-  }
-
-  Future<void> _seek(int deltaSec) async {
-    final p = _player;
-    if (p == null) return;
-    final dur = _duration.inSeconds;
-    final maxSec = dur > 0 ? dur : 1 << 30;
-    final target = (_position.inSeconds + deltaSec).clamp(0, maxSec);
-    await p.seek(Duration(seconds: target));
-    _scheduleOverlayHide();
-  }
-
-  Future<void> _seekTo(int sec) async {
-    final p = _player;
-    if (p == null) return;
-    await p.seek(Duration(seconds: sec));
-    if (!p.state.playing) await p.play();
     _scheduleOverlayHide();
   }
 
@@ -481,74 +473,134 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     final data = _data;
     if (data == null) return _buildLoading(theme);
 
-    final mediaSize = MediaQuery.of(context).size;
     final chapters = _flatChapters(data.outline);
 
     // Fullscreen mode: video popunjava cijeli SafeArea, sve ostalo skriveno.
-    // Hero player rasteže se na full size, controls overlay i dalje rade.
     if (_fullscreen) {
-      return _buildHero(theme, data, mediaSize.height, hasChaptersBeside: false);
+      return _buildHero(theme, data, double.infinity, hasChaptersBeside: false);
     }
 
-    // Layout: player + vertikalan chapter list side-by-side (gornja zona),
-    // title + abstract ispod. Side-by-side daje aktivni chapter visible bez
-    // scrolla na trenutnoj poziciji — bitno za 10-foot UI gdje korisnik
-    // ne zeli puno D-pad navigacije.
+    // Fixed-frame layout (YouTube/Netflix TV konvencija): player se nikad ne
+    // scrolla off-screen. Toolbar pinned top, meta footer pinned bottom, a
+    // sredina (player + chapter rail) popunjava Expanded. Chapter ListView
+    // scrolla SAMO interno — `Scrollable.ensureVisible` u
+    // `_updateActiveChapter` nema vise outer scrollable ancestor pa ne
+    // pomice cijeli screen kad aktivni chapter dođe izvan viewport-a.
     final hasChapters = chapters.isNotEmpty;
-    final heroHeight = (mediaSize.height * 0.62).clamp(280.0, 540.0);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Toolbar IZNAD playera s Fullscreen gumbom. Kriticno: gumb mora
-          // ziviti izvan player-ovog Focus subtree-a — inace OK na gumb prvo
-          // okine `_toggleFullscreen`, a onda key event bubbla u player-ov
-          // `onKeyEvent` koji okine `_togglePlay`, pa video instant pauzira.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(48, 8, 48, 8),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Pinned top: toolbar s "Čitaj" i Fullscreen gumbima. Mora ziviti
+        // izvan player-ovog Focus subtree-a (vidi `_buildFullscreenButton`)
+        // — inace OK na gumb prvo okine action, a onda key event bubbla u
+        // player-ov `onKeyEvent` koji okine `_togglePlay`, pa video pauzira.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(48, 8, 48, 4),
+          child: Row(
+            children: [
+              const Spacer(),
+              if (data.hasAiContent) ...[
+                _buildReaderButton(theme),
+                const SizedBox(width: 12),
+              ],
+              _buildFullscreenButton(theme),
+            ],
+          ),
+        ),
+        // Sredina: player + chapter rail side-by-side. Expanded uzima sve
+        // izmedju toolbar-a i footera; Row crossAxisAlignment.stretch daje
+        // oba child-a punu visinu (bez IntrinsicHeight jer parent je bounded).
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Spacer(),
-                _buildFullscreenButton(theme),
+                Expanded(
+                  flex: hasChapters ? 65 : 100,
+                  child: _buildHero(
+                    theme,
+                    data,
+                    double.infinity,
+                    hasChaptersBeside: hasChapters,
+                  ),
+                ),
+                if (hasChapters) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 35,
+                    child: _buildChaptersVertical(theme, chapters),
+                  ),
+                ],
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: hasChapters ? 65 : 100,
-                    child: _buildHero(
-                      theme,
-                      data,
-                      heroHeight,
-                      hasChaptersBeside: hasChapters,
-                    ),
-                  ),
-                  if (hasChapters) ...[
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 35,
-                      child: SizedBox(
-                        height: heroHeight,
-                        child: _buildChaptersVertical(theme, chapters),
-                      ),
-                    ),
-                  ],
-                ],
+        ),
+        // Pinned bottom: kompaktan meta footer. Title + channel/duration u
+        // jednom retku, abstract clamped na 2 retka (bilo 4) jer 10-foot
+        // viewer ne cita duge paragraphe — kratak description je dovoljan
+        // dok je player vidljiv. Fix-an layout = nema scroll-jump-a.
+        const SizedBox(height: 10),
+        _buildTitle(theme, data),
+        const SizedBox(height: 6),
+        _buildAbstract(theme, data),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  /// "Čitaj" gumb — vodi u TvEpisodeReaderScreen. Cuva trenutnu poziciju
+  /// kroz query param `?t=` da reader starta na istoj sekciji koju korisnik
+  /// trenutno gleda. Vidljiv samo kad epizoda ima AI sadržaj.
+  Widget _buildReaderButton(ThemeData theme) {
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+          return KeyEventResult.ignored;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+          _playerFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: TvFocusable(
+        focusNode: _readerFocus,
+        style: TvFocusStyle.subtleButton,
+        onActivate: () {
+          final sec = _position.inSeconds;
+          final target = sec > 5
+              ? '/v/${widget.youtubeId}/read?t=$sec'
+              : '/v/${widget.youtubeId}/read';
+          context.go(target);
+        },
+        builder: (context, focused) => AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          color: focused
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerHigh,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.auto_stories_rounded,
+                color: theme.colorScheme.onSurface,
+                size: 22,
               ),
-            ),
+              const SizedBox(width: 8),
+              Text(
+                'Čitaj',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 18),
-          _buildTitle(theme, data),
-          const SizedBox(height: 10),
-          _buildAbstract(theme, data),
-          const SizedBox(height: 32),
-        ],
+        ),
       ),
     );
   }
@@ -735,18 +787,8 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                 AnimatedOpacity(
                   opacity: showBackdrop ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 400),
-                  child: Image.network(
-                    CdnConfig.thumbnailUrl(data.youtubeId),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                    ),
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                      );
-                    },
+                  child: CachedThumbnail(
+                    url: CdnConfig.thumbnailUrl(data.youtubeId),
                   ),
                 ),
 
@@ -928,23 +970,16 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     // sam player ima primary focus.
     if (!node.hasPrimaryFocus) return KeyEventResult.ignored;
     final k = event.logicalKey;
-    if (k == LogicalKeyboardKey.arrowLeft) {
-      _seek(-10);
-      return KeyEventResult.handled;
-    }
-    if (k == LogicalKeyboardKey.arrowRight) {
-      _seek(10);
-      return KeyEventResult.handled;
-    }
-    // UP s playera → prebaci focus na Fullscreen gumb u overlay-u. Ovo je
-    // jedini D-pad put do tog gumba jer su LEFT/RIGHT zauzeti seek-om.
-    // _scheduleOverlayHide() osvjezi overlay (pokazi ga ako je sakriven
-    // i resetira hide timer) tako da je gumb stvarno vidljiv prije fokusa.
-    if (k == LogicalKeyboardKey.arrowUp) {
-      _scheduleOverlayHide();
-      _fullscreenFocus.requestFocus();
-      return KeyEventResult.handled;
-    }
+    // D-pad navigacija (◀▲▶▼) i seekanje su NAMJERNO ne-hendlani na playeru.
+    // Ranija verzija je mapirala LEFT/RIGHT na seek ±10s — bilo je
+    // nepredvidljivo (slučajni seek pri pokušaju navigacije do toolbar
+    // gumba) i blokiralo prirodan focus traversal. Sada arrow keys pusti
+    // u default DirectionalFocusIntent: UP s playera traversira na toolbar
+    // (Čitaj / Fullscreen), DOWN/LEFT/RIGHT ostaju na playeru (nema drugih
+    // focusable widgeta u tom smjeru — chapter rail je read-only). Ako
+    // seek bude trebao, dodat ćemo eksplicitne -10s / +10s gumbe pored
+    // Fullscreen-a u toolbar-u. Media keys (FF/rewind/track) su isto skinuti
+    // jer su podvarijanta seeka — držimo samo play/pause skup.
     if (k == LogicalKeyboardKey.enter ||
         k == LogicalKeyboardKey.select ||
         k == LogicalKeyboardKey.space ||
@@ -960,19 +995,6 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     if (k == LogicalKeyboardKey.mediaPause) {
       _player?.pause();
       _scheduleOverlayHide();
-      return KeyEventResult.handled;
-    }
-    if (k == LogicalKeyboardKey.mediaFastForward) {
-      _seek(30);
-      return KeyEventResult.handled;
-    }
-    if (k == LogicalKeyboardKey.mediaTrackNext) {
-      _seek(60);
-      return KeyEventResult.handled;
-    }
-    if (k == LogicalKeyboardKey.mediaRewind ||
-        k == LogicalKeyboardKey.mediaTrackPrevious) {
-      _seek(-30);
       return KeyEventResult.handled;
     }
     // 'F' = toggle fullscreen. Mac/Chrome dev convention.
@@ -1071,8 +1093,8 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
           const SizedBox(height: 8),
           Text(
             _fullscreen
-                ? 'OK = play/pause     ◀ ▶ = -10s / +10s     BACK / F = izađi'
-                : 'OK = play/pause     ◀ ▶ = ±10s     ▲ = fullscreen     ▼ = poglavlja',
+                ? 'OK = play/pause     BACK / F = izađi'
+                : 'OK = play/pause     ▲ = Čitaj / Fullscreen',
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.white.withValues(alpha: 0.7),
               letterSpacing: 0.5,
@@ -1136,11 +1158,11 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 48),
       child: Text(
         abstract,
-        maxLines: 4,
+        maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
-          height: 1.5,
+          height: 1.4,
         ),
       ),
     );
@@ -1197,7 +1219,6 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                   key: _chapterKeys[i],
                   chapter: chapters[i],
                   active: i == _activeChapterIndex,
-                  onTap: () => _seekTo(chapters[i].totalSeconds),
                 );
               },
             ),
@@ -1221,77 +1242,88 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
 // Chapter card
 // ---------------------------------------------------------------------------
 
-/// Vertical chapter row za TvEpisodeScreen side-panel listu.
-/// Compact: timestamp + topic u Row-u, active state s primary highlightom +
-/// play icon. Visina fix-ana implicitly preko paddingom + max line clamp.
+/// Vertical chapter kartica za TvEpisodeScreen side-panel — passive
+/// indikator napretka (NIJE D-pad target).
+///
+/// Zašto bez focus-a: u Reader-less verziji TV episode screena, chapter rail
+/// je krao D-pad fokus prema desno i blokirao put do "Čitaj" gumba u
+/// toolbar-u. Sada se po sekcijama lista samo u Reader modu (`/v/<id>/read`);
+/// ovdje su kartice read-only vizualni cue koje se same osvjezavaju kako
+/// player napreduje (vidi `_updateActiveChapter`).
+///
+/// Layout: 2-row kartica — timestamp + icon na vrhu (compact chip),
+/// naslov poglavlja ispod kao multi-line tekst do 3 retka.
 class _ChapterRow extends StatelessWidget {
   final OutlineChapter chapter;
   final bool active;
-  final VoidCallback onTap;
 
   const _ChapterRow({
     super.key,
     required this.chapter,
     required this.active,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return TvFocusable(
-      onActivate: onTap,
-      // Sharp edges + bez scale-a — chapter rows su uska vertikalna lista,
-      // horizontalni "pop" izgleda ruzno (odsijece se na granicama panela).
-      // Focus signal je ring + glow + bg promjena.
-      scaleOnFocus: false,
-      builder: (context, focused) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
         color: active
-            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.85)
+            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.9)
             : theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.6),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Icon(
+                .withValues(alpha: 0.55),
+        border: Border(
+          left: BorderSide(
+            color: active
+                ? theme.colorScheme.primary
+                : Colors.transparent,
+            width: 3,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: icon + timestamp (compact header)
+          Row(
+            children: [
+              Icon(
                 active
                     ? Icons.play_arrow_rounded
                     : Icons.access_time_rounded,
-                size: 18,
+                size: 16,
                 color: active
                     ? theme.colorScheme.primary
                     : theme.colorScheme.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              chapter.timestamp,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontFeatures: const [FontFeature('tnum')],
-                color: active
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                chapter.topic,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  height: 1.3,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              const SizedBox(width: 6),
+              Text(
+                chapter.timestamp,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontFeatures: const [FontFeature('tnum')],
+                  color: active
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Row 2: multi-line naslov poglavlja
+          Text(
+            chapter.topic,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+              height: 1.3,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
