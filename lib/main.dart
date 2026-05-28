@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
@@ -52,13 +53,23 @@ void main() async {
     // Anonymous sign-in ako nema postojeće sesije. Trigger backend-side
     // (on_auth_user_created) automatski kreira profile red.
     final client = Supabase.instance.client;
-    if (client.auth.currentUser == null) {
+    // Ako URL nosi auth parametre (povratak s magic link / OAuth redirecta),
+    // NE prijavljuj anonimno — inače anon sesija pregazi/utrkuje stvarnu sesiju
+    // koja stiže iz URL-a → /auth/callback zaglavi na "Prijava u tijeku".
+    final hasAuthCallback = kIsWeb &&
+        (Uri.base.fragment.contains('access_token') ||
+            Uri.base.queryParameters.containsKey('code') ||
+            Uri.base.path.contains('/auth/callback') ||
+            Uri.base.path.contains('/login-callback'));
+    if (client.auth.currentUser == null && !hasAuthCallback) {
       try {
         await client.auth.signInAnonymously();
         log('Supabase: signed in anonymously');
       } catch (e) {
         log('Supabase: anonymous sign-in failed — $e');
       }
+    } else if (hasAuthCallback) {
+      log('Supabase: auth callback URL detektiran — preskačem anon sign-in');
     } else {
       log('Supabase: restored session for ${client.auth.currentUser?.id}');
     }

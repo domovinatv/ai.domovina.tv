@@ -132,17 +132,39 @@ class PasskeyService {
 
   Future<void> _finish(String fn, Map<String, dynamic> body) async {
     final client = sb.Supabase.instance.client;
+    final Map<String, dynamic> data;
     try {
       final res = await client.functions.invoke(fn, body: body);
-      final data = (res.data as Map).cast<String, dynamic>();
-      final actionLink = data['action_link'] as String?;
-      if (actionLink == null || actionLink.isEmpty) {
-        throw const PasskeyFailure('Backend nije vratio sign-in link.');
-      }
-      await _openActionLink(actionLink);
+      data = (res.data as Map).cast<String, dynamic>();
     } on sb.FunctionException catch (e) {
       throw PasskeyFailure(_mapFinishError(e));
     }
+
+    // PRIMARNO: verificiraj email_otp direktno (session u responseu, bez
+    // redirecta). Redirect/action_link na webu ne radi jer je link server-
+    // generiran pa PKCE klijent ne uhvati sesiju iz URL-a.
+    final emailOtp = data['email_otp'] as String?;
+    final email = data['email'] as String?;
+    if (emailOtp != null && emailOtp.isNotEmpty && email != null) {
+      try {
+        await client.auth.verifyOTP(
+          type: sb.OtpType.magiclink,
+          email: email,
+          token: emailOtp,
+        );
+        return; // sesija postavljena → onAuthStateChange odradi ostalo
+      } on sb.AuthException catch (e) {
+        log('passkey verifyOTP error: ${e.message}');
+        throw const PasskeyFailure('Dovršetak passkey prijave nije uspio.');
+      }
+    }
+
+    // Fallback: otvori action_link (native deep link / stariji backend).
+    final actionLink = data['action_link'] as String?;
+    if (actionLink == null || actionLink.isEmpty) {
+      throw const PasskeyFailure('Backend nije vratio sign-in podatke.');
+    }
+    await _openActionLink(actionLink);
   }
 
   /// Otvori magic `action_link` — isti pattern kao HandoffService.
