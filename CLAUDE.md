@@ -72,6 +72,18 @@ App bi onda pickao codec ovisno o platformi/device-u. H.264 hardware
 decode radi univerzalno od Android 4 nadalje. Bez ovoga, novi 720p/1080p
 AV1 sadržaj neće glatko playati na većini Android TV box-ova.
 
+### Android TV lokalni emulator (dev loop)
+
+EON-matched emulator na Mac miniju za brzu TV layout/D-pad iteraciju. Auto-detektira
+se kao Leanback (bez `FORCE_TV`), ali **ne reproducira EON perf/jank** (Mac GPU +
+arm64 native). Setup, svakodnevne komande i objašnjenje rezolucije (960×540 dp je
+logički dp prostor uz dpr 2.0, NE downsampling — EON crta native 1920×1080):
+`docs/android-tv-emulator.md`.
+
+**Rule**: prije `emulator @EON_TV_API31` mora se mountati APFS kontejner
+(`hdiutil attach /Volumes/DOMOVINA2TB/android_emulators/DOMOVINA_ANDROID.sparsebundle`)
+jer SSD je exFAT i sve živi u tom kontejneru. Perf mjeriš samo na fizičkom EON-u.
+
 ### Native Android splash je static (nije rotirajuc)
 
 Pokušali smo runtime rotaciju biblijskih citata u native splash-u (5

@@ -105,6 +105,61 @@ u Fazi 2+).
 - Ostatak ColorScheme tokena nasljeđen iz `_build(scheme)` — `surface`, `outline`,
   `surfaceContainerHighest`, itd. su konzistentni s dark mode-om
 
+## Rezolucija, density i dp (zašto 960×540)
+
+Čest izvor zabune. EON prijavljuje logički ekran `960×540 dp`, što izgleda kao
+niska rezolucija — **nije**. To je logički dp prostor, ne broj piksela.
+
+### dp je fizička veličina, ne broj piksela
+
+`dp` je apstrakcija fizičke veličine (mdpi baseline: 1 dp ≈ 1/160 inča), NE
+piksela. `density` mapira dp → piksele:
+
+```
+density 320dpi → devicePixelRatio (dpr) = 2.0
+fizički framebuffer:  1920×1080 px   (ono što EON stvarno crta — oštro)
+logički canvas:        960× 540 dp   = px / dpr   (prostor za widgete)
+1 dp = 2×2 = 4 fizička piksela
+```
+
+Identično Retina ekranu. Flutter rasterizira vektorski (tekst, oblici) na razini
+framebuffera, pa je UI uvijek oštar u 1080p — `dpr` određuje **veličinu**
+elemenata, ne oštrinu. Veći density = veći elementi = čitljivo s 10-foot (3m)
+udaljenosti.
+
+### Logički canvas NIJE konstantan — ovisi o density-ju koji OEM postavi
+
+```
+Panel              density      dpr    logički canvas
+1080p @ xhdpi      320          2.0    960×540 dp     ← EON, Googleov preporučeni default
+1080p @ mdpi       160          1.0    1920×1080 dp   ← jeftini boxovi, sve sitno
+720p  @ tvdpi      213          1.33   1444×812 dp
+4K    @ xxxhdpi    640          4.0    960×540 dp     ← nativni 4K, 1 dp = 4×4 px
+```
+
+Googleova konvencija: 1080p→xhdpi, 4K→xxxhdpi, tako da **logički canvas ostaje
+~960×540 dp** i na 1080p i na 4K (density skalira s rezolucijom). Pa ~960×540 jest
+de-facto Android TV 16:9 grid u ispravnoj konfiguraciji. ALI density postavlja
+OEM, a jeftini boxovi ga zezaju (prijave 160/213) → zato se NE smije hardkodirati
+960×540.
+
+### Display lanac kad je 4K TV iza 1080p boxa
+
+EON → 1080p HDMI izlaz → Philips 4K panel **upscalira (interpolira)** 1080p→2160p:
+1 logički dp završi kao 4×4 = 16 fizičkih LED-ica, ali interpolirano (blago meko).
+Na **Full HD** TV-u nema upscalea → 1 dp = 2×2 = 4 nativne LED-ice, pixel-perfect.
+Nativni 4K UI bi tražio 4K HDMI izlaz + jaču GPU (Amlogic već janka na 1080p);
+za EON 1080p je ispravan perf kompromis. Ovo je display/HDMI/system stvar — **ne
+kontrolira se iz Flutter codebasea**.
+
+### Posljedica za layout
+
+Dizajniraj responsive u dp, ne za fiksni 960×540. `TvMetrics`
+(`lib/screens/tv/widgets/tv_metrics.dart`) čita stvarni `MediaQuery.size`, skalira
+relativno na /540 baseline (clamp [0.85, 1.15]) i koristi % širine za paddinge —
+tako isti app radi na cijelom rasponu TV logičkih veličina. Za lokalni
+EON-matched emulator vidi `docs/android-tv-emulator.md`.
+
 ## Known device quirks
 
 - **Telemach EON Smart Box (SDMC SDSTB02)**: Android 11, ali density je 320 dpi
