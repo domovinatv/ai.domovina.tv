@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../models/channel_index.dart';
+import '../../../widgets/cached_thumbnail.dart';
 import 'tv_focus.dart';
 
 /// Channel kartica za TV "Kanali" rail. Uvijek koristi kvadratni avatar
@@ -37,18 +38,9 @@ class TvChannelCard extends StatelessWidget {
                 width: size,
                 height: size,
                 child: avatar != null
-                    ? Image.network(
-                        avatar,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.podcasts_outlined,
-                            color: theme.colorScheme.onSurfaceVariant,
-                            size: 32,
-                          ),
-                        ),
+                    ? CachedThumbnail(
+                        url: avatar,
+                        errorIcon: Icons.podcasts_outlined,
                       )
                     : Container(
                         color: theme.colorScheme.surfaceContainerHighest,
@@ -62,12 +54,14 @@ class TvChannelCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // Do 2 reda imena kanala — bez ellipsis-a. Kratka imena ostaju
-            // jednoredna; duga (npr. "Centar za duhovna zvanja") se prelijevaju
-            // bez odsijecanja.
+            // Do 3 reda imena kanala — bez ellipsis-a. Kratka imena ostaju
+            // jednoredna; duga (npr. "Centar za duhovna zvanja Splitsko-
+            // makarske nadbiskupije") se prelijevaju bez odsijecanja.
+            // Bumped na 3 reda 2026-05-28 — channel names na narrow TV card
+            // s 2 reda i dalje su clip-ali zadnju rijec.
             Text(
               channel.name,
-              maxLines: 2,
+              maxLines: 3,
               softWrap: true,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
@@ -75,10 +69,13 @@ class TvChannelCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
+            // `height: 1.2` override — Material3 labelSmall default 1.45
+            // sirio bi liniju na ~16dp; TvMetrics rail kalkulira 13.2.
             Text(
               '${channel.videoCount} epizoda',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
+                height: 1.2,
               ),
             ),
           ],

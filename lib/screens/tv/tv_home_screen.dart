@@ -1,3 +1,6 @@
+import 'dart:math' show Random;
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +15,8 @@ import 'widgets/tv_channel_card.dart';
 import 'widgets/tv_episode_card.dart';
 import 'widgets/tv_focus.dart';
 import 'widgets/tv_hero.dart';
-import 'widgets/tv_loading_tips.dart';
+import 'widgets/tv_boot_splash.dart';
+import 'widgets/tv_metrics.dart';
 import 'widgets/tv_rail.dart';
 
 /// Faza 2 TV home screen.
@@ -63,6 +67,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   final _searchFocus = FocusNode(debugLabel: 'tv-appbar-search');
   final _heroPlayFocus = FocusNode(debugLabel: 'tv-hero-play');
 
+  // Channel grid sort state. Default: shuffle — fair je za male/nove kanale
+  // jer ih svaka sesija stavi na drugu poziciju (count desc bi ih trajno
+  // prikovao na dno popisa).
+  _ChannelSort _channelSort = _ChannelSort.shuffle;
+  List<ChannelSummary>? _shuffledOrder;
+  final _shuffleRandom = Random();
+
   @override
   void initState() {
     super.initState();
@@ -100,7 +111,10 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     final thumbUrl = CdnConfig.thumbnailUrl(pick.video.video.id);
     log('TvHome: featured ${pick.video.video.id} — preloading thumbnail');
     try {
-      await precacheImage(NetworkImage(thumbUrl), context);
+      // CachedNetworkImageProvider — keeps disk cache warm + ensures the
+      // bytes are decoded before TvHero renders, eliminating placeholder
+      // blink na boot-ready transition.
+      await precacheImage(CachedNetworkImageProvider(thumbUrl), context);
     } catch (e) {
       log('TvHome: featured thumbnail preload failed: $e');
       // Ne blokiramo bootstrap na ovome — radije nudi content sa fallback
@@ -128,17 +142,38 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     context.go('/c/$slug');
   }
 
+  bool _loggedDimensions = false;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mediaSize = MediaQuery.of(context).size;
-    // EON: density 320 → 960×540 dp. Mac/Chrome: varira. Hero 45% visine,
-    // clamp da ostane razuman za male i velike ekrane.
-    final heroHeight = (mediaSize.height * 0.45).clamp(220.0, 380.0);
+    final metrics = TvMetrics.of(context);
+
+    // Jednokratan log MediaQuery dimenzija — pomaze pri kalibraciji TvMetrics
+    // na pravim Android TV uredjajima (svaki TV moze imati drugaciji density).
+    if (!_loggedDimensions) {
+      _loggedDimensions = true;
+      final mq = MediaQuery.of(context);
+      log('TvHome: screen ${mq.size.width.toStringAsFixed(0)}×'
+          '${mq.size.height.toStringAsFixed(0)} dp, '
+          'dpr=${mq.devicePixelRatio.toStringAsFixed(2)}, '
+          'textScale=${mq.textScaler.scale(1.0).toStringAsFixed(2)}, '
+          'tvMetrics.scale=${metrics.scale.toStringAsFixed(2)}');
+    }
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
+      // Klamp textScaler na 1.0 za TV layout. Android TV-i ponekad imaju
+      // system "Display size / Font size" postavljen na large/largest
+      // (textScaler 1.5-2.0×), sto bodySmall 12sp pretvara u 24sp+ pa rail
+      // height + 3-line title overflowa (vidi screencap 2026-05-28).
+      // TV typography je vec kalibrirana za 3m couch viewing — system
+      // override se ne honor-a, jednako kao sto rade Netflix/YouTube TV.
+      body: MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.noScaling,
+        ),
+        child: SafeArea(
         // Flutter web ne mapira arrow keys na DirectionalFocusIntent po
         // defaultu (native Android TV salje DPAD_* keyeve koji Flutter okvir
         // sam hendla, ali u Chrome buildu samo Tab radi). Eksplicitno
@@ -159,7 +194,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             future: _indexFuture,
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
-                return _buildLoading(theme, heroHeight);
+                return _buildLoading(theme, metrics);
               }
               if (snap.hasError) {
                 return _buildError(theme, snap.error);
@@ -172,10 +207,11 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               });
               // Tips karousel ostaje vidljiv sve dok featured nije picked
               // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
-              if (!_bootReady) return _buildLoading(theme, heroHeight);
-              return _buildContent(theme, heroHeight, channels);
+              if (!_bootReady) return _buildLoading(theme, metrics);
+              return _buildContent(theme, metrics, channels);
             },
           ),
+        ),
         ),
       ),
     );
@@ -185,12 +221,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // States
   // ---------------------------------------------------------------------------
 
-  Widget _buildLoading(ThemeData theme, double heroHeight) {
+  Widget _buildLoading(ThemeData theme, TvMetrics metrics) {
     // Channel index prefetch + featured pick + thumbnail preload trazi 3-10s.
-    // Full-screen Slack-style tips karousel s 10s progress loaderom — bez
-    // appbar-a / skeleton-a iza, zelimo da fokus bude na sadrzaju cekanja.
-    return const TvLoadingTips(
-      tips: defaultTvTips,
+    // Koristimo TvBootSplash umjesto TvLoadingTips za vizualni kontinuitet
+    // s Android native splash-om — identicna slika (Mt 10,26-28) + diskretni
+    // "Učitavanje…" progress na dnu. Korisnik samo nastavi citati isti
+    // citat sa native -> Flutter handoff-a bez frame promjene.
+    return const TvBootSplash(
       progressDuration: Duration(seconds: 10),
     );
   }
@@ -211,7 +248,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 
   Widget _buildContent(
     ThemeData theme,
-    double heroHeight,
+    TvMetrics metrics,
     List<ChannelSummary> channels,
   ) {
     final allVids = _channelCache.allVideos;
@@ -227,35 +264,34 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             limit: 12, excludeFeatured: featured.video)
         : <FeedVideo>[];
 
-    // Channels sortirani po videoCount desc — bogatiji kanali prvi u rail-u.
-    final sortedChannels = List<ChannelSummary>.from(channels)
-      ..sort((a, b) => b.videoCount.compareTo(a.videoCount));
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildAppBar(theme),
+          _buildAppBar(theme, metrics),
           if (featured != null)
             TvHero(
               featured: featured,
-              maxHeight: heroHeight,
+              metrics: metrics,
               playFocusNode: _heroPlayFocus,
               autofocusPlay: true,
               onPlay: () => _openEpisode(featured.video.video.id),
             )
           else
-            _buildHeroSkeleton(theme, heroHeight),
+            _buildHeroSkeleton(theme, metrics),
 
-          // Veci gap izmedju hero-a i prvog rail-a — focused card scale 1.18
+          // Razmak izmedju hero-a i prvog rail-a — focused card scale 1.18
           // + glow shadow s `Clip.none` na rail-u overflowa vertikalno, pa
           // bez ovog prostora gornji rub kartice udara u hero ispod.
-          const SizedBox(height: 40),
+          SizedBox(height: metrics.heroToRailGap),
 
           if (_continueWatching.isNotEmpty) ...[
             TvRail(
               eyebrow: 'Nastavi slušati',
-              height: 200,
+              height: metrics.episodeRailHeight,
+              cardSpacing: metrics.cardSpacing,
+              horizontalPadding:
+                  EdgeInsets.symmetric(horizontal: metrics.pagePadH),
               cards: [
                 for (final wp in _continueWatching)
                   TvEpisodeCard(
@@ -264,18 +300,21 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                     progress: wp.durationSeconds > 0
                         ? wp.positionSeconds / wp.durationSeconds
                         : null,
-                    width: 160,
+                    width: metrics.episodeCardWidth,
                     onTap: () => _openEpisode(wp.episodeId),
                   ),
               ],
             ),
-            const SizedBox(height: 36),
+            SizedBox(height: metrics.sectionGap),
           ],
 
           if (latest.isNotEmpty)
             TvRail(
               eyebrow: 'Najnovije epizode',
-              height: 200,
+              height: metrics.episodeRailHeight,
+              cardSpacing: metrics.cardSpacing,
+              horizontalPadding:
+                  EdgeInsets.symmetric(horizontal: metrics.pagePadH),
               cards: [
                 for (final fv in latest)
                   TvEpisodeCard(
@@ -283,33 +322,22 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                     title: fv.video.displayTitle,
                     subtitle: fv.channelName,
                     magisteriumScore: fv.video.magisteriumScore,
-                    width: 160,
+                    width: metrics.episodeCardWidth,
                     onTap: () => _openEpisode(fv.video.id),
                   ),
               ],
             )
           else if (!cacheReady)
-            _buildRailSkeleton(theme, 'Najnovije epizode'),
+            _buildRailSkeleton(theme, metrics, 'Najnovije epizode'),
 
-          const SizedBox(height: 36),
+          SizedBox(height: metrics.sectionGap),
 
-          if (sortedChannels.isNotEmpty)
-            TvRail(
-              eyebrow: 'Kanali (${sortedChannels.length})',
-              height: 215,
-              cards: [
-                for (final c in sortedChannels)
-                  TvChannelCard(
-                    channel: c,
-                    size: 130,
-                    onTap: () => _openChannel(c),
-                  ),
-              ],
-            ),
+          if (channels.isNotEmpty)
+            _buildChannelsSection(theme, metrics, channels),
 
-          const SizedBox(height: 32),
-          _buildCacheStatus(theme),
-          const SizedBox(height: 32),
+          SizedBox(height: metrics.sectionGap),
+          _buildCacheStatus(theme, metrics),
+          SizedBox(height: metrics.sectionGap),
         ],
       ),
     );
@@ -319,16 +347,23 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // App bar
   // ---------------------------------------------------------------------------
 
-  Widget _buildAppBar(ThemeData theme) {
+  Widget _buildAppBar(ThemeData theme, TvMetrics metrics) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(48, 24, 48, 8),
+      padding: EdgeInsets.fromLTRB(
+        metrics.pagePadH,
+        metrics.pagePadV,
+        metrics.pagePadH,
+        metrics.pagePadV * 0.4,
+      ),
       child: Row(
         children: [
           Text(
             'DOMOVINA.ai',
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface,
+              fontSize: (theme.textTheme.titleLarge?.fontSize ?? 22) *
+                  metrics.scale,
             ),
           ),
           const Spacer(),
@@ -339,7 +374,10 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             onActivate: () => log('TvHome: pretraga (Faza 2.5)'),
             builder: (context, focused) => AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: 16 * metrics.scale,
+                vertical: 10 * metrics.scale,
+              ),
               decoration: BoxDecoration(
                 color: focused
                     ? theme.colorScheme.primaryContainer
@@ -351,13 +389,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 children: [
                   Icon(
                     Icons.search,
-                    size: 22,
+                    size: 20 * metrics.scale,
                     color: theme.colorScheme.onSurface,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8 * metrics.scale),
                   Text(
                     'Pretraga',
-                    style: theme.textTheme.titleMedium,
+                    style: theme.textTheme.titleSmall,
                   ),
                 ],
               ),
@@ -373,18 +411,19 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // za TV cilj je tek 'nije prazno' indikacija dok prefetch traje).
   // ---------------------------------------------------------------------------
 
-  /// Skeleton koji prati `TvHero` shape (max 1200dp wide, slika lijevo / blok
-  /// desno) — bez ovoga bi layout poskocio kad real hero stigne.
-  Widget _buildHeroSkeleton(ThemeData theme, double maxHeight) {
-    final compact = maxHeight < 280;
-    final imageWidth = (maxHeight * 16 / 9).clamp(360.0, 540.0);
+  /// Skeleton koji prati `TvHero` shape (max metrics.heroMaxWidth, slika
+  /// lijevo / blok desno) — bez ovoga bi layout poskocio kad real hero stigne.
+  Widget _buildHeroSkeleton(ThemeData theme, TvMetrics metrics) {
+    final maxHeight = metrics.heroMaxHeight;
+    final compact = maxHeight < 260;
+    final imageWidth = (maxHeight * 16 / 9).clamp(320.0, 480.0);
     final block = theme.colorScheme.surfaceContainerHighest;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(48, 16, 48, 0),
+      padding: EdgeInsets.fromLTRB(metrics.pagePadH, 8, metrics.pagePadH, 0),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: BoxConstraints(maxWidth: metrics.heroMaxWidth),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Material(
@@ -447,20 +486,21 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     );
   }
 
-  Widget _buildRailSkeleton(ThemeData theme, String eyebrow) {
+  Widget _buildRailSkeleton(
+      ThemeData theme, TvMetrics metrics, String eyebrow) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
+      padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 32,
+                width: 28 * metrics.scale,
                 height: 3,
                 color: theme.colorScheme.primary.withValues(alpha: 0.5),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 10 * metrics.scale),
               Text(
                 eyebrow.toUpperCase(),
                 style: theme.textTheme.labelLarge?.copyWith(
@@ -470,15 +510,16 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 12 * metrics.scale),
           SizedBox(
-            height: 182,
+            height: metrics.episodeRailHeight - 18,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: 4,
-              separatorBuilder: (_, _) => const SizedBox(width: 20),
+              separatorBuilder: (_, _) =>
+                  SizedBox(width: metrics.cardSpacing),
               itemBuilder: (context, i) => Container(
-                width: 160,
+                width: metrics.episodeCardWidth,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
@@ -491,10 +532,190 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     );
   }
 
-  Widget _buildCacheStatus(ThemeData theme) {
+  // ---------------------------------------------------------------------------
+  // Channel sort / grid
+  // ---------------------------------------------------------------------------
+
+  List<ChannelSummary> _orderChannels(List<ChannelSummary> input) {
+    switch (_channelSort) {
+      case _ChannelSort.shuffle:
+        // Shuffle se cache-a (`_shuffledOrder`) da redoslijed bude STABILAN
+        // izmedju setState rebuilda. Re-shuffle se dogadja samo kad user
+        // tapne Shuffle button (vidi `_setSort`).
+        return _shuffledOrder ??=
+            List<ChannelSummary>.from(input)..shuffle(_shuffleRandom);
+      case _ChannelSort.alpha:
+        return List<ChannelSummary>.from(input)
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      case _ChannelSort.countDesc:
+        return List<ChannelSummary>.from(input)
+          ..sort((a, b) => b.videoCount.compareTo(a.videoCount));
+      case _ChannelSort.countAsc:
+        return List<ChannelSummary>.from(input)
+          ..sort((a, b) => a.videoCount.compareTo(b.videoCount));
+    }
+  }
+
+  void _setSort(_ChannelSort sort) {
+    setState(() {
+      if (sort == _ChannelSort.shuffle) {
+        // Re-shuffle UVIJEK kad user tapne Shuffle, cak i ako je vec shuffle
+        // mode. Daje pravu randomness ako zeli "jos jednom".
+        _shuffledOrder = null;
+      }
+      _channelSort = sort;
+    });
+  }
+
+  Widget _buildChannelsSection(
+    ThemeData theme,
+    TvMetrics metrics,
+    List<ChannelSummary> channels,
+  ) {
+    final ordered = _orderChannels(channels);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: eyebrow naslov + sort chips u istom redu. Sort chips se
+          // wrappaju u novi red ako nema dovoljno prostora.
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12 * metrics.scale,
+            runSpacing: 8 * metrics.scale,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 3,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'KANALI (${ordered.length})',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+              _buildSortChip(
+                theme: theme,
+                metrics: metrics,
+                sort: _ChannelSort.countDesc,
+                icon: Icons.arrow_downward,
+                label: 'Epizode',
+              ),
+              _buildSortChip(
+                theme: theme,
+                metrics: metrics,
+                sort: _ChannelSort.countAsc,
+                icon: Icons.arrow_upward,
+                label: 'Epizode',
+              ),
+              _buildSortChip(
+                theme: theme,
+                metrics: metrics,
+                sort: _ChannelSort.alpha,
+                icon: Icons.sort_by_alpha,
+                label: 'Abeceda',
+              ),
+              _buildSortChip(
+                theme: theme,
+                metrics: metrics,
+                sort: _ChannelSort.shuffle,
+                icon: Icons.shuffle,
+                label: 'Shuffle',
+              ),
+            ],
+          ),
+          SizedBox(height: 16 * metrics.scale),
+          // Wrap grid — auto-flow po broju kolona koji stane u dostupnu
+          // sirinu. Channel cards su consistent width (metrics.channelCardSize)
+          // pa Wrap producira regularan grid bez explicit-nog GridView-a (koji
+          // ima problema s D-pad fokus traversal-om kod variable item-height-a).
+          Wrap(
+            spacing: metrics.cardSpacing,
+            runSpacing: 24 * metrics.scale,
+            children: [
+              for (final c in ordered)
+                TvChannelCard(
+                  channel: c,
+                  size: metrics.channelCardSize,
+                  onTap: () => _openChannel(c),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortChip({
+    required ThemeData theme,
+    required TvMetrics metrics,
+    required _ChannelSort sort,
+    required IconData icon,
+    required String label,
+  }) {
+    final active = _channelSort == sort;
+    // Pill shape (radius 100 → Flutter clamp na pola visine) i na outer
+    // (TvFocusable focus outline) i na inner (chip bg). Tako outer i inner
+    // radius razlikuju se TOCNO za 5dp (border width), pa fokus prsten leži
+    // savrseno koncentricno oko chip-a. Radius 20 (fixed) bio je problem
+    // jer su inner i outer imali ISTI radius ali na razlicitim dimensijama
+    // — inner je izgledao previse zaobljen relativno na svoj manji rect.
+    return TvFocusable(
+      style: TvFocusStyle.subtleButton,
+      borderRadius: BorderRadius.circular(100),
+      onActivate: () => _setSort(sort),
+      builder: (context, focused) => AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(
+          horizontal: 10 * metrics.scale,
+          vertical: 6 * metrics.scale,
+        ),
+        decoration: BoxDecoration(
+          color: active
+              ? theme.colorScheme.tertiary
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14 * metrics.scale,
+              color: active
+                  ? theme.colorScheme.onTertiary
+                  : theme.colorScheme.onSurface,
+            ),
+            SizedBox(width: 5 * metrics.scale),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: active
+                    ? theme.colorScheme.onTertiary
+                    : theme.colorScheme.onSurface,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCacheStatus(ThemeData theme, TvMetrics metrics) {
     if (_channelCache.done) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
+      padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
       child: Row(
         children: [
           SizedBox(
@@ -517,6 +738,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     );
   }
 }
+
+enum _ChannelSort { shuffle, alpha, countDesc, countAsc }
 
 class _SkeletonBar extends StatelessWidget {
   final double width;

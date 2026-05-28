@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../services/cdn_config.dart';
+import '../../../widgets/cached_thumbnail.dart';
 import 'tv_focus.dart';
 
 /// Episode kartica za TV rail-ove (Najnovije, Nastavi slušati, itd.).
@@ -51,36 +52,28 @@ class TvEpisodeCard extends StatelessWidget {
             ClipRect(
               child: Stack(
                 children: [
-                  Image.network(
-                    CdnConfig.thumbnailUrl(episodeId),
+                  CachedThumbnail(
+                    url: CdnConfig.thumbnailUrl(episodeId),
                     width: width,
                     height: thumbHeight,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      width: width,
-                      height: thumbHeight,
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        size: 32,
-                      ),
-                    ),
                   ),
                   if (magisteriumScore != null && magisteriumScore! >= 70)
                     Positioned(
                       top: 0,
                       right: 0,
+                      // "MAG 92" monogram — user feedback 2026-05-28: ⭐ emoji
+                      // izgledao kao "like" brojač; MAG (Magisterium) je
+                      // dignified i jasno odvojen od social-style indikatora.
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         color: theme.colorScheme.tertiary,
                         child: Text(
-                          '⭐ $magisteriumScore',
+                          'MAG $magisteriumScore',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onTertiary,
                             fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
                           ),
                         ),
                       ),
@@ -100,30 +93,42 @@ class TvEpisodeCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 6),
-            // Maksimalno 3 reda titla — kratki naslovi ostaju 1-2 reda; dugi
-            // se ne odsijecaju. Bez `overflow: ellipsis` jer korisnik zeli
-            // vidjeti cijeli naslov, makar to znacilo da neke kartice budu
-            // visocije (rail height je dimenzioniran za 3-line worst case).
+            const SizedBox(height: 8),
+            // EYEBROW (channel name) — vizualna razlika od title-a:
+            // UPPERCASE + letterSpacing + tertiary (croRed) + w700 + manji
+            // font. User feedback 2026-05-28: title i channel name su izgledali
+            // istovjetno (oba bodySmall onSurface), bilo je nemoguce na prvi
+            // pogled odvojiti naziv epizode od naziva kanala. Eyebrow pattern
+            // prati editorial home_screen (vidi `hero_section.dart`).
+            // maxLines 2 jer cijeli "MOLITVENA ZAJEDNICA EHO" tip dugog
+            // imena ne stane u 1 red na 152dp card width-u s letterSpacing-om.
+            if (subtitle != null) ...[
+              Text(
+                subtitle!.toUpperCase(),
+                maxLines: 2,
+                softWrap: true,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.tertiary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+            ],
+            // Maksimalno 5 redova titla — pokriva ~99% hrvatskih naslova na
+            // TV card width-u (~152dp @ 12sp ≈ 15 chars/line, 5 redaka ≈ 75
+            // chars). Korisnik 2026-05-28: title NE smije biti truncated.
             Text(
               title,
-              maxLines: 3,
+              maxLines: 5,
               softWrap: true,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 height: 1.2,
+                color: theme.colorScheme.onSurface,
               ),
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                subtitle!,
-                maxLines: 1,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
           ],
         ),
       ),

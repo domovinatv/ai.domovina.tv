@@ -272,25 +272,29 @@ class BibleVerse {
   const BibleVerse(this.text, this.reference);
 }
 
+/// Citati iz Jeruzalemske Biblije (Kršćanska sadašnjost,
+/// https://biblija.ks.hr — službeni hrvatski liturgijski tekst).
+/// Fact-check vs. raniji Magisterium AI snapshot 2026-05-28 u
+/// docs/splash-bible-citations-factcheck.md. Splash konvencija: bez
+/// `»…«` govornih navodnika, prva slovo veliko, terminal "." umjesto ":".
+///
+/// Indices 1..13 ovdje odgovaraju splash_full_{2..14}.png — splash_full_1.png
+/// je dugacka Mt 10,26-28 verzija za native splash i ne ponavlja se ovdje.
 const defaultBibleVerses = <BibleVerse>[
-  // Mt 10,26 short form je primarni native splash citat (vidi
-  // android/app/src/main/res/drawable-nodpi/splash_tagline_1.png).
-  // Ovdje izostavljamo kratki Mt 10,26 da Flutter splash nikad ne
-  // ponavlja sto je user upravo gledao 12-19s na nativnom splashu.
   BibleVerse(
-    'Jer ništa nije tajno osim da bi se očitovalo; niti je što skrito osim da iziđe na vidjelo.',
+    'Ta ništa nije zastrto, osim zato da se očituje; i ništa skriveno, osim zato da dođe na vidjelo!',
     'Marko 4,22',
   ),
   BibleVerse(
-    'Ta ništa nije tajno što se neće očitovati; ništa skriveno što se ne bi doznalo i na vidjelo izišlo.',
+    'Ta ništa nije tajno što se neće očitovati; ništa skriveno što se neće saznati i na vidjelo doći.',
     'Luka 8,17',
   ),
   BibleVerse(
-    'Ništa nije prikriveno što se neće otkriti ni tajno što se neće doznati.',
+    'Ništa nije skriveno što se neće otkriti ni tajno što se neće saznati.',
     'Luka 12,2',
   ),
   BibleVerse(
-    'Naša je pak domovina na nebesima, odakle iščekujemo Spasitelja, Gospodina Isusa Krista.',
+    'Naša je pak domovina na nebesima, odakle iščekujemo Spasitelja, Gospodina našega Isusa Krista.',
     'Filipljanima 3,20',
   ),
   BibleVerse(
@@ -298,19 +302,19 @@ const defaultBibleVerses = <BibleVerse>[
     'Ivan 8,32',
   ),
   BibleVerse(
-    "Vaša riječ neka bude: 'Da, da – ne, ne!' Što je više od toga, od Zloga je.",
+    'Vaša riječ neka bude: ‘Da, da, – ne, ne!’ Što je više od toga, od Zloga je.',
     'Matej 5,37',
   ),
   BibleVerse(
-    'U svijetu ćete imati muku, ali hrabri budite – ja sam pobijedio svijet!',
+    'U svijetu imate muku, ali hrabri budite – ja sam pobijedio svijet!',
     'Ivan 16,33',
   ),
   BibleVerse(
-    'Gdje ti je blago, ondje će ti biti i srce.',
+    'Doista, gdje ti je blago, ondje će ti biti i srce.',
     'Matej 6,21',
   ),
   BibleVerse(
-    'Tražite stoga najprije Kraljevstvo Božje i pravednost njegovu, a sve će vam se ostalo dodati.',
+    'Tražite stoga najprije Kraljevstvo i pravednost njegovu, a sve će vam se ostalo dodati.',
     'Matej 6,33',
   ),
   BibleVerse(
@@ -322,11 +326,11 @@ const defaultBibleVerses = <BibleVerse>[
     'Matej 22,21',
   ),
   BibleVerse(
-    'Žetva je velika, ali radnika malo.',
+    'Žetve je mnogo, a radnikâ malo.',
     'Matej 9,37',
   ),
   BibleVerse(
-    'Iz obilja srca usta mu govore.',
+    'Ta iz obilja srca usta mu govore.',
     'Luka 6,45',
   ),
 ];

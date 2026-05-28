@@ -75,9 +75,12 @@ class _TvFocusableState extends State<TvFocusable> {
     if (hasFocus != _focused) {
       setState(() => _focused = hasFocus);
     }
-    if (hasFocus) {
-      // ensureVisible no-op-a ako nema Scrollable ancestor-a (npr. hero PLAY
-      // gumb na fiksnoj poziciji); inace gura kartice/gumbe u centar viewporta.
+    // Hero PLAY (primaryButton) je uvijek pri vrhu scrolla — autofocus na njega
+    // pri loadu ne smije pozvati ensureVisible(alignment: 0.5) jer to centrira
+    // PLAY u viewport i odgura appbar van ekrana. Kartice (card) i appbar
+    // search (subtleButton) zadržavaju ensureVisible — treba im za D-pad
+    // navigaciju kroz rail-ove ispod fold-a.
+    if (hasFocus && widget.style != TvFocusStyle.primaryButton) {
       Scrollable.ensureVisible(
         context,
         alignment: 0.5,

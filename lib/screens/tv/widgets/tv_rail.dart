@@ -18,8 +18,8 @@ class TvRail extends StatelessWidget {
     required this.eyebrow,
     required this.cards,
     required this.height,
-    this.cardSpacing = 20,
-    this.horizontalPadding = const EdgeInsets.symmetric(horizontal: 48),
+    this.cardSpacing = 16,
+    this.horizontalPadding = const EdgeInsets.symmetric(horizontal: 40),
   });
 
   @override
@@ -35,11 +35,11 @@ class TvRail extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 32,
+                width: 28,
                 height: 3,
                 color: theme.colorScheme.primary,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Text(
                 eyebrow.toUpperCase(),
                 style: theme.textTheme.labelLarge?.copyWith(
@@ -51,7 +51,7 @@ class TvRail extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         SizedBox(
           height: height,
           // `Clip.none` — bez ovoga focused card scale 1.18 + glow shadow se
@@ -64,7 +64,7 @@ class TvRail extends StatelessWidget {
             clipBehavior: Clip.none,
             padding: horizontalPadding is EdgeInsets
                 ? horizontalPadding as EdgeInsets
-                : const EdgeInsets.symmetric(horizontal: 48),
+                : const EdgeInsets.symmetric(horizontal: 40),
             itemCount: cards.length,
             separatorBuilder: (_, _) => SizedBox(width: cardSpacing),
             itemBuilder: (context, i) => cards[i],

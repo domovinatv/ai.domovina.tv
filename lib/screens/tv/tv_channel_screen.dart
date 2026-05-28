@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../main.dart' show log;
 import '../../models/channel_detail.dart';
 import '../../services/channel_cache.dart';
+import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_episode_card.dart';
 import 'widgets/tv_focus.dart';
 
@@ -226,16 +227,12 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
           if (avatar != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                avatar,
+              child: CachedThumbnail(
+                url: avatar,
                 width: 48,
                 height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  width: 48,
-                  height: 48,
-                  color: theme.colorScheme.surfaceContainerHighest,
-                ),
+                errorIcon: Icons.podcasts_outlined,
+                errorIconSize: 24,
               ),
             ),
           if (avatar != null) const SizedBox(width: 14),
