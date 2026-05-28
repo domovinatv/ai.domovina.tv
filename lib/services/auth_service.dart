@@ -384,6 +384,8 @@ class AuthService extends ChangeNotifier {
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
           decoration: const InputDecoration(
             hintText: 'ime@primjer.com',
             border: OutlineInputBorder(),
