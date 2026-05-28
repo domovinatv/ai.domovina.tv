@@ -1,5 +1,5 @@
 /// Real Supabase auth servis — preservira public API mock varijante
-/// (currentUser/isAnonymous/isSignedIn/linkIdentity/signOut/forceSignIn)
+/// (currentUser/isAnonymous/isSignedIn/linkIdentity/signOut)
 /// tako da pozivajući widgeti (AccountChip, auth_sheet, M2/M3/M4) rade
 /// bez izmjena.
 ///
@@ -306,30 +306,6 @@ class AuthService extends ChangeNotifier {
     } on sb.AuthException catch (e) {
       log('signOut error: ${e.message}');
     }
-  }
-
-  /// FALLBACK za M4 handoff kad edge function /handoff/consume nije available.
-  /// Pravi flow je: edge function consume RPC + generira magic link → session
-  /// se prebaci preko onAuthStateChange listenera u init(). Dok edge function
-  /// ne postoji, handoff_service poziva forceSignIn nakon RPC consume da
-  /// barem prikaže success screen (no real session switch — UI-only).
-  Future<void> forceSignIn({
-    required String id,
-    required String displayName,
-    required String email,
-    required AuthProvider provider,
-  }) async {
-    log('AuthService.forceSignIn (UI fallback): $id');
-    // Ne mijenjamo stvarnu Supabase sesiju — to mora ići preko magic link-a
-    // iz edge function-a. Samo updateamo UI state s prikazom target user-a.
-    _user = AppUser(
-      id: id,
-      isAnonymous: false,
-      email: email,
-      displayName: displayName,
-      provider: provider,
-    );
-    notifyListeners();
   }
 
   // -- helpers --

@@ -199,10 +199,10 @@ class _SendTabState extends State<_SendTab> {
       _error = null;
     });
     try {
-      final code = await HandoffService.instance.createCode();
+      final handoff = await HandoffService.instance.createCode();
       if (!mounted) return;
       setState(() {
-        _code = code;
+        _code = handoff.code;
         _loading = false;
       });
     } catch (e) {
@@ -268,12 +268,17 @@ class _ReceiveTabState extends State<_ReceiveTab> {
   late final TextEditingController _ctrl;
   bool _loading = false;
   String? _error;
-  HandoffToken? _consumed;
+
+  /// True nakon što je action_link otvoren; sesija stiže asinkrono preko
+  /// AuthService listenera (mobile/TV). Na webu stranica navigira pa se ovaj
+  /// state ni ne prikaže.
+  bool _opening = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.prefilledCode ?? '');
+    AuthService.instance.addListener(_onAuthChange);
     if (widget.prefilledCode != null && widget.prefilledCode!.length == 6) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _submit());
     }
@@ -281,16 +286,24 @@ class _ReceiveTabState extends State<_ReceiveTab> {
 
   @override
   void dispose() {
+    AuthService.instance.removeListener(_onAuthChange);
     _ctrl.dispose();
     super.dispose();
+  }
+
+  void _onAuthChange() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (_consumed != null) {
-      return _ConsumedSuccess(token: _consumed!);
+    if (_opening && AuthService.instance.isSignedIn) {
+      return const _ConsumedSuccess();
+    }
+    if (_opening) {
+      return const _OpeningSignIn();
     }
 
     return SafeArea(
@@ -384,19 +397,14 @@ class _ReceiveTabState extends State<_ReceiveTab> {
       _error = null;
     });
     try {
-      final token = await HandoffService.instance.consumeCode(code);
-
-      // MOCK: u pravom flowu ovdje GoTrue magic link završi sign-in.
-      await AuthService.instance.forceSignIn(
-        id: token.sourceUserId,
-        displayName: token.sourceDisplayName ?? 'Korisnik',
-        email: token.sourceEmail ?? 'unknown@local',
-        provider: token.sourceProvider ?? AuthProvider.email,
-      );
+      // Otvara magic action_link: web navigira u istom tabu (app se reloada
+      // signed-in), mobile/TV otvara vanjski browser → deep link vraća sesiju.
+      // Stvarni sign-in stiže preko onAuthStateChange → AuthService listener.
+      await HandoffService.instance.consumeCode(code);
 
       if (!mounted) return;
       setState(() {
-        _consumed = token;
+        _opening = true;
         _loading = false;
       });
     } catch (e) {
@@ -411,13 +419,48 @@ class _ReceiveTabState extends State<_ReceiveTab> {
   }
 }
 
-class _ConsumedSuccess extends StatelessWidget {
-  final HandoffToken token;
-  const _ConsumedSuccess({required this.token});
+class _OpeningSignIn extends StatelessWidget {
+  const _OpeningSignIn();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 24),
+            Text(
+              'Otvaram prijavu…',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ako se otvori preglednik, potvrdi prijavu pa se vrati u aplikaciju.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConsumedSuccess extends StatelessWidget {
+  const _ConsumedSuccess();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final user = AuthService.instance.currentUser;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -433,14 +476,14 @@ class _ConsumedSuccess extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Prijavljen kao ${token.sourceDisplayName ?? "korisnik"}.',
+              'Prijavljen kao ${user?.displayName ?? "korisnik"}.',
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
-            if (token.sourceEmail != null) ...[
+            if (user?.email != null) ...[
               const SizedBox(height: 4),
               Text(
-                token.sourceEmail!,
+                user!.email!,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

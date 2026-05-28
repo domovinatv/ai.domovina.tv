@@ -1,160 +1,122 @@
-/// Cross-device handoff. createCode poziva `domovina_ai.create_handoff_token`
-/// RPC i vraća 6-znamenkasti kod. consumeCode pokuša pozvati edge function
-/// `https://api.domovina.ai/handoff/consume` (koja interno radi
-/// consume_handoff_token RPC s service_role i vraća magic link za sign-in).
+/// Cross-device handoff.
 ///
-/// Ako edge function vraća 404 (još nije deployan), fallback je UI-only
-/// forceSignIn preko AuthService — pokaže se success screen ali stvarna
-/// Supabase sesija ostaje neizmijenjena. Vidi docs/backend-prompts/06.
+/// [createCode] (izvorni uređaj, prijavljen) poziva `domovina_ai.create_handoff_token`
+/// RPC koji vraća `{code, expires_at}` (TTL 5 min) — prethodne nepotrošene
+/// kodove istog usera RPC automatski briše.
+///
+/// [consumeCode] (uređaj koji prima) poziva `handoff-consume` Edge Function
+/// (`/functions/v1/handoff-consume`). Funkcija interno radi consume preko
+/// service_role-a i vrati magic `action_link`; otvaranjem tog linka Supabase
+/// postavi sesiju izvornog usera na ovom uređaju.
 library;
 
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:url_launcher/url_launcher.dart';
 import '../main.dart' show log;
 import 'auth_service.dart';
 
-class HandoffToken {
+/// Rezultat generiranja koda na izvornom uređaju.
+class HandoffCode {
   final String code;
-  final String sourceUserId;
-  final String? sourceDisplayName;
-  final String? sourceEmail;
-  final AuthProvider? sourceProvider;
   final DateTime expiresAt;
-  bool consumed;
 
-  HandoffToken({
-    required this.code,
-    required this.sourceUserId,
-    this.sourceDisplayName,
-    this.sourceEmail,
-    this.sourceProvider,
-    required this.expiresAt,
-    this.consumed = false,
-  });
+  const HandoffCode({required this.code, required this.expiresAt});
 
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  Duration get remaining => expiresAt.difference(DateTime.now());
+  bool get isExpired => remaining.isNegative;
 }
 
 class HandoffService {
   static final HandoffService instance = HandoffService._();
   HandoffService._();
 
-  String get _supabaseBase {
-    // SUPABASE_URL is the Kong gateway base; edge function is /handoff/consume.
-    return const String.fromEnvironment('SUPABASE_URL');
-  }
-
-  /// Generira novi handoff kod preko RPC. Prethodne nepotrošene kodove istog
-  /// usera RPC automatski briše (vidi 06-handoff-rpc.md).
-  Future<String> createCode() async {
+  /// Generira novi handoff kod preko RPC. Vraća 6-znamenkasti kod + istek.
+  Future<HandoffCode> createCode() async {
     final user = AuthService.instance.currentUser;
     if (user == null) throw StateError('Nema usera za handoff');
 
     try {
       final client = sb.Supabase.instance.client;
-      final result = await client
-          .schema('domovina_ai')
-          .rpc('create_handoff_token');
-      return result as String;
+      final result =
+          await client.schema('domovina_ai').rpc('create_handoff_token');
+      final map = (result as Map).cast<String, dynamic>();
+      return HandoffCode(
+        code: map['code'] as String,
+        expiresAt: DateTime.parse(map['expires_at'] as String),
+      );
     } on sb.PostgrestException catch (e) {
       log('create_handoff_token RPC failed: ${e.message}');
       throw StateError('Backend ne odgovara: ${e.message}');
     }
   }
 
-  /// Konzumira kod. Prvi pokušaj ide preko edge function-a koji obrne magic
-  /// link i sign-ina trenutnu sesiju kao target user. Ako 404 → fallback
-  /// na force UI sign-in (mock until edge function lands).
-  Future<HandoffToken> consumeCode(String code) async {
+  /// Konzumira kod na uređaju koji prima. Poziva `handoff-consume` Edge
+  /// Function (supabase_flutter automatski šalje trenutni access token kao
+  /// pozivatelja), dobije `action_link` i otvori ga da Supabase završi sign-in.
+  /// Vraća `user_id` izvornog usera. Sama sesija stiže asinkrono preko
+  /// `onAuthStateChange` (vidi AuthService.init).
+  Future<String> consumeCode(String code) async {
     final clean = code.replaceAll(RegExp(r'[^0-9]'), '');
     if (clean.length != 6) {
       throw const FormatException('Kod mora imati točno 6 znamenki');
     }
 
-    // Pokušaj 1: edge function. Vraća { user_id, source_display_name?, source_email?, action_link? }
+    final client = sb.Supabase.instance.client;
     try {
-      final response = await http
-          .post(
-            Uri.parse('$_supabaseBase/handoff/consume'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'code': clean, 'device': _detectDevice()}),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        // Ako edge function vraća action_link, otvori ga da Supabase završi sign-in.
-        // Browser će se preusmjeriti, session listener u AuthService.init handlat će rest.
-        final actionLink = body['action_link'] as String?;
-        if (actionLink != null && actionLink.isNotEmpty) {
-          log('handoff: redirecting to action_link');
-          // TODO: navigator.location.replace(actionLink) — za sad samo log
-          //       i fallback na force sign-in; integracija deeplink-a dolazi
-          //       kad edge function bude testiran.
-        }
-        return HandoffToken(
-          code: clean,
-          sourceUserId: body['user_id'] as String? ?? '',
-          sourceDisplayName: body['source_display_name'] as String?,
-          sourceEmail: body['source_email'] as String?,
-          sourceProvider: _parseProvider(body['source_provider'] as String?),
-          expiresAt: DateTime.now().add(const Duration(minutes: 5)),
-          consumed: true,
-        );
+      final res = await client.functions.invoke(
+        'handoff-consume',
+        body: {'code': clean, 'device': _detectDevice()},
+      );
+      final data = (res.data as Map).cast<String, dynamic>();
+      final actionLink = data['action_link'] as String?;
+      if (actionLink == null || actionLink.isEmpty) {
+        throw StateError('Backend nije vratio sign-in link');
       }
-
-      if (response.statusCode == 404) {
-        log('handoff: edge function 404 — fallback to RPC + UI-only force sign-in');
-        return _consumeViaRpcFallback(clean);
-      }
-
-      throw StateError('Edge function vratio ${response.statusCode}');
-    } on FormatException {
-      rethrow;
-    } catch (e) {
-      log('handoff consume edge failed ($e) — fallback to RPC');
-      return _consumeViaRpcFallback(clean);
+      await _openActionLink(actionLink);
+      return data['user_id'] as String? ?? '';
+    } on sb.FunctionException catch (e) {
+      log('handoff-consume failed: status=${e.status} details=${e.details}');
+      throw StateError(_mapError(e));
     }
   }
 
-  /// RPC fallback — poziva consume_handoff_token direktno (security definer).
-  /// Vraća source user_id; force sign-in u UI je responsibility caller-a.
-  Future<HandoffToken> _consumeViaRpcFallback(String code) async {
-    try {
-      final client = sb.Supabase.instance.client;
-      final result = await client.schema('domovina_ai').rpc(
-        'consume_handoff_token',
-        params: {'p_code': code, 'p_device': _detectDevice()},
-      );
-      final map = result is Map<String, dynamic>
-          ? result
-          : (result as Map).cast<String, dynamic>();
-      return HandoffToken(
-        code: code,
-        sourceUserId: map['user_id'] as String? ?? '',
-        expiresAt: DateTime.now().add(const Duration(minutes: 5)),
-        consumed: true,
-      );
-    } on sb.PostgrestException catch (e) {
-      // 'invalid_or_expired_code' iz RPC-a — bubble up s human message
-      if (e.message.contains('invalid_or_expired')) {
-        throw StateError('Kod ne postoji ili je istekao');
-      }
-      throw StateError(e.message);
+  /// Otvori magic `action_link`. Web: ista kartica (full navigacija) da
+  /// supabase_flutter detektira sesiju iz URL-a po reloadu. Mobile/TV: vanjski
+  /// browser → magic link → redirect na `ai.domovina://auth/callback`.
+  Future<void> _openActionLink(String actionLink) async {
+    final uri = Uri.parse(actionLink);
+    if (kIsWeb) {
+      await launchUrl(uri, webOnlyWindowName: '_self');
+    } else {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
-  AuthProvider? _parseProvider(String? raw) {
-    if (raw == null) return null;
-    return AuthProvider.values.firstWhere(
-      (p) => p.name == raw,
-      orElse: () => AuthProvider.email,
-    );
+  String _mapError(sb.FunctionException e) {
+    final details = e.details;
+    final code = details is Map ? details['error'] as String? : null;
+    return switch (code) {
+      'not_authenticated' =>
+        'Ovaj uređaj nema aktivnu sesiju — osvježi stranicu i pokušaj ponovo',
+      'invalid_code_format' => 'Kod mora imati 6 znamenki',
+      'invalid_or_expired_code' => 'Kod ne postoji ili je istekao',
+      _ => switch (e.status) {
+          401 => 'Ovaj uređaj nema aktivnu sesiju — osvježi i pokušaj ponovo',
+          405 => 'Greška u pozivu (405)',
+          _ => 'Prijenos nije uspio (${e.status})',
+        },
+    };
   }
 
   String _detectDevice() {
-    // Match watch_progress device_type enum.
-    return 'web';
+    if (kIsWeb) return 'web';
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.android => 'android',
+      TargetPlatform.macOS => 'macos',
+      _ => 'web',
+    };
   }
 }
