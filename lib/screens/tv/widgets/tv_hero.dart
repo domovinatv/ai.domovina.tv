@@ -39,11 +39,12 @@ class TvHero extends StatelessWidget {
     final fv = featured.video;
     final video = fv.video;
 
-    // 16:9 slika; sirinu deriviramo iz maxHeight da slika nikad ne prelazi
-    // dozvoljenu visinu. Visina je STROGO `imageWidth * 9/16` i diktira
-    // visinu cijelog hero-a — bez tog explicit-nog height-a IntrinsicHeight
-    // bi rastao s text panel-om i slika bi bila stretched / cropped
-    // (vidi EON 1280px feedback 2026-05-28).
+    // 16:9 slika; sirinu deriviramo iz maxHeight da slika ne prelazi
+    // dozvoljenu visinu. Slika zadrzava fiksni aspect (imageWidth×imageHeight)
+    // i NIKAD se ne rasteze — ako tekst panel zatreba vise visine, cijeli hero
+    // naraste a slika se vertikalno centrira (crossAxisAlignment.center).
+    // Tako izbjegavamo overflow na malim TV-ima (EON 960×540 = hero 180dp gdje
+    // tekst ~183dp ne stane) bez stretchanja slike (EON feedback 2026-05-28).
     final imageWidth = (maxHeight * 16 / 9).clamp(320.0, 480.0);
     final imageHeight = imageWidth * 9 / 16;
 
@@ -72,90 +73,88 @@ class TvHero extends StatelessWidget {
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: metrics.heroMaxWidth),
-          // Eksplicitan height na cijelom hero-u = imageHeight. Bez ClipRRect
-          // (ukloneno 2026-05-28: rounded corners su lose izgledali za
-          // thumbnails koji imaju margin-e/letterbox — radije ostavimo siroke
-          // rubove i pustimo da svaka slika dise prirodno).
+          // Hero visina = max(imageHeight, tekst panel) — slika fiksna 16:9,
+          // tekst diktira rast. Bez ClipRRect (ukloneno 2026-05-28: rounded
+          // corners su lose izgledali za thumbnails koji imaju margin-e/
+          // letterbox — radije ostavimo siroke rubove i pustimo da svaka slika
+          // dise prirodno).
           child: Material(
             color: theme.colorScheme.surfaceContainerLowest,
-            child: SizedBox(
-              height: imageHeight,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: imageWidth,
-                    height: imageHeight,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CachedThumbnail(
-                          url: CdnConfig.thumbnailUrl(video.id),
-                          width: imageWidth,
-                          height: imageHeight,
-                        ),
-                        if (featured.magisteriumScore != null)
-                          Positioned(
-                            top: 12 * scale,
-                            right: 12 * scale,
-                            child: _MagisteriumPill(
-                              score: featured.magisteriumScore!,
-                              scale: scale,
-                            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: imageWidth,
+                  height: imageHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CachedThumbnail(
+                        url: CdnConfig.thumbnailUrl(video.id),
+                        width: imageWidth,
+                        height: imageHeight,
+                      ),
+                      if (featured.magisteriumScore != null)
+                        Positioned(
+                          top: 12 * scale,
+                          right: 12 * scale,
+                          child: _MagisteriumPill(
+                            score: featured.magisteriumScore!,
+                            scale: scale,
                           ),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      (compact ? 20 : 28) * scale,
+                      (compact ? 16 : 22) * scale,
+                      (compact ? 20 : 28) * scale,
+                      (compact ? 16 : 22) * scale,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          featured.reason.shortLabel.toUpperCase(),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.tertiary,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(height: (compact ? 4 : 8) * scale),
+                        Text(
+                          video.displayTitle,
+                          maxLines: compact ? 2 : 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: titleStyle,
+                        ),
+                        SizedBox(height: (compact ? 6 : 10) * scale),
+                        Text(
+                          metaParts.join('  ·  '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        SizedBox(height: (compact ? 10 : 16) * scale),
+                        _PlayButton(
+                          focusNode: playFocusNode,
+                          autofocus: autofocusPlay,
+                          scale: scale,
+                          onPressed: onPlay,
+                        ),
                       ],
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        (compact ? 20 : 28) * scale,
-                        (compact ? 16 : 22) * scale,
-                        (compact ? 20 : 28) * scale,
-                        (compact ? 16 : 22) * scale,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            featured.reason.shortLabel.toUpperCase(),
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: theme.colorScheme.tertiary,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(height: (compact ? 4 : 8) * scale),
-                          Text(
-                            video.displayTitle,
-                            maxLines: compact ? 2 : 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: titleStyle,
-                          ),
-                          SizedBox(height: (compact ? 6 : 10) * scale),
-                          Text(
-                            metaParts.join('  ·  '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          SizedBox(height: (compact ? 10 : 16) * scale),
-                          _PlayButton(
-                            focusNode: playFocusNode,
-                            autofocus: autofocusPlay,
-                            scale: scale,
-                            onPressed: onPlay,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
