@@ -1,10 +1,59 @@
 # Splash screen — biblijski citati
 
 DOMOVINA.ai splash screen prikazuje biblijski citat tijekom hladnog starta
-aplikacije. Postoje **dva splash sloja** — native Android i Flutter-rendered —
-s različitim arhitekturnim trade-off-evima.
+aplikacije. Postoje **dva splash sloja** — native Android i Flutter-rendered.
 
-## Pregled
+---
+
+## ⚠️ UPDATE 2026-05-28 — Premium full-frame overhaul (supersedes below)
+
+Velika revizija. Ključne promjene koje **nadjačavaju** stariji opis ispod:
+
+### Arhitektura
+- **Native splash je sada premium full-frame 4K PNG** (`splash_full_1.png`,
+  3840×2160), ne više layer-list (logo + tagline band). Generiran preko
+  `scripts/generate-premium-splash-taglines.py` (PIL auto-fit tipografija).
+- **Flutter boot splash = `TvBootSplash` widget** prikazuje **identičnu**
+  sliku (`assets/splash/splash_full_1.png`) + diskretni "Učitavanje…"
+  progress na dnu. Cilj: vizualni kontinuitet — native→Flutter handoff bez
+  frame promjene. Zamijenio `TvLoadingTips` u boot pathu (TvLoadingTips
+  ostaje u kodu, neiskorišten u bootu).
+- **Flash fix**: `NormalTheme.windowBackground` = `LaunchTheme.windowBackground`
+  = `@drawable/launch_background`. Bez toga theme swap stvara crni bljesak.
+  Vidi memory `feedback_splash_theme_continuity`.
+
+### Trajanje (ISPRAVAK)
+Native splash je vidljiv **~2.1s**, NE 12-19s. Stari "12-19s" je bio
+percipirani Flutter loading period (ChannelCache prefetch). Cold start
+detalji: `docs/android-tv-performance.md`.
+
+### Citati — KS Jeruzalemska Biblija (NE više Magisterium AI raw)
+Svi citati su **fact-checkani protiv https://biblija.ks.hr** (službeni
+hrvatski liturgijski tekst koji se čita na misi). 10/14 Magisterium AI
+tekstova se razlikovalo i zamijenjeno je KS verzijama. Detaljni diff:
+`docs/splash-bible-citations-factcheck.md`. Najvažniji fix: Mt 9,37
+"Žetva je velika, ali radnika malo" → KS "Žetve je mnogo, a radnikâ malo".
+
+- **Native splash citat**: Mt 10,26-**27** (skraćeno s 26-28 jer ~2s+10s
+  loading ne ostavlja vremena za 3 retka).
+- **Flutter rotacija**: 13 KS citata u `defaultBibleVerses`
+  (`tv_loading_tips.dart`) — ostaje za eventualni reuse.
+
+### Generiranje
+- `scripts/generate-premium-splash-taglines.py` — PIL auto-fit, default
+  generira samo `splash_full_1` (production), `--all` za svih 14 (design
+  review). Mirror u `assets/splash/` za Flutter.
+- `assets/icons/splash-template.svg` — layout source-of-truth (design
+  artifact; renderer mora odražavati promjene).
+- Fontovi: `assets/fonts/{Lora-Italic, Inter-Bold, Inter-Regular}.ttf`
+  (Lora Italic za citat, Inter za wordmark/atribuciju — vidi memory
+  `feedback_splash_typography`).
+- Stari `splash_tagline_*.png` + `splash_logo.png` OBRISANI (cleanup,
+  ~5MB AAB ušteda).
+
+---
+
+## Pregled (povijesno — vidi update iznad za trenutno stanje)
 
 | Sloj | Trajanje | Sadržaj | Rotacija |
 |---|---|---|---|

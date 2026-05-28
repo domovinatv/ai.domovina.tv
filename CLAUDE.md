@@ -74,14 +74,53 @@ AV1 sadržaj neće glatko playati na većini Android TV box-ova.
 
 ### Native Android splash je static (nije rotirajuc)
 
-Pokušali smo runtime rotaciju biblijskih citata u native splash-u (4
-različita pristupa), ali Android <12 starting window se ne može
-runtime-modificirati. Rotacija je premjestena u Flutter splash. Detalji
-u `docs/splash-bible-citations.md`.
+Pokušali smo runtime rotaciju biblijskih citata u native splash-u (5
+različitih pristupa), ali Android <12 starting window se ne može
+runtime-modificirati (komponira se iz manifest teme PRIJE Activity-a).
+Puna istraga: `docs/splash-randomization-research.md`. Verdict: nemoguće
+na API <12 bez vidljivih nuspojava (activity-alias rotacija razbacuje
+ikonu po Leanback Apps row-u).
 
-**Rule**: ne dirati `MainActivity.kt` `setTheme()` logiku za splash — ne
-radi. Za promjenu native splash teksta, regeneriraj
-`drawable-nodpi/splash_tagline_1.png` i rebuild.
+**Trenutna splash arhitektura** (vidi `docs/splash-bible-citations.md`):
+- Native splash = premium full-frame 4K PNG (`splash_full_1.png`,
+  Mt 10,26-27 KS Jeruzalemska Biblija).
+- Flutter `TvBootSplash` prikazuje istu sliku + "Učitavanje…" progress
+  za seamless native→Flutter kontinuitet.
+- Generiranje: `scripts/generate-premium-splash-taglines.py` (PIL auto-fit;
+  `--all` za svih 14 citata). Mirror u `assets/splash/` za Flutter asset.
+
+**Rule**: ne dirati `MainActivity.kt` za splash rotaciju — nemoguće. Za
+promjenu native splash teksta: edit `VERSES` u Python skripti, rerun,
+rebuild. Citati MORAJU biti KS Jeruzalemska Biblija (biblija.ks.hr), ne
+Magisterium AI raw — vidi `docs/splash-bible-citations-factcheck.md`.
+
+### Flash između native i Flutter splash-a — NormalTheme windowBackground
+
+`NormalTheme.windowBackground` MORA biti isti drawable kao
+`LaunchTheme.windowBackground` (`@drawable/launch_background`). Inače Flutter
+theme swap pri prvom frame-u zamijeni splash sliku za crno → vidljiv flash.
+Vidi `values/styles.xml` + `values-night/styles.xml`.
+
+### Impeller disabled na svim Android buildovima — Skia renderer
+
+`io.flutter.embedding.android.EnableImpeller=false` u AndroidManifest.xml.
+Razlog: Impeller shader compile na low-end Amlogic GPU (EON). Trenutno
+koristimo Skia. Tradeoff + buduće opcije (SkSL warmup) + cijela TV perf
+analiza: `docs/android-tv-performance.md`.
+
+**Rule**: ne re-enable-ati Impeller bez re-mjerenja cold starta na EON-u.
+NE koristiti `FlutterEngineCache` engine pre-warm — collide-a s
+audio_service `provideFlutterEngine()` (dupli `main()`). Detalji u perf docu.
+
+### Thumbnail caching — cached_network_image (TV)
+
+TV thumbnail-i koriste `CachedThumbnail` widget (`lib/widgets/cached_thumbnail.dart`)
+koji wrap-a `cached_network_image` — disk-persistent cache (preživljava app
+restart) + sivi placeholder + error widget. Cache key = URL, pa CDN `?v=`
+cache-buster prirodno invalidira. Web/mobile screens još koriste raw
+`Image.network` (TODO: proširiti ako se potvrdi benefit).
+
+**Rule**: za nove TV thumbnail-e koristi `CachedThumbnail`, ne `Image.network`.
 
 ## Logging
 
