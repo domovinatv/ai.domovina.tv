@@ -35,6 +35,12 @@ else
   SUPABASE_DEFINES="--dart-define=SUPABASE_URL=${SUPABASE_URL} --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
 fi
 
+# Certilia proxy URL (opcionalno — CertiliaService ima default na
+# certilia.domovina.ai pa prod radi i bez ovoga; override za dev/staging).
+if [[ -n "${CERTILIA_SERVER_URL:-}" ]]; then
+  SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=CERTILIA_SERVER_URL=${CERTILIA_SERVER_URL}"
+fi
+
 # Auto-bump verzije na svakom deployu — pomaže korisniku znati treba li
 # hard-refresh: ako footer prikazuje istu verziju kao prije, browser servira
 # stari cache i potrebno je Cmd+Shift+R; ako je verzija nova, deploy je

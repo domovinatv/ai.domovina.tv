@@ -133,6 +133,15 @@ class _AuthSheetContent extends StatelessWidget {
                   subtitle: 'Pošaljemo ti link i kod za prijavu',
                   onTap: () => _doLink(context, AuthProvider.email),
                 ),
+                const SizedBox(height: 10),
+                AuthProviderTile(
+                  iconBg: AppTheme.croRed.withValues(alpha: 0.10),
+                  iconChild: const Icon(Icons.badge_outlined,
+                      color: AppTheme.croRed, size: 22),
+                  label: 'Prijava eOsobnom',
+                  subtitle: 'Hrvatska e-osobna (Certilia / NIAS)',
+                  onTap: () => _doLink(context, AuthProvider.certilia),
+                ),
 
                 const SizedBox(height: 18),
                 _ReassuranceNote(origin: origin),

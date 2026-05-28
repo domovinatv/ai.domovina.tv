@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log, rootScaffoldMessengerKey;
 import '../onboarding/ui/auth_ui.dart';
+import 'certilia_service.dart';
 import 'favorites_service.dart';
 import 'local_prefs.dart';
 import 'passkey_service.dart';
@@ -24,7 +25,7 @@ const String _anonPendingMigrationKey = 'auth_anon_pending_migration_id';
 
 /// Provider info — kakav identitet je linkan. Mapira na sb.OAuthProvider
 /// za Google/Apple; email i passkey su custom flow-ovi.
-enum AuthProvider { google, apple, email, passkey }
+enum AuthProvider { google, apple, email, passkey, certilia }
 
 extension AuthProviderLabel on AuthProvider {
   String get displayName => switch (this) {
@@ -32,14 +33,16 @@ extension AuthProviderLabel on AuthProvider {
         AuthProvider.apple => 'Apple',
         AuthProvider.email => 'E-mail',
         AuthProvider.passkey => 'Passkey',
+        AuthProvider.certilia => 'eOsobna',
       };
 
-  /// Najbliži supabase_flutter OAuth provider za ovaj enum (null za email/passkey).
+  /// Najbliži supabase_flutter OAuth provider za ovaj enum (null za custom flow-ove).
   sb.OAuthProvider? get oauthProvider => switch (this) {
         AuthProvider.google => sb.OAuthProvider.google,
         AuthProvider.apple => sb.OAuthProvider.apple,
         AuthProvider.email => null,
         AuthProvider.passkey => null,
+        AuthProvider.certilia => null,
       };
 }
 
@@ -62,22 +65,28 @@ class AppUser {
 
   factory AppUser.fromSupabase(sb.User u) {
     final meta = u.userMetadata ?? const {};
+    final appMeta = u.appMetadata;
+    final isCertilia = appMeta['provider'] == 'certilia';
+
     String? displayName = meta['name'] as String?
         ?? meta['full_name'] as String?
-        ?? meta['preferred_username'] as String?;
+        ?? meta['preferred_username'] as String?
+        ?? (isCertilia ? appMeta['full_name'] as String? : null);
     if (displayName == null || displayName.isEmpty) {
       displayName = u.email?.split('@').firstOrNull;
     }
 
-    // Detektiraj koji je provider linked. Identities sadrži OAuth providere;
-    // ako nema OAuth identiteta a postoji email → magic link.
+    // Detektiraj koji je provider linked. Certilia ide preko app_metadata
+    // (synthetic email user); inače OAuth identities; fallback magic link.
     AuthProvider? provider;
     final identities = u.identities ?? const [];
     final providerNames = identities
         .map((i) => i.provider)
         .where((p) => p != 'email')
         .toList();
-    if (providerNames.contains('google')) {
+    if (isCertilia) {
+      provider = AuthProvider.certilia;
+    } else if (providerNames.contains('google')) {
       provider = AuthProvider.google;
     } else if (providerNames.contains('apple')) {
       provider = AuthProvider.apple;
@@ -273,6 +282,10 @@ class AuthService extends ChangeNotifier {
         case AuthProvider.passkey:
           await _registerPasskey(context);
           break;
+
+        case AuthProvider.certilia:
+          await signInWithCertilia(context);
+          break;
       }
     } on sb.AuthException catch (e) {
       log('linkIdentity AuthException: ${e.message} (status: ${e.statusCode})');
@@ -343,6 +356,31 @@ class AuthService extends ChangeNotifier {
       if (context.mounted) _snack(context, 'Prijava passkeyom u tijeku…');
     } on PasskeyFailure catch (e) {
       log('signInWithPasskey PasskeyFailure: ${e.message}');
+      if (context.mounted) _snack(context, e.message);
+    }
+  }
+
+  /// Prijava hrvatskom eOsobnom (Certilia/NIAS). Spremi anon UUID za migraciju
+  /// pa pokreni Certilia OIDC flow + bridge. Sesija stiže preko onAuthStateChange.
+  Future<void> signInWithCertilia(BuildContext context) async {
+    final client = _client();
+    if (client == null) {
+      _snack(context, 'Supabase nije konfiguriran.');
+      return;
+    }
+    final current = client.auth.currentUser;
+    String? anonId;
+    if (current?.isAnonymous == true && current != null) {
+      anonId = current.id;
+      setLocalStorageString(_anonPendingMigrationKey, current.id);
+      log('signInWithCertilia: saved pending anon=${current.id}');
+    }
+    try {
+      await CertiliaService.instance
+          .signInWithCertilia(context, anonId: anonId);
+      if (context.mounted) _snack(context, 'Prijava eOsobnom u tijeku…');
+    } on CertiliaFailure catch (e) {
+      log('signInWithCertilia CertiliaFailure: ${e.message}');
       if (context.mounted) _snack(context, e.message);
     }
   }
