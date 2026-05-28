@@ -1,16 +1,17 @@
 # Supabase Implementation Guide — DOMOVINA.ai
 
-Cross-analiza: **ZEF (Lovable monorepo)** ↔ **DOMOVINA ekosistem (split: 1 backend + N frontend-a)**.
+Tehnička analiza DOMOVINA backenda naspram **Lovable Supabase best practices** — provjerenih obrazaca za React + Supabase monorepo (migration-first workflow, SECURITY DEFINER RLS helpers, per-role grants, queue-based email infra, itd.).
 
-Tri repozitorija u igri:
+Dva repozitorija u igri:
 
 | Repo | Putanja | Uloga |
 |------|---------|-------|
-| **ZEF** | `/Users/ms/git/zef/zef-new-website` | Referenca — Lovable monorepo (React + Supabase u istom repu), production, ~125 migracija, ~30 Edge Functions |
 | **domovina-api** | `/Users/ms/git/domovinatv/domovina-api` | **Backend** — self-hosted Supabase as code (migracije, RLS, RPC, deploy scripts, Cloudflare Tunnel, Coolify) |
 | **domovina.ai** | `/Users/ms/git/domovinatv/domovina.ai` | **Frontend** — Flutter client (web/mobile/TV), consumira backend preko `api.domovina.ai` |
 
-> **Ključna arhitektonska razlika:** ZEF je monorepo jer je Lovable jedna app + jedna baza. DOMOVINA je **1 backend → N frontends** (`domovina.ai`, `domovina.energy`, `domovina.tv` dijele isti Supabase preko Kong gateway-a). Zato je backend **odvojen repo** (`domovina-api`) — to je namjerna, ispravna odluka, ne nedostatak. Sva schema/RLS/RPC logika živi u `domovina-api`, a Flutter samo poziva.
+> **Referentni standard:** ovaj dokument mjeri DOMOVINA backend naspram Lovable Supabase best practices — kanonskih obrazaca za React + Supabase monorepo aplikacije.
+
+> **Ključna arhitektonska razlika:** Lovable best-practice obrazac je monorepo (jedna app + jedna baza). DOMOVINA je **1 backend → N frontends** (`domovina.ai`, `domovina.energy`, `domovina.tv` dijele isti Supabase preko Kong gateway-a). Zato je backend **odvojen repo** (`domovina-api`) — to je namjerna, ispravna odluka, ne nedostatak. Sva schema/RLS/RPC logika živi u `domovina-api`, a Flutter samo poziva.
 
 ---
 
@@ -18,7 +19,7 @@ Tri repozitorija u igri:
 
 ### Headline nalaz: backend je zreliji nego što se mislilo
 
-Prva iteracija ovog dokumenta pretpostavila je da migracije ne postoje (gledala samo frontend repo). **Krivo.** Backend repo `domovina-api` **već prati gotovo sve ZEF best practices**:
+Prva iteracija ovog dokumenta pretpostavila je da migracije ne postoje (gledala samo frontend repo). **Krivo.** Backend repo `domovina-api` **već prati gotovo sve Lovable Supabase best practices**:
 
 - ✅ Migration-first workflow — 7 `.sql` migracija, `YYYYMMDDhhmmss_<area>_<what>` naming, immutable, tracking u `supabase_migrations.schema_migrations`
 - ✅ SECURITY DEFINER RLS helpers (`is_account_member()`, `has_role_on_account()`, `log_event()`) **sa `set search_path = ''`** (injection-safe)
@@ -285,7 +286,7 @@ Deploy: `./scripts/db-migrate.sh` (backup + transaction apply).
 
 ### 3.2 Edge Function: `handoff-consume`
 
-Backend trenutno nema `supabase/functions/`. Kreiraj prvu, slijedeći ZEF strukturu (`_shared/`, `verify_jwt` per function).
+Backend trenutno nema `supabase/functions/`. Kreiraj prvu, slijedeći standardnu Lovable Edge Function strukturu (`_shared/`, `verify_jwt` per function).
 
 ```
 domovina-api/supabase/functions/
@@ -504,7 +505,7 @@ class FavoritesRepo {
 
 ### Problem i strategija
 
-Backend schema živi u `domovina-api`, frontend modeli u `domovina.ai`. Kad backend promijeni kolonu, frontend mora znati. ZEF rješava jednim repom + `supabase gen types typescript`. U split arhitekturi treba **eksplicitan ugovor**.
+Backend schema živi u `domovina-api`, frontend modeli u `domovina.ai`. Kad backend promijeni kolonu, frontend mora znati. Lovable obrazac to rješava jednim repom + `supabase gen types typescript`. U split arhitekturi treba **eksplicitan ugovor**.
 
 **Preporuka:** Backend generira tipove kao artefakt, frontend ih konzumira ručno preslikane u `freezed`.
 
@@ -568,9 +569,9 @@ class WatchProgress with _$WatchProgress {
 
 ## 6. Phase 4 — Auth hardening (`domovina.ai`)
 
-### 6.1 Paralelni hydration (ZEF pattern)
+### 6.1 Paralelni hydration (Lovable pattern)
 
-ZEF radi `Promise.all([member, roles])`. Apliciraj na `auth_service.dart` nakon `_setUser()`:
+Lovable best-practice obrazac radi `Promise.all([member, roles])`. Apliciraj na `auth_service.dart` nakon `_setUser()`:
 
 ```dart
 Future<void> _hydrateUser(User user) async {
@@ -635,7 +636,7 @@ void _subscribe(String userId) {
 }
 ```
 
-> Backend mora imati `alter publication supabase_realtime add table domovina_ai.watch_progress` (ZEF pattern). Provjeri/dodaj migraciju u `domovina-api` — trenutno nije u 7 migracija.
+> Backend mora imati `alter publication supabase_realtime add table domovina_ai.watch_progress` (standardni Lovable Realtime pattern). Provjeri/dodaj migraciju u `domovina-api` — trenutno nije u 7 migracija.
 
 ### Acceptance kriterij
 
@@ -647,7 +648,7 @@ void _subscribe(String userId) {
 
 ## 8. Phase 6 — CI/CD za migracije (`domovina-api`)
 
-Backend deploya migracije ručno (`db-migrate.sh`). ZEF nema CI ni on, ali za multi-frontend backend to je vrijedno.
+Backend deploya migracije ručno (`db-migrate.sh`). Ni standardni Lovable obrazac nema CI za migracije, ali za multi-frontend backend to je vrijedno.
 
 ```yaml
 # domovina-api/.github/workflows/db.yml
@@ -664,21 +665,21 @@ jobs:
 
 Alternativa bez GH Actions: `db-migrate.sh` već radi posao; dodaj `--dry-run` u pre-commit hook za sanity.
 
-> **Migration tests** (ZEF nema, ali vrijedi): `supabase test db` s pgTAP — testira RLS politike (anon ne vidi tuđe, authenticated vidi svoje). Posebno korisno za multi-frontend gdje regresija pogađa 3 app-a.
+> **Migration tests** (nije dio standardnog Lovable obrasca, ali vrijedi): `supabase test db` s pgTAP — testira RLS politike (anon ne vidi tuđe, authenticated vidi svoje). Posebno korisno za multi-frontend gdje regresija pogađa 3 app-a.
 
 ---
 
 ## 9. Phase 7 — Email infra (odgodi)
 
-ZEF ima queue-based (pgmq + DLQ + `email_send_log` + `suppressed_emails` + React Email templates + `process-email-queue` cron function). Backend `domovina-api` koristi direkt GoTrue→Resend SMTP.
+Lovable best-practice email infra je queue-based (pgmq + DLQ + `email_send_log` + `suppressed_emails` + React Email templates + `process-email-queue` cron function). Backend `domovina-api` koristi direkt GoTrue→Resend SMTP.
 
 **Kad implementirati:** tek kad šalješ više od auth emaila (welcome, digest, "nova epizoda"). Za sada Resend SMTP je dovoljan.
 
 **Kad počneš (sve u `domovina-api`):**
 1. Provjeri `pgmq` dostupnost u Coolify image-u (vjerojatno treba custom image — nije u trenutnom template-u)
-2. Kopiraj ZEF `email_infra` migraciju kao template
+2. Postavi `email_infra` migraciju po Lovable obrascu (pgmq + DLQ + `email_send_log` + `suppressed_emails`)
 3. Edge Function `process-email-queue` (cron-triggered) + `email_send_log` audit
-4. Croatian templates (gender-aware greeting po ZEF `_shared/hr-gender.ts`)
+4. Croatian templates (gender-aware greeting kroz `_shared/hr-gender.ts` helper, po Lovable obrascu)
 
 ---
 
@@ -771,4 +772,4 @@ ZEF ima queue-based (pgmq + DLQ + `email_send_log` + `suppressed_emails` + React
 
 ---
 
-**Final note:** Backend `domovina-api` je iznenađujuće zreo — arhitektura, RLS, migracije i ops su na ZEF razini ili iznad (offline secrets, transaction-safe migrate, Cloudflare Zero Trust). Glavni rizik nije backend kvaliteta nego **split-repo desync**: frontend pretpostavke (anon, schema exposure, RPC dostupnost, FK kolone) ne poklapaju se s backend stvarnošću. Phase 0 (§2) rješava te mismatch-eve i otključava sve ostalo. Ne gradi backend iznova — sinkroniziraj ugovor.
+**Final note:** Backend `domovina-api` je iznenađujuće zreo — arhitektura, RLS, migracije i ops su na razini Lovable Supabase best practices ili iznad (offline secrets, transaction-safe migrate, Cloudflare Zero Trust). Glavni rizik nije backend kvaliteta nego **split-repo desync**: frontend pretpostavke (anon, schema exposure, RPC dostupnost, FK kolone) ne poklapaju se s backend stvarnošću. Phase 0 (§2) rješava te mismatch-eve i otključava sve ostalo. Ne gradi backend iznova — sinkroniziraj ugovor.
