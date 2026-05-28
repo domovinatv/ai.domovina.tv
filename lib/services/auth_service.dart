@@ -263,11 +263,9 @@ class AuthService extends ChangeNotifier {
             emailRedirectTo: kIsWeb ? null : 'ai.domovina://auth/callback',
           );
           if (context.mounted) {
-            _snack(
-              context,
-              'Magic link je poslan na $email — provjeri inbox.',
-              actionLabel: 'OK',
-            );
+            _snack(context, 'Kod i magic link poslani na $email.');
+            // Ponudi ručni unos koda (e-mail nosi i link i 6-znamenkasti kod).
+            await _promptForOtpAndVerify(context, email);
           }
           break;
 
@@ -409,7 +407,74 @@ class AuthService extends ChangeNotifier {
   /// Prikaži SnackBar preko GLOBALNOG ScaffoldMessenger key-a (ne preko
   /// context-a) — feedback radi i kad je sheet/dialog već zatvoren pa je
   /// proslijeđeni context unmountan. [context] se zadržava radi potpisa.
-  void _snack(BuildContext context, String msg, {String? actionLabel}) {
+  /// Dijalog za ručni unos 6-znamenkastog OTP koda iz magic link e-maila.
+  /// Verificira preko verifyOTP(type: email); sesija stigne preko onAuthStateChange.
+  /// (Alternativa kliku na link u e-mailu — radi i ako se link otvori u drugom
+  /// pregledniku/uređaju.)
+  Future<void> _promptForOtpAndVerify(BuildContext context, String email) async {
+    final client = _client();
+    if (client == null) return;
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Unesi kod iz e-maila'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Poslali smo 6-znamenkasti kod na $email. '
+              'Upiši ga ovdje — ili samo klikni link u e-mailu.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              maxLength: 6,
+              onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
+              decoration: const InputDecoration(
+                hintText: '123456',
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Odustani'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Potvrdi'),
+          ),
+        ],
+      ),
+    );
+    if (code == null || code.isEmpty) return;
+    log('AuthService: verifyOTP email=$email');
+    try {
+      await client.auth.verifyOTP(
+        type: sb.OtpType.email,
+        email: email,
+        token: code,
+      );
+      // Uspjeh → onAuthStateChange postavi permanent sesiju + migracija.
+      _showSnack('Prijava uspješna.');
+    } on sb.AuthException catch (e) {
+      log('verifyOTP error: ${e.message}');
+      _showSnack('Kod nije ispravan ili je istekao.');
+    }
+  }
+
+  void _snack(BuildContext context, String msg, {String? actionLabel}) =>
+      _showSnack(msg, actionLabel: actionLabel);
+
+  void _showSnack(String msg, {String? actionLabel}) {
     rootScaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text(msg),
