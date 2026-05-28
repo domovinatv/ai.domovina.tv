@@ -88,9 +88,9 @@ class _AuthSheetContent extends StatelessWidget {
             Align(
               alignment: Alignment.center,
               child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  AuthService.instance.signInWithPasskey(context);
+                onPressed: () async {
+                  await AuthService.instance.signInWithPasskey(context);
+                  if (context.mounted) Navigator.of(context).pop();
                 },
                 child: Text(
                   'Već imaš passkey? Prijavi se',
@@ -187,8 +187,12 @@ class _AuthSheetContent extends StatelessWidget {
       };
 
   Future<void> _doLink(BuildContext context, AuthProvider p) async {
-    Navigator.of(context).pop();
+    // NE popati sheet prije async rada — time bi se context unmountao pa bi
+    // linkIdentity (email/passkey) rano izašao na `context.mounted` guardu i
+    // nikad ne pozvao signInWithOtp / passkey registraciju. Sheet ostaje otvoren
+    // dok traje operacija (email dialog / WebAuthn ide preko njega), pop poslije.
     await AuthService.instance.linkIdentity(context, p);
+    if (context.mounted) Navigator.of(context).pop();
   }
 }
 

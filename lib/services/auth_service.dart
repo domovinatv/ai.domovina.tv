@@ -10,7 +10,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../main.dart' show log;
+import '../main.dart' show log, rootScaffoldMessengerKey;
 import 'favorites_service.dart';
 import 'local_prefs.dart';
 import 'passkey_service.dart';
@@ -404,9 +404,11 @@ class AuthService extends ChangeNotifier {
     return result == null || result.isEmpty ? null : result;
   }
 
+  /// Prikaži SnackBar preko GLOBALNOG ScaffoldMessenger key-a (ne preko
+  /// context-a) — feedback radi i kad je sheet/dialog već zatvoren pa je
+  /// proslijeđeni context unmountan. [context] se zadržava radi potpisa.
   void _snack(BuildContext context, String msg, {String? actionLabel}) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    rootScaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text(msg),
         duration: const Duration(seconds: 3),

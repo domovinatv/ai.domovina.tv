@@ -87,8 +87,13 @@ class DominovinaApp extends StatefulWidget {
   State<DominovinaApp> createState() => _DominovinaAppState();
 }
 
+/// Globalni ScaffoldMessenger key — omogućuje prikaz SnackBar-a iz servisa
+/// (npr. AuthService) neovisno o BuildContext-u koji je možda već unmountan
+/// (npr. nakon zatvaranja bottom sheeta). Vezan na MaterialApp ispod.
+final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class _DominovinaAppState extends State<DominovinaApp> {
-  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  final _messengerKey = rootScaffoldMessengerKey;
   late final _router = createRouter();
 
   @override
