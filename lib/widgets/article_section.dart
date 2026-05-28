@@ -75,56 +75,15 @@ class _IterationBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final lang = EpisodeLanguageScope.of(context);
-    final themeText = pickLang(lang, iteration.theme, iteration.themeEn);
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${iteration.iterationNumber}',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    themeText,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ArticleIterationHeader(iteration: iteration),
           const SizedBox(height: 16),
           ...iteration.sections.map(
-            (sec) => _SectionCard(
+            (sec) => ArticleSectionCard(
               key: sectionKeys[sec.screenshotTimestamp],
               section: sec,
               youtubeId: youtubeId,
@@ -140,25 +99,90 @@ class _IterationBlock extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatefulWidget {
+/// Iteracijski header — broj iteracije + tema. Public da ga dijele
+/// [ArticleSection] (vertikalni clanak) i ParallelArticleView (desktop paralelni
+/// prikaz) bez dupliciranja stila.
+class ArticleIterationHeader extends StatelessWidget {
+  final ArticleIteration iteration;
+
+  const ArticleIterationHeader({super.key, required this.iteration});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final lang = EpisodeLanguageScope.of(context);
+    final themeText = pickLang(lang, iteration.theme, iteration.themeEn);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Center(
+              child: Text(
+                '${iteration.iterationNumber}',
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              themeText,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ArticleSectionCard extends StatefulWidget {
   final PodcastSection section;
   final String youtubeId;
   final void Function(String timestamp)? onPlayTap;
   final SectionMagisterium? sectionMagisterium;
 
-  const _SectionCard({
+  /// Kad false, ne renderira inline teolosku procjenu (koristi se u paralelnom
+  /// desktop layoutu gdje Magisterium ima zaseban stupac u istom redu).
+  final bool showInlineMagisterium;
+
+  /// Vanjski padding kartice. Default ostavlja prostor izmedu sekcija; paralelni
+  /// layout prosljeduje EdgeInsets.zero (razmak hendla parent red).
+  final EdgeInsetsGeometry padding;
+
+  const ArticleSectionCard({
     super.key,
     required this.section,
     required this.youtubeId,
     this.onPlayTap,
     this.sectionMagisterium,
+    this.showInlineMagisterium = true,
+    this.padding = const EdgeInsets.only(bottom: 56, top: 80),
   });
 
   @override
-  State<_SectionCard> createState() => _SectionCardState();
+  State<ArticleSectionCard> createState() => _ArticleSectionCardState();
 }
 
-class _SectionCardState extends State<_SectionCard> {
+class _ArticleSectionCardState extends State<ArticleSectionCard> {
   bool _citationsExpanded = false;
 
   int _tsToSeconds(String ts) {
@@ -197,7 +221,7 @@ class _SectionCardState extends State<_SectionCard> {
     final keywords = pickLangList(lang, section.keywords, section.keywordsEn);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 56, top: 80),
+      padding: widget.padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -394,7 +418,9 @@ class _SectionCardState extends State<_SectionCard> {
             ),
 
           // Magisterium enrichment block
-          if (mag != null && mag.assessment.isNotEmpty)
+          if (widget.showInlineMagisterium &&
+              mag != null &&
+              mag.assessment.isNotEmpty)
             _MagisteriumEnrichment(
               mag: mag,
               citationsExpanded: _citationsExpanded,

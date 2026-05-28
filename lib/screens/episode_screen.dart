@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
@@ -29,6 +30,7 @@ import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/magisterium_panel.dart';
 import '../widgets/magisterium_v2_view.dart';
+import '../widgets/parallel_article_view.dart';
 import '../widgets/entities_section.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
@@ -274,6 +276,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
   late final Map<String, GlobalKey> _magSectionKeys;
   String? _activeTimestamp; // prati video player poziciju
   String? _scrollTimestamp; // prati scroll poziciju srednje liste
+
+  /// True kad je aktivan paralelni desktop layout (sticky "Članak ‖ Magisterium"
+  /// header). Postavlja se u build(); koristi ga _scrollToSection da odbije
+  /// fixed pinned visinu (app bar + sticky header) pri scrollu na sekciju.
+  bool _parallelActive = false;
 
   // Mobile tab switcher: 0 = članak, 1 = Magisterium.
   // Aktivan samo kad je !isWide && hasMag (inače nema tab bara).
@@ -824,13 +831,32 @@ class _EpisodeContentState extends State<_EpisodeContent>
   static const _scrollAlignment = 0.18;
 
   void _scrollToSection(String timestamp) {
-    final key = _sectionKeys[timestamp];
-    if (key?.currentContext != null) {
-      Scrollable.ensureVisible(
-        key!.currentContext!,
-        duration: Duration.zero,
-        alignment: _scrollAlignment,
-      );
+    final ctx = _sectionKeys[timestamp]?.currentContext;
+    if (ctx != null) {
+      if (_parallelActive && _scrollController.hasClients) {
+        // Paralelni layout ima dva pinned slivera (app bar + sticky naslovi
+        // stupaca). ensureVisible-ov alignment (frakcija viewporta) ne zna za
+        // njih pa naslov sekcije zavrsi ispod fixed headera, a razmak varira s
+        // visinom viewporta i fazom pinanja. Umjesto toga racunamo apsolutni
+        // scroll offset (getOffsetToReveal na vrh) i oduzmemo fiksni pinned
+        // inset → naslov uvijek sjedi konstantnih `gap` px ispod headera.
+        final render = ctx.findRenderObject();
+        if (render != null) {
+          final reveal =
+              RenderAbstractViewport.of(render).getOffsetToReveal(render, 0).offset;
+          const gap = 16.0;
+          final inset = kToolbarHeight + kParallelStickyHeaderHeight + gap;
+          final target = (reveal - inset)
+              .clamp(0.0, _scrollController.position.maxScrollExtent);
+          _scrollController.jumpTo(target);
+        }
+      } else {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: Duration.zero,
+          alignment: _scrollAlignment,
+        );
+      }
     }
     _scrollMagToSection(timestamp);
   }
@@ -956,15 +982,18 @@ class _EpisodeContentState extends State<_EpisodeContent>
         magV2 != null;
     // Magisterium stupac: zasebni scrollable panel na širokim ekranima
     final showMagColumn = hasMag && width > 1500;
+    // Paralelni prikaz: clanak i Magisterium per-sekcija jedan uz drugi u
+    // dijeljenom scrollu (timestampovi poravnati). Zahtijeva per-sekcija
+    // Magisterium podatke; ako epizoda ima samo V2 esej (magPrimary == null),
+    // pada na klasicni magColumn (V2 esej nema per-sekcija timestampove).
+    final useParallel = showMagColumn && magPrimary != null;
+    _parallelActive = useParallel;
     // Mobile: bottom tabovi za switch između článka i Magisteriuma.
     // Bez ovog, Magisterium content je "zakopan" ispod dugačke article liste.
     final showMobileBottomBar = !isWide;
     final isMobileWithTabs = !isWide && hasMag;
 
-    final scrollBody = CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        SliverAppBar(
+    final appBar = SliverAppBar(
           pinned: true,
           leading: isWide
               ? null
@@ -1038,8 +1067,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 ),
               ),
           ],
-        ),
-        SliverToBoxAdapter(
+        );
+
+    final standardContent = SliverToBoxAdapter(
           child: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
@@ -1121,8 +1151,114 @@ class _EpisodeContentState extends State<_EpisodeContent>
               ),
             ),
           ),
-        ),
-      ],
+        );
+
+    // Paralelni desktop sadrzaj: hero/sazetak/poglavlja na citkoj sirini (860),
+    // pa clanak ‖ Magisterium per-sekcija na siroj (dijele isti scroll →
+    // timestampovi poravnati), pa entiteti/footer natrag na 860. Naslovi
+    // stupaca su sticky (SliverPersistentHeader) unutar SliverMainAxisGroup-a
+    // pa pinaju samo dok je paralelna zona vidljiva i otpinaju kad odscrolla.
+    final List<Widget> parallelSlivers = useParallel
+        ? [
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      HeroSection(
+                        info: data.info,
+                        youtubeId: data.youtubeId,
+                        summary: summaryForUi.summary,
+                      ),
+                      if (data.hasTranslationEn)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Row(
+                            children: [
+                              Text(
+                                _language == EpisodeLanguage.en
+                                    ? 'Language:'
+                                    : 'Jezik:',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              LanguageToggleChip(
+                                current: _language,
+                                onChanged: _onLanguageChanged,
+                              ),
+                            ],
+                          ),
+                        ),
+                      Divider(
+                          height: 1, color: theme.colorScheme.outlineVariant),
+                      SummarySection(summary: summaryForUi),
+                      Divider(
+                          height: 1, color: theme.colorScheme.outlineVariant),
+                      const SizedBox(height: 12),
+                      ChaptersSection(outline: data.outline!),
+                      Divider(
+                          height: 1, color: theme.colorScheme.outlineVariant),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverMainAxisGroup(
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: ParallelColumnsStickyDelegate(
+                    // Score je jezicno-neovisan; EN overlay varijanta cesto nema
+                    // overall_score pa fallbackamo na HR primary score.
+                    overallScore: magPrimary.overallScore ??
+                        data.magisteriumPrimary?.overallScore,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1500),
+                      child: ParallelArticleView(
+                        article: articleForUi,
+                        magisterium: magPrimary,
+                        youtubeId: data.youtubeId,
+                        sectionKeys: _sectionKeys,
+                        onPlayTap: _videoReady
+                            ? (ts) => _seekAndPlay(ts, preroll: true)
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Divider(
+                          height: 1, color: theme.colorScheme.outlineVariant),
+                      const SizedBox(height: 12),
+                      EntitiesSection(summary: summaryForUi.summary),
+                      _MetadataFooter(data: data),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ]
+        : const [];
+
+    final scrollBody = CustomScrollView(
+      controller: _scrollController,
+      slivers: useParallel ? [appBar, ...parallelSlivers] : [appBar, standardContent],
     );
 
     // Mobile Magisterium tab — zasebni scroll view s istim SliverAppBar patternom
@@ -1202,9 +1338,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
       );
     }
 
-    // Magisterium stupac — neovisno scrollable, blog-post stil
+    // Magisterium stupac — neovisno scrollable, blog-post stil. Samo kad NE
+    // koristimo paralelni prikaz (tj. epizoda ima samo V2 esej bez per-sekcija
+    // timestampova) — inace Magisterium zivi unutar scrollBody-a.
     Widget? magColumn;
-    if (showMagColumn) {
+    if (showMagColumn && !useParallel) {
       // V2 view nema fillParent/sectionKeys — wrappamo u SingleChildScrollView
       // da bi stupac imao vlastiti scroll, isto kao stari Panel s fillParent.
       final inner = magV2 != null
@@ -1234,7 +1372,37 @@ class _EpisodeContentState extends State<_EpisodeContent>
     }
 
     Widget body;
-    if (showVideo && showMagColumn) {
+    if (useParallel) {
+      // Paralelni stupci zive UNUTAR scrollBody-a (dijele scroll) → nema
+      // zasebnog magColumn-a. Samo TOC (+ video) okolo.
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TableOfContents(
+            article: articleForUi,
+            activeTimestamp: _activeTimestamp,
+            scrollTimestamp: _scrollTimestamp,
+            onSectionTap: _seekAndPlay,
+          ),
+          Expanded(child: scrollBody),
+          if (showVideo)
+            VideoPanel(
+              player: _player!,
+              controller: _videoController!,
+              chapters: _videoChapters,
+              activeTimestamp: _activeTimestamp,
+              scrollTimestamp: _scrollTimestamp,
+              onChapterTap: _seekAndPlay,
+              onSeek: _onVideoSeek,
+              totalDurationSeconds: data.info.duration,
+              speakerTimeline: data.speakerTimeline,
+              speakers: summaryForUi.summary.speakers,
+              mutedAutoplay: _mutedAutoplay,
+              onUnmute: () => setState(() => _mutedAutoplay = false),
+            ),
+        ],
+      );
+    } else if (showVideo && showMagColumn) {
       // Ultrawide: TOC | content | magisterium | video
       body = Row(
         crossAxisAlignment: CrossAxisAlignment.start,

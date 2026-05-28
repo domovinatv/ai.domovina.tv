@@ -9,7 +9,7 @@ import 'citation_helpers.dart';
 /// Standalone chronological read-through of the full Magisterium AI analysis.
 /// Presents all theological assessments, enrichments, and citations as a
 /// continuous "article" — branded as Magisterium AI content.
-class MagisteriumArticleSection extends StatefulWidget {
+class MagisteriumArticleSection extends StatelessWidget {
   final MagisteriumData magisterium;
 
   /// Optional keys per screenshot_timestamp — used by parent for scroll-sync.
@@ -22,18 +22,9 @@ class MagisteriumArticleSection extends StatefulWidget {
   });
 
   @override
-  State<MagisteriumArticleSection> createState() =>
-      _MagisteriumArticleSectionState();
-}
-
-class _MagisteriumArticleSectionState extends State<MagisteriumArticleSection> {
-  /// Track which sections have their citations expanded.
-  final Set<String> _expandedCitations = {};
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mag = widget.magisterium;
+    final mag = magisterium;
     final overallColor = MagisteriumSection.scoreColor(mag.overallScore);
     final lang = EpisodeLanguageScope.of(context);
     final isEn = lang == EpisodeLanguage.en;
@@ -118,17 +109,7 @@ class _MagisteriumArticleSectionState extends State<MagisteriumArticleSection> {
           // ── Iteration blocks ──────────────────────────────────
           ...mag.iterations.map((iter) => _IterationArticle(
                 iteration: iter,
-                sectionKeys: widget.sectionKeys,
-                expandedCitations: _expandedCitations,
-                onToggleCitation: (key) {
-                  setState(() {
-                    if (_expandedCitations.contains(key)) {
-                      _expandedCitations.remove(key);
-                    } else {
-                      _expandedCitations.add(key);
-                    }
-                  });
-                },
+                sectionKeys: sectionKeys,
                 isLast: iter == mag.iterations.last,
               )),
 
@@ -174,15 +155,11 @@ class _MagisteriumArticleSectionState extends State<MagisteriumArticleSection> {
 class _IterationArticle extends StatelessWidget {
   final MagisteriumIteration iteration;
   final Map<String, GlobalKey>? sectionKeys;
-  final Set<String> expandedCitations;
-  final void Function(String key) onToggleCitation;
   final bool isLast;
 
   const _IterationArticle({
     required this.iteration,
     this.sectionKeys,
-    required this.expandedCitations,
-    required this.onToggleCitation,
     required this.isLast,
   });
 
@@ -277,14 +254,12 @@ class _IterationArticle extends StatelessWidget {
             if (sec.magisterium == null || sec.magisterium!.assessment.isEmpty) {
               return const SizedBox.shrink();
             }
-            final citKey =
-                '${iteration.iterationNumber}:$idx';
-            return _SectionAnalysis(
+            return MagisteriumSectionAnalysis(
               key: sectionKeys?[sec.screenshotTimestamp],
-              section: sec,
+              timestamp: sec.screenshotTimestamp,
+              subtitle: sec.subtitle,
+              subtitleEn: sec.subtitleEn,
               mag: sec.magisterium!,
-              citationsExpanded: expandedCitations.contains(citKey),
-              onToggleCitations: () => onToggleCitation(citKey),
               showDivider:
                   idx < iteration.sections.length - 1 || !isLast,
             );
@@ -299,29 +274,46 @@ class _IterationArticle extends StatelessWidget {
 // One section's theological analysis
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _SectionAnalysis extends StatelessWidget {
-  final MagisteriumSectionEntry section;
+/// Jedna sekcija teoloske analize (timestamp + score + subtitle + procjena +
+/// obogacivanje + zabrinutosti + citati). Samostalno upravlja expand stanjem
+/// citata. Koristi se i u [MagisteriumArticleSection] (stupac) i u paralelnom
+/// desktop layoutu (ParallelArticleView) gdje [padding] = zero da se timestamp
+/// poravna s clankom u istom redu.
+class MagisteriumSectionAnalysis extends StatefulWidget {
+  final String timestamp;
+  final String subtitle;
+  final String? subtitleEn;
   final SectionMagisterium mag;
-  final bool citationsExpanded;
-  final VoidCallback onToggleCitations;
   final bool showDivider;
+  final EdgeInsetsGeometry padding;
 
-  const _SectionAnalysis({
+  const MagisteriumSectionAnalysis({
     super.key,
-    required this.section,
+    required this.timestamp,
+    required this.subtitle,
+    this.subtitleEn,
     required this.mag,
-    required this.citationsExpanded,
-    required this.onToggleCitations,
     this.showDivider = true,
+    this.padding = const EdgeInsets.fromLTRB(16, 16, 16, 0),
   });
+
+  @override
+  State<MagisteriumSectionAnalysis> createState() =>
+      _MagisteriumSectionAnalysisState();
+}
+
+class _MagisteriumSectionAnalysisState
+    extends State<MagisteriumSectionAnalysis> {
+  bool _citationsExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final mag = widget.mag;
     final color = MagisteriumSection.scoreColor(mag.score);
     final lang = EpisodeLanguageScope.of(context);
     final isEn = lang == EpisodeLanguage.en;
-    final subtitleText = pickLang(lang, section.subtitle, section.subtitleEn);
+    final subtitleText = pickLang(lang, widget.subtitle, widget.subtitleEn);
     final assessmentText = pickLang(lang, mag.assessment, mag.assessmentEn);
     final enrichmentText = pickLang(lang, mag.enrichment, mag.enrichmentEn);
     final concernsList = pickLangList(lang, mag.concerns, mag.concernsEn);
@@ -330,7 +322,7 @@ class _SectionAnalysis extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: widget.padding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -339,7 +331,7 @@ class _SectionAnalysis extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Timestamp
-                  if (section.screenshotTimestamp.isNotEmpty)
+                  if (widget.timestamp.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
@@ -351,7 +343,7 @@ class _SectionAnalysis extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        section.screenshotTimestamp,
+                        widget.timestamp,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.bold,
@@ -470,14 +462,15 @@ class _SectionAnalysis extends StatelessWidget {
               if (mag.citations.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 InkWell(
-                  onTap: onToggleCitations,
+                  onTap: () => setState(
+                      () => _citationsExpanded = !_citationsExpanded),
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
                         Icon(
-                          citationsExpanded
+                          _citationsExpanded
                               ? Icons.expand_less
                               : Icons.expand_more,
                           size: 18,
@@ -497,13 +490,13 @@ class _SectionAnalysis extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (citationsExpanded)
+                if (_citationsExpanded)
                   ...mag.citations.map((cit) => _FullCitation(citation: cit)),
               ],
             ],
           ),
         ),
-        if (showDivider)
+        if (widget.showDivider)
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: Divider(
@@ -511,7 +504,7 @@ class _SectionAnalysis extends StatelessWidget {
               color: theme.colorScheme.outlineVariant.withAlpha(60),
             ),
           ),
-        if (!showDivider) const SizedBox(height: 16),
+        if (!widget.showDivider) const SizedBox(height: 16),
       ],
     );
   }
