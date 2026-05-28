@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
@@ -833,23 +832,27 @@ class _EpisodeContentState extends State<_EpisodeContent>
   void _scrollToSection(String timestamp) {
     final ctx = _sectionKeys[timestamp]?.currentContext;
     if (ctx != null) {
-      if (_parallelActive && _scrollController.hasClients) {
-        // Paralelni layout ima dva pinned slivera (app bar + sticky naslovi
-        // stupaca). ensureVisible-ov alignment (frakcija viewporta) ne zna za
-        // njih pa naslov sekcije zavrsi ispod fixed headera, a razmak varira s
-        // visinom viewporta i fazom pinanja. Umjesto toga racunamo apsolutni
-        // scroll offset (getOffsetToReveal na vrh) i oduzmemo fiksni pinned
-        // inset → naslov uvijek sjedi konstantnih `gap` px ispod headera.
-        final render = ctx.findRenderObject();
-        if (render != null) {
-          final reveal =
-              RenderAbstractViewport.of(render).getOffsetToReveal(render, 0).offset;
-          const gap = 16.0;
-          final inset = kToolbarHeight + kParallelStickyHeaderHeight + gap;
-          final target = (reveal - inset)
-              .clamp(0.0, _scrollController.position.maxScrollExtent);
-          _scrollController.jumpTo(target);
-        }
+      final box = ctx.findRenderObject() as RenderBox?;
+      if (box != null && _scrollController.hasClients) {
+        // Citamo STVARNU ekransku poziciju cilja (localToGlobal) i korigiramo
+        // scroll da sjedne tocno `gap` px ispod pinned zone. Robusno naspram
+        // getOffsetToReveal kvirkova (npr. in-group pinned header double-count u
+        // paralelnom layoutu) i neovisno o visini ekrana.
+        //
+        // Pinned zona = safe-area top (SliverAppBar je primary → na mobitelu mu
+        // status bar / notch povecava visinu za padding.top) + app bar; u
+        // paralelnom desktop layoutu jos i sticky naslovi stupaca. Na desktopu je
+        // padding.top == 0 pa je ponasanje identicno prijasnjem.
+        final currentY = box.localToGlobal(Offset.zero).dy;
+        final topInset = MediaQuery.paddingOf(context).top;
+        const gap = 16.0;
+        final pinned = _parallelActive
+            ? topInset + kToolbarHeight + kParallelStickyHeaderHeight
+            : topInset + kToolbarHeight;
+        final desiredY = pinned + gap;
+        final target = (_scrollController.offset + (currentY - desiredY))
+            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        _scrollController.jumpTo(target);
       } else {
         Scrollable.ensureVisible(
           ctx,

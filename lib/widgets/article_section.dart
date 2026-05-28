@@ -83,13 +83,23 @@ class _IterationBlock extends StatelessWidget {
           ArticleIterationHeader(iteration: iteration),
           const SizedBox(height: 16),
           ...iteration.sections.map(
-            (sec) => ArticleSectionCard(
-              key: sectionKeys[sec.screenshotTimestamp],
-              section: sec,
-              youtubeId: youtubeId,
-              onPlayTap: onPlayTap,
-              sectionMagisterium: magisterium?.forTimestamp(
-                sec.screenshotTimestamp,
+            // Leading razmak (top:80) je IZVAN KeyedSubtree-a da scroll-to-section
+            // (localToGlobal na keyed box) cilja sam sadrzaj sekcije, a ne prazni
+            // padding iznad njega — inace naslov sjedne ~80px prenisko (mobile).
+            // Isti razlog kao paralelni desktop layout koji padding drzi izvan keya.
+            (sec) => Padding(
+              padding: const EdgeInsets.only(top: 80),
+              child: KeyedSubtree(
+                key: sectionKeys[sec.screenshotTimestamp],
+                child: ArticleSectionCard(
+                  section: sec,
+                  youtubeId: youtubeId,
+                  onPlayTap: onPlayTap,
+                  sectionMagisterium: magisterium?.forTimestamp(
+                    sec.screenshotTimestamp,
+                  ),
+                  padding: const EdgeInsets.only(bottom: 56),
+                ),
               ),
             ),
           ),
