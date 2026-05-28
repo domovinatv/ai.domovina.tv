@@ -15,8 +15,15 @@
     </style>
 
     <!-- NormalTheme: aktivan nakon prvog Flutter frame-a, behind Flutter UI.
-         Black da se ne pojavljuje bijeli pulse pri navigaciji. -->
+         windowBackground POSTAVLJEN NA ISTI launch_background drawable kao
+         LaunchTheme — eliminira flash između native splash i Flutter prvog
+         frame-a. Bez ovoga theme swap (LaunchTheme→NormalTheme) instantno
+         zamijeni splash sliku za crno, što stvara brief crni flash dok
+         FlutterView komponira svoju sliku iznad. S istim windowBackground-om,
+         splash slika OSTAJE pod Flutter UI-jem tokom cijele tranzicije —
+         korisnik nikad ne vidi crno između native i Flutter splash-a.
+         Standard Flutter best practice (vidi flutter_native_splash plugin). -->
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
 </resources>

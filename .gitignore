@@ -58,3 +58,6 @@ app.*.map.json
 # Node / Playwright
 node_modules/
 test-results/
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  DOMOVINA.ai premium splash — design template.
+
+  Ovo je IZVOR ISTINE za layout. Stvarni PNG-ovi se renderiraju Python skriptom
+  (scripts/generate-premium-splash-taglines.py) koja ima precizno
+  font-metric mjerenje + auto-fit (SVG <text> ne radi auto-wrap ni auto-shrink).
+
+  Editaj ovaj SVG za promjene u layoutu (pozicije, boje, fontovi), pa zatim
+  ručno odražaj te promjene u Python renderer-u. Citat i atribucija ovdje su
+  PLACEHOLDER-i — pravi tekstovi dolaze iz Python skripte.
+
+  Otvori u browseru ili Inkscape/Figma za preview.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="3840" height="2160"
+     viewBox="0 0 3840 2160"
+     font-family="Inter, sans-serif">
+
+  <!-- Vertical gradient: navy → darker navy -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#002F6C"/>
+      <stop offset="100%" stop-color="#001F4C"/>
+    </linearGradient>
+  </defs>
+  <rect width="3840" height="2160" fill="url(#bg)"/>
+
+  <!-- Wordmark "DOMOVINA.ai" — Inter Bold 104px, white, top center y=240 -->
+  <text x="1920" y="344"
+        font-family="Inter"
+        font-weight="700"
+        font-size="104"
+        fill="#FFFFFF"
+        text-anchor="middle">DOMOVINA.ai</text>
+
+  <!-- Red accent line — 160×10px, centered under wordmark -->
+  <rect x="1840" y="410" width="160" height="10" fill="#FF1F1F"/>
+
+  <!-- Citation block — Lora Italic, auto-fit u Python skripti.
+       Maksimalna bounding box: 3200×1100, centered.
+       Font tier u Python skripti: 60..240px, iterativno najveći koji stane. -->
+  <g id="citation-block" transform="translate(1920 1080)">
+    <!-- Sample: 2 line short verse. U pravom renderu broj linija varira. -->
+    <text font-family="Lora"
+          font-style="italic"
+          font-weight="400"
+          font-size="220"
+          fill="#FFFFFF"
+          text-anchor="middle">
+      <tspan x="0" dy="-80">{{CITATION_LINE_1}}</tspan>
+      <tspan x="0" dy="260">{{CITATION_LINE_2}}</tspan>
+    </text>
+
+    <!-- Attribution — Inter Bold 60px, soft red, letter-spaced 16px,
+         uppercase, ~280px below citation block.
+         Letter-spacing u Pythonu: ručno character-by-character. -->
+    <text x="0" y="500"
+          font-family="Inter"
+          font-weight="700"
+          font-size="60"
+          fill="#FF6B6B"
+          letter-spacing="16"
+          text-anchor="middle">— {{ATTRIBUTION_UPPER}}</text>
+  </g>
+
+  <!-- Bottom separator line — 800×4px, 50% white, y=2030 -->
+  <rect x="1520" y="2030" width="800" height="4" fill="#FFFFFF" fill-opacity="0.5"/>
+
+  <!-- Bottom tagline — Inter Regular 44px, 50% white, y=2080 -->
+  <text x="1920" y="2080"
+        font-family="Inter"
+        font-weight="400"
+        font-size="44"
+        fill="#FFFFFF"
+        fill-opacity="0.5"
+        text-anchor="middle">AI-obrada katoličkih podcasta</text>
+</svg>

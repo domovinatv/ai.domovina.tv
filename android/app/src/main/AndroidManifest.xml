@@ -74,6 +74,13 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Disable Impeller renderer. On low-end Amlogic GPU (EON SDSTB02)
+             Impeller's first-frame shader compile adds 5-10s to cold start.
+             Skia fallback has pre-compiled shaders → faster TTID. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <!-- audio_service: foreground media playback service + Bluetooth/headset
              button receiver. Required for background audio. -->
         <service android:name="com.ryanheise.audioservice.AudioService"

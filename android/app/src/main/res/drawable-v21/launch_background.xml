@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v21+ varijanta — drzati u sync s /drawable/launch_background.xml. -->
+<!-- v21+ varijanta — drzati u sync s /drawable/launch_background.xml.
+     Vidi taj fajl za detalje. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_bg" />
-    <item
-        android:width="180dp"
-        android:height="180dp"
-        android:gravity="top|center_horizontal"
-        android:top="40dp"
-        android:drawable="@drawable/splash_logo" />
-    <item
-        android:width="900dp"
-        android:height="280dp"
-        android:gravity="bottom|center_horizontal"
-        android:bottom="20dp"
-        android:drawable="@drawable/splash_tagline_1" />
+    <item>
+        <bitmap
+            android:src="@drawable/splash_full_1"
+            android:gravity="fill" />
+    </item>
 </layer-list>

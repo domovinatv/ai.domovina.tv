@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Native Android splash drawable. Static.
-     Sadrzaj: Croatian navy bg + DOMOVINA.ai logo (gornja trecina) +
-     Matej 10,26-28 citat (donja trecina).
+<!-- Native Android splash drawable. Premium full-frame (3840×2160) PNG —
+     Mt 10,26-27 (KS Jeruzalemska Biblija). Identicna slika se prikazuje i
+     u Flutter boot splash-u (lib/screens/tv/widgets/tv_boot_splash.dart)
+     za seamless native→Flutter tranziciju. NormalTheme.windowBackground
+     takodjer pointa na ovaj drawable da nema flash-a pri theme swap-u.
 
-     Vazno: ovo SE NE moze runtime-rotirati na Android <12 — vidi
-     docs/splash-bible-citations.md, sekcija "Tehnicka arhitektura". -->
+     Generirano scripts/generate-premium-splash-taglines.py (PRODUCTION_ONLY
+     flag — generira samo #1; vidi script za regeneraciju svih 14 verzija).
+
+     Vazno: native splash randomizacija nije moguca na Android <12 — vidi
+     docs/splash-randomization-research.md. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_bg" />
-    <item
-        android:width="180dp"
-        android:height="180dp"
-        android:gravity="top|center_horizontal"
-        android:top="40dp"
-        android:drawable="@drawable/splash_logo" />
-    <item
-        android:width="900dp"
-        android:height="280dp"
-        android:gravity="bottom|center_horizontal"
-        android:bottom="20dp"
-        android:drawable="@drawable/splash_tagline_1" />
+    <item>
+        <bitmap
+            android:src="@drawable/splash_full_1"
+            android:gravity="fill" />
+    </item>
 </layer-list>
