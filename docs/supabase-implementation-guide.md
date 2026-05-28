@@ -38,7 +38,7 @@ Ovo su nalazi koji **trenutno lome funkcionalnost** ili će je slomiti čim se b
 
 | # | Mismatch | Frontend pretpostavlja | Backend stvarno | Posljedica |
 |---|----------|------------------------|-----------------|-----------|
-| **M1** | **Anonymous auth** | `main.dart` zove `signInAnonymously()` | `ENABLE_ANONYMOUS_USERS=false` | **Anon login pada** → cijeli offline-first flow ne radi protiv produkcije |
+| ~~**M1**~~ ✅ | **Anonymous auth — RIJEŠENO** | `main.dart` zove `signInAnonymously()` | `ENABLE_ANONYMOUS_USERS=true` + `GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED=true` (potvrđeno na Coolify 2026-05-28) | Anon login radi protiv produkcije |
 | **M2** | **`domovina_ai` schema exposure** | servisi zovu `.schema('domovina_ai').from(...)` | `PGRST_DB_SCHEMAS=public,storage,graphql_public` — **`domovina_ai` NIJE exposan** | **Sve watch_progress/favorites/handoff REST query-je vraćaju 404/PGRST106** |
 | **M3** | **`migrate_anon_data()` RPC** | `auth_service.dart:178` ga zove | **Ne postoji** u 7 migracija | Anon→permaneti gube watch_progress (frontend ima PGRST202 fallback, ali feature je broken) |
 | **M4** | **`consume_handoff_token()` poziv** | `handoff_service.dart` ga zove kao RPC fallback | RPC ima `revoke execute ... from authenticated` — **samo service_role smije** | RPC fallback baca `permission denied`; jedini ispravan put je Edge Function koja **ne postoji** |
@@ -59,14 +59,14 @@ Ovo su nalazi koji **trenutno lome funkcionalnost** ili će je slomiti čim se b
 | # | Gap | Status |
 |---|-----|--------|
 | B1 | `migrate_anon_data()` RPC | Ne postoji — treba migracija |
-| B2 | `ENABLE_ANONYMOUS_USERS` | `false` — treba odluka (vidi §2 M1) |
+| ~~B2~~ | `ENABLE_ANONYMOUS_USERS` | ✅ `true` na Coolify (potvrđeno 2026-05-28) — M1 riješen |
 | B3 | `domovina_ai` u `PGRST_DB_SCHEMAS` | Nije exposan (vidi §2 M2) |
 | B4 | Edge Function `handoff-consume` | Planiran M5, ne postoji |
 | B5 | `pg_cron` za `cleanup_expired_handoffs()` | Komentiran u migraciji, nije aktiviran |
 | B6 | Generated types export | Nema `supabase gen types` artefakta za frontend |
 | B7 | CI/CD za migracije | Manualan (`db-migrate.sh`); nema GitHub Action / migration tests |
 | B8 | Queue-based email (pgmq + DLQ + send_log) | Nema — GoTrue direkt na Resend SMTP |
-| B9 | Google OAuth Cloud Console | TODO.md — pending |
+| ~~B9~~ | Google OAuth Cloud Console | ✅ konfiguriran na Coolify (2026-05-28): `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`, client ID/secret + `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://api.domovina.ai/auth/v1/callback`. Provjeri da Google Cloud Console authorized redirect URI uključuje istu vrijednost. |
 
 **Frontend (`domovina.ai`):**
 
@@ -139,9 +139,10 @@ Da bi frontend rad imao smisla, evo što backend **stvarno** ima (provjereno či
 ### 1.4 Auth & infra config (provjereno)
 
 - `ENABLE_EMAIL_SIGNUP=true`, `ENABLE_EMAIL_AUTOCONFIRM=false`, magic link live (Resend SMTP)
-- `ENABLE_ANONYMOUS_USERS=false` ⚠️ (vidi M1)
-- `PGRST_DB_SCHEMAS=public,storage,graphql_public` ⚠️ (vidi M2 — `domovina_ai` fali)
-- Google OAuth — dokumentiran, Cloud Console pending
+- `ENABLE_ANONYMOUS_USERS=true` + `GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED=true` ✅ (M1 riješen, potvrđeno 2026-05-28)
+- `GOTRUE_SECURITY_MANUAL_LINKING_ENABLED=true` ✅ — GoTrue dopušta `linkIdentity()` (anon→permanent). Frontend trenutno ipak ide kroz `signInWithOAuth` + `migrate_anon_data` jer pokriva i "returning user u novom browseru" (vidi `auth_service.dart` komentar); manual linking je sad opcija ako se zatreba.
+- Google OAuth ✅ konfiguriran: `GOTRUE_EXTERNAL_GOOGLE_ENABLED=true`, client ID/secret set, `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://api.domovina.ai/auth/v1/callback` (GoTrue-side callback; ovo je odvojeno od app redirect allow liste — vidi §3.4)
+- `PGRST_DB_SCHEMAS=public,storage,graphql_public` ⚠️ (vidi M2 — `domovina_ai` fali; NIJE potvrđeno da je riješeno)
 - `additional_redirect_urls` uključuje sve domene + `localhost:3000/5173` (ali **ne** `ai.domovina://` deep link — vidi §6)
 - Deploy: `scripts/db-migrate.sh` (backup → transaction apply → tracking insert), `db-status.sh`, `db-dump.sh`, offline `build-coolify-env.sh`
 - Cloudflare Tunnel + Zero Trust Access (Studio) + WAF (block bare root)
@@ -152,9 +153,11 @@ Da bi frontend rad imao smisla, evo što backend **stvarno** ima (provjereno či
 
 Ovo se mora riješiti prije svega ostalog jer trenutno lomi runtime. Svaki fix navodi **u kojem repu** se radi.
 
-### M1 — Anonymous auth: `false` na backendu vs `signInAnonymously()` na frontendu
+### M1 — Anonymous auth ✅ RIJEŠENO (2026-05-28)
 
-**Problem:** `domovina.ai/lib/main.dart` zove `Supabase.instance.client.auth.signInAnonymously()` da omogući offline-first watch progress. Backend ima `ENABLE_ANONYMOUS_USERS=false` → poziv vraća `422 anonymous_provider_disabled`.
+> **Status:** Riješeno. Backend ima `ENABLE_ANONYMOUS_USERS=true` + `GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED=true` (Coolify, potvrđeno 2026-05-28). Odabrana je Opcija A. Anon login radi protiv produkcije. Preostaje samo operativni hardening: rate-limit anon signup (Cloudflare WAF na `/auth/v1/signup`) + pg_cron cleanup stale anon korisnika (§3.3). Tekst ispod ostaje kao kontekst odluke.
+
+**Problem (povijesno):** `domovina.ai/lib/main.dart` zove `Supabase.instance.client.auth.signInAnonymously()` da omogući offline-first watch progress. Backend je nekad imao `ENABLE_ANONYMOUS_USERS=false` → poziv je vraćao `422 anonymous_provider_disabled`.
 
 **Odluka — dvije opcije:**
 
@@ -695,7 +698,7 @@ Lovable best-practice email infra je queue-based (pgmq + DLQ + `email_send_log` 
 ## 11. Otvorena pitanja (cross-repo)
 
 1. **Edge Runtime na Coolify** — ima li Supabase deployment `edge-runtime` container? Ako ne, `handoff-consume` (M4) ne može kao Deno function bez dodavanja u docker-compose. Alternativa: lagani backend endpoint.
-2. **Zašto je `ENABLE_ANONYMOUS_USERS=false`** — namjerno ili propust? Backend dizajn sugerira da je anon planiran. (M1)
+2. ~~**Zašto je `ENABLE_ANONYMOUS_USERS=false`**~~ — ✅ riješeno: flag je `true` na Coolify (potvrđeno 2026-05-28), bila je namjerna Opcija A. (M1)
 3. **`PGRST_DB_SCHEMAS` desync** — `.env.example` ima `public,storage,graphql_public`, memory kaže da treba `public,domovina_ai`. Što je stvarno na Coolify env-u? (M2)
 4. **`pg_cron` dostupnost** u Coolify image-u (§3.3)
 5. **Realtime publication** — treba migracija da doda `domovina_ai.watch_progress` u `supabase_realtime` (§7)
@@ -707,8 +710,8 @@ Lovable best-practice email infra je queue-based (pgmq + DLQ + `email_send_log` 
 ## 12. Akcijski redoslijed (cross-repo)
 
 ### Tjedan 1 — Contract fixes (lomi funkcionalnost)
-1. `domovina-api`: `ENABLE_ANONYMOUS_USERS=true` + verify zašto je bio false (M1)
-2. `domovina-api`: `PGRST_DB_SCHEMAS` dodaj `domovina_ai`, restart PostgREST (M2)
+1. ~~`domovina-api`: `ENABLE_ANONYMOUS_USERS=true`~~ ✅ DONE (2026-05-28) — anon + Google OAuth aktivni na Coolify (M1, B9)
+2. `domovina-api`: `PGRST_DB_SCHEMAS` dodaj `domovina_ai`, restart PostgREST (M2) ← **sad najviši backend prioritet**
 3. `domovina-api`: deploy `migrate_anon_data()` migraciju (M3, §3.1)
 4. `domovina-api`: dodaj `ai.domovina://auth/callback` u redirect allow list (§3.4)
 5. `domovina.ai`: ispravi modele na `user_id`/`owner_id` po backendu (M5)
@@ -717,7 +720,7 @@ Lovable best-practice email infra je queue-based (pgmq + DLQ + `email_send_log` 
 6. `domovina-api`: Edge Function `handoff-consume` (M4, §3.2) — ovisno o §11.1
 7. `domovina-api`: pg_cron cleanup (§3.3) — ovisno o §11.4
 8. `domovina-api`: Realtime publication migracija (§7)
-9. `domovina-api`: Google OAuth Cloud Console (B9)
+9. ~~`domovina-api`: Google OAuth Cloud Console (B9)~~ ✅ DONE (2026-05-28) — provjeri samo da Google Console authorized redirect URI = `https://api.domovina.ai/auth/v1/callback`
 
 ### Tjedan 3 — Frontend struktura + types
 10. `domovina.ai`: `lib/data/` sloj (§4)
