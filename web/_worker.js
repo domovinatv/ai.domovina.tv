@@ -19,10 +19,62 @@
 const CDN = 'https://cdn.domovina.ai';
 const SITE = 'https://domovina.ai';
 
+// .well-known — serviramo iz workera (NE iz ASSETS) jer:
+//   1. apple-app-site-association nema ekstenziju → fall-through na SPA fallback
+//   2. flutter build web zna preskočiti `.`-prefiksirane direktorije (web/.well-known/
+//      ne dospije pouzdano u build/web)
+// Oba služe i App Links verifikaciji (Android autoVerify, iOS applinks) i
+// passkey/WebAuthn (Android Credential Manager preko assetlinks; iOS webcredentials).
+//
+// POPUNITI prije deploya:
+//   __ANDROID_SHA256_FINGERPRINT__ — SHA-256 signing cert fingerprint(i), velika
+//      slova, ":"-odvojeni (npr. AB:CD:...). Dodaj debug I release ako trebaju oba.
+//      (Google Play signing definira se naknadno.)
+// Apple Team ID (6SCK58757K) je već upisan.
+const ASSETLINKS_JSON = JSON.stringify([
+  {
+    relation: [
+      'delegate_permission/common.handle_all_urls',
+      'delegate_permission/common.get_login_creds',
+    ],
+    target: {
+      namespace: 'android_app',
+      package_name: 'ai.domovina',
+      sha256_cert_fingerprints: ['__ANDROID_SHA256_FINGERPRINT__'],
+    },
+  },
+], null, 2);
+
+const AASA_JSON = JSON.stringify({
+  applinks: {
+    apps: [],
+    details: [
+      { appID: '6SCK58757K.ai.domovina', paths: ['*'] },
+    ],
+  },
+  webcredentials: {
+    apps: ['6SCK58757K.ai.domovina'],
+  },
+}, null, 2);
+
+function wellKnownResponse(body) {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // .well-known (App Links + passkey/WebAuthn) — prije svega ostalog.
+    if (path === '/.well-known/assetlinks.json') return wellKnownResponse(ASSETLINKS_JSON);
+    if (path === '/.well-known/apple-app-site-association') return wellKnownResponse(AASA_JSON);
 
     // Statički asseti (JS, CSS, slike, fontovi...) — direktno iz ASSETS.
     // KRITIČNO: env.ASSETS.fetch ne aplicira web/_headers automatski kad

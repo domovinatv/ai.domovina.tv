@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.0.22+44
+version: 2.0.24+46
 
 environment:
   sdk: ^3.11.4
@@ -53,6 +53,13 @@ dependencies:
   supabase_flutter: ^2.5.0
   google_fonts: ^6.2.1
   cached_network_image: ^3.4.1
+  # Passkeys: ovisimo direktno o platform paketima (NE o meta `passkeys`) jer
+  # meta povlači `ua_client_hints` koji importa `dart:html` → ruši --wasm build.
+  # Platform paketi ovise samo o platform_interface (+ package:web na webu).
+  passkeys_platform_interface: ^2.6.0
+  passkeys_web: ^2.8.1
+  passkeys_android: ^2.12.0
+  passkeys_ios: ^2.9.0
 
 dev_dependencies:
   flutter_test:

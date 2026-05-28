@@ -52,6 +52,12 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
 
+  <!-- Corbado passkeys Web SDK (bundle.js, pinned 2.5.0 — najnoviji objavljeni).
+       Mora se učitati SINKRONO prije flutter_bootstrap.js jer passkeys_web
+       registerWith() provjerava window.PasskeyAuthenticator pri startu enginea;
+       ako fali, plugin zatvori prozor ("SDK not loaded"). -->
+  <script src="passkeys_bundle.js"></script>
+
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">
   {

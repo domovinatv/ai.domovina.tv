@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 import 'favorites_service.dart';
 import 'local_prefs.dart';
+import 'passkey_service.dart';
 import 'watch_progress_service.dart';
 
 /// localStorage ključ — anon user UUID koji čeka migraciju u permanent
@@ -271,12 +272,7 @@ class AuthService extends ChangeNotifier {
           break;
 
         case AuthProvider.passkey:
-          // TODO: implementirati WebAuthn preko passkeys package + custom
-          // /passkey/register/start endpoint. Vidi 05-auth-providers.md §Passkey.
-          _snack(
-            context,
-            'Passkey još nije dostupan — koristi Google, Apple ili e-mail za sada.',
-          );
+          await _registerPasskey(context);
           break;
       }
     } on sb.AuthException catch (e) {
@@ -289,6 +285,66 @@ class AuthService extends ChangeNotifier {
       if (context.mounted) {
         _snack(context, 'Neočekivana greška pri prijavi.');
       }
+    }
+  }
+
+  /// Registracija passkeyja (poziva se iz auth_sheet primary gumba).
+  ///   - Permanent user → dodaj passkey na postojeći račun (bez email prompta).
+  ///   - Anon/novi → prompt za email (treba za session bridge), spremi anon UUID
+  ///     za migraciju, pa registriraj → novi permanent račun.
+  /// Sesija stiže async preko onAuthStateChange (action_link).
+  Future<void> _registerPasskey(BuildContext context) async {
+    final client = _client();
+    if (client == null) {
+      _snack(context, 'Supabase nije konfiguriran.');
+      return;
+    }
+    final current = client.auth.currentUser;
+    final isPermanent = current != null && !current.isAnonymous;
+
+    String? email;
+    if (isPermanent) {
+      email = current.email;
+      if (email == null || email.isEmpty) {
+        _snack(context, 'Tvoj račun nema e-mail — passkey trenutno nije moguć.');
+        return;
+      }
+    } else {
+      email = await _promptForEmail(context, null);
+      if (email == null || !context.mounted) return;
+      // Spremi anon UUID za migraciju nakon što stigne permanent sesija.
+      if (current?.isAnonymous == true && current != null) {
+        setLocalStorageString(_anonPendingMigrationKey, current.id);
+        log('_registerPasskey: saved pending anon=${current.id}');
+      }
+    }
+
+    try {
+      await PasskeyService.instance.registerPasskey(email: email);
+      if (context.mounted) {
+        _snack(context, isPermanent
+            ? 'Passkey je dodan na tvoj račun.'
+            : 'Otvaram prijavu — passkey je kreiran…');
+      }
+    } on PasskeyFailure catch (e) {
+      log('_registerPasskey PasskeyFailure: ${e.message}');
+      if (context.mounted) _snack(context, e.message);
+    }
+  }
+
+  /// Prijava postojećim passkeyom (returning sign-in). Sesija stiže async.
+  Future<void> signInWithPasskey(BuildContext context) async {
+    final client = _client();
+    if (client == null) {
+      _snack(context, 'Supabase nije konfiguriran.');
+      return;
+    }
+    try {
+      await PasskeyService.instance.loginWithPasskey();
+      if (context.mounted) _snack(context, 'Prijava passkeyom u tijeku…');
+    } on PasskeyFailure catch (e) {
+      log('signInWithPasskey PasskeyFailure: ${e.message}');
+      if (context.mounted) _snack(context, e.message);
     }
   }
 

@@ -79,13 +79,29 @@ class _AuthSheetContent extends StatelessWidget {
             const SizedBox(height: 20),
             _ProviderButton(
               icon: Icons.fingerprint,
-              label: 'Passkey',
+              label: 'Kreiraj passkey',
               subtitle: 'Najsigurnije, bez lozinke',
               accent: theme.colorScheme.primary,
               isPrimary: true,
               onTap: () => _doLink(context, AuthProvider.passkey),
             ),
-            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  AuthService.instance.signInWithPasskey(context);
+                },
+                child: Text(
+                  'Već imaš passkey? Prijavi se',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
             _ProviderButton(
               icon: Icons.account_circle,
               label: 'Nastavi s Google računom',
