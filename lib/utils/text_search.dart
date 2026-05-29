@@ -20,13 +20,59 @@ const Map<String, String> _foldMap = {
 };
 
 /// Lowercase + fold dijakritika → usporedivi ASCII oblik.
+///
+/// Foldano PO ZNAKU tako da je izlaz iste duljine kao ulaz (1 code unit →
+/// 1 znak). To je nužno za [highlightRanges] gdje indekse iz foldane verzije
+/// mapiramo natrag na originalni tekst. Za naš (hrvatski/latinični) sadržaj
+/// lowercase je 1:1; ako neki znak lowercasea u više znakova, čuvamo original.
 String foldText(String input) {
-  final lower = input.toLowerCase();
   final buf = StringBuffer();
-  for (final ch in lower.split('')) {
-    buf.write(_foldMap[ch] ?? ch);
+  for (final ch in input.split('')) {
+    final lc = ch.toLowerCase();
+    final c = lc.length == 1 ? lc : ch;
+    buf.write(_foldMap[c] ?? c);
   }
   return buf.toString();
+}
+
+/// Rasponi `[start, end)` u [text] koji odgovaraju bilo kojem tokenu iz
+/// [query] (dijakritik-neosjetljivo). Rezultat je sortiran i spojen (bez
+/// preklapanja) — spreman za izgradnju highlight TextSpan-ova.
+List<List<int>> highlightRanges(String text, String query) {
+  if (text.isEmpty) return const [];
+  final q = foldText(query).trim();
+  if (q.isEmpty) return const [];
+  final tokens =
+      q.split(RegExp(r'\s+')).where((t) => t.length >= 2).toList();
+  if (tokens.isEmpty) return const [];
+
+  final folded = foldText(text); // ista duljina kao text → indeksi se poklapaju
+  final ranges = <List<int>>[];
+  for (final token in tokens) {
+    var from = 0;
+    while (true) {
+      final idx = folded.indexOf(token, from);
+      if (idx < 0) break;
+      ranges.add([idx, idx + token.length]);
+      from = idx + token.length;
+    }
+  }
+  if (ranges.isEmpty) return const [];
+
+  ranges.sort((a, b) => a[0].compareTo(b[0]));
+  final merged = <List<int>>[];
+  var cur = ranges.first;
+  for (var i = 1; i < ranges.length; i++) {
+    final r = ranges[i];
+    if (r[0] <= cur[1]) {
+      if (r[1] > cur[1]) cur = [cur[0], r[1]];
+    } else {
+      merged.add(cur);
+      cur = r;
+    }
+  }
+  merged.add(cur);
+  return merged;
 }
 
 /// Deterministički lokalni match scorer. Vraća score > 0 ako se SVI tokeni

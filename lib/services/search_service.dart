@@ -117,6 +117,9 @@ class SearchService {
       final results = (body['results'] as List<dynamic>? ?? [])
           .map((e) => SemanticResult.fromJson(e as Map<String, dynamic>))
           .toList();
+      // Server već vraća silazno po score (ORDER BY cosineDistance ASC), ali
+      // defenzivno re-sortiramo da UI ranking bude zajamčen.
+      results.sort((a, b) => b.score.compareTo(a.score));
       log('SearchService: ${results.length} rezultata za "$q"');
       return results;
     } on TimeoutException {

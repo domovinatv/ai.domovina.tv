@@ -8,6 +8,7 @@ import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/search_service.dart';
 import '../../utils/text_search.dart';
+import '../../widgets/highlight_text.dart';
 
 import '../../theme/typography.dart';
 
@@ -561,8 +562,9 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  QueryHighlightText(
                     ch.name,
+                    query: _query,
                     style: theme.textTheme.titleSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -609,8 +611,9 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  QueryHighlightText(
                     vr.video.displayTitle,
+                    query: _query,
                     style: theme.textTheme.titleSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -670,15 +673,17 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (r.episodeTitle != null)
-                    Text(
+                    QueryHighlightText(
                       r.episodeTitle!,
+                      query: _query,
                       style: theme.textTheme.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   const SizedBox(height: 2),
-                  Text(
+                  QueryHighlightText(
                     r.snippet,
+                    query: _query,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       height: 1.3,
@@ -718,6 +723,49 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                     ],
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            _relevanceMeter(theme, r.score),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Kvantitativna metrika relevantnosti uz semantički rezultat: tanki bar
+  /// (fill ~ score, normaliziran na 0.30–0.70 raspon gdje su realni pogoci) +
+  /// sirovi score. Tooltip objašnjava značenje.
+  Widget _relevanceMeter(ThemeData theme, double score) {
+    final norm = ((score - 0.30) / 0.40).clamp(0.0, 1.0);
+    final color = norm >= 0.66
+        ? const Color(0xFF2E7D32) // zelena — jak pogodak
+        : norm >= 0.33
+            ? const Color(0xFFF9A825) // jantar — srednji
+            : theme.colorScheme.outline; // slab
+    return Tooltip(
+      message:
+          'Relevantnost (semantička sličnost): ${score.toStringAsFixed(2)}',
+      child: SizedBox(
+        width: 36,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: norm,
+                minHeight: 5,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              score.toStringAsFixed(2),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 10,
               ),
             ),
           ],
