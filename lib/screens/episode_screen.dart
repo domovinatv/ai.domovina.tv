@@ -24,6 +24,7 @@ import '../services/watch_progress_service.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/language_toggle_chip.dart';
+import '../widgets/support_episode_panel.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
@@ -251,6 +252,86 @@ class _LoadingScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+
+/// Trorazinski breadcrumb koji zamjenjuje obični channel-name title u app baru:
+///
+///   `Početna  ›  <Kanal>  ›  <Epizoda>`
+///
+/// Prva dva čvora su tap-abilni (`context.go`), epizoda je trenutni čvor
+/// (bold, ne-klikabilan, ellipsis). Derivira se iz same epizode
+/// (`info.channelId` / `info.channel`) pa radi neovisno o tome je li korisnik
+/// stigao s homepagea, kanala ili izravnog deep-linka — uvijek nudi i "natrag
+/// na Početnu" i "natrag na kanal". Navigacija ide preko `context.go` jer app
+/// koristi go_router replace-semantiku (nema push stacka). Slug kanala =
+/// channelId s `_`→`-` (vidi `ChannelScreen`, ruta `/c/:slug`).
+class _Breadcrumb extends StatelessWidget {
+  final String channelName;
+  final String channelId;
+  final String episodeTitle;
+
+  const _Breadcrumb({
+    required this.channelName,
+    required this.channelId,
+    required this.episodeTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final hasChannel = channelId.isNotEmpty && channelName.isNotEmpty;
+    // Na uskom mobitelu (app bar je već pun action ikona) izostavljamo zadnji
+    // čvor — epizodu — da tap-abilni "Početna" i kanal zadrže prostor. Na
+    // tabletu/desktopu prikazujemo puni trorazinski put.
+    final showEpisode = MediaQuery.sizeOf(context).width > 760;
+
+    Widget crumb(String label, {VoidCallback? onTap, bool current = false}) {
+      Widget text = Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: current ? FontWeight.w600 : FontWeight.w500,
+          color: current ? theme.colorScheme.onSurface : muted,
+        ),
+      );
+      if (onTap == null) return text;
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: text,
+        ),
+      );
+    }
+
+    Widget sep() => Icon(Icons.chevron_right, size: 18, color: muted);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        crumb('Početna', onTap: () => context.go('/')),
+        if (hasChannel) ...[
+          sep(),
+          Flexible(
+            child: crumb(
+              channelName,
+              onTap: () => context.go('/c/${channelId.replaceAll('_', '-')}'),
+              // Kad epizodu skrivamo (mobitel), kanal je zadnji čvor pa ga
+              // istaknemo, ali ostaje tap-abilan.
+              current: !showEpisode,
+            ),
+          ),
+        ],
+        if (showEpisode) ...[
+          sep(),
+          Flexible(child: crumb(episodeTitle, current: true)),
+        ],
+      ],
+    );
+  }
+}
 
 class _EpisodeContent extends StatefulWidget {
   final EpisodeData data;
@@ -998,19 +1079,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
     final appBar = SliverAppBar(
           pinned: true,
-          leading: isWide
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Natrag',
-                  onPressed: () => context.go('/'),
-                ),
           automaticallyImplyLeading: false,
-          title: Text(
-            data.info.channel,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+          titleSpacing: 12,
+          title: _Breadcrumb(
+            channelName: data.info.channel,
+            channelId: data.info.channelId,
+            episodeTitle: data.displayTitle,
           ),
           actions: [
             Padding(
@@ -1084,6 +1158,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     info: data.info,
                     youtubeId: data.youtubeId,
                     summary: summaryForUi.summary,
+                  ),
+                  SupportEpisodePanel(
+                    youtubeId: data.youtubeId,
+                    episodeTitle: data.displayTitle,
                   ),
                   if (data.hasTranslationEn)
                     Padding(
@@ -1174,6 +1252,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         info: data.info,
                         youtubeId: data.youtubeId,
                         summary: summaryForUi.summary,
+                      ),
+                      SupportEpisodePanel(
+                        youtubeId: data.youtubeId,
+                        episodeTitle: data.displayTitle,
                       ),
                       if (data.hasTranslationEn)
                         Padding(
@@ -1271,17 +1353,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
         slivers: [
           SliverAppBar(
             pinned: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Natrag',
-              onPressed: () => context.go('/'),
-            ),
             automaticallyImplyLeading: false,
-            title: Text(
-              data.info.channel,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+            titleSpacing: 12,
+            title: _Breadcrumb(
+              channelName: data.info.channel,
+              channelId: data.info.channelId,
+              episodeTitle: data.displayTitle,
             ),
             actions: [
               Padding(
@@ -1683,17 +1760,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
       slivers: [
         SliverAppBar(
           pinned: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            tooltip: 'Natrag',
-            onPressed: () => context.go('/'),
-          ),
           automaticallyImplyLeading: false,
-          title: Text(
-            data.info.channel,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+          titleSpacing: 12,
+          title: _Breadcrumb(
+            channelName: data.info.channel,
+            channelId: data.info.channelId,
+            episodeTitle: data.displayTitle,
           ),
           actions: [
             Padding(

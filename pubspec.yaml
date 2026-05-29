@@ -53,6 +53,9 @@ dependencies:
   supabase_flutter: ^2.5.0
   google_fonts: ^6.2.1
   cached_network_image: ^3.4.1
+  # SEPA/EPC QR za pinka.finance "Podrži ovu epizodu" panel. CustomPaint-based,
+  # bez dart:html → siguran za --wasm build.
+  qr_flutter: ^4.1.0
   # Passkeys: ovisimo direktno o platform paketima (NE o meta `passkeys`) jer
   # meta povlači `ua_client_hints` koji importa `dart:html` → ruši --wasm build.
   # Platform paketi ovise samo o platform_interface (+ package:web na webu).
