@@ -338,12 +338,44 @@ sequenceDiagram
 ```
 
 Setup koraci:
-1. **Certilia OAuth app** (`developer.certilia.com`): Web Application; grants
-   *Authorization Code + Refresh Token*; redirect URI
-   `https://certilia.domovina.ai/api/auth/callback`; scopes
-   `openid profile eid email offline_access`; token auth `client_secret_post`;
-   PKCE **S256**; ID token **RS256**.
-2. **Deploy `certilia-server`** na Coolify (`certilia.domovina.ai`), base dir
+
+**1. Certilia "Create Service Provider (IDP)" forma** (`developer.certilia.com`
+→ *Identity provider* → *Create*). Forma izgleda i popunjava se ovako:
+
+![Certilia Create Service Provider (IDP) forma](images/certilia-idp-create.png)
+
+Polje-po-polje (zvjezdica = obavezno):
+
+| Polje na formi | Vrijednost | Napomena |
+|---|---|---|
+| **Service provider name*** | `DOMOVINA` | prikazano korisniku na consent ekranu |
+| **Show in Certilia Portal** | po želji | ✓ ako želiš da se app vidi u Certilia portalu |
+| **Protocol*** | `OIDC/OAuth2` | |
+| **Grant Types*** | `authorization_code`, `refresh_token` | |
+| **Callback URL*** | `https://certilia.domovina.ai/api/auth/callback` | **mora točno** = `CERTILIA_REDIRECT_URI` u proxy env-u |
+| **Back channel URL** | _(prazno)_ | ne treba za ovaj flow |
+| **User data your application want to receive*** | `Email, First name, Last name, OIB/PIN` | claimovi koje app *može* dobiti (uz consent) |
+| **Mandatory user data your application require** | **`pin`** (OIB) | ⚠️ vidi napomenu — drži minimalno |
+| **User access token expiration*** | `3600` | 1 h |
+| **User refresh token expiration*** | `86400` | 1 dan (možeš i duže) |
+| **ID token expiration*** | `3600` | 1 h |
+
+> ⚠️ **Privatnost / GDPR — Mandatory user data:** Certilia upozorava *"User will
+> be forced to provide consent for this data. If user deny consent, login will
+> fail. Choose only minimal set."* Naš bridge identitet veže **isključivo na OIB**
+> (`pin`), a email je opcionalan (fallback je OIB-derived email). Zato u
+> **Mandatory** drži **samo `pin`** — sve ostalo (mobile, address, country, gender,
+> birthdate) makni iz mandatory da prijava ne pada i da ne tražimo nepotrebne
+> podatke. `Email/First name/Last name` ostavi u "*want to receive*" (opcionalno).
+>
+> _Napomena: na formi NEMA zasebnih polja za "scopes", "token auth method" ni
+> "PKCE" — Certilia ih izvodi iz protokola; PKCE (S256) i `client_secret_post`
+> obavlja `certilia-server` proxy. OIDC scopes (`openid profile eid email
+> offline_access`) konfiguriraju se na klijentu u `CertiliaService`._
+
+Spremi → dobiješ `Client ID` (`certilia_…`) + `Client Secret` (idu u Coolify env, ručno).
+
+**2. Deploy `certilia-server`** na Coolify (`certilia.domovina.ai`), base dir
    `certilia-server/`. Env: `CERTILIA_CLIENT_ID/SECRET`, `CERTILIA_BASE_URL=https://idp.certilia.com`,
    `CERTILIA_REDIRECT_URI=…/api/auth/callback`, `JWT_SECRET`/`SESSION_SECRET`
    (`openssl rand -hex 64`), `ALLOWED_ORIGINS=https://domovina.ai,http://localhost:5173`.
