@@ -1,25 +1,28 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:fuzzy/fuzzy.dart';
 import '../../models/channel_index.dart';
 import '../../models/channel_detail.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
+import '../../services/search_service.dart';
+import '../../utils/text_search.dart';
 
 import '../../theme/typography.dart';
 
 /// Otvori search overlay (modal) povrh home screen-a.
 ///
-/// Sadrži:
-/// - Glavni search field s autofocus
-/// - Live rezultati: kanali (do 8) + epizode (do 15)
-/// - Expandable sekcija "Otvori po YouTube ID-u" na dnu
+/// Dva sloja pretrage:
+/// - Tier 0 (instant, offline): dijakritik-neosjetljiv lokalni match nad
+///   učitanim kanalima/epizodama (naslov, govornici, teme, sažetak).
+/// - Tier 1 (semantic, online): deterministički RAG `/api/search` — pronalazi
+///   GDJE se o nečemu priča, s deep linkom na točan timestamp.
 Future<void> showSearchOverlay(
   BuildContext context, {
   required List<ChannelSummary> channels,
   required void Function(ChannelSummary) onSelectChannel,
   required void Function(String videoId) onSelectVideo,
+  required void Function(String videoId, int seconds) onSelectVideoAt,
 }) async {
   await showGeneralDialog(
     context: context,
@@ -31,6 +34,7 @@ Future<void> showSearchOverlay(
       channels: channels,
       onSelectChannel: onSelectChannel,
       onSelectVideo: onSelectVideo,
+      onSelectVideoAt: onSelectVideoAt,
     ),
     transitionBuilder: (context, anim, _, child) {
       return FadeTransition(
@@ -50,24 +54,34 @@ class _SearchOverlay extends StatefulWidget {
   final List<ChannelSummary> channels;
   final void Function(ChannelSummary) onSelectChannel;
   final void Function(String videoId) onSelectVideo;
+  final void Function(String videoId, int seconds) onSelectVideoAt;
 
   const _SearchOverlay({
     required this.channels,
     required this.onSelectChannel,
     required this.onSelectVideo,
+    required this.onSelectVideoAt,
   });
 
   @override
   State<_SearchOverlay> createState() => _SearchOverlayState();
 }
 
+// Lokalni rezultat epizode s izračunatim scoreom.
+typedef _VideoHit = ({String channelId, String channelName, ChannelVideo video});
+
 class _SearchOverlayState extends State<_SearchOverlay> {
   final _searchController = TextEditingController();
   final _idController = TextEditingController();
   final _searchFocus = FocusNode();
   Timer? _debounce;
+  Timer? _semanticDebounce;
   String _query = '';
   bool _showIdInput = false;
+
+  // Tier 1 semantic state.
+  List<SemanticResult> _semanticResults = [];
+  bool _semanticLoading = false;
 
   @override
   void initState() {
@@ -80,6 +94,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _semanticDebounce?.cancel();
     _searchController.dispose();
     _idController.dispose();
     _searchFocus.dispose();
@@ -87,9 +102,38 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   void _onSearchChanged(String value) {
+    // Tier 0 — instant lokalni rezultati (kratki debounce za smoothness).
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () {
+    _debounce = Timer(const Duration(milliseconds: 180), () {
       if (mounted) setState(() => _query = value);
+    });
+
+    // Tier 1 — semantic, duži debounce + min duljina (štedi mrežu/embeddinge).
+    _semanticDebounce?.cancel();
+    final q = value.trim();
+    if (q.length < 3) {
+      if (_semanticResults.isNotEmpty || _semanticLoading) {
+        setState(() {
+          _semanticResults = [];
+          _semanticLoading = false;
+        });
+      }
+      return;
+    }
+    _semanticDebounce = Timer(const Duration(milliseconds: 420), () {
+      _runSemantic(q);
+    });
+  }
+
+  Future<void> _runSemantic(String q) async {
+    setState(() => _semanticLoading = true);
+    final results = await SearchService.search(q, limit: 12);
+    if (!mounted) return;
+    // Odbaci stale odgovor (upit se promijenio u međuvremenu).
+    if (_searchController.text.trim() != q) return;
+    setState(() {
+      _semanticResults = results;
+      _semanticLoading = false;
     });
   }
 
@@ -98,6 +142,40 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     if (id.isEmpty) return;
     Navigator.of(context).pop();
     widget.onSelectVideo(id);
+  }
+
+  // ── Tier 0 scoring ────────────────────────────────────────────
+  List<ChannelSummary> _localChannels(String q) {
+    final scored = <(double, ChannelSummary)>[];
+    for (final ch in widget.channels) {
+      final s = localMatchScore(q, ch.name);
+      if (s > 0) scored.add((s, ch));
+    }
+    scored.sort((a, b) => b.$1.compareTo(a.$1));
+    return scored.take(6).map((e) => e.$2).toList();
+  }
+
+  List<_VideoHit> _localVideos(String q) {
+    final scored = <(double, _VideoHit)>[];
+    for (final hit in channelCache.allVideos) {
+      final v = hit.video;
+      // Kombinirani haystack → multi-token upit radi i preko više polja
+      // (npr. "šterc demografija": ime u speakers, tema u topics).
+      final combined = [
+        v.displayTitle,
+        v.title,
+        v.speakers.join(' '),
+        v.topics.join(' '),
+        v.abstract_ ?? '',
+        hit.channelName,
+      ].join('  ');
+      final base = localMatchScore(q, combined);
+      if (base <= 0) continue;
+      final titleBoost = localMatchScore(q, v.displayTitle) > 0 ? 3.0 : 0.0;
+      scored.add((base + titleBoost, hit));
+    }
+    scored.sort((a, b) => b.$1.compareTo(a.$1));
+    return scored.take(12).map((e) => e.$2).toList();
   }
 
   @override
@@ -159,7 +237,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 filled: false,
-                hintText: 'Pretraži kanale i epizode…',
+                hintText: 'Pretraži kanale, epizode i sadržaj…',
                 hintStyle: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant
                       .withValues(alpha: 0.5),
@@ -169,6 +247,15 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               ),
             ),
           ),
+          if (_semanticLoading)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.close, size: 20),
             tooltip: 'Zatvori',
@@ -184,46 +271,14 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       return _emptyState(theme);
     }
 
-    // Fuzzy search po kanalima.
-    final channelFuse = Fuzzy<ChannelSummary>(
-      widget.channels,
-      options: FuzzyOptions(
-        keys: [WeightedKey(name: 'name', getter: (c) => c.name, weight: 1)],
-        threshold: 0.4,
-      ),
-    );
-    final channelResults =
-        channelFuse.search(_query).take(8).map((r) => r.item).toList();
+    final channelResults = _localChannels(_query);
+    final videoResults =
+        channelCache.allVideos.isNotEmpty ? _localVideos(_query) : <_VideoHit>[];
 
-    // Fuzzy search po video zapisima (ako je cache spreman).
-    final allVids = channelCache.allVideos;
-    List<({String channelId, String channelName, ChannelVideo video})>
-        videoResults = [];
-    if (allVids.isNotEmpty) {
-      final videoFuse = Fuzzy<
-          ({String channelId, String channelName, ChannelVideo video})>(
-        allVids,
-        options: FuzzyOptions(
-          keys: [
-            WeightedKey(
-              name: 'title',
-              getter: (v) => v.video.displayTitle,
-              weight: 1,
-            ),
-            WeightedKey(
-              name: 'speakers',
-              getter: (v) => v.video.speakers.join(' '),
-              weight: 0.5,
-            ),
-          ],
-          threshold: 0.4,
-        ),
-      );
-      videoResults =
-          videoFuse.search(_query).take(15).map((r) => r.item).toList();
-    }
+    final hasLocal = channelResults.isNotEmpty || videoResults.isNotEmpty;
+    final hasSemantic = _semanticResults.isNotEmpty;
 
-    if (channelResults.isEmpty && videoResults.isEmpty) {
+    if (!hasLocal && !hasSemantic && !_semanticLoading) {
       return Padding(
         padding: const EdgeInsets.all(32),
         child: Center(
@@ -243,12 +298,19 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       children: [
         if (channelResults.isNotEmpty) ...[
           _sectionLabel(theme, 'KANALI'),
-          for (final ch in channelResults)
-            _channelRow(theme, ch),
+          for (final ch in channelResults) _channelRow(theme, ch),
         ],
         if (videoResults.isNotEmpty) ...[
           _sectionLabel(theme, 'EPIZODE'),
           for (final vr in videoResults) _videoRow(theme, vr),
+        ],
+        // Tier 1 — semantička pretraga sadržaja.
+        if (hasSemantic || _semanticLoading) ...[
+          _semanticSectionLabel(theme),
+          if (hasSemantic)
+            for (final r in _semanticResults) _semanticRow(theme, r)
+          else
+            _semanticLoadingRow(theme),
         ],
       ],
     );
@@ -273,6 +335,14 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Pretražuje kanale, epizode i sam sadržaj razgovora',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+            ),
           ],
         ),
       ),
@@ -285,6 +355,48 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       child: Text(
         text,
         style: AppTypography.eyebrowStyle(theme.colorScheme),
+      ),
+    );
+  }
+
+  Widget _semanticSectionLabel(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 16, 6),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome,
+              size: 13, color: theme.colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            'U SADRŽAJU',
+            style: AppTypography.eyebrowStyle(theme.colorScheme),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _semanticLoadingRow(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Pretražujem sadržaj razgovora…',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -339,8 +451,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     );
   }
 
-  Widget _videoRow(ThemeData theme,
-      ({String channelId, String channelName, ChannelVideo video}) vr) {
+  Widget _videoRow(ThemeData theme, _VideoHit vr) {
     return InkWell(
       onTap: () {
         Navigator.of(context).pop();
@@ -357,8 +468,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 width: 72,
                 height: 40,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) =>
-                    _thumbPlaceholder(theme, 72, 40),
+                errorBuilder: (c, e, s) => _thumbPlaceholder(theme, 72, 40),
               ),
             ),
             const SizedBox(width: 12),
@@ -390,6 +500,93 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _semanticRow(ThemeData theme, SemanticResult r) {
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).pop();
+        if (r.isSummary) {
+          widget.onSelectVideo(r.youtubeId);
+        } else {
+          widget.onSelectVideoAt(r.youtubeId, r.startSeconds);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                CdnConfig.thumbnailUrl(r.youtubeId),
+                width: 72,
+                height: 40,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => _thumbPlaceholder(theme, 72, 40),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (r.episodeTitle != null)
+                    Text(
+                      r.episodeTitle!,
+                      style: theme.textTheme.titleSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    r.snippet,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      if (!r.isSummary) ...[
+                        Icon(Icons.play_circle_outline,
+                            size: 12, color: theme.colorScheme.primary),
+                        const SizedBox(width: 3),
+                        Text(
+                          _fmtTs(r.startSeconds),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Text(
+                          r.speakers.isNotEmpty
+                              ? r.speakers.join(', ')
+                              : r.channel,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.7),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -487,5 +684,14 @@ class _SearchOverlayState extends State<_SearchOverlay> {
           size: 18,
           color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
     );
+  }
+
+  String _fmtTs(int s) {
+    final h = s ~/ 3600;
+    final m = (s % 3600) ~/ 60;
+    final sec = s % 60;
+    final ss = sec.toString().padLeft(2, '0');
+    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$ss';
+    return '$m:$ss';
   }
 }

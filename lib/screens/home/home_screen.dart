@@ -179,7 +179,13 @@ class _HomeScreenState extends State<HomeScreen> {
       channels: index.channels,
       onSelectChannel: _selectChannel,
       onSelectVideo: _openVideo,
+      onSelectVideoAt: _openVideoAt,
     );
+  }
+
+  /// Otvori epizodu na zadanom timestampu (semantic search deep link).
+  void _openVideoAt(String videoId, int seconds) {
+    context.go('/v/$videoId/t/$seconds');
   }
 
   /// Primijeni aktivni sort mode na kanale. Za 'custom' mode koristi spremljen
