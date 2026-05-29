@@ -396,6 +396,21 @@ Polje-po-polje (finalno; zvjezdica = obavezno):
 > iz protokola; PKCE (S256) + `client_secret_post` obavlja proxy; OIDC scopes su
 > na klijentu u `CertiliaService`._
 
+**1b. Nakon SAVE — "Show Config"** (lista IDP-ova → red DOMOVINA → *Show Config*).
+Tu su **endpointi za komunikaciju** i **Client ID / Client Secret**:
+
+![Certilia — Show Config (endpointi + Client ID/Secret)](images/certilia-idp-config.png)
+
+- **Endpoints** (javno, potvrđuju našu konfiguraciju):
+  - Authorize `https://idp.certilia.com/oauth2/authorize`
+  - **OpenID Discovery `https://idp.certilia.com/oauth2/oidcdiscovery/.well-known/openid-configuration`** → edge fn `certilia` ovo koristi za JWKS verifikaciju idTokena (`CERTILIA_ISSUER=https://idp.certilia.com`).
+  - Token `https://idp.certilia.com/oauth2/token`
+  - Scope `openid`, Response Type `code`, Redirect URI `https://certilia.domovina.ai/api/auth/callback`.
+- **Client ID / Client Secret**: kopiraj odavde u **Coolify env** (proxy: oba; Supabase edge: samo `CERTILIA_CLIENT_ID`). **Nikad u repo/git** — secret je na slici namjerno potpuno zamućen.
+
+> 🔐 **Secret nikad u repo.** Ovaj screenshot je siguran za commit jer je Client
+> Secret potpuno zamućen, a Client ID je polu-javan (šalje se u OAuth zahtjevu).
+
 **2. Deploy `certilia-server`** na Coolify (`certilia.domovina.ai`), base dir
    `certilia-server/`. Env: `CERTILIA_CLIENT_ID/SECRET`, `CERTILIA_BASE_URL=https://idp.certilia.com`,
    `CERTILIA_REDIRECT_URI=…/api/auth/callback`, `JWT_SECRET`/`SESSION_SECRET`
