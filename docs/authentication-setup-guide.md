@@ -353,7 +353,7 @@ Polje-po-polje (zvjezdica = obavezno):
 | **Protocol*** | `OIDC/OAuth2` | |
 | **Grant Types*** | `authorization_code`, `refresh_token` | |
 | **Callback URL*** | `https://certilia.domovina.ai/api/auth/callback` | **mora točno** = `CERTILIA_REDIRECT_URI` u proxy env-u |
-| **Back channel URL** | _(prazno)_ | ne treba za ovaj flow |
+| **Back channel URL** | _(prazno)_ | OIDC back-channel **logout** endpoint (IdP zove server-to-server pri odjavi). Ne treba — vidi napomenu |
 | **User data your application want to receive*** | `Email, First name, Last name, OIB/PIN` | claimovi koje app *može* dobiti (uz consent) |
 | **Mandatory user data your application require** | **`pin`** (OIB) | ⚠️ vidi napomenu — drži minimalno |
 | **User access token expiration*** | `3600` | 1 h |
@@ -367,6 +367,12 @@ Polje-po-polje (zvjezdica = obavezno):
 > **Mandatory** drži **samo `pin`** — sve ostalo (mobile, address, country, gender,
 > birthdate) makni iz mandatory da prijava ne pada i da ne tražimo nepotrebne
 > podatke. `Email/First name/Last name` ostavi u "*want to receive*" (opcionalno).
+>
+> **Back channel URL** = OIDC back-channel logout endpoint (Certilia ga zove
+> server-to-server kad se korisnik odjavi na IdP strani). **Ostavi prazno** — mi
+> ne držimo Certilia sesiju (uzmemo idToken jednom → bridge na Supabase sesiju),
+> a `certilia-server` nema logout-webhook rutu. Treba samo ako želiš da
+> Certilia-inicirana odjava ruši i tvoju app sesiju.
 >
 > _Napomena: na formi NEMA zasebnih polja za "scopes", "token auth method" ni
 > "PKCE" — Certilia ih izvodi iz protokola; PKCE (S256) i `client_secret_post`
