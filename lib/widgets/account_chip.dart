@@ -22,6 +22,7 @@ class AccountChip extends StatelessWidget {
             displayName: auth.currentUser?.displayName,
             email: auth.currentUser?.email,
             provider: auth.currentUser?.provider,
+            verified: auth.currentUser?.isVerified ?? false,
           );
         }
         return _AnonymousChip();
@@ -79,8 +80,14 @@ class _SignedInChip extends StatelessWidget {
   final String? displayName;
   final String? email;
   final AuthProvider? provider;
+  final bool verified;
 
-  const _SignedInChip({this.displayName, this.email, this.provider});
+  const _SignedInChip({
+    this.displayName,
+    this.email,
+    this.provider,
+    this.verified = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +128,26 @@ class _SignedInChip extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+              if (verified)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified,
+                          size: 13, color: theme.colorScheme.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Verificiran identitet',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -144,17 +171,40 @@ class _SignedInChip extends StatelessWidget {
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: CircleAvatar(
-          radius: 14,
-          backgroundColor: theme.colorScheme.primary,
-          child: Text(
-            initial,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: theme.colorScheme.primary,
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
             ),
-          ),
+            // KYC: verificirani identitet (eID) → plavi check badge.
+            if (verified)
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(1),
+                  child: Icon(
+                    Icons.verified,
+                    size: 13,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

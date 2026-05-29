@@ -55,12 +55,16 @@ class AppUser {
   final String? displayName;
   final AuthProvider? provider;
 
+  /// KYC: identitet verificiran preko eID-a (Certilia). Iz app_metadata.
+  final bool isVerified;
+
   const AppUser({
     required this.id,
     required this.isAnonymous,
     this.email,
     this.displayName,
     this.provider,
+    this.isVerified = false,
   });
 
   factory AppUser.fromSupabase(sb.User u) {
@@ -100,6 +104,7 @@ class AppUser {
       email: u.email,
       displayName: displayName,
       provider: provider,
+      isVerified: appMeta['kyc_verified'] == true,
     );
   }
 }
