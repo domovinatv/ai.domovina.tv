@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/channel_index.dart';
 import '../../models/channel_detail.dart';
 import '../../services/cdn_config.dart';
@@ -83,6 +84,18 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   List<SemanticResult> _semanticResults = [];
   bool _semanticLoading = false;
 
+  // Keyboard navigacija (command-palette stil). _selected je globalni indeks
+  // kroz spojeni red: kanali → epizode → semantic. _visible* drže trenutno
+  // prikazane lokalne rezultate da handler i render dijele isti redoslijed.
+  int _selected = 0;
+  final _scrollController = ScrollController();
+  final _selectedKey = GlobalKey();
+  List<ChannelSummary> _visibleChannels = const [];
+  List<_VideoHit> _visibleVideos = const [];
+
+  int get _itemCount =>
+      _visibleChannels.length + _visibleVideos.length + _semanticResults.length;
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +108,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   void dispose() {
     _debounce?.cancel();
     _semanticDebounce?.cancel();
+    _scrollController.dispose();
     _searchController.dispose();
     _idController.dispose();
     _searchFocus.dispose();
@@ -105,7 +119,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     // Tier 0 — instant lokalni rezultati (kratki debounce za smoothness).
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 180), () {
-      if (mounted) setState(() => _query = value);
+      if (mounted) {
+        setState(() {
+          _query = value;
+          _selected = 0; // novi upit → highlight prvi rezultat
+        });
+      }
     });
 
     // Tier 1 — semantic, duži debounce + min duljina (štedi mrežu/embeddinge).
@@ -142,6 +161,73 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     if (id.isEmpty) return;
     Navigator.of(context).pop();
     widget.onSelectVideo(id);
+  }
+
+  // ── Keyboard navigacija ───────────────────────────────────────
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowDown) {
+      _moveSelection(1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      _moveSelection(-1);
+      return KeyEventResult.handled;
+    }
+    // Enter: kad je fokus u polju, TextField.onSubmitted već okine; ovo hvata
+    // slučaj kad polje nema fokus. _activateSelected je idempotentan (guard).
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      if (_itemCount > 0) {
+        _activateSelected();
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _moveSelection(int delta) {
+    final n = _itemCount;
+    if (n == 0) return;
+    setState(() => _selected = (_selected + delta).clamp(0, n - 1));
+    // Scroll selektirani red u vidljivo područje nakon rebuilda.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _selectedKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  bool _activated = false; // guard protiv dvostruke aktivacije (onSubmitted + key)
+
+  void _activateSelected() {
+    if (_activated) return;
+    final n = _itemCount;
+    if (n == 0) return;
+    _activated = true;
+    final i = _selected.clamp(0, n - 1);
+    final c = _visibleChannels.length;
+    final v = _visibleVideos.length;
+    Navigator.of(context).pop();
+    if (i < c) {
+      widget.onSelectChannel(_visibleChannels[i]);
+    } else if (i < c + v) {
+      widget.onSelectVideo(_visibleVideos[i - c].video.id);
+    } else {
+      final r = _semanticResults[i - c - v];
+      if (r.isSummary) {
+        widget.onSelectVideo(r.youtubeId);
+      } else {
+        widget.onSelectVideoAt(r.youtubeId, r.startSeconds);
+      }
+    }
   }
 
   // ── Tier 0 scoring ────────────────────────────────────────────
@@ -188,9 +274,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     return Center(
       child: Material(
         color: Colors.transparent,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
-          child: Container(
+        child: Focus(
+          onKeyEvent: _handleKey,
+          child: ConstrainedBox(
+            constraints:
+                BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
+            child: Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(14),
@@ -212,6 +301,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 _idInputSection(theme),
               ],
             ),
+            ),
           ),
         ),
       ),
@@ -231,6 +321,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               controller: _searchController,
               focusNode: _searchFocus,
               onChanged: _onSearchChanged,
+              onSubmitted: (_) => _activateSelected(),
+              textInputAction: TextInputAction.go,
               style: theme.textTheme.titleMedium,
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -268,12 +360,17 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 
   Widget _resultsList(ThemeData theme) {
     if (_query.isEmpty) {
+      _visibleChannels = const [];
+      _visibleVideos = const [];
       return _emptyState(theme);
     }
 
     final channelResults = _localChannels(_query);
     final videoResults =
         channelCache.allVideos.isNotEmpty ? _localVideos(_query) : <_VideoHit>[];
+    // Spremi za keyboard handler (mora dijeliti isti redoslijed kao render).
+    _visibleChannels = channelResults;
+    _visibleVideos = videoResults;
 
     final hasLocal = channelResults.isNotEmpty || videoResults.isNotEmpty;
     final hasSemantic = _semanticResults.isNotEmpty;
@@ -292,27 +389,55 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       );
     }
 
+    // Clamp selekciju na trenutni broj rezultata (može se smanjiti kad stignu
+    // novi semantic rezultati ili se promijeni upit).
+    final total = _itemCount;
+    if (_selected >= total) _selected = total == 0 ? 0 : total - 1;
+    if (_selected < 0) _selected = 0;
+
+    final c = channelResults.length;
+    final v = videoResults.length;
+
     return ListView(
+      controller: _scrollController,
       shrinkWrap: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
       children: [
         if (channelResults.isNotEmpty) ...[
           _sectionLabel(theme, 'KANALI'),
-          for (final ch in channelResults) _channelRow(theme, ch),
+          for (var i = 0; i < c; i++)
+            _selectableRow(index: i, child: _channelRow(theme, channelResults[i])),
         ],
         if (videoResults.isNotEmpty) ...[
           _sectionLabel(theme, 'EPIZODE'),
-          for (final vr in videoResults) _videoRow(theme, vr),
+          for (var i = 0; i < v; i++)
+            _selectableRow(
+                index: c + i, child: _videoRow(theme, videoResults[i])),
         ],
         // Tier 1 — semantička pretraga sadržaja.
         if (hasSemantic || _semanticLoading) ...[
           _semanticSectionLabel(theme),
           if (hasSemantic)
-            for (final r in _semanticResults) _semanticRow(theme, r)
+            for (var i = 0; i < _semanticResults.length; i++)
+              _selectableRow(
+                  index: c + v + i,
+                  child: _semanticRow(theme, _semanticResults[i]))
           else
             _semanticLoadingRow(theme),
         ],
       ],
+    );
+  }
+
+  // Pozadina + key za trenutno selektirani (keyboard) red.
+  Widget _selectableRow({required int index, required Widget child}) {
+    final selected = index == _selected;
+    return Container(
+      key: selected ? _selectedKey : null,
+      color: selected
+          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.10)
+          : null,
+      child: child,
     );
   }
 
@@ -341,6 +466,14 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '↑ ↓ za navigaciju · ↵ za odabir',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
               ),
             ),
           ],
