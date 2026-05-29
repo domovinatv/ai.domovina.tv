@@ -362,11 +362,12 @@ Polje-po-polje (zvjezdica = obavezno):
 
 > ⚠️ **Privatnost / GDPR — Mandatory user data:** Certilia upozorava *"User will
 > be forced to provide consent for this data. If user deny consent, login will
-> fail. Choose only minimal set."* Naš bridge identitet veže **isključivo na OIB**
-> (`pin`), a email je opcionalan (fallback je OIB-derived email). Zato u
-> **Mandatory** drži **samo `pin`** — sve ostalo (mobile, address, country, gender,
-> birthdate) makni iz mandatory da prijava ne pada i da ne tražimo nepotrebne
-> podatke. `Email/First name/Last name` ostavi u "*want to receive*" (opcionalno).
+> fail. Choose only minimal set."* Spremamo **verificirani minimum** (OIB, ime,
+> prezime, datum rođenja, država), pa u **Mandatory** drži točno **`pin,
+> firstname, lastname, birthdate, country`**. Makni `email, mobile, address,
+> gender` iz mandatory (email ostavi u "*want to receive*" — opcionalno). **NE**
+> traži fotografiju ni podatke o ispravi (izbjegavamo čl. 9 biometriju). Vidi
+> [`compliance/data-protection.md`](compliance/data-protection.md) §2 (Obrada B).
 >
 > **Back channel URL** = OIDC back-channel logout endpoint (Certilia ga zove
 > server-to-server kad se korisnik odjavi na IdP strani). **Ostavi prazno** — mi
