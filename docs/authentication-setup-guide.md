@@ -355,14 +355,14 @@ Setup koraci:
 
 | Polje | Prvi nacrt | Finalno ✅ |
 |---|---|---|
-| Show in Certilia Portal | ✓ uključeno | ☐ isključeno (po želji) |
-| User data *want to receive* | sva polja (Email…Organization) | **Email, First name, Last name, OIB/PIN** |
+| User data *want to receive* | sva polja (Email…Organization) | **OIB/PIN, First name, Last name, Birthdate, Country, Email** |
 | Mandatory user data | email, pin, mobile, firstname, lastname, address, country, gender, birthdate | **`pin`** (samo OIB) |
 
 Razlog (čl. 5(1)(c) minimizacija): forsiramo consent **samo za OIB** (`pin`) jer
-identitet ovisi isključivo o njemu; ime/prezime/email su opcionalni (vrate se uz
-consent). Manje obveznih polja = veća stopa uspješne prijave + manje PII-a + lakša
-AZOP priča.
+identitet ovisi isključivo o njemu; ostala polja (ime, prezime, datum rođenja,
+država, email) su **opcionalna** — vrate se uz consent, ali prijava ne pada ako
+korisnik neko odbije. DOB + država su dodani jer DOMOVINA prati dobnu i geo
+strukturu korisnika.
 </details>
 
 Polje-po-polje (finalno; zvjezdica = obavezno):
@@ -370,12 +370,12 @@ Polje-po-polje (finalno; zvjezdica = obavezno):
 | Polje na formi | Finalna vrijednost | Napomena |
 |---|---|---|
 | **Service provider name*** | `DOMOVINA` | prikazano na consent ekranu |
-| **Show in Certilia Portal** | ☐ isključeno | po želji (listanje u Certilia portalu) |
+| **Show in Certilia Portal** | ✓ uključeno | po želji (listanje u Certilia portalu) |
 | **Protocol*** | `OIDC/OAuth2` | |
 | **Grant Types*** | `authorization_code`, `refresh_token` | |
 | **Callback URL*** | `https://certilia.domovina.ai/api/auth/callback` | **mora točno** = `CERTILIA_REDIRECT_URI` |
 | **Back channel URL** | _(prazno)_ | back-channel logout — ne treba (vidi dolje) |
-| **User data want to receive*** | `Email, First name, Last name, OIB/PIN` | dobiva se uz consent |
+| **User data want to receive*** | `OIB/PIN, First name, Last name, Birthdate, Country, Email` | dobiva se uz consent |
 | **Mandatory user data** | **`pin`** (OIB) | jedino obvezno; OIB = identity key + `oib_hash` anti-dup |
 | **Access / Refresh / ID token** | `3600` / `86400` / `3600` | 1 h / 1 dan / 1 h |
 
@@ -383,11 +383,12 @@ Polje-po-polje (finalno; zvjezdica = obavezno):
 > treba; ime/prezime/email su opcionalni. **SAVE** → dobiješ `Client ID`
 > (`certilia_…`) + `Client Secret` (idu u Coolify env, ručno).
 >
-> ⚠️ **KYC napomena:** ova forma traži `Email, First/Last name, OIB`. **Datum
-> rođenja i država se NE traže**, pa ostaju `NULL` u `identity_verifications`
-> (shema je nullable → ništa ne puca; KYC = OIB + ime, + email ako je dan). Želiš
-> li DOB + državu u KYC-u, dodaj `Birthdate` i `Country` u *want to receive*. Vidi
-> [`compliance/kyc-strategy-and-extensibility.md`](compliance/kyc-strategy-and-extensibility.md).
+> **KYC koji spremamo:** OIB (enkriptiran), ime, prezime, **datum rođenja**,
+> **država** (+ email ako korisnik da consent). DOB omogućuje dobnu strukturu,
+> država geo-strukturu korisnika. Samo `pin` (OIB) je obvezan; ostalo je
+> opcionalno (vraća se uz consent). Bez fotografije/isprave (izbjegavamo čl. 9).
+> Vidi [`compliance/kyc-strategy-and-extensibility.md`](compliance/kyc-strategy-and-extensibility.md)
+> + [`compliance/data-protection.md`](compliance/data-protection.md) §2 (Obrada B).
 >
 > **Back channel URL** = OIDC back-channel logout (IdP zove server-to-server pri
 > odjavi). **Ostavi prazno** — ne držimo Certilia sesiju.
