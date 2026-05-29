@@ -40,41 +40,60 @@ class PasskeyService {
 
   PasskeysPlatform get _platform => PasskeysPlatform.instance;
 
+  /// Single-flight guard: samo jedna WebAuthn ceremonija u isto vrijeme.
+  /// Bez ovoga drugi tap na tile (dok traje async register/start) pokrene
+  /// drugi `navigator.credentials.create()` → browser baci
+  /// `OperationError: A request is already pending` (pogoršano password
+  /// manager-ima poput LastPass-a koji presreću ceremoniju).
+  bool _ceremonyInProgress = false;
+
   /// Registracija novog passkeyja.
   /// [email] je obavezan za new-signup (account identifier + session bridge).
   /// Za već prijavljenog permanent usera backend ignorira [email] i veže passkey
   /// na postojeći račun. Otvara `action_link` na kraju (sesija stiže async).
   Future<void> registerPasskey({required String email}) async {
     log('PasskeyService.registerPasskey email=$email');
-
-    final options = await _invokeStart('passkey/register/start', {'email': email});
-    final challenge = options['challenge'] as String;
-
-    final RegisterResponseType regResponse;
-    try {
-      await _platform.cancelCurrentAuthenticatorOperation();
-      regResponse = await _platform.register(
-        RegisterRequestType.fromJson(options),
-      );
-    } on PlatformException catch (e) {
-      log('passkey register PlatformException: ${e.code} ${e.message}');
-      throw PasskeyFailure(switch (e.code) {
-        'cancelled' => 'Registracija passkeyja je otkazana.',
-        'exclude-credentials-match' =>
-          'Na ovom uređaju već postoji passkey za ovaj račun.',
-        'domain-not-associated' =>
-          'Domena nije povezana za passkey (provjeri assetlinks/AASA).',
-        'deviceNotSupported' || 'android-passkey-unsupported' =>
-          'Ovaj uređaj ne podržava passkey.',
-        _ => 'Passkey nije moguće kreirati na ovom uređaju.',
-      });
+    if (_ceremonyInProgress) {
+      throw const PasskeyFailure(
+          'Passkey zahtjev je već u tijeku — pričekaj da završi ili osvježi stranicu.');
     }
+    _ceremonyInProgress = true;
+    try {
+      final options =
+          await _invokeStart('passkey/register/start', {'email': email});
+      final challenge = options['challenge'] as String;
 
-    await _finish('passkey/register/finish', {
-      'challenge': challenge,
-      'credential': regResponse.toJson(),
-      'deviceName': _deviceName(),
-    });
+      final RegisterResponseType regResponse;
+      try {
+        await _platform.cancelCurrentAuthenticatorOperation();
+        regResponse = await _platform.register(
+          RegisterRequestType.fromJson(options),
+        );
+      } on PlatformException catch (e) {
+        log('passkey register PlatformException: ${e.code} ${e.message}');
+        throw PasskeyFailure(switch (e.code) {
+          'cancelled' || 'NotAllowedError' =>
+            'Registracija passkeyja je otkazana ili je istekla. Pokušaj ponovo.',
+          'OperationError' =>
+            'Password manager (npr. LastPass) blokira passkey. U njegovom prozoru klikni „Use a different passkey" i odaberi iCloud/Apple Passwords — ili isključi LastPass za ovaj site.',
+          'exclude-credentials-match' || 'InvalidStateError' =>
+            'Na ovom uređaju već postoji passkey za ovaj račun.',
+          'domain-not-associated' =>
+            'Domena nije povezana za passkey (provjeri assetlinks/AASA).',
+          'deviceNotSupported' || 'android-passkey-unsupported' =>
+            'Ovaj uređaj ne podržava passkey.',
+          _ => 'Passkey nije moguće kreirati na ovom uređaju.',
+        });
+      }
+
+      await _finish('passkey/register/finish', {
+        'challenge': challenge,
+        'credential': regResponse.toJson(),
+        'deviceName': _deviceName(),
+      });
+    } finally {
+      _ceremonyInProgress = false;
+    }
   }
 
   /// Prijava postojećim passkeyom (discoverable credential — OS prikaže picker).
@@ -82,35 +101,46 @@ class PasskeyService {
   /// pa pozivatelj može ponuditi registraciju.
   Future<void> loginWithPasskey() async {
     log('PasskeyService.loginWithPasskey');
-
-    final options = await _invokeStart('passkey/login/start', {});
-    final challenge = options['challenge'] as String;
-
-    final AuthenticateResponseType authResponse;
-    try {
-      await _platform.cancelCurrentAuthenticatorOperation();
-      authResponse = await _platform.authenticate(
-        AuthenticateRequestType.fromJson(options),
-      );
-    } on PlatformException catch (e) {
-      log('passkey login PlatformException: ${e.code} ${e.message}');
-      if (e.code == 'no-credentials-available' ||
-          e.code == 'android-no-credential') {
-        throw const PasskeyFailure('Nema passkeyja na ovom uređaju.',
-            noCredential: true);
-      }
-      throw PasskeyFailure(switch (e.code) {
-        'cancelled' => 'Prijava passkeyom je otkazana.',
-        'domain-not-associated' =>
-          'Domena nije povezana za passkey (provjeri assetlinks/AASA).',
-        _ => 'Prijava passkeyom nije uspjela.',
-      });
+    if (_ceremonyInProgress) {
+      throw const PasskeyFailure(
+          'Passkey zahtjev je već u tijeku — pričekaj da završi ili osvježi stranicu.');
     }
+    _ceremonyInProgress = true;
+    try {
+      final options = await _invokeStart('passkey/login/start', {});
+      final challenge = options['challenge'] as String;
 
-    await _finish('passkey/login/finish', {
-      'challenge': challenge,
-      'credential': authResponse.toJson(),
-    });
+      final AuthenticateResponseType authResponse;
+      try {
+        await _platform.cancelCurrentAuthenticatorOperation();
+        authResponse = await _platform.authenticate(
+          AuthenticateRequestType.fromJson(options),
+        );
+      } on PlatformException catch (e) {
+        log('passkey login PlatformException: ${e.code} ${e.message}');
+        if (e.code == 'no-credentials-available' ||
+            e.code == 'android-no-credential') {
+          throw const PasskeyFailure('Nema passkeyja na ovom uređaju.',
+              noCredential: true);
+        }
+        throw PasskeyFailure(switch (e.code) {
+          'cancelled' || 'NotAllowedError' =>
+            'Prijava passkeyom je otkazana ili je istekla. Pokušaj ponovo.',
+          'OperationError' =>
+            'Password manager (npr. LastPass) blokira passkey. U njegovom prozoru klikni „Use a different passkey" — ili isključi LastPass za ovaj site.',
+          'domain-not-associated' =>
+            'Domena nije povezana za passkey (provjeri assetlinks/AASA).',
+          _ => 'Prijava passkeyom nije uspjela.',
+        });
+      }
+
+      await _finish('passkey/login/finish', {
+        'challenge': challenge,
+        'credential': authResponse.toJson(),
+      });
+    } finally {
+      _ceremonyInProgress = false;
+    }
   }
 
   // -- helpers --
