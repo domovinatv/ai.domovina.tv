@@ -340,47 +340,61 @@ sequenceDiagram
 Setup koraci:
 
 **1. Certilia "Create Service Provider (IDP)" forma** (`developer.certilia.com`
-→ *Identity provider* → *Create*). Forma izgleda i popunjava se ovako:
+→ *Identity provider* → *Create*).
 
-![Certilia Create Service Provider (IDP) forma](images/certilia-idp-create.png)
+**Konačna (finalna, minimizirana) konfiguracija — ovo spremamo:**
 
-Polje-po-polje (zvjezdica = obavezno):
+![Certilia IDP forma — finalna minimizirana konfiguracija](images/certilia-idp-create-final.png)
 
-| Polje na formi | Vrijednost | Napomena |
+<details>
+<summary>📋 Prvi nacrt (PRIJE minimizacije — sva mandatory polja) · klikni za usporedbu</summary>
+
+![Certilia IDP forma — prvi nacrt sa svim mandatory poljima](images/certilia-idp-create-initial.png)
+
+**Što se promijenilo (prvi nacrt → finalno):**
+
+| Polje | Prvi nacrt | Finalno ✅ |
 |---|---|---|
-| **Service provider name*** | `DOMOVINA` | prikazano korisniku na consent ekranu |
-| **Show in Certilia Portal** | po želji | ✓ ako želiš da se app vidi u Certilia portalu |
+| Show in Certilia Portal | ✓ uključeno | ☐ isključeno (po želji) |
+| User data *want to receive* | sva polja (Email…Organization) | **Email, First name, Last name, OIB/PIN** |
+| Mandatory user data | email, pin, mobile, firstname, lastname, address, country, gender, birthdate | **`pin`** (samo OIB) |
+
+Razlog (čl. 5(1)(c) minimizacija): forsiramo consent **samo za OIB** (`pin`) jer
+identitet ovisi isključivo o njemu; ime/prezime/email su opcionalni (vrate se uz
+consent). Manje obveznih polja = veća stopa uspješne prijave + manje PII-a + lakša
+AZOP priča.
+</details>
+
+Polje-po-polje (finalno; zvjezdica = obavezno):
+
+| Polje na formi | Finalna vrijednost | Napomena |
+|---|---|---|
+| **Service provider name*** | `DOMOVINA` | prikazano na consent ekranu |
+| **Show in Certilia Portal** | ☐ isključeno | po želji (listanje u Certilia portalu) |
 | **Protocol*** | `OIDC/OAuth2` | |
 | **Grant Types*** | `authorization_code`, `refresh_token` | |
-| **Callback URL*** | `https://certilia.domovina.ai/api/auth/callback` | **mora točno** = `CERTILIA_REDIRECT_URI` u proxy env-u |
-| **Back channel URL** | _(prazno)_ | OIDC back-channel **logout** endpoint (IdP zove server-to-server pri odjavi). Ne treba — vidi napomenu |
-| **User data your application want to receive*** | `Email, First name, Last name, OIB/PIN` | claimovi koje app *može* dobiti (uz consent) |
-| **Mandatory user data your application require** | **`pin`** (OIB) | ⚠️ vidi napomenu — drži minimalno |
-| **User access token expiration*** | `3600` | 1 h |
-| **User refresh token expiration*** | `86400` | 1 dan (možeš i duže) |
-| **ID token expiration*** | `3600` | 1 h |
+| **Callback URL*** | `https://certilia.domovina.ai/api/auth/callback` | **mora točno** = `CERTILIA_REDIRECT_URI` |
+| **Back channel URL** | _(prazno)_ | back-channel logout — ne treba (vidi dolje) |
+| **User data want to receive*** | `Email, First name, Last name, OIB/PIN` | dobiva se uz consent |
+| **Mandatory user data** | **`pin`** (OIB) | jedino obvezno; OIB = identity key + `oib_hash` anti-dup |
+| **Access / Refresh / ID token** | `3600` / `86400` / `3600` | 1 h / 1 dan / 1 h |
 
-> ⚠️ **Privatnost / GDPR — Mandatory user data:** Certilia upozorava *"User will
-> be forced to provide consent for this data. If user deny consent, login will
-> fail. Choose only minimal set."* Spremamo **verificirani minimum** (OIB, ime,
-> prezime, datum rođenja, država), pa u **Mandatory** drži točno **`pin,
-> firstname, lastname, birthdate, country`**. Makni `email, mobile, address,
-> gender` iz mandatory (email ostavi u "*want to receive*" — opcionalno). **NE**
-> traži fotografiju ni podatke o ispravi (izbjegavamo čl. 9 biometriju). Vidi
-> [`compliance/data-protection.md`](compliance/data-protection.md) §2 (Obrada B).
+> ✅ **Spremno za SAVE.** `pin` (OIB) kao jedino mandatory je točno ono što bridge
+> treba; ime/prezime/email su opcionalni. **SAVE** → dobiješ `Client ID`
+> (`certilia_…`) + `Client Secret` (idu u Coolify env, ručno).
 >
-> **Back channel URL** = OIDC back-channel logout endpoint (Certilia ga zove
-> server-to-server kad se korisnik odjavi na IdP strani). **Ostavi prazno** — mi
-> ne držimo Certilia sesiju (uzmemo idToken jednom → bridge na Supabase sesiju),
-> a `certilia-server` nema logout-webhook rutu. Treba samo ako želiš da
-> Certilia-inicirana odjava ruši i tvoju app sesiju.
+> ⚠️ **KYC napomena:** ova forma traži `Email, First/Last name, OIB`. **Datum
+> rođenja i država se NE traže**, pa ostaju `NULL` u `identity_verifications`
+> (shema je nullable → ništa ne puca; KYC = OIB + ime, + email ako je dan). Želiš
+> li DOB + državu u KYC-u, dodaj `Birthdate` i `Country` u *want to receive*. Vidi
+> [`compliance/kyc-strategy-and-extensibility.md`](compliance/kyc-strategy-and-extensibility.md).
 >
-> _Napomena: na formi NEMA zasebnih polja za "scopes", "token auth method" ni
-> "PKCE" — Certilia ih izvodi iz protokola; PKCE (S256) i `client_secret_post`
-> obavlja `certilia-server` proxy. OIDC scopes (`openid profile eid email
-> offline_access`) konfiguriraju se na klijentu u `CertiliaService`._
-
-Spremi → dobiješ `Client ID` (`certilia_…`) + `Client Secret` (idu u Coolify env, ručno).
+> **Back channel URL** = OIDC back-channel logout (IdP zove server-to-server pri
+> odjavi). **Ostavi prazno** — ne držimo Certilia sesiju.
+>
+> _Forma NEMA polja za "scopes"/"token auth method"/"PKCE" — Certilia ih izvodi
+> iz protokola; PKCE (S256) + `client_secret_post` obavlja proxy; OIDC scopes su
+> na klijentu u `CertiliaService`._
 
 **2. Deploy `certilia-server`** na Coolify (`certilia.domovina.ai`), base dir
    `certilia-server/`. Env: `CERTILIA_CLIENT_ID/SECRET`, `CERTILIA_BASE_URL=https://idp.certilia.com`,
