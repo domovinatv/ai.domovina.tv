@@ -286,15 +286,18 @@ class _Breadcrumb extends StatelessWidget {
     final slug = channelSlug;
     final hasChannel =
         slug != null && slug.isNotEmpty && channelName.isNotEmpty;
-    // Na uskom mobitelu (app bar je već pun action ikona) izostavljamo zadnji
-    // čvor — epizodu — da tap-abilni "Početna" i kanal zadrže prostor. Na
-    // tabletu/desktopu prikazujemo puni trorazinski put.
-    final showEpisode = MediaQuery.sizeOf(context).width > 760;
+    final width = MediaQuery.sizeOf(context).width;
+    // Mobitel (<600): breadcrumb je horizontalno skrolabilan i prikazuje PUNI
+    // put (uklj. epizodu) — konzistentno sa skrolabilnim redom akcija. Na
+    // tabletu/desktopu: Flexible + ellipsis, epizoda tek >760.
+    final scrollable = width < 600;
+    final showEpisode = scrollable || width > 760;
 
     Widget crumb(String label, {VoidCallback? onTap, bool current = false}) {
       Widget text = Text(
         label,
         maxLines: 1,
+        softWrap: false,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.titleMedium?.copyWith(
           fontWeight: current ? FontWeight.w600 : FontWeight.w500,
@@ -314,28 +317,37 @@ class _Breadcrumb extends StatelessWidget {
 
     Widget sep() => Icon(Icons.chevron_right, size: 18, color: muted);
 
-    return Row(
+    // U scrollable modu NE koristimo Flexible (unbounded width u horizontalnom
+    // scrollu bi pucao) — crumbovi idu na intrinzičnu širinu.
+    Widget node(Widget child) => scrollable ? child : Flexible(child: child);
+
+    final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         crumb('Početna', onTap: () => context.go('/')),
         if (hasChannel) ...[
           sep(),
-          Flexible(
-            child: crumb(
-              channelName,
-              onTap: () => context.go('/c/$slug'),
-              // Kad epizodu skrivamo (mobitel), kanal je zadnji čvor pa ga
-              // istaknemo, ali ostaje tap-abilan.
-              current: !showEpisode,
-            ),
-          ),
+          node(crumb(
+            channelName,
+            onTap: () => context.go('/c/$slug'),
+            // Kad epizodu skrivamo (širina 600–760), kanal je zadnji čvor.
+            current: !showEpisode,
+          )),
         ],
         if (showEpisode) ...[
           sep(),
-          Flexible(child: crumb(episodeTitle, current: true)),
+          node(crumb(episodeTitle, current: true)),
         ],
       ],
     );
+
+    if (scrollable) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: row,
+      );
+    }
+    return row;
   }
 }
 
