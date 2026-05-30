@@ -8,6 +8,7 @@ import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/search_service.dart';
 import '../../utils/text_search.dart';
+import '../../widgets/episode_age.dart';
 import '../../widgets/highlight_text.dart';
 
 import '../../theme/typography.dart';
@@ -755,13 +756,21 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    vr.channelName,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          vr.channelName,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      EpisodeAgeChip(vr.video.date),
+                    ],
                   ),
                   // Isječak iz polja gdje je query nađen (abstract/teme/govornici).
                   if (matchCtx != null) ...[
@@ -894,6 +903,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      EpisodeAgeChip(r.uploadDate),
                     ],
                   ),
                 ],
