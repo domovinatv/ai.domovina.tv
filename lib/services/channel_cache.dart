@@ -46,6 +46,20 @@ class ChannelCache extends ChangeNotifier {
     return null;
   }
 
+  /// Look up naš interni channel id (npr. `muzevni_budite`) po imenu kanala
+  /// (match info.json `channel` ↔ index.json `name`). NB: ovo NIJE YouTube
+  /// UC… id koji živi u `info.channelId` — naša `/c/:slug` ruta očekuje naš
+  /// id (s `_`). Null ako index nije učitan ili nema matcha. Koristi se za
+  /// breadcrumb na episode screenu.
+  String? channelIdForName(String name) {
+    final idx = _index;
+    if (idx == null) return null;
+    for (final c in idx.channels) {
+      if (c.name == name) return c.id;
+    }
+    return null;
+  }
+
   /// Ucitaj channel detail (cache-first, network fallback).
   Future<ChannelDetail> loadChannel(String channelId) async {
     final cached = _cache[channelId];

@@ -262,16 +262,20 @@ class _LoadingScreen extends StatelessWidget {
 /// (`info.channelId` / `info.channel`) pa radi neovisno o tome je li korisnik
 /// stigao s homepagea, kanala ili izravnog deep-linka — uvijek nudi i "natrag
 /// na Početnu" i "natrag na kanal". Navigacija ide preko `context.go` jer app
-/// koristi go_router replace-semantiku (nema push stacka). Slug kanala =
-/// channelId s `_`→`-` (vidi `ChannelScreen`, ruta `/c/:slug`).
+/// koristi go_router replace-semantiku (nema push stacka).
+///
+/// [channelSlug] je naš route-ready slug (npr. `muzevni-budite`), razriješen
+/// preko `channelCache.channelIdForName` — NIJE YouTube UC… id iz
+/// `info.channelId` (taj ne postoji kao `/c/:slug`). Dok se index ne učita
+/// (deep-link) slug je null pa se kanal-čvor sakrije.
 class _Breadcrumb extends StatelessWidget {
   final String channelName;
-  final String channelId;
+  final String? channelSlug;
   final String episodeTitle;
 
   const _Breadcrumb({
     required this.channelName,
-    required this.channelId,
+    required this.channelSlug,
     required this.episodeTitle,
   });
 
@@ -279,7 +283,9 @@ class _Breadcrumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    final hasChannel = channelId.isNotEmpty && channelName.isNotEmpty;
+    final slug = channelSlug;
+    final hasChannel =
+        slug != null && slug.isNotEmpty && channelName.isNotEmpty;
     // Na uskom mobitelu (app bar je već pun action ikona) izostavljamo zadnji
     // čvor — epizodu — da tap-abilni "Početna" i kanal zadrže prostor. Na
     // tabletu/desktopu prikazujemo puni trorazinski put.
@@ -317,7 +323,7 @@ class _Breadcrumb extends StatelessWidget {
           Flexible(
             child: crumb(
               channelName,
-              onTap: () => context.go('/c/${channelId.replaceAll('_', '-')}'),
+              onTap: () => context.go('/c/$slug'),
               // Kad epizodu skrivamo (mobitel), kanal je zadnji čvor pa ga
               // istaknemo, ali ostaje tap-abilan.
               current: !showEpisode,
@@ -429,10 +435,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// Inicijalno HR; ako URL nije EN, ucitaj sticky pref iz prefs-a.
   EpisodeLanguage _language = EpisodeLanguage.hr;
 
+  /// Naš route-ready channel slug (npr. `muzevni-budite`) za breadcrumb `/c/`
+  /// link. Razrješava se iz channel indexa po imenu kanala (vidi
+  /// `_resolveChannelSlug`). Null dok se index ne učita ili ako nema matcha —
+  /// breadcrumb tada sakrije kanal-čvor.
+  String? _channelSlug;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _resolveChannelSlug();
 
     // 1) URL forsiranje (npr. /v/<id>/en) — najjaci signal.
     if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
@@ -560,6 +573,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
       seconds: sec,
     );
     _lastUrlSyncedSec = sec;
+  }
+
+  /// Razriješi naš channel slug iz indexa po imenu kanala (info.json `channel`
+  /// ↔ index.json `name`). Index se učita lazy (cache-first) pa ovo radi i na
+  /// izravni deep-link na `/v/<id>` bez prethodnog posjeta homepageu.
+  Future<void> _resolveChannelSlug() async {
+    await channelCache.loadIndex();
+    if (!mounted) return;
+    final id = channelCache.channelIdForName(widget.data.info.channel);
+    if (id == null) return;
+    setState(() => _channelSlug = id.replaceAll('_', '-'));
   }
 
   Duration _parseDuration(String ts) {
@@ -1083,7 +1107,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           titleSpacing: 12,
           title: _Breadcrumb(
             channelName: data.info.channel,
-            channelId: data.info.channelId,
+            channelSlug: _channelSlug,
             episodeTitle: data.displayTitle,
           ),
           actions: [
@@ -1357,7 +1381,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             titleSpacing: 12,
             title: _Breadcrumb(
               channelName: data.info.channel,
-              channelId: data.info.channelId,
+              channelSlug: _channelSlug,
               episodeTitle: data.displayTitle,
             ),
             actions: [
@@ -1764,7 +1788,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           titleSpacing: 12,
           title: _Breadcrumb(
             channelName: data.info.channel,
-            channelId: data.info.channelId,
+            channelSlug: _channelSlug,
             episodeTitle: data.displayTitle,
           ),
           actions: [
