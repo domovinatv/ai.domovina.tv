@@ -720,6 +720,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   Widget _videoRow(ThemeData theme, _VideoHit vr) {
+    final matchCtx = _localMatchContext(vr.video, _query);
     return InkWell(
       onTap: () {
         Navigator.of(context).pop();
@@ -728,6 +729,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -744,13 +746,15 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Naslov se prelama u više redaka (nije skraćen elipsom).
                   QueryHighlightText(
                     vr.video.displayTitle,
                     query: _query,
                     style: theme.textTheme.titleSmall,
-                    maxLines: 1,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     vr.channelName,
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -759,9 +763,24 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // Isječak iz polja gdje je query nađen (abstract/teme/govornici).
+                  if (matchCtx != null) ...[
+                    const SizedBox(height: 3),
+                    QueryHighlightText(
+                      matchCtx,
+                      query: _query,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             if (vr.video.durationDisplay != null)
               Text(
                 vr.video.durationDisplay!,
@@ -773,6 +792,28 @@ class _SearchOverlayState extends State<_SearchOverlay> {
         ),
       ),
     );
+  }
+
+  /// Nađi polje epizode (abstract → teme → govornici) u kojem se query
+  /// pojavljuje i vrati kratak isječak oko pogotka. null ako je match bio samo
+  /// u naslovu (koji je već prikazan i highlightan).
+  String? _localMatchContext(ChannelVideo v, String q) {
+    final candidates = <String>[
+      if ((v.abstract_ ?? '').trim().isNotEmpty) v.abstract_!.trim(),
+      if (v.topics.isNotEmpty) v.topics.join(' · '),
+      if (v.speakers.isNotEmpty) v.speakers.join(', '),
+    ];
+    String? best;
+    var bestCount = 0;
+    for (final c in candidates) {
+      final n = highlightRanges(c, q).length;
+      if (n > bestCount) {
+        bestCount = n;
+        best = c;
+      }
+    }
+    if (best == null) return null;
+    return snippetAround(best, q, before: 50, window: 160);
   }
 
   Widget _semanticRow(ThemeData theme, SemanticResult r) {
