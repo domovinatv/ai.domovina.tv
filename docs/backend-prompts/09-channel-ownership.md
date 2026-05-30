@@ -163,9 +163,15 @@ Body: `{ episodeId, address }` (+ user jwt).
 1. Resolve user. Dohvati `episode_safes[episodeId]` (`no_safe` / `safe_frozen`).
 2. **Re-provjeri eligibility server-side** (NE vjeruj klijentu):
    - verified `channel_claims` za `es.youtube_channel_id` + `account_id=user`
-   - `app_metadata.kyc_verified == true`
-   - `verified_at` mlađi od 90 dana (inače `reverify_needed`)
-   - inače → `not_eligible`
+   - `verified_at` mlađi od 90 dana (inače → `reverify_needed`)
+   - `kyc_verified == true` (inače → `kyc_required`). **VAŽNO:** čitaj
+     `app_metadata` AUTORITATIVNO iz baze preko
+     `admin.auth.admin.getUserById(user.id)`, NE iz `getUser()` tokena —
+     password-grant/anon JWT ne odražava `kyc_verified` koji Certilia upiše
+     naknadno (`updateUserById`). Lokalno potvrđeno: token tvrdi `true`, baza
+     `false` → fn ispravno vrati `kyc_required`.
+   - claim mora postojati (inače → `not_eligible`); adresa u `owner_wallets`
+     (inače → `wallet_not_registered`)
 3. Provjeri da je `address` u `owner_wallets` tog usera.
 4. Preko Safe Transaction Service (chain `es.chain_id`): predloži
    `addOwnerWithThreshold(address, threshold)`. Platforma (trajni co-signer)
@@ -188,6 +194,34 @@ Opcionalno: dodaj `youtube_channel_id text` u `domovina_ai.channels` (ako
 postoji) + index za server-side match.
 
 ---
+
+## Lokalno testiranje (verificirano 2026-05-30)
+
+```bash
+# 1. migracija (db-migrate.sh je SSH-to-PROD; lokalno ide direktno psql)
+psql "postgresql://postgres:postgres@127.0.0.1:55322/postgres" \
+  -v ON_ERROR_STOP=1 -f supabase/migrations/20260530130000_channel_ownership.sql
+
+# 2. deno check obiju fn
+deno check supabase/functions/youtube-claim/index.ts
+deno check supabase/functions/safe-owner-add/index.ts
+
+# 3. VAŽNO: supabase CLI bakea listu funkcija + verify_jwt u edge container env
+#    (SUPABASE_INTERNAL_FUNCTIONS_CONFIG) pri `supabase start`. NOVE funkcije ili
+#    config.toml izmjene NE pokupi `docker restart` (ni `start` dok stack radi —
+#    no-op) → treba PUN stop+start. DB volumeni ostaju, migracije perzistiraju.
+#    Inače 404 "Function not found" (registry) ili 401 "Invalid JWT" (verify_jwt).
+#    Izmjena SAMO koda postojeće fn → dovoljan `docker restart` (reload modula).
+supabase stop && supabase start
+
+# 4. ključevi:  supabase status -o env | grep -E 'ANON_KEY|SERVICE_ROLE_KEY'
+#    (skini navodnike: sed -E 's/^[A-Z_]+="?([^"]*)"?$/\1/')
+```
+
+Pokriveno (sve prolazi): 8 SQL/RLS testova + edge E2E — youtube-claim/start
+(not_signed_in / invalid_channel_id / authUrl+PKCE+oauth_state) i safe-owner-add
+puni ladder (wallet_not_registered → ok:true+stub tx+audit → reverify_needed →
+kyc_required). callback (Google consent) nije E2E.
 
 ## Acceptance kriteriji
 
