@@ -372,4 +372,35 @@ final res = await client.functions.invoke('youtube-claim/start',
 
 ---
 
-> **Status:** plan spreman za implementaciju od Faze 0. Promjene odluka (D1–D4) zahtijevaju update ovog dokumenta — on je single source of truth.
+---
+
+## 15. Status implementacije
+
+**Flutter klijent — IMPLEMENTIRANO** (ovaj repo):
+
+| Faza | Klijentski artefakt | Status |
+|---|---|---|
+| 0 | `ChannelDetail/ChannelSummary.youtubeChannelId`, `PodcastInfo.youtubeChannelId`, `kYoutubeChannelIdPattern`+`canonicalUcId()` | ✅ |
+| 1 | `models/channel_claim.dart`, `services/channel_ownership_service.dart` (start/callback/reverify/myClaims) | ✅ |
+| 2 | `models/payout_eligibility.dart` (ownership∧KYC∧svježina) | ✅ |
+| 3 | `models/owner_wallet.dart`, `services/wallet_service.dart` | ✅ |
+| 4 | `models/episode_safe.dart`, `services/safe_service.dart` (requestOwnerAdd) | ✅ |
+| 5 | `screens/ownership/channel_ownership_screen.dart` (claim flow + callback + Moji kanali), 3 go_router rute, ulazi iz channel SliverAppBar + account_chip popup | ✅ |
+| — | `test/channel_ownership_test.dart` (18 testova: UC parsing, D4, eligibility, EVM) | ✅ |
+
+**Backend — SPEC SPREMAN, ČEKA IMPLEMENTACIJU** (`domovina-api` repo):
+- SQL migracije + 2 edge funkcije (`youtube-claim`, `safe-owner-add`) →
+  [`backend-prompts/09-channel-ownership.md`](./backend-prompts/09-channel-ownership.md).
+- Dok backend nije gore, klijentski pozivi vraćaju kontrolirane greške
+  (FunctionException → mapirane HR poruke), UI ne puca.
+
+**Pipeline — ČEKA** (`fetch.domovina.tv` repo):
+- Faza 0 preduvjet: upis `youtube_channel_id` (`UC…`) u `channel.json`.
+  Dok ga nema, "Preuzmi vlasništvo" akcija je skrivena (fallback na
+  `/channel/UC…` URL parsing radi za kanale koji ga već imaju u URL-u).
+
+---
+
+> **Status:** Flutter klijent kompletan (Faze 0–5). Backend i pipeline koraci
+> dokumentirani kao deklarativni prompti. Promjene odluka (D1–D4) zahtijevaju
+> update ovog dokumenta — on je single source of truth.

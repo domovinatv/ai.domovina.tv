@@ -88,6 +88,8 @@ Flutter pristupa preko `supabase.schema('domovina_ai').from('watch_progress')`.
 05-auth-providers.md         → Google + Apple + Email magic + Passkey (WebAuthn) GoTrue config
 06-handoff-rpc.md            → create/consume_handoff_token RPC + pg_cron cleanup
 07-flutter-swap-mocks.md     → swap mock servisa za prave Supabase pozive
+09-channel-ownership.md      → channel claim (YouTube OAuth) + Safe Multisig payout
+                               (4 tablice + RLS, youtube-claim + safe-owner-add edge fn)
 ```
 
 ## Sanity check između koraka
