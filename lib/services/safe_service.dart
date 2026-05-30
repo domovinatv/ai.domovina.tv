@@ -88,6 +88,10 @@ class SafeService {
   String _mapReason(String? code) => switch (code) {
         'not_eligible' =>
           'Nisi ispunio uvjete za isplatu (vlasništvo, identitet ili svježina).',
+        'kyc_required' =>
+          'Za isplatu prvo verificiraj identitet eOsobnom (Certilia).',
+        'wallet_not_registered' =>
+          'Adresa novčanika nije registrirana na tvom računu.',
         'no_safe' => 'Za ovu epizodu još ne postoji novčanik.',
         'safe_frozen' => 'Novčanik epizode je trenutno zamrznut.',
         'reverify_needed' =>
