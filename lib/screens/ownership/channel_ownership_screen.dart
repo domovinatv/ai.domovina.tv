@@ -26,7 +26,7 @@ import '../../services/wallet_service.dart';
 // ───────────────────────────────────────────────────────────────────────────
 
 class ChannelOwnershipScreen extends StatefulWidget {
-  /// Interni channel slug (kao /c/<id>). Screen iz njega dohvati UC… ID.
+  /// Interni channel slug (kao `/c/:id`). Screen iz njega dohvati UC… ID.
   final String channelId;
   const ChannelOwnershipScreen({super.key, required this.channelId});
 
