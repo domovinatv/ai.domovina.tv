@@ -1,3 +1,5 @@
+import 'channel_detail.dart' show canonicalUcId;
+
 /// Model za /channels/data/index.json
 class ChannelIndex {
   final String version;
@@ -28,6 +30,9 @@ class ChannelSummary {
   final String? avatarCover;
   final ImageDimensions? avatarCoverDimensions;
   final String youtubeChannelUrl;
+
+  /// Kanonski `UC…` ID — vidi [ChannelDetail.youtubeChannelId].
+  final String? youtubeChannelId;
   final String? youtubePlaylistUrl;
   final int? followerCount;
   final int videoCount;
@@ -42,6 +47,7 @@ class ChannelSummary {
     this.avatarCover,
     this.avatarCoverDimensions,
     required this.youtubeChannelUrl,
+    this.youtubeChannelId,
     this.youtubePlaylistUrl,
     this.followerCount,
     required this.videoCount,
@@ -76,6 +82,10 @@ class ChannelSummary {
               ? ImageDimensions.fromJson(coverDim)
               : null,
       youtubeChannelUrl: json['youtube_channel_url'] as String? ?? '',
+      youtubeChannelId: canonicalUcId(
+        json['youtube_channel_id'] as String?,
+        json['youtube_channel_url'] as String?,
+      ),
       youtubePlaylistUrl: json['youtube_playlist_url'] as String?,
       followerCount: json['follower_count'] as int?,
       videoCount: json['video_count'] as int? ?? 0,

@@ -1,3 +1,21 @@
+/// Matcha kanonski YouTube channel ID `UC` + 22 znaka (base64url alfabet).
+final RegExp kYoutubeChannelIdPattern = RegExp(r'^UC[0-9A-Za-z_-]{22}$');
+
+/// Vrati validan `UC…` ID iz eksplicitnog polja, ili ga izvuci iz
+/// `youtube_channel_url` (npr. `https://www.youtube.com/channel/UC…`).
+/// Handle/`/c/` URL-ovi nemaju UC ID pa vraćaju null. Vidi
+/// docs/channel-ownership-and-safe-payout-plan.md (Faza 0).
+String? canonicalUcId(String? explicit, String? url) {
+  if (explicit != null && kYoutubeChannelIdPattern.hasMatch(explicit)) {
+    return explicit;
+  }
+  if (url != null) {
+    final m = RegExp(r'/channel/(UC[0-9A-Za-z_-]{22})').firstMatch(url);
+    if (m != null) return m.group(1);
+  }
+  return null;
+}
+
 /// Model za /channels/data/{channel_id}.json
 class ChannelDetail {
   final String version;
@@ -6,6 +24,12 @@ class ChannelDetail {
   final String? avatarSquare;
   final String? avatarCover;
   final String youtubeChannelUrl;
+
+  /// Kanonski YouTube channel ID (`UC…`). Izvor: pipeline upisuje yt-dlp
+  /// `channel_id` u channel.json. Potreban za ownership verifikaciju
+  /// (`channels.list?mine=true` match). Null dok pipeline ne upiše polje
+  /// (osim ako se da izvući iz `/channel/UC…` URL-a).
+  final String? youtubeChannelId;
   final String? youtubePlaylistUrl;
   final String? description;
   final List<String> tags;
@@ -23,6 +47,7 @@ class ChannelDetail {
     this.avatarSquare,
     this.avatarCover,
     required this.youtubeChannelUrl,
+    this.youtubeChannelId,
     this.youtubePlaylistUrl,
     this.description,
     this.tags = const [],
@@ -42,6 +67,10 @@ class ChannelDetail {
       avatarSquare: json['avatar_square'] as String?,
       avatarCover: json['avatar_cover'] as String?,
       youtubeChannelUrl: json['youtube_channel_url'] as String? ?? '',
+      youtubeChannelId: canonicalUcId(
+        json['youtube_channel_id'] as String?,
+        json['youtube_channel_url'] as String?,
+      ),
       youtubePlaylistUrl: json['youtube_playlist_url'] as String?,
       description: json['description'] as String?,
       tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),

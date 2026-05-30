@@ -67,6 +67,12 @@ class PodcastInfo {
     );
   }
 
+  /// Kanonski YouTube channel ID (`UC…`) ili null. yt-dlp `channel_id` JEST
+  /// UC ID na izvoru, ali validiramo prije korištenja za ownership match.
+  /// Vidi docs/channel-ownership-and-safe-payout-plan.md.
+  String? get youtubeChannelId =>
+      RegExp(r'^UC[0-9A-Za-z_-]{22}$').hasMatch(channelId) ? channelId : null;
+
   /// Parses uploadDate (YYYYMMDD) into DateTime
   DateTime get uploadDateTime {
     final s = uploadDate;
