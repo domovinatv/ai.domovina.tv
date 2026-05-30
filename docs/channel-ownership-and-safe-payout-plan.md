@@ -388,19 +388,42 @@ final res = await client.functions.invoke('youtube-claim/start',
 | 5 | `screens/ownership/channel_ownership_screen.dart` (claim flow + callback + Moji kanali), 3 go_router rute, ulazi iz channel SliverAppBar + account_chip popup | ✅ |
 | — | `test/channel_ownership_test.dart` (18 testova: UC parsing, D4, eligibility, EVM) | ✅ |
 
-**Backend — SPEC SPREMAN, ČEKA IMPLEMENTACIJU** (`domovina-api` repo):
-- SQL migracije + 2 edge funkcije (`youtube-claim`, `safe-owner-add`) →
+**Backend — IMPLEMENTIRANO + LOKALNO E2E TESTIRANO** (`domovina-api` repo,
+commits `00b4253` schema+fns, `9c8bf57` verify_jwt, `2a19a68` KYC-iz-baze):
+- Migracija `20260530130000_channel_ownership.sql` — 5 tablica (channel_claims,
+  episode_safes, owner_wallets, safe_actions, oauth_states) + RLS + grants +
+  D2 `one_primary_per_channel` partial unique.
+- Edge fn `youtube-claim` (start/callback/reverify) + `safe-owner-add`,
+  `config.toml` verify_jwt=false. Spec:
   [`backend-prompts/09-channel-ownership.md`](./backend-prompts/09-channel-ownership.md).
-- Dok backend nije gore, klijentski pozivi vraćaju kontrolirane greške
-  (FunctionException → mapirane HR poruke), UI ne puca.
+- Verificirano na lokalnom Supabase stacku (Kong 55321, DB 55322):
+  - 8/8 SQL/RLS (UC check, D2, D4 svježina, eligibility join, RLS izolacija,
+    anon↦safes).
+  - youtube-claim/start preko HTTP-a: anon→not_signed_in, bad UC→
+    invalid_channel_id, happy→Google authUrl (youtube.readonly + PKCE S256) +
+    oauth_state (verifier len 86) perzistiran.
+  - safe-owner-add preko HTTP-a (puni ladder): wallet_not_registered →
+    ok:true+stub safe_tx_hash+audit (owner_add_proposed chain 8453) →
+    reverify_needed (D4, claim 100d) → kyc_required (kyc_verified=false u BAZI
+    dok token tvrdi true → dokaz da fn čita app_metadata preko getUserById).
+  - **NIJE E2E:** youtube-claim/callback (OAuth code→token exchange) — traži
+    pravi Google consent; logika deno-check čista.
+- **Preostaje:** PROD deploy — `scripts/db-migrate.sh` (SSH) +
+  `deploy-functions.sh` + env (`GOOGLE_OAUTH_CLIENT_ID/SECRET`,
+  `YOUTUBE_CLAIM_REDIRECT_URI`, opcionalno `SAFE_TX_SERVICE_URL`/
+  `PLATFORM_SIGNER_KEY`).
 
-**Pipeline — ČEKA** (`fetch.domovina.tv` repo):
-- Faza 0 preduvjet: upis `youtube_channel_id` (`UC…`) u `channel.json`.
-  Dok ga nema, "Preuzmi vlasništvo" akcija je skrivena (fallback na
-  `/channel/UC…` URL parsing radi za kanale koji ga već imaju u URL-u).
+**Pipeline — ČEKA** (channel.json builder, backend uploader — NIJE u lokalnim
+repoima):
+- Verificirano na CDN-u: `info.json` već nosi `channel_id`=`UC…` (episode-level
+  claim radi danas). `channels/*.json` nose samo handle URL (`@ime`) bez UC →
+  channel-level "Preuzmi vlasništvo" akcija skrivena dok builder ne kopira UC iz
+  `info.json.channel_id` u novo `youtube_channel_id` polje. Flutter
+  (`canonicalUcId`) je spreman.
 
 ---
 
-> **Status:** Flutter klijent kompletan (Faze 0–5). Backend i pipeline koraci
-> dokumentirani kao deklarativni prompti. Promjene odluka (D1–D4) zahtijevaju
+> **Status:** Flutter klijent (Faze 0–5) + backend (migracija + 2 edge fn)
+> implementirani i lokalno E2E testirani. Preostaje prod deploy backenda i
+> channel.json builder (channel-level Faza 0). Promjene odluka (D1–D4) zahtijevaju
 > update ovog dokumenta — on je single source of truth.
