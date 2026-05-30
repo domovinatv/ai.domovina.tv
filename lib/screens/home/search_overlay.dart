@@ -773,7 +773,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                         color: theme.colorScheme.onSurfaceVariant,
                         height: 1.3,
                       ),
-                      maxLines: 2,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -813,7 +813,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       }
     }
     if (best == null) return null;
-    return snippetAround(best, q, before: 50, window: 160);
+    return snippetAround(best, q, before: 60, window: 220);
   }
 
   Widget _semanticRow(ThemeData theme, SemanticResult r) {
@@ -851,7 +851,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                       r.episodeTitle!,
                       query: _query,
                       style: theme.textTheme.titleSmall,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   const SizedBox(height: 3),
