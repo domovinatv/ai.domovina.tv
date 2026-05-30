@@ -153,6 +153,14 @@ class _SignedInChip extends StatelessWidget {
         ),
         const PopupMenuDivider(),
         const PopupMenuItem(
+          value: 'channels',
+          child: ListTile(
+            leading: Icon(Icons.smart_display_outlined),
+            title: Text('Moji kanali'),
+            dense: true,
+          ),
+        ),
+        const PopupMenuItem(
           value: 'handoff',
           child: ListTile(
             leading: Icon(Icons.devices_other),
@@ -212,6 +220,9 @@ class _SignedInChip extends StatelessWidget {
 
   void _onSelected(BuildContext context, String value) {
     switch (value) {
+      case 'channels':
+        context.go('/account/channels');
+        break;
       case 'handoff':
         context.go('/handoff');
         break;
