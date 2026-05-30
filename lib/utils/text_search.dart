@@ -38,6 +38,10 @@ String foldText(String input) {
 /// Rasponi `[start, end)` u [text] koji odgovaraju bilo kojem tokenu iz
 /// [query] (dijakritik-neosjetljivo). Rezultat je sortiran i spojen (bez
 /// preklapanja) — spreman za izgradnju highlight TextSpan-ova.
+///
+/// Match je na razini RIJEČI s prefiks-poklapanjem (stem), pa hvata i hrvatske
+/// sklonjene oblike: upit "demografska obnova" istakne i "demografsku obnovu",
+/// "demografski", "obnove" itd. Highlighta se cijela riječ iz teksta.
 List<List<int>> highlightRanges(String text, String query) {
   if (text.isEmpty) return const [];
   final q = foldText(query).trim();
@@ -48,13 +52,13 @@ List<List<int>> highlightRanges(String text, String query) {
 
   final folded = foldText(text); // ista duljina kao text → indeksi se poklapaju
   final ranges = <List<int>>[];
-  for (final token in tokens) {
-    var from = 0;
-    while (true) {
-      final idx = folded.indexOf(token, from);
-      if (idx < 0) break;
-      ranges.add([idx, idx + token.length]);
-      from = idx + token.length;
+  for (final m in RegExp(r'[a-z0-9]+').allMatches(folded)) {
+    final word = m.group(0)!;
+    for (final token in tokens) {
+      if (_wordMatchesToken(word, token)) {
+        ranges.add([m.start, m.end]);
+        break;
+      }
     }
   }
   if (ranges.isEmpty) return const [];
@@ -73,6 +77,49 @@ List<List<int>> highlightRanges(String text, String query) {
   }
   merged.add(cur);
   return merged;
+}
+
+/// Riječ se poklapa s tokenom ako dijele dovoljno dug zajednički prefiks da
+/// pokriju varijaciju nastavka (hrvatska deklinacija/konjugacija).
+bool _wordMatchesToken(String word, String token) {
+  final n = word.length < token.length ? word.length : token.length;
+  var cp = 0;
+  while (cp < n && word.codeUnitAt(cp) == token.codeUnitAt(cp)) {
+    cp++;
+  }
+  final need = token.length < 4 ? token.length : 4;
+  // Zajednički prefiks mora biti barem `need` znakova I pokriti sve osim
+  // zadnja 2 znaka kraće riječi (toleriraj nastavak).
+  return cp >= need && cp >= n - 2;
+}
+
+/// Vrati isječak [text]-a centriran oko PRVOG pogotka [query]-ja (s „…"
+/// rubovima) tako da je highlightani dio vidljiv i kad je tekst dug. Ako nema
+/// pogotka, vraća početak. Snap-a na granice riječi.
+String snippetAround(String text, String query,
+    {int before = 70, int window = 280}) {
+  final t = text.trim();
+  if (t.length <= window) return t;
+
+  final ranges = highlightRanges(t, query);
+  if (ranges.isEmpty) {
+    return '${t.substring(0, window).trimRight()}…';
+  }
+
+  final matchStart = ranges.first[0];
+  var start = (matchStart - before).clamp(0, t.length);
+  var end = (start + window).clamp(0, t.length);
+  // Snap na granice riječi da ne režemo usred riječi.
+  if (start > 0) {
+    final sp = t.indexOf(' ', start);
+    if (sp != -1 && sp - start < 25) start = sp + 1;
+  }
+  if (end < t.length) {
+    final sp = t.lastIndexOf(' ', end);
+    if (sp > start) end = sp;
+  }
+  final core = t.substring(start, end).trim();
+  return '${start > 0 ? '…' : ''}$core${end < t.length ? '…' : ''}';
 }
 
 /// Deterministički lokalni match scorer. Vraća score > 0 ako se SVI tokeni

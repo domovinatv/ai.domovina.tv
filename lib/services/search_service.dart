@@ -54,6 +54,8 @@ class SemanticResult {
       final temaMatch = RegExp(r'^Tema:.*\n+', multiLine: false).firstMatch(t);
       if (temaMatch != null) t = t.substring(temaMatch.end).trim();
     }
+    // Očisti markdown bold/italic markere (sažeci ih sadrže) i višak razmaka.
+    t = t.replaceAll('**', '').replaceAll(RegExp(r'\s+'), ' ').trim();
     return t;
   }
 

@@ -1,0 +1,57 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:domovina_ai/utils/text_search.dart';
+
+// Vrati podstringove [text]-a koji bi bili highlightani za [query].
+List<String> hl(String text, String query) =>
+    highlightRanges(text, query).map((r) => text.substring(r[0], r[1])).toList();
+
+void main() {
+  group('foldText', () {
+    test('lowercase + fold dijakritika, ista duljina', () {
+      expect(foldText('Čušpajž'), 'cuspajz');
+      expect(foldText('Žižek'), 'zizek');
+      expect(foldText('ĐĆŠ').length, 3);
+    });
+  });
+
+  group('highlightRanges — sklonjeni oblici', () {
+    test('upit "demografska obnova" hvata "demografsku obnovu"', () {
+      final m = hl('predlaže modele za demografsku obnovu danas', 'demografska obnova');
+      expect(m, containsAll(<String>['demografsku', 'obnovu']));
+    });
+
+    test('dijakritik-neosjetljivo: "sterc" → "Šterc"', () {
+      expect(hl('Profesor Šterc kaže', 'sterc'), contains('Šterc'));
+    });
+
+    test('ne highlighta nepovezane riječi', () {
+      expect(hl('potpuno druga rečenica', 'demografija'), isEmpty);
+    });
+
+    test('kratki token egzaktno', () {
+      expect(hl('EU i euro', 'eu'), containsAll(<String>['EU', 'euro']));
+    });
+  });
+
+  group('snippetAround', () {
+    test('centrira prozor oko pogotka s elipsom', () {
+      final long = '${'a' * 200} demografska obnova ${'b' * 200}';
+      final s = snippetAround(long, 'demografska obnova');
+      expect(s.contains('demografska obnova'), isTrue);
+      expect(s.startsWith('…'), isTrue);
+      expect(s.endsWith('…'), isTrue);
+      expect(s.length, lessThan(long.length));
+    });
+
+    test('kratak tekst se vraća cijel', () {
+      expect(snippetAround('kratko demografska', 'demografska'), 'kratko demografska');
+    });
+  });
+
+  group('localMatchScore', () {
+    test('AND semantika + dijakritici', () {
+      expect(localMatchScore('zizek', 'Slavoj Žižek o ideologiji') > 0, isTrue);
+      expect(localMatchScore('nepostojeci', 'Slavoj Žižek'), 0);
+    });
+  });
+}
