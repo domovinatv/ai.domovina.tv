@@ -1101,10 +1101,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final showMobileBottomBar = !isWide;
     final isMobileWithTabs = !isWide && hasMag;
 
-    final appBar = SliverAppBar(
-          pinned: true,
-          automaticallyImplyLeading: false,
-          titleSpacing: 12,
+    final appBar = _episodeAppBar(
+          twoRow: width < 600,
           title: _Breadcrumb(
             channelName: data.info.channel,
             channelSlug: _channelSlug,
@@ -1375,10 +1373,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
     if (isMobileWithTabs) {
       mobileMagScroll = CustomScrollView(
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            automaticallyImplyLeading: false,
-            titleSpacing: 12,
+          _episodeAppBar(
+            twoRow: width < 600,
             title: _Breadcrumb(
               channelName: data.info.channel,
               channelSlug: _channelSlug,
@@ -1782,10 +1778,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final scrollBody = CustomScrollView(
       controller: _scrollController,
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          automaticallyImplyLeading: false,
-          titleSpacing: 12,
+        _episodeAppBar(
+          twoRow: width < 600,
           title: _Breadcrumb(
             channelName: data.info.channel,
             channelSlug: _channelSlug,
@@ -2155,4 +2149,38 @@ class _MetaRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Episode SliverAppBar s responsivnim rasporedom akcija. Na mobitelu
+/// (twoRow=true) breadcrumb ostaje u gornjem redu, a akcije se sele u drugi red
+/// (bottom) — inače se breadcrumb + 6-7 akcija prelijeva na uskom ekranu i
+/// "većina buttona se ne vidi". Akcije u drugom redu su desno-poravnate i
+/// horizontalno skrolabilne (touch), pa nikad ne overflowaju. Desktop/tablet:
+/// akcije inline kao prije.
+SliverAppBar _episodeAppBar({
+  required Widget title,
+  required List<Widget> actions,
+  required bool twoRow,
+}) {
+  return SliverAppBar(
+    pinned: true,
+    automaticallyImplyLeading: false,
+    titleSpacing: 12,
+    title: title,
+    actions: twoRow ? null : actions,
+    bottom: twoRow
+        ? PreferredSize(
+            preferredSize: const Size.fromHeight(46),
+            child: SizedBox(
+              height: 46,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(mainAxisSize: MainAxisSize.min, children: actions),
+              ),
+            ),
+          )
+        : null,
+  );
 }
