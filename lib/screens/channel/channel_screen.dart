@@ -23,6 +23,9 @@ class ChannelScreen extends StatefulWidget {
 class _ChannelScreenState extends State<ChannelScreen> {
   late final Future<ChannelDetail> _detailFuture;
   String? _resolvedName;
+  // Kanonski UC… ID kanala (kad ga channel.json nosi) → otključava "Preuzmi
+  // vlasništvo" akciju. Null dok pipeline ne upiše youtube_channel_id.
+  String? _resolvedUcId;
 
   @override
   void initState() {
@@ -67,6 +70,16 @@ class _ChannelScreenState extends State<ChannelScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // "Preuzmi vlasništvo" — vidljivo samo kad kanal ima kanonski
+                  // UC… ID (Faza 0). Vodi na claim flow (/c/<slug>/claim).
+                  if (_resolvedUcId != null)
+                    IconButton(
+                      icon: const Icon(Icons.verified_user_outlined),
+                      tooltip: 'Preuzmi vlasništvo',
+                      onPressed: () => context.push(
+                        '/c/${widget.channelId.replaceAll('_', '-')}/claim',
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -82,10 +95,14 @@ class _ChannelScreenState extends State<ChannelScreen> {
                     return Center(child: Text('Greska: ${snap.error}'));
                   }
                   final detail = snap.data!;
-                  if (detail.name != _resolvedName) {
+                  if (detail.name != _resolvedName ||
+                      detail.youtubeChannelId != _resolvedUcId) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted) {
-                        setState(() => _resolvedName = detail.name);
+                        setState(() {
+                          _resolvedName = detail.name;
+                          _resolvedUcId = detail.youtubeChannelId;
+                        });
                       }
                     });
                   }
