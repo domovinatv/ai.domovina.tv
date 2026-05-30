@@ -1,8 +1,8 @@
 /// Channel ownership UI — vlasnik preuzima kanal, verificira identitet,
 /// registrira wallet i postaje Safe co-signer. Tri ekrana (go_router rute):
-///   - ChannelOwnershipScreen     (/c/:channelId/claim)         — per-kanal flow
-///   - YoutubeClaimCallbackScreen (/youtube-claim/callback)      — OAuth povratak
-///   - MyChannelsScreen           (/account/channels)           — lista claimova
+///   - `ChannelOwnershipScreen`     (`/c/:channelId/claim`)    — per-kanal flow
+///   - `YoutubeClaimCallbackScreen` (`/youtube-claim/callback`) — OAuth povratak
+///   - `MyChannelsScreen`           (`/account/channels`)      — lista claimova
 /// Vidi docs/channel-ownership-and-safe-payout-plan.md §5–§11.
 library;
 
