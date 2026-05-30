@@ -1,0 +1,414 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../services/cdn_config.dart';
+import '../../services/channel_cache.dart';
+import '../../services/meili_client.dart';
+import '../../widgets/em_highlight_text.dart';
+import '../../widgets/episode_age.dart';
+
+/// LOKALNI PoC ekran — instant keyword tražilica nad 2562 epizode preko
+/// Meilisearcha (`localhost:7700`). Komplementarno semantičkoj MCP pretrazi.
+/// Ruta: `/search` (vidi app_router.dart).
+class MeiliSearchScreen extends StatefulWidget {
+  const MeiliSearchScreen({super.key});
+
+  @override
+  State<MeiliSearchScreen> createState() => _MeiliSearchScreenState();
+}
+
+class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
+  final _controller = TextEditingController();
+  final _focus = FocusNode();
+  Timer? _debounce;
+
+  String _query = '';
+  String? _channel; // odabrani slug ili null (svi)
+  MeiliResponse? _response;
+  Map<String, int> _allChannels = const {}; // slug → broj (puna distribucija)
+  bool _loading = false;
+  String? _error;
+  bool _meiliUp = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+  }
+
+  Future<void> _bootstrap() async {
+    final up = await MeiliClient.ping();
+    if (!mounted) return;
+    setState(() => _meiliUp = up);
+    if (!up) return;
+    try {
+      final facets = await MeiliClient.channelFacets();
+      if (mounted) setState(() => _allChannels = facets);
+    } catch (_) {/* facet fetch nije kritičan */}
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    // Instant-search: Meili je <5ms, kratki debounce samo da ne spamamo po tipki.
+    _debounce = Timer(const Duration(milliseconds: 220), () {
+      setState(() => _query = value);
+      _runSearch();
+    });
+  }
+
+  Future<void> _runSearch() async {
+    final q = _controller.text.trim();
+    if (q.isEmpty) {
+      setState(() {
+        _response = null;
+        _loading = false;
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final res = await MeiliClient.search(q, channel: _channel, limit: 30);
+      if (!mounted || _controller.text.trim() != q) return; // stale guard
+      setState(() {
+        _response = res;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
+  }
+
+  void _selectChannel(String? slug) {
+    setState(() => _channel = slug);
+    _runSearch();
+  }
+
+  String _channelName(String slug) {
+    final idx = channelCache.index;
+    if (idx != null) {
+      for (final c in idx.channels) {
+        if (c.id == slug) return c.name;
+      }
+    }
+    // Fallback: prettify slug.
+    return slug
+        .split('_')
+        .where((w) => w.isNotEmpty)
+        .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Keyword pretraga'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/'),
+        ),
+      ),
+      body: Column(
+        children: [
+          _searchField(theme),
+          if (!_meiliUp) _meiliDownBanner(theme),
+          _statsBar(theme),
+          if (_allChannels.isNotEmpty) _channelChips(theme),
+          const Divider(height: 1),
+          Expanded(child: _results(theme)),
+        ],
+      ),
+    );
+  }
+
+  Widget _searchField(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: TextField(
+        controller: _controller,
+        focusNode: _focus,
+        autofocus: true,
+        textInputAction: TextInputAction.search,
+        onChanged: _onChanged,
+        style: theme.textTheme.titleMedium,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _controller.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () {
+                    _controller.clear();
+                    _onChanged('');
+                  },
+                ),
+          hintText: 'Traži po riječima (typo-tolerantno)…',
+          filled: true,
+          fillColor: theme.colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+        ),
+      ),
+    );
+  }
+
+  Widget _meiliDownBanner(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.errorContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Text(
+        'Meilisearch nije dostupan na ${MeiliClient.baseUrl}. Pokreni docker '
+        'kontejner i napuni index (domovina-rag repo).',
+        style: theme.textTheme.labelMedium
+            ?.copyWith(color: theme.colorScheme.onErrorContainer),
+      ),
+    );
+  }
+
+  Widget _statsBar(ThemeData theme) {
+    final res = _response;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    String text;
+    if (_loading) {
+      text = 'Tražim…';
+    } else if (res != null) {
+      final n = res.estimatedTotalHits;
+      text =
+          '$n ${_plural(n)} u ${res.processingTimeMs} ms · typo-tolerantno';
+    } else {
+      text = 'Upiši pojam za instant pretragu 2562 epizode';
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 2, 16, 8),
+      child: Row(
+        children: [
+          Icon(Icons.bolt, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(text,
+                style: theme.textTheme.labelMedium?.copyWith(color: muted)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _plural(int n) {
+    if (n % 10 == 1 && n % 100 != 11) return 'rezultat';
+    if ([2, 3, 4].contains(n % 10) && !(n % 100 >= 12 && n % 100 <= 14)) {
+      return 'rezultata';
+    }
+    return 'rezultata';
+  }
+
+  Widget _channelChips(ThemeData theme) {
+    // Sortiraj kanale po veličini (najveći prvi).
+    final entries = _allChannels.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return SizedBox(
+      height: 46,
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+        ),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          children: [
+            _chip(theme, label: 'Svi', selected: _channel == null,
+                onTap: () => _selectChannel(null)),
+            for (final e in entries)
+              _chip(theme,
+                  label: '${_channelName(e.key)} (${e.value})',
+                  selected: _channel == e.key,
+                  onTap: () => _selectChannel(e.key)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(ThemeData theme,
+      {required String label,
+      required bool selected,
+      required VoidCallback onTap}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Center(
+        child: ChoiceChip(
+          label: Text(label),
+          selected: selected,
+          onSelected: (_) => onTap(),
+          labelStyle: theme.textTheme.labelMedium?.copyWith(
+            color: selected
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+          selectedColor: theme.colorScheme.primary,
+          showCheckmark: false,
+        ),
+      ),
+    );
+  }
+
+  Widget _results(ThemeData theme) {
+    if (_error != null) {
+      return _centered(theme, 'Greška: $_error');
+    }
+    final res = _response;
+    if (res == null) {
+      return _centered(
+        theme,
+        _query.isEmpty
+            ? 'Instant keyword pretraga — počni tipkati.'
+            : 'Tražim…',
+        icon: Icons.search,
+      );
+    }
+    if (res.hits.isEmpty) {
+      return _centered(theme, 'Nema rezultata za "${_controller.text.trim()}".');
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: res.hits.length,
+      separatorBuilder: (_, _) =>
+          const Divider(height: 1, indent: 16, endIndent: 16),
+      itemBuilder: (context, i) => _resultCard(theme, res.hits[i]),
+    );
+  }
+
+  Widget _resultCard(ThemeData theme, MeiliHit hit) {
+    final snippet = hit.formattedArticleSnippet.trim();
+    return InkWell(
+      onTap: () => context.go('/v/${hit.youtubeId}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                CdnConfig.thumbnailUrl(hit.youtubeId),
+                width: 104,
+                height: 58,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => Container(
+                  width: 104,
+                  height: 58,
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  child: Icon(Icons.ondemand_video,
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.5)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  EmHighlightText(
+                    hit.formattedTitle,
+                    style: theme.textTheme.titleSmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _channelName(hit.channel),
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: theme.colorScheme.primary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      EpisodeAgeChip(hit.uploadDate),
+                    ],
+                  ),
+                  if (snippet.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    EmHighlightText(
+                      snippet,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (hit.sectionTitles.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      hit.sectionTitles.take(3).join('  ·  '),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.65),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _centered(ThemeData theme, String text, {IconData? icon}) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon,
+                size: 40,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+            const SizedBox(height: 12),
+          ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(text,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ),
+        ],
+      ),
+    );
+  }
+}
