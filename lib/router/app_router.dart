@@ -11,6 +11,7 @@ import '../screens/legal/terms_screen.dart';
 // import '../screens/search/meili_search_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
+import '../screens/ownership/channel_ownership_screen.dart';
 import '../screens/tv/tv_channel_screen.dart';
 import '../screens/tv/tv_episode_reader_screen.dart';
 import '../screens/tv/tv_episode_screen.dart';
@@ -44,6 +45,35 @@ GoRouter createRouter() {
                 : ChannelScreen(channelId: channelId),
           );
         },
+      ),
+      // Channel ownership claim flow (vidi docs/channel-ownership-and-safe-payout-plan.md)
+      GoRoute(
+        path: '/c/:slug/claim',
+        pageBuilder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          final channelId = slug.replaceAll('-', '_');
+          return NoTransitionPage(
+            key: ValueKey('claim-$slug'),
+            child: ChannelOwnershipScreen(channelId: channelId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/youtube-claim/callback',
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: const ValueKey('youtube-claim-callback'),
+          child: YoutubeClaimCallbackScreen(
+            code: state.uri.queryParameters['code'],
+            state: state.uri.queryParameters['state'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/account/channels',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('my-channels'),
+          child: MyChannelsScreen(),
+        ),
       ),
       GoRoute(
         path: '/v/:videoId',
