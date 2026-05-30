@@ -7,7 +7,8 @@ import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
-import '../screens/search/meili_search_screen.dart';
+// Privremeno onemogućeno (Meili keyword PoC) — vidi /search rutu niže.
+// import '../screens/search/meili_search_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
 import '../screens/tv/tv_channel_screen.dart';
@@ -182,14 +183,16 @@ GoRouter createRouter() {
           );
         },
       ),
-      // Keyword pretraga (Meilisearch PoC) — lokalni eksperiment.
-      GoRoute(
-        path: '/search',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          key: ValueKey('meili-search'),
-          child: MeiliSearchScreen(),
-        ),
-      ),
+      // Keyword pretraga (Meilisearch PoC) — PRIVREMENO ONEMOGUĆENO.
+      // Reaktivirati kad Meili bude na serveru + integrirati u homepage
+      // tražilicu. Kod živi u lib/screens/search/meili_search_screen.dart.
+      // GoRoute(
+      //   path: '/search',
+      //   pageBuilder: (context, state) => const NoTransitionPage(
+      //     key: ValueKey('meili-search'),
+      //     child: MeiliSearchScreen(),
+      //   ),
+      // ),
       // M4 handoff — cross-device sign-in transfer
       GoRoute(
         path: '/handoff',
