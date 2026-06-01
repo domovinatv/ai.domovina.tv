@@ -173,7 +173,54 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       _stepKyc(context, eligibility),
       const SizedBox(height: 12),
       _stepWalletAndSafe(context, eligibility),
+      if (widget.channelId != null && _claim?.isVerified != true) ...[
+        const SizedBox(height: 20),
+        _inviteOwnerCard(context, title ?? ucId),
+      ],
     ];
+  }
+
+  // Poziv vlasniku kanala preko WhatsAppa (za korisnika koji nije vlasnik, ali
+  // ga poznaje). wa.me/?text=… otvara WhatsApp s prefilanom porukom i pušta
+  // korisnika da odabere primatelja (ne treba broj).
+  Widget _inviteOwnerCard(BuildContext context, String channelTitle) {
+    final slugDashed = widget.channelId!.replaceAll('_', '-');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nisi ti vlasnik kanala?',
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            const Text(
+              'Ako poznaješ vlasnika, pošalji mu poruku da preuzme vlasništvo i '
+              'verificira se na DOMOVINA.ai.',
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _inviteOwnerWhatsApp(channelTitle, slugDashed),
+              icon: const Icon(Icons.chat_outlined),
+              label: const Text('Pozovi vlasnika (WhatsApp)'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _inviteOwnerWhatsApp(
+      String channelTitle, String slugDashed) async {
+    final link = 'https://domovina.ai/c/$slugDashed';
+    final msg = 'Pozdrav! Tvoj YouTube kanal "$channelTitle" je na DOMOVINA.ai. '
+        'Možeš besplatno preuzeti vlasništvo i upravljati svojim sadržajem te '
+        'isplatama — verificiraj se kao vlasnik kanala ovdje: $link';
+    final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
+    await launchUrl(uri,
+        mode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication);
   }
 
   // Step 1 — vlasništvo (YouTube OAuth).
@@ -523,6 +570,46 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
     }
   }
 
+  Future<void> _confirmRevoke(ChannelClaim c) async {
+    final name = c.channelTitle ?? c.youtubeChannelId;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Otkvači vlasništvo?'),
+        content: Text(
+          'Odričeš se vlasništva nad kanalom "$name". Verifikacija i status '
+          'isplate se poništavaju, a kanal postaje dostupan za novo preuzimanje. '
+          'Možeš ga ponovno preuzeti bilo kada.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Odustani'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Otkvači'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ChannelOwnershipService.instance.revokeClaim(c.id);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vlasništvo otkvačeno.')),
+      );
+    } on ChannelOwnershipFailure catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -583,12 +670,22 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
           '${c.status.name} · ${c.role.name}'
           '${needsReverify ? ' · treba ponovnu potvrdu' : ''}',
         ),
-        trailing: needsReverify
-            ? TextButton(
-                onPressed: () => _reverify(c),
-                child: const Text('Ponovi'),
-              )
-            : const Icon(Icons.chevron_right),
+        trailing: PopupMenuButton<String>(
+          tooltip: 'Opcije',
+          onSelected: (v) {
+            if (v == 'reverify') _reverify(c);
+            if (v == 'revoke') _confirmRevoke(c);
+          },
+          itemBuilder: (_) => [
+            if (needsReverify)
+              const PopupMenuItem(
+                  value: 'reverify', child: Text('Ponovi potvrdu')),
+            const PopupMenuItem(
+              value: 'revoke',
+              child: Text('Otkvači vlasništvo'),
+            ),
+          ],
+        ),
         // Otvori per-kanal verifikacijski/upravljački ekran (po UC… ID-u).
         onTap: () => context.push('/account/channels/${c.youtubeChannelId}'),
       ),

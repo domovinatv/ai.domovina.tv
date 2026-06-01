@@ -98,6 +98,25 @@ class ChannelOwnershipService {
     }
   }
 
+  /// Otkvači (odreci se) vlastitog claima — soft-revoke (status='revoked') na
+  /// serveru. Oslobađa kanal za novi claim. RLS/ownership provjeren server-side.
+  Future<void> revokeClaim(String claimId) async {
+    final client = sb.Supabase.instance.client;
+    try {
+      final res = await client.functions.invoke(
+        'youtube-claim/revoke',
+        body: {'claimId': claimId},
+      );
+      final data = (res.data as Map).cast<String, dynamic>();
+      if (data['ok'] != true) {
+        throw const ChannelOwnershipFailure('Otkvačivanje vlasništva nije uspjelo.');
+      }
+    } on sb.FunctionException catch (e) {
+      log('youtube-claim/revoke failed: ${e.status} ${e.details}');
+      throw ChannelOwnershipFailure(_mapError(e));
+    }
+  }
+
   /// Pročitaj claim trenutnog usera za dani kanal (null ako nema).
   /// RLS osigurava da user vidi samo svoje claimove.
   Future<ChannelClaim?> myClaimFor(String ucId) async {
@@ -130,6 +149,7 @@ class ChannelOwnershipService {
           .from('channel_claims')
           .select()
           .eq('account_id', user.id)
+          .neq('status', 'revoked')
           .order('created_at', ascending: false);
       return (rows as List)
           .map((r) => ChannelClaim.fromJson((r as Map).cast<String, dynamic>()))
