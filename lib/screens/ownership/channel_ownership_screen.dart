@@ -25,6 +25,49 @@ import '../../services/wallet_service.dart';
 // Per-channel claim flow
 // ───────────────────────────────────────────────────────────────────────────
 
+// AppBar breadcrumb (Početna › … › current). In-app navigacija natrag —
+// nuždan jer iOS PWA nema browser back. Zadnji čvor je "current" (ne-tappable).
+class _Crumbs extends StatelessWidget {
+  final List<(String, VoidCallback?)> items;
+  const _Crumbs(this.items);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final row = <Widget>[];
+    for (var i = 0; i < items.length; i++) {
+      final (label, onTap) = items[i];
+      final current = i == items.length - 1;
+      final text = Text(
+        label,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: current ? FontWeight.w600 : FontWeight.w500,
+          color: current ? theme.colorScheme.onSurface : muted,
+        ),
+      );
+      row.add(onTap == null
+          ? text
+          : InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: text,
+              ),
+            ));
+      if (!current) row.add(Icon(Icons.chevron_right, size: 18, color: muted));
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(mainAxisSize: MainAxisSize.min, children: row),
+    );
+  }
+}
+
 class ChannelOwnershipScreen extends StatefulWidget {
   /// Interni channel slug (kao `/c/:id`) — screen iz njega dohvati UC… ID.
   /// Alternativno (npr. iz "Moji kanali") otvori se direktno po [youtubeChannelId]
@@ -115,7 +158,19 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Vlasništvo kanala')),
+      appBar: AppBar(
+        title: _Crumbs([
+          ('Početna', () => context.go('/')),
+          if (widget.channelId != null)
+            (
+              _channel?.name ?? 'Kanal',
+              () => context.go('/c/${widget.channelId!.replaceAll('_', '-')}')
+            )
+          else
+            ('Moji kanali', () => context.go('/account/channels')),
+          ('Vlasništvo', null),
+        ]),
+      ),
       body: AnimatedBuilder(
         animation: AuthService.instance,
         builder: (context, _) {
@@ -638,7 +693,12 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Moji kanali')),
+      appBar: AppBar(
+        title: _Crumbs([
+          ('Početna', () => context.go('/')),
+          ('Moji kanali', null),
+        ]),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
