@@ -180,6 +180,12 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
           : claim?.isVerified == true
               ? 'Vlasništvo potvrđeno preko YouTube računa.'
               : 'Prijavi se YouTube računom koji posjeduje ovaj kanal.',
+      note: done
+          ? null
+          : 'Vlasništvo može preuzeti samo Google račun koji je VLASNIK kanala. '
+              'Uređivači i menadžeri dodani u YouTube postavkama (Channel permissions) '
+              'ne mogu — YouTube ih ne prikazuje kao vlasnike. Ako kanal pripada Brand '
+              'računu, prijavi se Google računom koji njime upravlja.',
       action: done
           ? null
           : FilledButton.icon(
@@ -260,6 +266,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     required String title,
     required String subtitle,
     Widget? action,
+    String? note,
   }) {
     final scheme = Theme.of(context).colorScheme;
     final Color circleColor = done
@@ -290,6 +297,26 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
                   const SizedBox(height: 4),
                   Text(subtitle,
                       style: Theme.of(context).textTheme.bodyMedium),
+                  if (note != null) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline,
+                            size: 16, color: scheme.onSurfaceVariant),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            note,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (action != null) ...[
                     const SizedBox(height: 12),
                     action,
