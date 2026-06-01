@@ -153,11 +153,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _toggleSimpleMode(bool value) async {
-    setState(() => _simpleMode = value);
-    await saveSimpleModePref(value);
-  }
-
   void _onCacheUpdate() {
     if (mounted) setState(() {});
   }
@@ -289,8 +284,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onChannelTap: _selectChannel,
               onShuffle: _shuffle,
               onSearchTap: _openSearchOverlay,
-              simpleMode: _simpleMode,
-              onSimpleModeChanged: _toggleSimpleMode,
               onVideoTap: _openVideo,
             ),
           ),
@@ -315,8 +308,6 @@ class _ChannelGridView extends StatelessWidget {
   final void Function(ChannelSummary) onChannelTap;
   final VoidCallback onShuffle;
   final VoidCallback onSearchTap;
-  final bool simpleMode;
-  final ValueChanged<bool> onSimpleModeChanged;
   final void Function(String videoId) onVideoTap;
 
   const _ChannelGridView({
@@ -330,8 +321,6 @@ class _ChannelGridView extends StatelessWidget {
     required this.onChannelTap,
     required this.onShuffle,
     required this.onSearchTap,
-    required this.simpleMode,
-    required this.onSimpleModeChanged,
     required this.onVideoTap,
   });
 
@@ -421,8 +410,6 @@ class _ChannelGridView extends StatelessWidget {
                         ? null
                         : (channelCache.loaded, channelCache.total),
                     isMobile: isMobile,
-                    simpleMode: simpleMode,
-                    onSimpleModeChanged: onSimpleModeChanged,
                   ),
                 ),
 
@@ -571,133 +558,47 @@ class _ChannelGridView extends StatelessWidget {
 // Header
 // ---------------------------------------------------------------------------
 
-/// Minimalan sub-bar ispod app bara — view mode toggle + cache progress.
+/// Minimalan sub-bar ispod app bara — prikazuje samo progres ucitavanja
+/// kanala. Kad je cache gotov, kolabira na nista (bez praznog paddinga).
 ///
-/// Search i YouTube ID input su preselili u Cmd+K overlay (search_overlay.dart).
+/// View-mode prebacivanje (Detaljno/Jednostavno) je maknuto odavde — sada
+/// zivi samo na episode ekranima (vidi episode_screen.dart / episode_simple_screen.dart),
+/// gdje je jasno labelirano. Search i YouTube ID input su u Cmd+K overlay-u.
 class _HomeHeader extends StatelessWidget {
   final (int, int)? cacheProgress; // (loaded, total) — null kad je gotovo
   final bool isMobile;
-  final bool simpleMode;
-  final ValueChanged<bool> onSimpleModeChanged;
 
   const _HomeHeader({
     this.cacheProgress,
     required this.isMobile,
-    required this.simpleMode,
-    required this.onSimpleModeChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showProgress = cacheProgress != null;
+    if (cacheProgress == null) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 4, 16, isMobile ? 4 : 8),
       child: Row(
         children: [
-          if (showProgress)
-            Expanded(
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: theme.colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Učitavam ${cacheProgress!.$1}/${cacheProgress!.$2} kanala…',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            const Spacer(),
-          _viewModeToggle(theme),
-        ],
-      ),
-    );
-  }
-
-  Widget _viewModeToggle(ThemeData theme) {
-    return Container(
-      height: 32,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggleButton(
-            theme: theme,
-            icon: Icons.desktop_windows,
-            label: 'Detaljno',
-            isActive: !simpleMode,
-            onTap: () => onSimpleModeChanged(false),
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: theme.colorScheme.onSurfaceVariant
+                  .withValues(alpha: 0.5),
+            ),
           ),
-          _toggleButton(
-            theme: theme,
-            icon: Icons.phone_android,
-            label: 'Jednostavno',
-            isActive: simpleMode,
-            onTap: () => onSimpleModeChanged(true),
+          const SizedBox(width: 8),
+          Text(
+            'Učitavam ${cacheProgress!.$1}/${cacheProgress!.$2} kanala…',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _toggleButton({
-    required ThemeData theme,
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: isActive
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 13,
-              color: isActive
-                  ? theme.colorScheme.onPrimaryContainer
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

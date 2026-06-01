@@ -25,6 +25,7 @@ import '../widgets/language_toggle_chip.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/speaker_chip.dart';
+import '../widgets/view_mode_toggle_button.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
 /// Optimiziran za slušanje u autu — 3 taba: Player, Poglavlja, Info.
@@ -565,9 +566,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             onPressed: () =>
                 openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
           ),
-          IconButton(
-            icon: const Icon(Icons.unfold_more),
-            tooltip: 'Detaljni prikaz',
+          ViewModeToggleButton(
+            toSimple: false,
             onPressed: () async {
               await saveSimpleModePref(false);
               if (!context.mounted) return;

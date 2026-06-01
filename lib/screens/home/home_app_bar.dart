@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/typography.dart';
 import '../../widgets/account_chip.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 /// Slim sticky app bar za home screen.
 ///
@@ -57,6 +58,8 @@ class HomeAppBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
               ],
+              const ThemeToggleButton(),
+              const SizedBox(width: 4),
               const AccountChip(),
             ],
           );

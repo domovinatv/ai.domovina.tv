@@ -35,6 +35,7 @@ import '../widgets/entities_section.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
+import '../widgets/view_mode_toggle_button.dart';
 
 class EpisodeScreen extends StatefulWidget {
   final String youtubeId;
@@ -1156,9 +1157,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
               onPressed: () =>
                   openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
             ),
-            IconButton(
-              icon: const Icon(Icons.unfold_less),
-              tooltip: 'Jednostavni prikaz',
+            ViewModeToggleButton(
+              toSimple: true,
               onPressed: () async {
                 await saveSimpleModePref(true);
                 if (!context.mounted) return;
@@ -1406,9 +1406,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 ),
               ),
               FavoriteButton(episodeId: data.youtubeId),
-              IconButton(
-                icon: const Icon(Icons.unfold_less),
-                tooltip: 'Jednostavni prikaz',
+              ViewModeToggleButton(
+                toSimple: true,
                 onPressed: () async {
                   await saveSimpleModePref(true);
                   if (!context.mounted) return;

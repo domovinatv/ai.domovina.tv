@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
+import 'services/theme_mode_service.dart';
 import 'services/tv_mode.dart';
 import 'services/update_notifier.dart';
 import 'services/watch_progress_service.dart';
@@ -79,6 +80,8 @@ void main() async {
 
   await AuthService.instance.init();
   await WatchProgressService.instance.init();
+  // Ucitaj spremljenu temu (default tamna za nove korisnike).
+  await ThemeController.instance.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {
@@ -128,17 +131,32 @@ class _DominovinaAppState extends State<DominovinaApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Na Android TV-u forsiramo dark TV temu (10-foot UI uvijek tamno);
-    // mobile/desktop/web prate system theme mode kao i prije.
+    // Na Android TV-u forsiramo dark TV temu (10-foot UI uvijek tamno).
+    // Mobile/desktop/web prate korisnikov odabir iz ThemeController-a
+    // (default tamna za nove korisnike, prebacivo preko ikone u home baru).
     final isTv = TvMode.isTv;
-    return MaterialApp.router(
-      scaffoldMessengerKey: _messengerKey,
-      title: 'DOMOVINA.ai',
-      debugShowCheckedModeBanner: false,
-      theme: isTv ? AppTheme.tv() : AppTheme.light(),
-      darkTheme: isTv ? AppTheme.tv() : AppTheme.dark(),
-      themeMode: isTv ? ThemeMode.dark : ThemeMode.system,
-      routerConfig: _router,
+    if (isTv) {
+      return MaterialApp.router(
+        scaffoldMessengerKey: _messengerKey,
+        title: 'DOMOVINA.ai',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.tv(),
+        darkTheme: AppTheme.tv(),
+        themeMode: ThemeMode.dark,
+        routerConfig: _router,
+      );
+    }
+    return AnimatedBuilder(
+      animation: ThemeController.instance,
+      builder: (context, _) => MaterialApp.router(
+        scaffoldMessengerKey: _messengerKey,
+        title: 'DOMOVINA.ai',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeController.instance.mode,
+        routerConfig: _router,
+      ),
     );
   }
 }

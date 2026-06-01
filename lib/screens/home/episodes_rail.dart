@@ -84,7 +84,6 @@ class _EpisodesRailState extends State<EpisodesRail> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = widget.eyebrowAccentColor ?? theme.colorScheme.primary;
-    final railHeight = widget.isMobile ? 240.0 : 270.0;
     // Drag devices: touch (mobile swipe), trackpad (Mac 2-finger swipe),
     // stylus. NE mouse — mouse drag preko InkWell-iranih kartica je
     // nepouzdan (gesture arena bira tap umjesto drag-a kad je move < ~18px).
@@ -119,55 +118,65 @@ class _EpisodesRailState extends State<EpisodesRail> {
             ),
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            height: railHeight,
-            child: Stack(
-              children: [
-                Listener(
-                  onPointerSignal: (event) {
-                    if (event is PointerScrollEvent) {
-                      _onPointerSignal(event);
-                    }
-                  },
-                  child: ScrollConfiguration(
-                    behavior: dragBehavior,
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: widget.cards.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 12),
-                      itemBuilder: (context, i) => widget.cards[i],
+          // Visina rail-a se ravna po stvarnom sadrzaju kartica (IntrinsicHeight)
+          // umjesto fiksne vrijednosti — fiksna je ostavljala velik prazan
+          // prostor ispod nizih kartica (npr. "Nastavi slušati" nema podnaslov
+          // ni datum pa je kraca od "Najnovije epizode").
+          Stack(
+            children: [
+              Listener(
+                onPointerSignal: (event) {
+                  if (event is PointerScrollEvent) {
+                    _onPointerSignal(event);
+                  }
+                },
+                child: ScrollConfiguration(
+                  behavior: dragBehavior,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (int i = 0; i < widget.cards.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 12),
+                            widget.cards[i],
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                // Scroll arrows — samo na non-mobile (desktop pokazivac).
-                if (!widget.isMobile && _canScrollLeft)
-                  Positioned(
-                    left: 4,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: _ArrowButton(
-                        icon: Icons.chevron_left,
-                        onTap: () => _scrollBy(-360),
-                      ),
+              ),
+              // Scroll arrows — samo na non-mobile (desktop pokazivac).
+              // Positioned top/bottom 0 → centriran na intrinsicnu visinu rail-a.
+              if (!widget.isMobile && _canScrollLeft)
+                Positioned(
+                  left: 4,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: _ArrowButton(
+                      icon: Icons.chevron_left,
+                      onTap: () => _scrollBy(-360),
                     ),
                   ),
-                if (!widget.isMobile && _canScrollRight)
-                  Positioned(
-                    right: 4,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: _ArrowButton(
-                        icon: Icons.chevron_right,
-                        onTap: () => _scrollBy(360),
-                      ),
+                ),
+              if (!widget.isMobile && _canScrollRight)
+                Positioned(
+                  right: 4,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: _ArrowButton(
+                      icon: Icons.chevron_right,
+                      onTap: () => _scrollBy(360),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ],
       ),
