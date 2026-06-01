@@ -232,6 +232,8 @@ sequenceDiagram
 
 **Sigurnosne točke (vidi §9):** code exchange isključivo server-side; `state` vezan na ulogiranog korisnika i ciljani `UC…`; PKCE; `mine=true` pokriva delegirane managere (Brand Account) — prihvatljivo po D2.
 
+> **E2E nalaz (2026-06-01):** `channels.list?mine=true` vraća kanal SAMO vlasniku/manageru Brand računa — **NE** uređivačima dodanima kroz YouTube *Channel permissions* (Settings → Permissions). Editori se ne pojavljuju kao vlasnici pa ne mogu claimati. Praktična posljedica za D2: "collaborator" putanja vrijedi samo za Brand-Account-level managere, ne za permission-editore. UI uz "Login with YouTube" eksplicitno poručuje da treba **vlasnički** Google račun (`channel_ownership_screen.dart` note).
+
 ### Zašto odvojen OAuth, a ne GoTrue Google?
 GoTrue Google login ne nosi `youtube.readonly` scope i auto-linka identitete po emailu (rizik clobbera). Verifikacija je **akcija nad postojećim računom**, ne login. Zato vlastiti OAuth client + incremental authorization (Princip D).
 
