@@ -223,6 +223,38 @@ GoRouter createRouter() {
           );
         },
       ),
+      // Path-based timestamp share — /m/<id>/t/<sec> (mobile simplified view).
+      // Mirror /v/<id>/t/<sec> da share linkovi iz simple playera otvore
+      // simple ekran umjesto da padnu na errorPageBuilder (homepage).
+      GoRoute(
+        path: '/m/:videoId/t/:seconds',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
+          return NoTransitionPage(
+            key: ValueKey('mobile-$videoId-${startAt ?? 0}-hr'),
+            child: EpisodeSimpleScreen(
+              youtubeId: videoId,
+              startAtSeconds: startAt,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/m/:videoId/t/:seconds/en',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
+          return NoTransitionPage(
+            key: ValueKey('mobile-$videoId-${startAt ?? 0}-en'),
+            child: EpisodeSimpleScreen(
+              youtubeId: videoId,
+              startAtSeconds: startAt,
+              initialLanguageEn: true,
+            ),
+          );
+        },
+      ),
       // Keyword pretraga (Meilisearch PoC) — aktivno za lokalni test.
       // Kod živi u lib/screens/search/meili_search_screen.dart.
       GoRoute(

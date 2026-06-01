@@ -34,10 +34,15 @@ class EpisodeSimpleScreen extends StatefulWidget {
   /// True kad URL ima `/en` sufix (npr. `/m/<id>/en`).
   final bool initialLanguageEn;
 
+  /// Eksplicitni start timestamp iz URL-a (`/m/<id>/t/<sec>`). Ima prednost
+  /// nad saved watch progress-om. null → resume na zadnju poziciju.
+  final int? startAtSeconds;
+
   const EpisodeSimpleScreen({
     super.key,
     required this.youtubeId,
     this.initialLanguageEn = false,
+    this.startAtSeconds,
   });
 
   @override
@@ -69,6 +74,7 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
       return _SimpleEpisodeContent(
         data: _data!,
         initialLanguageEn: widget.initialLanguageEn,
+        startAtSeconds: widget.startAtSeconds,
       );
     }
 
@@ -125,10 +131,12 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
 class _SimpleEpisodeContent extends StatefulWidget {
   final EpisodeData data;
   final bool initialLanguageEn;
+  final int? startAtSeconds;
 
   const _SimpleEpisodeContent({
     required this.data,
     this.initialLanguageEn = false,
+    this.startAtSeconds,
   });
 
   @override
@@ -256,15 +264,18 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   }
 
   Future<void> _initVideo() async {
-    // Resume na saved progress (osim ako je completed — rewatch konvencija).
-    // Simple screen nema URL timestamp routes (samo /m/<id>), pa nema URL override-a.
-    final saved =
-        WatchProgressService.instance.getSync(widget.data.youtubeId);
-    int? startAt;
+    // URL explicit timestamp (`/m/<id>/t/<sec>`) ima prednost nad saved
+    // progress-om. Inače resume na zadnju poziciju ako > 5s i nije completed
+    // (rewatch konvencija — kreni od početka).
+    int? startAt = widget.startAtSeconds;
     bool resumedFromSaved = false;
-    if (saved != null && !saved.completed && saved.positionSeconds > 5) {
-      startAt = saved.positionSeconds;
-      resumedFromSaved = true;
+    if (startAt == null) {
+      final saved =
+          WatchProgressService.instance.getSync(widget.data.youtubeId);
+      if (saved != null && !saved.completed && saved.positionSeconds > 5) {
+        startAt = saved.positionSeconds;
+        resumedFromSaved = true;
+      }
     }
 
     try {
