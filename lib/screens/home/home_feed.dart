@@ -55,6 +55,17 @@ class FeaturedPick {
 class HomeFeed {
   HomeFeed._();
 
+  /// Epizoda je "spremna za homepage" kad ima generiran članak (`has_article`).
+  ///
+  /// Članak je zadnji AI korak prije nego pipeline uploada video + screenshotove
+  /// na CDN, pa je `has_article` kanonski signal da epizoda ima sliku i sadržaj
+  /// za prikaz (isti gate koristi i channel stranica). Channel index je namjerno
+  /// permisivan i sadrži i tek-skinute, neobrađene epizode (`has_article:false`,
+  /// bez članka/videa/slike) — homepage ih NE smije surfati u hero/"Najnovije".
+  /// Channel stranica ih i dalje prikazuje, ali s oznakom "još u obradi".
+  static bool isReadyForHome(FeedVideo v) =>
+      v.video.pipeline?.hasArticle ?? false;
+
   /// Featured pick s razlogom. Algoritam (4-tier fallback):
   ///
   /// 1. **Hi-quality recent** — `hasMagisterium && score≥70 && ≤14 dana`,
@@ -159,8 +170,13 @@ class HomeFeed {
       );
     }
 
-    // Tier 4
-    final sorted = List<FeedVideo>.from(all)
+    // Tier 4 — najnovija SPREMNA epizoda (ima članak). Neobrađene epizode iz
+    // permisivnog channel indexa se preskaču. Fallback na cijeli `all` samo u
+    // degeneriranom slučaju (nijedna epizoda nema članak — npr. svjež katalog),
+    // da homepage ipak nije prazan.
+    final readyPool = all.where(isReadyForHome).toList();
+    final pool = readyPool.isNotEmpty ? readyPool : all;
+    final sorted = List<FeedVideo>.from(pool)
       ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
     final winner = sorted.first;
     return FeaturedPick(
@@ -168,16 +184,20 @@ class HomeFeed {
       reason: FeaturedReason.newest,
       magisteriumScore: winner.video.magisteriumScore,
       daysAgo: daysAgoFor(winner.video.date),
-      candidatePool: all.length,
+      candidatePool: pool.length,
     );
   }
 
   /// "Najnovije epizode" rail — cross-channel sortirano po datumu desc.
   static List<FeedVideo> latestEpisodes(List<FeedVideo> all,
       {int limit = 20, FeedVideo? excludeFeatured}) {
-    final filtered = excludeFeatured == null
-        ? all
-        : all.where((v) => v.video.id != excludeFeatured.video.id).toList();
+    // Samo spremne epizode (s člankom) — neobrađene iz permisivnog channel
+    // indexa se ne prikazuju u "Najnovije epizode".
+    final filtered = all
+        .where(isReadyForHome)
+        .where((v) =>
+            excludeFeatured == null || v.video.id != excludeFeatured.video.id)
+        .toList();
     final sorted = List<FeedVideo>.from(filtered)
       ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
     return sorted.take(limit).toList();
