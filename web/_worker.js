@@ -57,6 +57,30 @@ const AASA_JSON = JSON.stringify({
   },
 }, null, 2);
 
+// WebAuthn Related Origin Requests (WebAuthn L3). Lets passkeys created under
+// RP ID `domovina.ai` be used natively from OTHER registrable domains in the
+// ecosystem (pinka.finance, domovina.energy, …) — not just *.domovina.ai
+// subdomains. Each listed origin may request assertions with RP ID domovina.ai.
+// Served at https://domovina.ai/.well-known/webauthn.
+// See pay.domovina.ai/docs/plans/cross-domain-wallet-passkey.md (Phase D).
+const WEBAUTHN_JSON = JSON.stringify({
+  origins: [
+    'https://domovina.ai',
+    'https://www.domovina.ai',
+    'https://wallet.domovina.ai',
+    'https://pay.domovina.ai',
+    'https://mpt.domovina.ai',
+    'https://pinka.finance',
+    'https://www.pinka.finance',
+    'https://app.pinka.finance',
+    'https://pinka-app.pages.dev',
+    'https://domovina.energy',
+    'https://www.domovina.energy',
+    'https://domovina.tv',
+    'https://www.domovina.tv',
+  ],
+}, null, 2);
+
 function wellKnownResponse(body) {
   return new Response(body, {
     status: 200,
@@ -75,6 +99,7 @@ export default {
     // .well-known (App Links + passkey/WebAuthn) — prije svega ostalog.
     if (path === '/.well-known/assetlinks.json') return wellKnownResponse(ASSETLINKS_JSON);
     if (path === '/.well-known/apple-app-site-association') return wellKnownResponse(AASA_JSON);
+    if (path === '/.well-known/webauthn') return wellKnownResponse(WEBAUTHN_JSON);
 
     // Statički asseti (JS, CSS, slike, fontovi...) — direktno iz ASSETS.
     // KRITIČNO: env.ASSETS.fetch ne aplicira web/_headers automatski kad
