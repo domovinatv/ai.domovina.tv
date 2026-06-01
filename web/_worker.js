@@ -74,6 +74,8 @@ const WEBAUTHN_JSON = JSON.stringify({
     'https://www.pinka.finance',
     'https://app.pinka.finance',
     'https://pinka-app.pages.dev',
+    'https://pinka.io',
+    'https://www.pinka.io',
     'https://domovina.energy',
     'https://www.domovina.energy',
     'https://domovina.tv',
