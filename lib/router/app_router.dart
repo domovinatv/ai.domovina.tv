@@ -7,8 +7,7 @@ import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
-// Privremeno onemogućeno (Meili keyword PoC) — vidi /search rutu niže.
-// import '../screens/search/meili_search_screen.dart';
+import '../screens/search/meili_search_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
 import '../screens/ownership/channel_ownership_screen.dart';
@@ -74,6 +73,17 @@ GoRouter createRouter() {
           key: ValueKey('my-channels'),
           child: MyChannelsScreen(),
         ),
+      ),
+      // Per-kanal verifikacija/upravljanje otvoreno po UC… ID-u (iz "Moji kanali").
+      GoRoute(
+        path: '/account/channels/:ucId',
+        pageBuilder: (context, state) {
+          final ucId = state.pathParameters['ucId']!;
+          return NoTransitionPage(
+            key: ValueKey('manage-$ucId'),
+            child: ChannelOwnershipScreen(youtubeChannelId: ucId),
+          );
+        },
       ),
       GoRoute(
         path: '/v/:videoId',
@@ -213,16 +223,15 @@ GoRouter createRouter() {
           );
         },
       ),
-      // Keyword pretraga (Meilisearch PoC) — PRIVREMENO ONEMOGUĆENO.
-      // Reaktivirati kad Meili bude na serveru + integrirati u homepage
-      // tražilicu. Kod živi u lib/screens/search/meili_search_screen.dart.
-      // GoRoute(
-      //   path: '/search',
-      //   pageBuilder: (context, state) => const NoTransitionPage(
-      //     key: ValueKey('meili-search'),
-      //     child: MeiliSearchScreen(),
-      //   ),
-      // ),
+      // Keyword pretraga (Meilisearch PoC) — aktivno za lokalni test.
+      // Kod živi u lib/screens/search/meili_search_screen.dart.
+      GoRoute(
+        path: '/search',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('meili-search'),
+          child: MeiliSearchScreen(),
+        ),
+      ),
       // M4 handoff — cross-device sign-in transfer
       GoRoute(
         path: '/handoff',

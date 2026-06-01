@@ -26,9 +26,14 @@ import '../../services/wallet_service.dart';
 // ───────────────────────────────────────────────────────────────────────────
 
 class ChannelOwnershipScreen extends StatefulWidget {
-  /// Interni channel slug (kao `/c/:id`). Screen iz njega dohvati UC… ID.
-  final String channelId;
-  const ChannelOwnershipScreen({super.key, required this.channelId});
+  /// Interni channel slug (kao `/c/:id`) — screen iz njega dohvati UC… ID.
+  /// Alternativno (npr. iz "Moji kanali") otvori se direktno po [youtubeChannelId]
+  /// (UC…), bez učitavanja channel.json — naziv se uzme iz claima.
+  final String? channelId;
+  final String? youtubeChannelId;
+  const ChannelOwnershipScreen({super.key, this.channelId, this.youtubeChannelId})
+      : assert(channelId != null || youtubeChannelId != null,
+            'Treba channelId (slug) ili youtubeChannelId (UC…)');
 
   @override
   State<ChannelOwnershipScreen> createState() => _ChannelOwnershipScreenState();
@@ -37,6 +42,7 @@ class ChannelOwnershipScreen extends StatefulWidget {
 class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   ChannelDetail? _channel;
   ChannelClaim? _claim;
+  String? _ucId;
   bool _loading = true;
   bool _busy = false;
   String? _error;
@@ -50,14 +56,19 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final channel = await ChannelService.loadChannel(widget.channelId);
-      final ucId = channel.youtubeChannelId;
+      ChannelDetail? channel;
+      String? ucId = widget.youtubeChannelId;
+      if (widget.channelId != null) {
+        channel = await ChannelService.loadChannel(widget.channelId!);
+        ucId = channel.youtubeChannelId;
+      }
       final claim = ucId == null
           ? null
           : await ChannelOwnershipService.instance.myClaimFor(ucId);
       if (!mounted) return;
       setState(() {
         _channel = channel;
+        _ucId = ucId;
         _claim = claim;
         _loading = false;
       });
@@ -72,7 +83,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   }
 
   Future<void> _startClaim() async {
-    final ucId = _channel?.youtubeChannelId;
+    final ucId = _ucId;
     if (ucId == null) return;
     setState(() {
       _busy = true;
@@ -122,22 +133,23 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
 
   List<Widget> _buildBody(BuildContext context) {
     final auth = AuthService.instance;
-    final channel = _channel;
+    final ucId = _ucId;
+    final title = _channel?.name ?? _claim?.channelTitle ?? ucId;
 
     if (!auth.isSignedIn) {
       return [
         _infoCard(context, 'Za preuzimanje kanala prvo se prijavi.'),
       ];
     }
-    if (channel == null) {
-      return [_infoCard(context, _error ?? 'Kanal nije pronađen.')];
-    }
-    if (channel.youtubeChannelId == null) {
+    if (ucId == null) {
       return [
         _infoCard(
             context,
-            'Ovaj kanal još nema povezan YouTube identifikator pa preuzimanje '
-            'trenutno nije moguće.'),
+            _error ??
+                (widget.channelId != null
+                    ? 'Ovaj kanal još nema povezan YouTube identifikator pa '
+                        'preuzimanje trenutno nije moguće.'
+                    : 'Kanal nije pronađen.')),
       ];
     }
 
@@ -148,10 +160,9 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     );
 
     return [
-      Text(channel.name, style: Theme.of(context).textTheme.titleLarge),
+      Text(title ?? ucId, style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 4),
-      Text(channel.youtubeChannelId!,
-          style: Theme.of(context).textTheme.bodySmall),
+      Text(ucId, style: Theme.of(context).textTheme.bodySmall),
       const SizedBox(height: 24),
       if (_error != null) ...[
         _errorBanner(context, _error!),
@@ -527,7 +538,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   if (_claims.isEmpty)
-                    const Text('Još nemaš nijedan preuzet kanal.')
+                    _emptyClaims(context)
                   else
                     ..._claims.map(_claimTile),
                   const SizedBox(height: 24),
@@ -542,6 +553,22 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
             ),
     );
   }
+
+  Widget _emptyClaims(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Još nemaš nijedan preuzet kanal. Otvori kanal i klikni '
+            '"Preuzmi vlasništvo" za pokretanje verifikacije.',
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.podcasts),
+            label: const Text('Pregledaj kanale'),
+          ),
+        ],
+      );
 
   Widget _claimTile(ChannelClaim c) {
     final needsReverify = c.needsReverify(DateTime.now());
@@ -561,7 +588,9 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
                 onPressed: () => _reverify(c),
                 child: const Text('Ponovi'),
               )
-            : null,
+            : const Icon(Icons.chevron_right),
+        // Otvori per-kanal verifikacijski/upravljački ekran (po UC… ID-u).
+        onTap: () => context.push('/account/channels/${c.youtubeChannelId}'),
       ),
     );
   }
