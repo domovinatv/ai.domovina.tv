@@ -424,6 +424,7 @@ class YoutubeClaimCallbackScreen extends StatefulWidget {
 class _YoutubeClaimCallbackScreenState
     extends State<YoutubeClaimCallbackScreen> {
   String _message = 'Provjeravam vlasništvo…';
+  String? _boldTerm;
   bool _done = false;
   bool _ok = false;
 
@@ -459,9 +460,33 @@ class _YoutubeClaimCallbackScreenState
       if (!mounted) return;
       setState(() {
         _message = e.message;
+        _boldTerm = e.boldTerm;
         _done = true;
       });
     }
+  }
+
+  // Poruka s opcionalno boldanim pojmom (npr. naziv kanala).
+  Widget _messageWidget(BuildContext context) {
+    final term = _boldTerm;
+    final base = Theme.of(context).textTheme.bodyMedium;
+    if (term == null || !_message.contains(term)) {
+      return Text(_message, textAlign: TextAlign.center, style: base);
+    }
+    final i = _message.indexOf(term);
+    return Text.rich(
+      TextSpan(
+        style: base,
+        children: [
+          TextSpan(text: _message.substring(0, i)),
+          TextSpan(
+              text: term,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          TextSpan(text: _message.substring(i + term.length)),
+        ],
+      ),
+      textAlign: TextAlign.center,
+    );
   }
 
   @override
@@ -483,7 +508,7 @@ class _YoutubeClaimCallbackScreenState
                         ? Colors.green
                         : Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
-              Text(_message, textAlign: TextAlign.center),
+              _messageWidget(context),
               if (_done) ...[
                 const SizedBox(height: 24),
                 FilledButton(

@@ -22,7 +22,11 @@ import '../models/channel_claim.dart';
 
 class ChannelOwnershipFailure implements Exception {
   final String message;
-  const ChannelOwnershipFailure(this.message);
+
+  /// Opcionalni pojam unutar [message] koji UI prikaže boldano (npr. naziv
+  /// kanala). Mora se doslovno pojaviti u [message].
+  final String? boldTerm;
+  const ChannelOwnershipFailure(this.message, {this.boldTerm});
   @override
   String toString() => message;
 }
@@ -71,17 +75,25 @@ class ChannelOwnershipService {
         // Edge fn vraća kod pod ključem 'error' (ne 'reason').
         final reason = data['error'] as String?;
         if (reason == 'channel_mismatch') {
+          // Backend vrati jedan odabrani kanal (branded picker) → jednina.
           final owned = (data['ownedChannels'] as List?)
                   ?.map((e) => (e as Map)['title'] as String?)
                   .whereType<String>()
                   .toList() ??
               const <String>[];
-          final suffix = owned.isEmpty
-              ? ' Ovaj Google račun ne upravlja nijednim YouTube kanalom.'
-              : ' Ovim računom upravljaš kanalima: ${owned.join(', ')}.';
+          final name = owned.isNotEmpty ? owned.first : null;
+          if (name == null) {
+            throw const ChannelOwnershipFailure(
+                'Prijavljeni Google račun nije vlasnik ovog kanala. Ovaj račun '
+                'ne upravlja nijednim YouTube kanalom. Prijavi se Google računom '
+                'koji je VLASNIK kanala (ne urednik).');
+          }
           throw ChannelOwnershipFailure(
-              'Prijavljeni Google račun nije vlasnik ovog kanala.$suffix'
-              ' Prijavi se Google računom koji je VLASNIK kanala (ne urednik).');
+            'Prijavljeni Google račun nije vlasnik ovog kanala. Ovim računom '
+            'upravljaš kanalom: $name. Prijavi se Google računom koji je VLASNIK '
+            'kanala (ne urednik).',
+            boldTerm: name,
+          );
         }
         throw ChannelOwnershipFailure(_mapReason(reason));
       }
