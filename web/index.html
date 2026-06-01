@@ -111,6 +111,28 @@
       <p class="bi-load">Učitavanje aplikacije…</p>
     </div>
   </div>
+
+  <!-- TRAJNI legal footer: NE uklanja se JS-om (za razliku od boot-intro). Pravi
+       <a href> linkovi na privacy/terms u DOM-u (Flutter renderira u canvas pa
+       nema pravih <a> tagova; Google branding check traži privacy link na home
+       page). z-index:-1 → iza Flutter view-a, ne ometa app ni interakciju. -->
+  <footer id="legal-footer">
+    <style>
+      #legal-footer{position:fixed;left:0;right:0;bottom:0;z-index:-1;background:#001a3d;color:#cdd6e6;font:13px/1.55 'Inter',system-ui,-apple-system,sans-serif;padding:10px 16px;text-align:center;}
+      #legal-footer a{color:#fff;}
+      #legal-footer .lf-sep{opacity:.5;margin:0 7px;}
+      #legal-footer .lf-op{opacity:.75;font-size:12px;margin-top:3px;}
+    </style>
+    <div>
+      <a href="https://domovina.ai/privacy">Pravila privatnosti</a>
+      <span class="lf-sep">·</span>
+      <a href="https://domovina.ai/terms">Uvjeti korištenja</a>
+      <span class="lf-sep">·</span>
+      <a href="mailto:privacy@italk.hr">privacy@italk.hr</a>
+    </div>
+    <div class="lf-op">DOMOVINA.ai — operator: ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Hrvatska · OIB 54872935051</div>
+  </footer>
+
   <script>
     // Makni statički uvod kad Flutter oboji prvi frame; fallback timeout da
     // nikad trajno ne blokira aplikaciju ako event izostane.
