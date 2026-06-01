@@ -114,8 +114,10 @@ create policy actions_select_owner on domovina_ai.safe_actions
 
 ## B. Edge funkcija `youtube-claim` (start / callback / reverify)
 
-Vlastiti Google OAuth client (NE GoTrue Google provider — Princip D iz plana).
-Env: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+Vlastiti, DEDICIRANI Google OAuth client (NE GoTrue Google login client —
+Princip D iz plana). Env (feature-scoped `YOUTUBE_CLAIM_*` naming da se u Coolify
+dijeljenom env poolu jasno odvoji od `GOTRUE_EXTERNAL_GOOGLE_*`):
+`YOUTUBE_CLAIM_GOOGLE_CLIENT_ID`, `YOUTUBE_CLAIM_GOOGLE_CLIENT_SECRET`,
 `YOUTUBE_CLAIM_REDIRECT_URI` (npr. `https://domovina.ai/youtube-claim/callback`).
 
 ### `POST /youtube-claim/start`

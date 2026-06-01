@@ -409,7 +409,7 @@ commits `00b4253` schema+fns, `9c8bf57` verify_jwt, `2a19a68` KYC-iz-baze):
   - **NIJE E2E:** youtube-claim/callback (OAuth code→token exchange) — traži
     pravi Google consent; logika deno-check čista.
 - **Preostaje:** PROD deploy — `scripts/db-migrate.sh` (SSH) +
-  `deploy-functions.sh` + env (`GOOGLE_OAUTH_CLIENT_ID/SECRET`,
+  `deploy-functions.sh` + env (`YOUTUBE_CLAIM_GOOGLE_CLIENT_ID/_SECRET`,
   `YOUTUBE_CLAIM_REDIRECT_URI`, opcionalno `SAFE_TX_SERVICE_URL`/
   `PLATFORM_SIGNER_KEY`).
 
