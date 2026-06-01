@@ -68,7 +68,22 @@ class ChannelOwnershipService {
       );
       final data = (res.data as Map).cast<String, dynamic>();
       if (data['ok'] != true) {
-        throw ChannelOwnershipFailure(_mapReason(data['reason'] as String?));
+        // Edge fn vraća kod pod ključem 'error' (ne 'reason').
+        final reason = data['error'] as String?;
+        if (reason == 'channel_mismatch') {
+          final owned = (data['ownedChannels'] as List?)
+                  ?.map((e) => (e as Map)['title'] as String?)
+                  .whereType<String>()
+                  .toList() ??
+              const <String>[];
+          final suffix = owned.isEmpty
+              ? ' Ovaj Google račun ne upravlja nijednim YouTube kanalom.'
+              : ' Ovim računom upravljaš kanalima: ${owned.join(', ')}.';
+          throw ChannelOwnershipFailure(
+              'Prijavljeni Google račun nije vlasnik ovog kanala.$suffix'
+              ' Prijavi se Google računom koji je VLASNIK kanala (ne urednik).');
+        }
+        throw ChannelOwnershipFailure(_mapReason(reason));
       }
       return ChannelClaim.fromJson(
           (data['claim'] as Map).cast<String, dynamic>());
