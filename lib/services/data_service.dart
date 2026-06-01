@@ -220,8 +220,23 @@ class DataService {
     }
   }
 
-  /// Vraća CDN URL videa — podržava HTTP 206 range requeste za seeking.
-  String resolveVideoUri() => CdnConfig.videoUrl(youtubeId);
+  /// Vraća CDN URL videa za reprodukciju.
+  ///
+  /// Prioritet: `video_h264.mp4` (H.264 — univerzalno HW-dekodira na svim
+  /// platformama/browserima/Android TV box-evima) ako postoji. Inače fallback
+  /// na izvorni `video.mp4` (može biti AV1/VP9 koji stariji uređaji ne
+  /// dekodiraju HW). Probe je HEAD request; 404/greška → fallback.
+  Future<String> resolveVideoUri() async {
+    try {
+      // Probe s cache-busterom (izbjegava stale 404); playback koristi čisti URL.
+      final response =
+          await http.head(Uri.parse(CdnConfig.videoH264ProbeUrl(youtubeId)));
+      if (response.statusCode == 200) return CdnConfig.videoH264Url(youtubeId);
+    } catch (_) {
+      // Mreža/CORS — padaj na izvorni video.mp4 koji uvijek postoji.
+    }
+    return CdnConfig.videoUrl(youtubeId);
+  }
 
   /// Ucitaj diariziran SRT i parsiraj u SpeakerTimeline.
   /// Vraća null ako fajl ne postoji (nije obavezan asset).
@@ -415,6 +430,7 @@ class EpisodeData {
       svc.loadMagisteriumEn(),          // 13
       svc.loadMagisteriumBatchEn(),     // 14
       svc.loadMagisteriumFullV2En(),    // 15
+      svc.resolveVideoUri(),            // 16 — H.264 probe + fallback
     ]);
     return EpisodeData(
       youtubeId: youtubeId,
@@ -434,7 +450,7 @@ class EpisodeData {
       magisteriumEn: results[13] as MagisteriumData?,
       magisteriumBatchEn: results[14] as MagisteriumData?,
       magisteriumFullV2En: results[15] as MagisteriumFullV2Data?,
-      videoUri: svc.resolveVideoUri(),
+      videoUri: results[16] as String,
     );
   }
 
@@ -499,6 +515,7 @@ class EpisodeData {
         'Magisterium batch (EN)', svc.loadMagisteriumBatchEn());
     final magFullV2EnF = trackOptional(
         'Magisterium v2 (EN)', svc.loadMagisteriumFullV2En());
+    final videoUriF = svc.resolveVideoUri();
 
     // Await all (required ones may throw)
     final info = await infoF;
@@ -517,6 +534,7 @@ class EpisodeData {
     final magEn = await magEnF;
     final magBatchEn = await magBatchEnF;
     final magFullV2En = await magFullV2EnF;
+    final videoUri = await videoUriF;
 
     return EpisodeData(
       youtubeId: youtubeId,
@@ -536,7 +554,7 @@ class EpisodeData {
       magisteriumFullV2En: magFullV2En,
       magisteriumFullV2Prompt: magV2Prompt,
       speakerTimeline: srt,
-      videoUri: svc.resolveVideoUri(),
+      videoUri: videoUri,
     );
   }
 }

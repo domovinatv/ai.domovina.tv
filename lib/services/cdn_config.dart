@@ -58,8 +58,22 @@ class CdnConfig {
       '$base/data/$ytId/article.magisterium_full_v2.en.json';
   static String diarizedSrtUrl(String ytId) => '$base/data/$ytId/diarized.srt';
 
-  /// Video MP4 — CDN podržava HTTP 206 range requeste za seeking
+  /// Video MP4 — CDN podržava HTTP 206 range requeste za seeking.
+  /// Ovo je izvorni codec (može biti AV1/VP9 — ne dekodira se HW svugdje).
   static String videoUrl(String ytId) => '$base/data/$ytId/video.mp4';
+
+  /// H.264 transcode — univerzalno HW-dekodirajuć (Android 4+, svi browseri,
+  /// iOS). Pipeline producira ovo paralelno s `video.mp4`. Postoji samo za
+  /// epizode koje su prošle transcode korak; vidi [DataService.resolveVideoUri]
+  /// koji probe-a postojanje i fallback-a na [videoUrl] ako 404.
+  static String videoH264Url(String ytId) =>
+      '$base/data/$ytId/video_h264.mp4';
+
+  /// Probe URL za H.264 postojanje — s cache-busterom da stale 404 (od prije
+  /// nego je transcode završio) ne zaglavi fallback na izvorni video.
+  /// Playback i dalje koristi čisti [videoH264Url] (immutable cache OK).
+  static String videoH264ProbeUrl(String ytId) =>
+      '$base/data/$ytId/video_h264.mp4?${_channelCacheBuster()}';
 
   /// Thumbnail epizode
   static String thumbnailUrl(String ytId) => '$base/images/$ytId/thumbnail.png';
