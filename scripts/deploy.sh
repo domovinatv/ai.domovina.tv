@@ -41,6 +41,18 @@ if [[ -n "${CERTILIA_SERVER_URL:-}" ]]; then
   SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=CERTILIA_SERVER_URL=${CERTILIA_SERVER_URL}"
 fi
 
+# Meilisearch keyword tražilica (vidi lib/services/meili_client.dart).
+# MEILI_SEARCH_KEY je READ-ONLY search-only ključ (nikad master) — siguran za
+# bundle. Deterministički je pa MeiliClient ima radni default; override ovdje
+# samo ako prod Meili koristi drugi master key. MEILI_URL pokazuje na prod
+# (https://search.domovina.ai); bez override-a klijent gađa lokalni dev.
+if [[ -n "${MEILI_URL:-}" ]]; then
+  SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=MEILI_URL=${MEILI_URL}"
+fi
+if [[ -n "${MEILI_SEARCH_KEY:-}" ]]; then
+  SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=MEILI_SEARCH_KEY=${MEILI_SEARCH_KEY}"
+fi
+
 # Auto-bump verzije na svakom deployu — pomaže korisniku znati treba li
 # hard-refresh: ako footer prikazuje istu verziju kao prije, browser servira
 # stari cache i potrebno je Cmd+Shift+R; ako je verzija nova, deploy je

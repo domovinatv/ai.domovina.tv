@@ -6,22 +6,40 @@ import 'package:http/http.dart' as http;
 
 import '../main.dart' show log;
 
-/// Klijent za LOKALNI Meilisearch PoC — keyword (egzaktna riječ + typo-tolerant)
-/// pretraga 2562 podcast epizoda. KOMPLEMENTARNO semantičkoj MCP pretrazi
-/// (vidi search_service.dart), ne miješati.
+/// Klijent za Meilisearch keyword (egzaktna riječ + typo-tolerant) pretragu
+/// podcast epizoda. KOMPLEMENTARNO semantičkoj MCP pretrazi (vidi
+/// search_service.dart), ne miješati.
 ///
-/// NB: master key je hardkodiran jer je ovo lokalni eksperiment. U produkciji
-/// ide search-only key + host iza proxyja.
+/// Konfiguracija preko --dart-define (deploy.sh embeda u build):
+///   MEILI_URL         — npr. https://search.domovina.ai (default: lokalni dev)
+///   MEILI_SEARCH_KEY  — READ-ONLY search-only ključ (actions:[search]).
+///                       NIKAD master key. Siguran za frontend bundle jer ne
+///                       može pisati/admin. Generira se preko
+///                       domovina-rag/scripts/meili-provision-keys.sh.
+///
+/// Search-only ključ je deterministički (HMAC master+uid) pa je IDENTIČAN na
+/// lokalnom i cloud Meiliju — default ispod radi protiv oba.
 class MeiliClient {
-  static const String _masterKey = 'poc_master_key_domovina_2026';
+  // Default = lokalni dev search-only key (deterministički, uid 39ed0b6b…).
+  // Override u prod buildu: --dart-define=MEILI_SEARCH_KEY=...
+  static const String _searchKey = String.fromEnvironment(
+    'MEILI_SEARCH_KEY',
+    defaultValue:
+        'd4e39f13270b43c3210cfa005d80fdd3390fc7948be0db0c0f03d3cffa4a780f',
+  );
+
+  /// Override: --dart-define=MEILI_URL=https://search.domovina.ai
+  static const String _urlOverride = String.fromEnvironment('MEILI_URL');
+
   static const String _pre = '<em>';
   static const String _post = '</em>';
 
   static final http.Client _http = http.Client();
 
-  /// Host ovisi o platformi: Android emulator vidi host preko 10.0.2.2,
-  /// web/iOS-sim/desktop preko localhost.
+  /// Prod: MEILI_URL dart-define. Dev bez override-a: localhost (web/iOS/desktop),
+  /// 10.0.2.2 (Android emulator vidi host preko tog aliasa).
   static String get baseUrl {
+    if (_urlOverride.isNotEmpty) return _urlOverride;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:7700';
     }
@@ -29,7 +47,7 @@ class MeiliClient {
   }
 
   static Map<String, String> get _headers => {
-        'Authorization': 'Bearer $_masterKey',
+        'Authorization': 'Bearer $_searchKey',
         'Content-Type': 'application/json',
       };
 
