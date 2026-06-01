@@ -81,6 +81,52 @@
   </script>
 </head>
 <body>
+  <!-- Statički uvod / splash: čitljiv ljudima I crawlerima opis svrhe aplikacije.
+       Google OAuth branding verification traži da home page jasno objasni što app
+       radi; Flutter SPA inače renderira prazan <body> pa crawler/reviewer ne vidi
+       nikakav tekst. Ovaj blok je u izvornom HTML-u (uvijek vidljiv, bez JS-a) i
+       miče se na 'flutter-first-frame' kad Flutter oboji prvi frame. -->
+  <div id="boot-intro" role="main" aria-label="DOMOVINA.ai">
+    <style>
+      #boot-intro{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:#002F6C;color:#fff;font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;padding:28px;overflow:auto;}
+      #boot-intro .bi-wrap{max-width:660px;text-align:center;}
+      #boot-intro h1{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:clamp(34px,6vw,54px);margin:0 0 6px;letter-spacing:.5px;}
+      #boot-intro .bi-tag{font-size:clamp(15px,2.4vw,19px);opacity:.92;margin:0 0 22px;font-weight:500;}
+      #boot-intro p{font-size:15px;line-height:1.62;opacity:.92;margin:0 0 14px;}
+      #boot-intro a{color:#fff;}
+      #boot-intro .bi-links{margin-top:20px;font-size:14px;opacity:.85;}
+      #boot-intro .bi-links a{margin:0 6px;white-space:nowrap;}
+      #boot-intro .bi-load{margin-top:24px;font-size:13px;opacity:.55;}
+    </style>
+    <div class="bi-wrap">
+      <h1>DOMOVINA.ai</h1>
+      <p class="bi-tag">AI-obrađeni hrvatski katolički podcasti</p>
+      <p>DOMOVINA.ai transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije te provjerava njihovu usklađenost s katoličkim naukom (Magisterium AI). Korisnici mogu pretraživati epizode, čitati transkripte i sažetke te slušati obrađeni sadržaj.</p>
+      <p>Vlasnici YouTube kanala mogu potvrditi vlasništvo svojega kanala kako bi upravljali svojim sadržajem i isplatama. Za tu potvrdu aplikacija traži isključivo pristup za čitanje (<em>youtube.readonly</em>): provjerava da prijavljeni korisnik upravlja kanalom i pritom ništa ne objavljuje niti mijenja na YouTubeu.</p>
+      <div class="bi-links">
+        <a href="/privacy">Pravila privatnosti</a> ·
+        <a href="/terms">Uvjeti korištenja</a> ·
+        <a href="mailto:stepanic.matija@gmail.com">Kontakt</a>
+      </div>
+      <p class="bi-load">Učitavanje aplikacije…</p>
+    </div>
+  </div>
+  <script>
+    // Makni statički uvod kad Flutter oboji prvi frame; fallback timeout da
+    // nikad trajno ne blokira aplikaciju ako event izostane.
+    (function () {
+      function hideIntro() {
+        var el = document.getElementById('boot-intro');
+        if (!el) return;
+        el.style.transition = 'opacity .4s ease';
+        el.style.opacity = '0';
+        setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); }, 450);
+      }
+      window.addEventListener('flutter-first-frame', hideIntro, { once: true });
+      setTimeout(hideIntro, 6000);
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
   <script>
     // Service Worker update detection + forced check on every page load.
