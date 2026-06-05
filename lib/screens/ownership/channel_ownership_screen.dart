@@ -1,5 +1,5 @@
 /// Channel ownership UI — vlasnik preuzima kanal, verificira identitet,
-/// registrira wallet i postaje Safe co-signer. Tri ekrana (go_router rute):
+/// registrira novčanik (odredište isplate). Tri ekrana (go_router rute):
 ///   - `ChannelOwnershipScreen`     (`/c/:channelId/claim`)    — per-kanal flow
 ///   - `YoutubeClaimCallbackScreen` (`/youtube-claim/callback`) — OAuth povratak
 ///   - `MyChannelsScreen`           (`/account/channels`)      — lista claimova
@@ -333,7 +333,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     );
   }
 
-  // Step 3 — wallet + Safe co-signer.
+  // Step 3 — wallet (odredište isplate).
   Widget _stepWalletAndSafe(BuildContext context, PayoutEligibility e) {
     final locked = !e.isEligible;
     return _stepCard(
@@ -344,7 +344,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       title: 'Poveži novčanik',
       subtitle: locked
           ? 'Dostupno nakon vlasništva i verifikacije identiteta.'
-          : 'Registriraj adresu novčanika za isplatu (Safe co-signer).',
+          : 'Registriraj adresu novčanika za isplatu (odredište).',
       action: locked
           ? null
           : FilledButton.icon(
@@ -716,7 +716,20 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
                   const SizedBox(height: 24),
                   Text('Novčanici za isplatu',
                       style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Odredište na koje ti se isplaćuju prikupljena sredstva — '
+                    'tvoj kripto-novčanik (0x, Gnosis). Kad zatražiš isplatu, '
+                    'platforma izvrši prijenos na tu adresu.\n\nOvo NIJE adresa '
+                    'na koju stižu donacije: svaka kampanja ima zaseban Safe na '
+                    'koji uplate dolaze (vidljiv svima na Gnosisscanu); isplatu '
+                    'pokrećeš iz upravljanja kampanjom.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
                   ..._wallets.map(_walletTile),
                   const SizedBox(height: 12),
                   _addWalletForm(context),
@@ -758,10 +771,17 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
         trailing: PopupMenuButton<String>(
           tooltip: 'Opcije',
           onSelected: (v) {
+            if (v == 'campaigns') {
+              context.push('/account/channels/${c.youtubeChannelId}/campaigns');
+            }
             if (v == 'reverify') _reverify(c);
             if (v == 'revoke') _confirmRevoke(c);
           },
           itemBuilder: (_) => [
+            // Pinka "Zid podrške" kampanje — samo za verificirane kanale.
+            if (c.isVerified)
+              const PopupMenuItem(
+                  value: 'campaigns', child: Text('Kampanje (Zid podrške)')),
             if (needsReverify)
               const PopupMenuItem(
                   value: 'reverify', child: Text('Ponovi potvrdu')),
@@ -782,7 +802,9 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
       child: ListTile(
         leading: const Icon(Icons.account_balance_wallet_outlined),
         title: Text(_shortAddr(w.address)),
-        subtitle: Text(w.isVerified ? 'Verificiran' : 'Registriran'),
+        subtitle: Text(w.isVerified
+            ? 'Odredište isplate · potvrđeno'
+            : 'Odredište isplate'),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {
@@ -804,7 +826,9 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
             TextField(
               controller: _walletCtrl,
               decoration: InputDecoration(
-                labelText: 'Adresa novčanika (0x…)',
+                labelText: 'Adresa tvog novčanika za isplatu (0x…)',
+                helperText: 'EVM adresa (Gnosis) na koju primaš isplate.',
+                helperMaxLines: 2,
                 errorText: _walletError,
                 border: const OutlineInputBorder(),
               ),

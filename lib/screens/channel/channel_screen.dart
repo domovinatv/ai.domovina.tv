@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/channel_detail.dart';
+import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
 import '../../widgets/magisterium_section.dart';
 
@@ -106,9 +107,33 @@ class _ChannelScreenState extends State<ChannelScreen> {
                       }
                     });
                   }
-                  return _ResponsiveVideoList(
-                    videos: detail.videos,
-                    onVideoTap: _openVideo,
+                  final slug = widget.channelId.replaceAll('_', '-');
+                  return Column(
+                    children: [
+                      // "Zid podrške" — sama se sakrije ako kanal nema aktivnu
+                      // pinka kampanju (vidi lib/pinka_sdk/). Match po internom
+                      // channel id-u ILI kanonskom UC… id-u.
+                      PinkaSupportCard.channel(
+                        channelId: widget.channelId,
+                        youtubeChannelId: detail.youtubeChannelId,
+                        onOpen: (_) => context.push(
+                          Uri(
+                            path: '/c/$slug/support',
+                            queryParameters: {
+                              if (detail.youtubeChannelId != null)
+                                'uc': detail.youtubeChannelId!,
+                              'name': detail.name,
+                            },
+                          ).toString(),
+                        ),
+                      ),
+                      Expanded(
+                        child: _ResponsiveVideoList(
+                          videos: detail.videos,
+                          onVideoTap: _openVideo,
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),

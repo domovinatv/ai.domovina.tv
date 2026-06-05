@@ -11,6 +11,9 @@ import '../screens/search/meili_search_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
 import '../screens/ownership/channel_ownership_screen.dart';
+import '../screens/ownership/campaigns/channel_campaigns_screen.dart';
+import '../screens/ownership/campaigns/campaign_manage_screen.dart';
+import '../pinka_sdk/pinka_sdk.dart';
 import '../screens/tv/tv_channel_screen.dart';
 import '../screens/tv/tv_episode_reader_screen.dart';
 import '../screens/tv/tv_episode_screen.dart';
@@ -45,6 +48,25 @@ GoRouter createRouter() {
           );
         },
       ),
+      // "Zid podrške" — pinka.finance crowdfunding/donacije za kanal.
+      // Standalone SDK u lib/pinka_sdk/. Subjekt = podcast_channel; ref se
+      // matcha na UC… id ILI interni channel id. Episode varijanta
+      // (/v/:id/support) je vizija — vidi PinkaCampaignScreen.episode.
+      GoRoute(
+        path: '/c/:slug/support',
+        pageBuilder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          final channelId = slug.replaceAll('-', '_');
+          return NoTransitionPage(
+            key: ValueKey('support-$slug'),
+            child: PinkaCampaignScreen.channel(
+              channelId: channelId,
+              youtubeChannelId: state.uri.queryParameters['uc'],
+              channelName: state.uri.queryParameters['name'],
+            ),
+          );
+        },
+      ),
       // Channel ownership claim flow (vidi docs/channel-ownership-and-safe-payout-plan.md)
       GoRoute(
         path: '/c/:slug/claim',
@@ -73,6 +95,32 @@ GoRouter createRouter() {
           key: ValueKey('my-channels'),
           child: MyChannelsScreen(),
         ),
+      ),
+      // Pinka kampanje za verificirani kanal (vlasnik administrira) — vidi
+      // lib/screens/ownership/campaigns/. Faza A: upravljanje postojećima.
+      GoRoute(
+        path: '/account/channels/:ucId/campaigns',
+        pageBuilder: (context, state) {
+          final ucId = state.pathParameters['ucId']!;
+          return NoTransitionPage(
+            key: ValueKey('channel-campaigns-$ucId'),
+            child: ChannelCampaignsScreen(youtubeChannelId: ucId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/account/channels/:ucId/campaigns/:campaignId',
+        pageBuilder: (context, state) {
+          final ucId = state.pathParameters['ucId']!;
+          final campaignId = state.pathParameters['campaignId']!;
+          return NoTransitionPage(
+            key: ValueKey('campaign-manage-$campaignId'),
+            child: CampaignManageScreen(
+              youtubeChannelId: ucId,
+              campaignId: campaignId,
+            ),
+          );
+        },
       ),
       // Per-kanal verifikacija/upravljanje otvoreno po UC… ID-u (iz "Moji kanali").
       GoRoute(
