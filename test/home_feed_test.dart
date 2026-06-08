@@ -58,6 +58,64 @@ void main() {
     });
   });
 
+  group('HomeFeed.freshlyArrived', () {
+    String daysAgo(int n) =>
+        DateTime.now().subtract(Duration(days: n)).toIso8601String().split('T').first;
+
+    test('vraća samo neobrađene (has_article == false) epizode', () {
+      final all = [
+        _fv(_video('ready', date: daysAgo(1), hasArticle: true)),
+        _fv(_video('raw1', date: daysAgo(2))),
+        _fv(_video('raw2', date: daysAgo(3))),
+      ];
+
+      final ids =
+          HomeFeed.freshlyArrived(all).map((v) => v.video.id).toList();
+
+      expect(ids, isNot(contains('ready')));
+      expect(ids, ['raw1', 'raw2']); // sortirano po datumu desc
+    });
+
+    test('izostavlja stare neobrađene stubove (izvan maxAgeDays)', () {
+      final all = [
+        _fv(_video('fresh', date: daysAgo(3))),
+        _fv(_video('stari', date: daysAgo(120))),
+      ];
+
+      final ids = HomeFeed.freshlyArrived(all, maxAgeDays: 30)
+          .map((v) => v.video.id)
+          .toList();
+
+      expect(ids, ['fresh']);
+    });
+
+    test('izostavlja epizode bez datuma', () {
+      final all = [
+        _fv(_video('nodate')), // date == null
+        _fv(_video('fresh', date: daysAgo(1))),
+      ];
+
+      final ids =
+          HomeFeed.freshlyArrived(all).map((v) => v.video.id).toList();
+
+      expect(ids, ['fresh']);
+    });
+
+    test('excludeFeatured uklanja featured epizodu', () {
+      final featured = _fv(_video('raw1', date: daysAgo(1)));
+      final all = [
+        featured,
+        _fv(_video('raw2', date: daysAgo(2))),
+      ];
+
+      final ids = HomeFeed.freshlyArrived(all, excludeFeatured: featured)
+          .map((v) => v.video.id)
+          .toList();
+
+      expect(ids, ['raw2']);
+    });
+  });
+
   group('HomeFeed.pickFeatured', () {
     test('Tier 4 newest fallback bira spremnu, ne neobrađenu epizodu', () {
       final all = [

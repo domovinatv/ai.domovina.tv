@@ -400,6 +400,11 @@ class _ChannelGridView extends StatelessWidget {
             final hasMinData = HomeFeed.hasMinimumData(channelCache);
             final featured =
                 hasMinData ? HomeFeed.pickFeatured(allVids) : null;
+            // "Upravo stiglo" — tek pristigle, još neobrađene epizode.
+            final freshlyArrived = featured != null
+                ? HomeFeed.freshlyArrived(allVids,
+                    limit: 12, excludeFeatured: featured.video)
+                : const <FeedVideo>[];
 
             return CustomScrollView(
               slivers: [
@@ -477,6 +482,31 @@ class _ChannelGridView extends StatelessWidget {
                   )
                 else if (!hasMinData)
                   SliverToBoxAdapter(child: RailSkeleton(isMobile: isMobile)),
+
+                // "Upravo stiglo" rail — tek pristigle epizode bez članka
+                // (has_article:false). Kronološki su među najnovijima, ali ih
+                // "Najnovije" sakriva jer nemaju AI obradu. Surfamo ih gledljive
+                // uz "U obradi" oznaku; tap vodi na basic episode layout
+                // (video + YouTube, bez članka).
+                if (freshlyArrived.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: EpisodesRail(
+                      eyebrow: 'Upravo stiglo',
+                      isMobile: isMobile,
+                      cards: freshlyArrived
+                          .map((fv) => EpisodeRailCard(
+                                title: fv.video.displayTitle,
+                                subtitle: fv.channelName,
+                                thumbnailUrl:
+                                    CdnConfig.thumbnailUrl(fv.video.id),
+                                dateLabel: fv.video.date,
+                                statusBadge: 'U obradi',
+                                width: isMobile ? 180 : 220,
+                                onTap: () => onVideoTap(fv.video.id),
+                              ))
+                          .toList(),
+                    ),
+                  ),
 
                 if (channels.isNotEmpty) ...[
                   // Sekcija naslov "KANALI (23)" + sort dropdown desno

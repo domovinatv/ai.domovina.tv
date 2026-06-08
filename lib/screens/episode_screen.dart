@@ -1889,6 +1889,23 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    // Video još nije na CDN-u dok pipeline ne završi obradu, pa
+                    // je YouTube jedini watch path za tek pristigle epizode.
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => openUrl(
+                            'https://www.youtube.com/watch?v=${data.youtubeId}'),
+                        icon: const Icon(Icons.smart_display),
+                        label: const Text('Gledaj na YouTubeu'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF0000),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

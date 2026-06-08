@@ -66,6 +66,14 @@ class HomeFeed {
   static bool isReadyForHome(FeedVideo v) =>
       v.video.pipeline?.hasArticle ?? false;
 
+  /// Epizoda je "tek pristigla" — pipeline je skinuo info + thumbnail, ali još
+  /// nije producirao članak (`has_article:false`). Gledljiva je (YouTube), ali
+  /// bez sažetka/članka/Magisterium analize. Suprotno od [isReadyForHome] —
+  /// ove se NE pojavljuju u "Najnovije epizode", nego u zasebnom "Upravo stiglo"
+  /// railu s "U obradi" oznakom.
+  static bool isFreshUnprocessed(FeedVideo v) =>
+      !(v.video.pipeline?.hasArticle ?? false);
+
   /// Featured pick s razlogom. Algoritam (4-tier fallback):
   ///
   /// 1. **Hi-quality recent** — `hasMagisterium && score≥70 && ≤14 dana`,
@@ -195,6 +203,39 @@ class HomeFeed {
     // indexa se ne prikazuju u "Najnovije epizode".
     final filtered = all
         .where(isReadyForHome)
+        .where((v) =>
+            excludeFeatured == null || v.video.id != excludeFeatured.video.id)
+        .toList();
+    final sorted = List<FeedVideo>.from(filtered)
+      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+    return sorted.take(limit).toList();
+  }
+
+  /// "Upravo stiglo" rail — tek pristigle epizode (info + thumbnail, bez
+  /// članka) sortirano po datumu desc. Kronološki su među najnovijima, ali ih
+  /// "Najnovije epizode" sakriva jer nemaju članak. Ovdje ih surfamo gledljive
+  /// uz "U obradi" oznaku.
+  ///
+  /// Gate na svježinu ([maxAgeDays]) sprječava da stari, nikad-obrađeni stubovi
+  /// iz permisivnog channel indexa zatrpaju rail — prikazuju se samo epizode
+  /// koje su doista nedavno pristigle. Zahtijeva i datum i thumbnail signal
+  /// (svaka epizoda u listingu ima thumbnail URL, pa je dovoljan datum).
+  static List<FeedVideo> freshlyArrived(List<FeedVideo> all,
+      {int limit = 12, int maxAgeDays = 30, FeedVideo? excludeFeatured}) {
+    final now = DateTime.now();
+    bool recent(String? date) {
+      if (date == null) return false;
+      try {
+        final d = now.difference(DateTime.parse(date)).inDays;
+        return d <= maxAgeDays;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    final filtered = all
+        .where(isFreshUnprocessed)
+        .where((v) => recent(v.video.date))
         .where((v) =>
             excludeFeatured == null || v.video.id != excludeFeatured.video.id)
         .toList();

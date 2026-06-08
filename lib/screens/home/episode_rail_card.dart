@@ -11,6 +11,10 @@ class EpisodeRailCard extends StatelessWidget {
   final String? dateLabel;
   final int? magisteriumScore;
 
+  /// Mala oznaka u gornjem-lijevom kutu cover-a (npr. "U obradi" za tek
+  /// pristigle, još neobrađene epizode). Null = bez oznake.
+  final String? statusBadge;
+
   /// Progress 0.0–1.0 — pokazuje se kao tanka bar na dnu cover-a.
   /// Null = nema progresa (npr. "Najnovije" rail).
   final double? progress;
@@ -27,6 +31,7 @@ class EpisodeRailCard extends StatelessWidget {
     this.thumbnailUrl,
     this.dateLabel,
     this.magisteriumScore,
+    this.statusBadge,
     this.progress,
   });
 
@@ -53,6 +58,12 @@ class EpisodeRailCard extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       _coverImage(theme),
+                      if (statusBadge != null)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: _statusPill(theme),
+                        ),
                       if (magisteriumScore != null)
                         Positioned(
                           top: 6,
@@ -138,6 +149,33 @@ class EpisodeRailCard extends StatelessWidget {
         alignment: Alignment.centerLeft,
         widthFactor: progress!.clamp(0.0, 1.0),
         child: Container(color: AppTheme.croRed),
+      ),
+    );
+  }
+
+  Widget _statusPill(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.tertiary.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.hourglass_top, size: 10, color: theme.colorScheme.tertiary),
+          const SizedBox(width: 3),
+          Text(
+            statusBadge!,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
