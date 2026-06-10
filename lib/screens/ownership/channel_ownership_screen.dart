@@ -364,7 +364,10 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     try {
       // AuthService spremi anon UUID + pokrene Certilia flow; app_metadata
       // .kyc_verified stigne preko onAuthStateChange.
-      await AuthService.instance.signInWithCertilia(context);
+      final result = await AuthService.instance.signInWithCertilia(context);
+      if (mounted && result.status == AuthFlowStatus.failure) {
+        setState(() => _error = result.message);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

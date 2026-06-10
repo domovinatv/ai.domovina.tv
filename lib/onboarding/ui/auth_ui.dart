@@ -156,6 +156,10 @@ class LabeledDivider extends StatelessWidget {
 /// Premium provider tile. [primary] = istaknuti (navy filled, sjena, badge);
 /// inače čista kartica s obrubom. [iconChild] je leading glyph (npr. Icon ili
 /// stilizirano "G").
+///
+/// [loading] prikaže spinner umjesto trailing strelice/badgea (tile koji je
+/// pokrenuo operaciju); [enabled]=false utiša i blokira tap (ostali tile-ovi
+/// dok operacija traje).
 class AuthProviderTile extends StatefulWidget {
   final Widget iconChild;
   final Color iconBg;
@@ -164,6 +168,11 @@ class AuthProviderTile extends StatefulWidget {
   final VoidCallback onTap;
   final bool primary;
   final String? badge;
+
+  /// Boja badge pille (default crvena — PREPORUČENO; navy za ZADNJI PUT).
+  final Color? badgeColor;
+  final bool enabled;
+  final bool loading;
 
   const AuthProviderTile({
     super.key,
@@ -174,6 +183,9 @@ class AuthProviderTile extends StatefulWidget {
     this.subtitle,
     this.primary = false,
     this.badge,
+    this.badgeColor,
+    this.enabled = true,
+    this.loading = false,
   });
 
   @override
@@ -188,6 +200,8 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final primary = widget.primary;
+    final interactive = widget.enabled && !widget.loading;
+    final hover = _hover && interactive;
 
     final bg = primary
         ? AppTheme.croBlue
@@ -200,8 +214,12 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
+      cursor: interactive ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 120),
+        // Tile koji se vrti ostaje pun; ostali se utišaju dok traje operacija.
+        opacity: widget.enabled || widget.loading ? 1 : 0.45,
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
           color: bg,
@@ -209,7 +227,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
           border: primary
               ? null
               : Border.all(
-                  color: _hover
+                  color: hover
                       ? cs.primary.withValues(alpha: 0.5)
                       : cs.outlineVariant.withValues(alpha: 0.7),
                   width: 1,
@@ -217,12 +235,12 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
           boxShadow: primary
               ? [
                   BoxShadow(
-                    color: AppTheme.croBlue.withValues(alpha: _hover ? 0.34 : 0.24),
-                    blurRadius: _hover ? 22 : 16,
+                    color: AppTheme.croBlue.withValues(alpha: hover ? 0.34 : 0.24),
+                    blurRadius: hover ? 22 : 16,
                     offset: const Offset(0, 6),
                   ),
                 ]
-              : (_hover
+              : (hover
                   ? [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.06),
@@ -235,7 +253,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: widget.onTap,
+            onTap: interactive ? widget.onTap : null,
             borderRadius: BorderRadius.circular(14),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -276,19 +294,29 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
                       ],
                     ),
                   ),
-                  if (widget.badge != null)
+                  if (widget.loading)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        valueColor: AlwaysStoppedAnimation(
+                            primary ? Colors.white : cs.primary),
+                      ),
+                    )
+                  else if (widget.badge != null)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppTheme.croRed,
+                        color: widget.badgeColor ?? AppTheme.croRed,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         widget.badge!,
                         style: const TextStyle(
                           fontFamily: 'Inter',
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                           letterSpacing: 0.6,
@@ -308,6 +336,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -324,90 +353,141 @@ Future<String?> showAuthInputDialog(
   TextInputType keyboardType = TextInputType.text,
   int? maxLength,
   String confirmLabel = 'Potvrdi',
+  Iterable<String>? autofillHints,
 }) {
-  final controller = TextEditingController();
   return showDialog<String>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.45),
-    builder: (ctx) {
-      final theme = Theme.of(ctx);
-      final cs = theme.colorScheme;
-      void submit() => Navigator.pop(ctx, controller.text.trim());
-      return Dialog(
-        backgroundColor: cs.surface,
-        elevation: 0,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Icon(icon, color: cs.primary, size: 26),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(fontSize: 21),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                keyboardType: keyboardType,
-                textInputAction: TextInputAction.done,
-                textAlign: maxLength != null ? TextAlign.center : TextAlign.start,
-                maxLength: maxLength,
-                style: maxLength != null
-                    ? theme.textTheme.headlineSmall?.copyWith(
-                        fontSize: 24, letterSpacing: 8)
-                    : null,
-                onSubmitted: (_) => submit(),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  counterText: '',
-                ),
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                onPressed: submit,
-                child: Text(confirmLabel),
-              ),
-              const SizedBox(height: 4),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(
-                  'Odustani',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
+    builder: (ctx) => _AuthInputDialog(
+      title: title,
+      message: message,
+      hint: hint,
+      icon: icon,
+      keyboardType: keyboardType,
+      maxLength: maxLength,
+      confirmLabel: confirmLabel,
+      autofillHints: autofillHints,
+    ),
   ).then((v) => (v == null || v.isEmpty) ? null : v);
+}
+
+class _AuthInputDialog extends StatefulWidget {
+  final String title;
+  final String message;
+  final String hint;
+  final IconData icon;
+  final TextInputType keyboardType;
+  final int? maxLength;
+  final String confirmLabel;
+  final Iterable<String>? autofillHints;
+
+  const _AuthInputDialog({
+    required this.title,
+    required this.message,
+    required this.hint,
+    required this.icon,
+    required this.keyboardType,
+    required this.maxLength,
+    required this.confirmLabel,
+    required this.autofillHints,
+  });
+
+  @override
+  State<_AuthInputDialog> createState() => _AuthInputDialogState();
+}
+
+class _AuthInputDialogState extends State<_AuthInputDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final maxLength = widget.maxLength;
+    return Dialog(
+      backgroundColor: cs.surface,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(widget.icon, color: cs.primary, size: 26),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              widget.title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall?.copyWith(fontSize: 21),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              keyboardType: widget.keyboardType,
+              autofillHints: widget.autofillHints,
+              textInputAction: TextInputAction.done,
+              textAlign:
+                  maxLength != null ? TextAlign.center : TextAlign.start,
+              maxLength: maxLength,
+              style: maxLength != null
+                  ? theme.textTheme.headlineSmall?.copyWith(
+                      fontSize: 24, letterSpacing: 8)
+                  : null,
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                counterText: '',
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: _submit,
+              child: Text(widget.confirmLabel),
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Odustani',
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -545,8 +545,14 @@ class _NotSignedInPrompt extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 14),
               ),
-              onPressed: () =>
-                  showAuthSheet(context, origin: AuthSheetOrigin.handoff),
+              // NE origin: handoff — njegov subtitle ("Kod je verificiran…")
+              // vrijedi samo za receive flow; ovdje šaljemo vlastiti copy.
+              onPressed: () => showAuthSheet(
+                context,
+                headlineOverride: 'Prijavi se',
+                subtitleOverride:
+                    'Za slanje prijave na drugi uređaj prvo se prijavi na ovom.',
+              ),
             ),
           ],
         ),

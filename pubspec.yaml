@@ -91,6 +91,8 @@ flutter:
   assets:
     - assets/icons/domovina_ai_logo.svg
     - assets/icons/domovina_ai_logo_1024.png
+    # Službeni Google "G" (brand guidelines — ne smije se crtati custom glyph).
+    - assets/icons/google_g_logo.png
     # Premium splash images — koristi TvBootSplash widget za continuity
     # s Android native splash-om (drawable-nodpi/splash_full_*.png).
     # Generirano scripts/generate-premium-splash-taglines.py.

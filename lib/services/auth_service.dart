@@ -23,6 +23,11 @@ import 'watch_progress_service.dart';
 /// Brišemo postavljanjem na prazan string (vidi local_prefs API).
 const String _anonPendingMigrationKey = 'auth_anon_pending_migration_id';
 
+/// localStorage ključ — zadnja uspješno korištena metoda prijave
+/// (AuthProvider.name). Auth sheet ju ističe "ZADNJI PUT" badgeom da
+/// returning user ne otvori slučajno drugi račun drugom metodom.
+const String lastProviderKey = 'auth_last_provider';
+
 /// Provider info — kakav identitet je linkan. Mapira na sb.OAuthProvider
 /// za Google/Apple; email i passkey su custom flow-ovi.
 enum AuthProvider { google, apple, email, passkey, certilia }
@@ -44,6 +49,47 @@ extension AuthProviderLabel on AuthProvider {
         AuthProvider.passkey => null,
         AuthProvider.certilia => null,
       };
+}
+
+/// Ishod jednog auth pokušaja. Pozivatelj (auth sheet) na temelju statusa
+/// odlučuje zatvara li sheet i prikazuje li grešku inline (ne snackbar).
+enum AuthFlowStatus {
+  /// Sesija je uspostavljena (ili stiže kroz onAuthStateChange unutar sekunde).
+  success,
+
+  /// Pokrenut browser redirect (OAuth) — stranica / vanjski browser preuzima.
+  redirect,
+
+  /// Magic link + kod su poslani; korisnik nastavlja kroz e-mail.
+  /// [AuthFlowResult.message] nosi e-mail adresu.
+  emailSent,
+
+  /// Korisnik je odustao (zatvorio dialog/ceremoniju) — nije greška.
+  cancelled,
+
+  /// Greška — [AuthFlowResult.message] je human-readable hrvatski tekst.
+  failure,
+}
+
+class AuthFlowResult {
+  final AuthFlowStatus status;
+  final String? message;
+
+  /// Passkey login pao jer na uređaju NEMA passkeyja — pozivatelj može
+  /// ponuditi kreiranje novog umjesto suhe greške.
+  final bool passkeyMissing;
+
+  const AuthFlowResult(this.status, [this.message])
+      : passkeyMissing = false;
+  const AuthFlowResult.noPasskey(this.message)
+      : status = AuthFlowStatus.failure,
+        passkeyMissing = true;
+
+  static const success = AuthFlowResult(AuthFlowStatus.success);
+  static const redirect = AuthFlowResult(AuthFlowStatus.redirect);
+  static const cancelled = AuthFlowResult(AuthFlowStatus.cancelled);
+  static AuthFlowResult failure(String message) =>
+      AuthFlowResult(AuthFlowStatus.failure, message);
 }
 
 /// View model nad sb.User — ostaje isti shape kao mock MockUser tako
@@ -147,9 +193,16 @@ class AuthService extends ChangeNotifier {
 
   void _setUser(sb.User? u) {
     final next = u == null ? null : AppUser.fromSupabase(u);
-    if (next?.id == _user?.id && next?.isAnonymous == _user?.isAnonymous) {
-      // Manje stvarne promjene (npr. metadata) — i dalje refresh
-      // jer chip moze imati novi displayName.
+    // Anon → permanent tranzicija unutar appa (link/prijava bez reloada):
+    // potvrdi uspjeh korisniku + zapamti zadnju metodu za sheet hint.
+    // (OAuth redirect path ima vlastitu potvrdu u AuthCallbackScreen.)
+    final wasAnonymous = _user?.isAnonymous ?? false;
+    if (wasAnonymous && next != null && !next.isAnonymous) {
+      _showSnack(
+          'Prijavljen si kao ${next.displayName ?? next.email ?? 'korisnik'}.');
+      if (next.provider != null) {
+        setLocalStorageString(lastProviderKey, next.provider!.name);
+      }
     }
     _user = next;
     notifyListeners();
@@ -224,7 +277,7 @@ class AuthService extends ChangeNotifier {
   ///      koji prebaci watch_progress/sessions/handoff iz anon → permanent.
   ///
   /// Spec migracije: docs/backend-prompts/08-anon-data-migration-rpc.md.
-  Future<void> linkIdentity(
+  Future<AuthFlowResult> linkIdentity(
     BuildContext context,
     AuthProvider provider, {
     String? mockEmail,
@@ -232,8 +285,8 @@ class AuthService extends ChangeNotifier {
     log('AuthService.linkIdentity($provider)');
     final client = _client();
     if (client == null) {
-      _snack(context, 'Supabase nije konfiguriran — nije moguće povezati račun.');
-      return;
+      return AuthFlowResult.failure(
+          'Supabase nije konfiguriran — prijava nije moguća.');
     }
 
     try {
@@ -257,52 +310,61 @@ class AuthService extends ChangeNotifier {
                 ? '${Uri.base.origin}/auth/callback'
                 : 'ai.domovina://auth/callback',
           );
-          // OAuth flow je redirect-based na webu → app će se reload-ati,
-          // session listener iz init() će handlati state + migraciju.
-          if (context.mounted) {
-            _snack(context, 'Otvaram ${provider.displayName} prijavu…');
+          // Web: slijedi full-page redirect (session listener iz init()
+          // handla state + migraciju po povratku). Native: otvoren je
+          // vanjski browser pa korisniku treba hint gdje nastaviti.
+          if (!kIsWeb) {
+            _showSnack('Nastavi prijavu u pregledniku…');
           }
-          break;
+          return AuthFlowResult.redirect;
 
         case AuthProvider.email:
-          final email = await _promptForEmail(context, mockEmail);
-          if (email == null || !context.mounted) return;
-          final currentUser = client.auth.currentUser;
-          if (currentUser?.isAnonymous == true && currentUser != null) {
-            setLocalStorageString(_anonPendingMigrationKey, currentUser.id);
-            log('AuthService.linkIdentity(email): saved pending anon=${currentUser.id}');
-          }
-          await client.auth.signInWithOtp(
-            email: email,
-            shouldCreateUser: true,
-            emailRedirectTo: kIsWeb ? null : 'ai.domovina://auth/callback',
-          );
-          if (context.mounted) {
-            _snack(context, 'Kod i magic link poslani na $email.');
-            // Ponudi ručni unos koda (e-mail nosi i link i 6-znamenkasti kod).
-            await _promptForOtpAndVerify(context, email);
-          }
-          break;
+          // Primarni e-mail flow vodi auth sheet (in-sheet koraci preko
+          // sendEmailOtp/verifyEmailOtp). Ovaj fallback samo pošalje link.
+          final email = mockEmail ?? await _promptForEmail(context, null);
+          if (email == null) return AuthFlowResult.cancelled;
+          return await sendEmailOtp(email);
 
         case AuthProvider.passkey:
-          await _registerPasskey(context);
-          break;
+          return await _registerPasskey(context);
 
         case AuthProvider.certilia:
-          await signInWithCertilia(context);
-          break;
+          return await signInWithCertilia(context);
       }
     } on sb.AuthException catch (e) {
-      log('linkIdentity AuthException: ${e.message} (status: ${e.statusCode})');
-      if (context.mounted) {
-        _snack(context, 'Greška (AuthException): ${e.message}');
-      }
+      log('linkIdentity AuthException: ${e.message} '
+          '(code: ${e.code}, status: ${e.statusCode})');
+      return AuthFlowResult.failure(friendlyAuthError(e));
     } catch (e, stackTrace) {
       log('linkIdentity neocekivana greska: $e\n$stackTrace');
-      if (context.mounted) {
-        _snack(context, 'Neočekivana greška pri prijavi.');
-      }
+      return AuthFlowResult.failure(
+          'Neočekivana greška pri prijavi. Pokušaj ponovo.');
     }
+  }
+
+  /// Mapiranje GoTrue grešaka na hrvatske poruke razumljive korisniku.
+  /// Sirove engleske poruke ([sb.AuthException.message]) nikad ne idu u UI.
+  static String friendlyAuthError(sb.AuthException e) {
+    final byCode = switch (e.code) {
+      'over_email_send_rate_limit' ||
+      'over_request_rate_limit' ||
+      'over_sms_send_rate_limit' =>
+        'Previše pokušaja — pričekaj minutu pa pokušaj ponovo.',
+      'email_address_invalid' || 'validation_failed' =>
+        'E-mail adresa ne izgleda ispravno. Provjeri unos.',
+      'otp_expired' => 'Kod je istekao — zatraži novi.',
+      'otp_disabled' => 'Prijava kodom trenutno nije dostupna.',
+      'user_banned' => 'Ovaj račun je privremeno blokiran.',
+      'signup_disabled' => 'Registracija novih računa trenutno nije moguća.',
+      'provider_disabled' => 'Ova metoda prijave trenutno nije dostupna.',
+      'email_not_confirmed' => 'E-mail adresa još nije potvrđena.',
+      _ => null,
+    };
+    if (byCode != null) return byCode;
+    if (e is sb.AuthRetryableFetchException) {
+      return 'Nema veze s poslužiteljem. Provjeri internet pa pokušaj ponovo.';
+    }
+    return 'Prijava nije uspjela. Pokušaj ponovo.';
   }
 
   /// Registracija passkeyja (poziva se iz auth_sheet primary gumba).
@@ -310,11 +372,10 @@ class AuthService extends ChangeNotifier {
   ///   - Anon/novi → prompt za email (treba za session bridge), spremi anon UUID
   ///     za migraciju, pa registriraj → novi permanent račun.
   /// Sesija stiže async preko onAuthStateChange (action_link).
-  Future<void> _registerPasskey(BuildContext context) async {
+  Future<AuthFlowResult> _registerPasskey(BuildContext context) async {
     final client = _client();
     if (client == null) {
-      _snack(context, 'Supabase nije konfiguriran.');
-      return;
+      return AuthFlowResult.failure('Supabase nije konfiguriran.');
     }
     final current = client.auth.currentUser;
     final isPermanent = current != null && !current.isAnonymous;
@@ -323,12 +384,12 @@ class AuthService extends ChangeNotifier {
     if (isPermanent) {
       email = current.email;
       if (email == null || email.isEmpty) {
-        _snack(context, 'Tvoj račun nema e-mail — passkey trenutno nije moguć.');
-        return;
+        return AuthFlowResult.failure(
+            'Tvoj račun nema e-mail — passkey trenutno nije moguć.');
       }
     } else {
       email = await _promptForEmail(context, null);
-      if (email == null || !context.mounted) return;
+      if (email == null) return AuthFlowResult.cancelled;
       // Spremi anon UUID za migraciju nakon što stigne permanent sesija.
       if (current?.isAnonymous == true && current != null) {
         setLocalStorageString(_anonPendingMigrationKey, current.id);
@@ -338,40 +399,39 @@ class AuthService extends ChangeNotifier {
 
     try {
       await PasskeyService.instance.registerPasskey(email: email);
-      if (context.mounted) {
-        _snack(context, isPermanent
-            ? 'Passkey je dodan na tvoj račun.'
-            : 'Otvaram prijavu — passkey je kreiran…');
-      }
+      return AuthFlowResult(
+        AuthFlowStatus.success,
+        isPermanent ? 'Passkey je dodan na tvoj račun.' : 'Passkey je kreiran.',
+      );
     } on PasskeyFailure catch (e) {
       log('_registerPasskey PasskeyFailure: ${e.message}');
-      if (context.mounted) _snack(context, e.message);
+      return AuthFlowResult.failure(e.message);
     }
   }
 
   /// Prijava postojećim passkeyom (returning sign-in). Sesija stiže async.
-  Future<void> signInWithPasskey(BuildContext context) async {
+  Future<AuthFlowResult> signInWithPasskey(BuildContext context) async {
     final client = _client();
     if (client == null) {
-      _snack(context, 'Supabase nije konfiguriran.');
-      return;
+      return AuthFlowResult.failure('Supabase nije konfiguriran.');
     }
     try {
       await PasskeyService.instance.loginWithPasskey();
-      if (context.mounted) _snack(context, 'Prijava passkeyom u tijeku…');
+      return AuthFlowResult.success;
     } on PasskeyFailure catch (e) {
       log('signInWithPasskey PasskeyFailure: ${e.message}');
-      if (context.mounted) _snack(context, e.message);
+      if (e.noCredential) return AuthFlowResult.noPasskey(e.message);
+      return AuthFlowResult.failure(e.message);
     }
   }
 
   /// Prijava hrvatskom eOsobnom (Certilia/NIAS). Spremi anon UUID za migraciju
-  /// pa pokreni Certilia OIDC flow + bridge. Sesija stiže preko onAuthStateChange.
-  Future<void> signInWithCertilia(BuildContext context) async {
+  /// pa pokreni Certilia OIDC flow + bridge. Po uspjehu je sesija već
+  /// postavljena (verifyOTP unutar CertiliaService).
+  Future<AuthFlowResult> signInWithCertilia(BuildContext context) async {
     final client = _client();
     if (client == null) {
-      _snack(context, 'Supabase nije konfiguriran.');
-      return;
+      return AuthFlowResult.failure('Supabase nije konfiguriran.');
     }
     final current = client.auth.currentUser;
     String? anonId;
@@ -383,11 +443,134 @@ class AuthService extends ChangeNotifier {
     try {
       await CertiliaService.instance
           .signInWithCertilia(context, anonId: anonId);
-      if (context.mounted) _snack(context, 'Prijava eOsobnom u tijeku…');
+      return AuthFlowResult.success;
     } on CertiliaFailure catch (e) {
       log('signInWithCertilia CertiliaFailure: ${e.message}');
-      if (context.mounted) _snack(context, e.message);
+      return AuthFlowResult.failure(e.message);
     }
+  }
+
+  /// Pošalje magic link + 6-znamenkasti kod na [email] i spremi anon UUID
+  /// za migraciju. Sheet zatim vodi korisnika kroz [verifyEmailOtp] (ručni
+  /// unos koda) — ili korisnik klikne link iz e-maila.
+  Future<AuthFlowResult> sendEmailOtp(String email) async {
+    log('AuthService.sendEmailOtp($email)');
+    final client = _client();
+    if (client == null) {
+      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+    }
+    final currentUser = client.auth.currentUser;
+    if (currentUser?.isAnonymous == true && currentUser != null) {
+      setLocalStorageString(_anonPendingMigrationKey, currentUser.id);
+      log('sendEmailOtp: saved pending anon=${currentUser.id}');
+    }
+    try {
+      await client.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: true,
+        emailRedirectTo: kIsWeb ? null : 'ai.domovina://auth/callback',
+      );
+      return AuthFlowResult(AuthFlowStatus.emailSent, email);
+    } on sb.AuthException catch (e) {
+      log('sendEmailOtp AuthException: ${e.message} (code: ${e.code})');
+      return AuthFlowResult.failure(friendlyAuthError(e));
+    } catch (e) {
+      log('sendEmailOtp unexpected: $e');
+      return AuthFlowResult.failure(
+          'Slanje e-maila nije uspjelo. Pokušaj ponovo.');
+    }
+  }
+
+  /// Verificira 6-znamenkasti kod iz e-maila. Po uspjehu sesija stiže preko
+  /// onAuthStateChange (permanent user + migracija anon podataka).
+  Future<AuthFlowResult> verifyEmailOtp(String email, String code) async {
+    log('AuthService.verifyEmailOtp email=$email');
+    final client = _client();
+    if (client == null) {
+      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+    }
+    try {
+      await client.auth.verifyOTP(
+        type: sb.OtpType.email,
+        email: email,
+        token: code,
+      );
+      return const AuthFlowResult(AuthFlowStatus.success, 'Prijava uspješna.');
+    } on sb.AuthException catch (e) {
+      log('verifyEmailOtp error: ${e.message} (code: ${e.code})');
+      return AuthFlowResult.failure(
+          'Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.');
+    } catch (e) {
+      log('verifyEmailOtp unexpected: $e');
+      return AuthFlowResult.failure('Provjera koda nije uspjela.');
+    }
+  }
+
+  /// Sve povezane prijavne metode trenutnog usera (za Moj račun ekran).
+  /// GoTrue identities (google/apple/email) + certilia iz app_metadata.
+  /// Passkey nije GoTrue identity — vidi se kroz PasskeyService.listPasskeys.
+  List<AuthProvider> get linkedProviders {
+    final u = _client()?.auth.currentUser;
+    if (u == null || u.isAnonymous) return const [];
+    final providers = <AuthProvider>{};
+    for (final identity in u.identities ?? const <sb.UserIdentity>[]) {
+      switch (identity.provider) {
+        case 'google':
+          providers.add(AuthProvider.google);
+        case 'apple':
+          providers.add(AuthProvider.apple);
+        case 'email':
+          providers.add(AuthProvider.email);
+      }
+    }
+    if (u.appMetadata['provider'] == 'certilia') {
+      providers.add(AuthProvider.certilia);
+    }
+    return providers.toList();
+  }
+
+  /// Trajno briše račun i sve podatke (App Store Guideline 5.1.1(v)).
+  /// Edge fn `account-delete` verificira JWT i obriše auth.users red —
+  /// FK-ovi s ON DELETE CASCADE čiste platform tablice. Nakon brisanja
+  /// lokalna sesija je nevažeća → očisti i nastavi kao novi gost.
+  /// Spec: docs/backend-prompts/10-account-management.md.
+  Future<AuthFlowResult> deleteAccount() async {
+    log('AuthService.deleteAccount');
+    final client = _client();
+    if (client == null) {
+      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+    }
+    try {
+      await client.functions.invoke('account-delete');
+      log('AuthService.deleteAccount: backend confirmed');
+    } on sb.FunctionException catch (e) {
+      log('deleteAccount FunctionException: ${e.status} ${e.details}');
+      if (e.status == 404) {
+        return AuthFlowResult.failure(
+            'Brisanje računa kroz aplikaciju još nije dostupno. '
+            'Pošalji zahtjev na privacy@italk.hr i izbrisat ćemo ga ručno.');
+      }
+      return AuthFlowResult.failure(
+          'Brisanje računa nije uspjelo (${e.status}). Pokušaj ponovo.');
+    } catch (e) {
+      log('deleteAccount unexpected: $e');
+      return AuthFlowResult.failure(
+          'Brisanje računa nije uspjelo. Pokušaj ponovo.');
+    }
+
+    try {
+      await client.auth.signOut();
+    } catch (e) {
+      // Sesija je možda već server-side mrtva — lokalni cleanup je dovoljan.
+      log('deleteAccount signOut: $e');
+    }
+    try {
+      await client.auth.signInAnonymously();
+    } catch (e) {
+      log('deleteAccount: anon re-signin failed — $e');
+    }
+    return const AuthFlowResult(
+        AuthFlowStatus.success, 'Račun je trajno izbrisan.');
   }
 
   Future<void> signOut(BuildContext context) async {
@@ -424,6 +607,7 @@ class AuthService extends ChangeNotifier {
       hint: 'ime@primjer.com',
       icon: Icons.alternate_email,
       keyboardType: TextInputType.emailAddress,
+      autofillHints: const [AutofillHints.email],
       confirmLabel: 'Pošalji',
     );
   }
@@ -431,40 +615,6 @@ class AuthService extends ChangeNotifier {
   /// Prikaži SnackBar preko GLOBALNOG ScaffoldMessenger key-a (ne preko
   /// context-a) — feedback radi i kad je sheet/dialog već zatvoren pa je
   /// proslijeđeni context unmountan. [context] se zadržava radi potpisa.
-  /// Dijalog za ručni unos 6-znamenkastog OTP koda iz magic link e-maila.
-  /// Verificira preko verifyOTP(type: email); sesija stigne preko onAuthStateChange.
-  /// (Alternativa kliku na link u e-mailu — radi i ako se link otvori u drugom
-  /// pregledniku/uređaju.)
-  Future<void> _promptForOtpAndVerify(BuildContext context, String email) async {
-    final client = _client();
-    if (client == null) return;
-    final code = await showAuthInputDialog(
-      context,
-      title: 'Unesi kod',
-      message: 'Poslali smo 6-znamenkasti kod na $email. '
-          'Upiši ga ovdje — ili klikni link u e-mailu.',
-      hint: '••••••',
-      icon: Icons.mark_email_read_outlined,
-      keyboardType: TextInputType.number,
-      maxLength: 6,
-      confirmLabel: 'Potvrdi',
-    );
-    if (code == null || code.isEmpty) return;
-    log('AuthService: verifyOTP email=$email');
-    try {
-      await client.auth.verifyOTP(
-        type: sb.OtpType.email,
-        email: email,
-        token: code,
-      );
-      // Uspjeh → onAuthStateChange postavi permanent sesiju + migracija.
-      _showSnack('Prijava uspješna.');
-    } on sb.AuthException catch (e) {
-      log('verifyOTP error: ${e.message}');
-      _showSnack('Kod nije ispravan ili je istekao.');
-    }
-  }
-
   void _snack(BuildContext context, String msg, {String? actionLabel}) =>
       _showSnack(msg, actionLabel: actionLabel);
 
