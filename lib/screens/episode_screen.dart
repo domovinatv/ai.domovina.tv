@@ -1499,6 +1499,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           if (showVideo)
             VideoPanel(
               player: _player!,
+              youtubeId: widget.data.youtubeId,
               controller: _videoController!,
               chapters: _videoChapters,
               activeTimestamp: _activeTimestamp,
@@ -1528,6 +1529,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           Expanded(flex: 2, child: magColumn!),
           VideoPanel(
             player: _player!,
+            youtubeId: widget.data.youtubeId,
             controller: _videoController!,
             chapters: _videoChapters,
             activeTimestamp: _activeTimestamp,
@@ -1573,6 +1575,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           Expanded(child: scrollBody),
           VideoPanel(
             player: _player!,
+            youtubeId: widget.data.youtubeId,
             controller: _videoController!,
             chapters: _videoChapters,
             activeTimestamp: _activeTimestamp,
@@ -1656,6 +1659,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               child: SafeArea(
                 child: VideoPanel(
                   player: _player!,
+                  youtubeId: widget.data.youtubeId,
                   controller: _videoController!,
                   chapters: _videoChapters,
                   activeTimestamp: _activeTimestamp,
@@ -1923,6 +1927,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           Expanded(child: scrollBody),
           VideoPanel(
             player: _player!,
+            youtubeId: widget.data.youtubeId,
             controller: _videoController!,
             chapters: const [],
             onChapterTap: (_) {},
@@ -1959,6 +1964,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               child: SafeArea(
                 child: VideoPanel(
                   player: _player!,
+                  youtubeId: widget.data.youtubeId,
                   controller: _videoController!,
                   chapters: const [],
                   onChapterTap: (_) {},

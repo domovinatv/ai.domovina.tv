@@ -4,6 +4,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
 import '../models/podcast_summary.dart';
+import 'episode_video.dart';
+import 'youtube_embed.dart';
 
 /// Marker za jedno poglavlje u video playeru (timestamp + label)
 class VideoChapterMark {
@@ -35,6 +37,9 @@ class VideoPanel extends StatefulWidget {
   final bool mutedAutoplay;
   final VoidCallback? onUnmute;
 
+  /// YouTube ID epizode — omogućuje in-app YouTube embed mode (web).
+  final String? youtubeId;
+
   const VideoPanel({
     super.key,
     required this.player,
@@ -50,6 +55,7 @@ class VideoPanel extends StatefulWidget {
     this.onSeek,
     this.mutedAutoplay = false,
     this.onUnmute,
+    this.youtubeId,
   });
 
   @override
@@ -62,6 +68,9 @@ class _VideoPanelState extends State<VideoPanel> {
   bool _playing = false;
   bool _seeking = false;
   double _sliderValue = 0;
+
+  /// In-app YouTube embed mode — native player pauziran, iframe preuzima.
+  bool _ytMode = false;
   late final Map<String, GlobalKey> _chapterKeys = {
     for (final ch in widget.chapters) ch.timestamp: GlobalKey(),
   };
@@ -131,19 +140,17 @@ class _VideoPanelState extends State<VideoPanel> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  /// Boje govornika — gradimo po redoslijedu iz speakers liste.
-  Map<String, Color> _speakerColors(ThemeData theme) {
-    final palette = [
-      theme.colorScheme.primary,
-      theme.colorScheme.tertiary,
-      theme.colorScheme.secondary,
-      theme.colorScheme.error,
-    ];
-    final map = <String, Color>{};
-    for (var i = 0; i < widget.speakers.length; i++) {
-      map[widget.speakers[i].id] = palette[i % palette.length];
-    }
-    return map;
+  /// Boje govornika — dijeljena paleta s EpisodeVideo (fullscreen badge).
+  Map<String, Color> _speakerColors(ThemeData theme) =>
+      speakerColorsFor(theme, widget.speakers);
+
+  void _enterYtMode() {
+    widget.player.pause();
+    setState(() => _ytMode = true);
+  }
+
+  void _exitYtMode() {
+    setState(() => _ytMode = false);
   }
 
   SummarySpeaker? _currentSpeaker() {
@@ -179,40 +186,39 @@ class _VideoPanelState extends State<VideoPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Video display (16:9) + web play overlay
+          // Video display (16:9) — native player ili YouTube embed mode
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Stack(
               children: [
                 Container(
                   color: Colors.black,
-                  child: MaterialDesktopVideoControlsTheme(
-                    normal: const MaterialDesktopVideoControlsThemeData(),
-                    fullscreen: MaterialDesktopVideoControlsThemeData(
-                      topButtonBar: [
-                        if (widget.speakerTimeline != null)
-                          _FullscreenSpeakerLabel(
-                            player: widget.player,
-                            speakerTimeline: widget.speakerTimeline!,
-                            speakers: widget.speakers,
-                            speakerColors: colors,
-                          ),
-                      ],
-                    ),
-                    child: Video(controller: widget.controller),
-                  ),
+                  child: _ytMode && widget.youtubeId != null
+                      ? YouTubeEmbed(
+                          videoId: widget.youtubeId!,
+                          startSeconds: _position.inSeconds,
+                        )
+                      : EpisodeVideo(
+                          player: widget.player,
+                          controller: widget.controller,
+                          speakerTimeline: widget.speakerTimeline,
+                          speakers: widget.speakers,
+                          onYouTubeMode:
+                              youTubeEmbedSupported && widget.youtubeId != null
+                                  ? _enterYtMode
+                                  : null,
+                        ),
                 ),
-                // Web overlay: play (paused) ili unmute (muted autoplay)
-                if (kIsWeb && (!_playing || widget.mutedAutoplay))
+                // Web overlay: unmute CTA za muted autoplay (browser policy).
+                // Paused overlay je uklonjen — klik na video sad toggle-a
+                // play/pause (playAndPauseOnTap u EpisodeVideo).
+                if (kIsWeb && widget.mutedAutoplay && !_ytMode)
                   Positioned.fill(
                     child: GestureDetector(
                       onTap: () {
-                        if (widget.mutedAutoplay && widget.onUnmute != null) {
-                          widget.player.setVolume(100);
-                          widget.onUnmute!();
-                        } else {
-                          widget.player.play();
-                        }
+                        widget.player.setVolume(100);
+                        widget.onUnmute?.call();
+                        if (!_playing) widget.player.play();
                       },
                       child: Container(
                         color: Colors.black54,
@@ -227,19 +233,15 @@ class _VideoPanelState extends State<VideoPanel> {
                                   color: theme.colorScheme.primary,
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  widget.mutedAutoplay
-                                      ? Icons.volume_up
-                                      : Icons.play_arrow,
+                                child: const Icon(
+                                  Icons.volume_up,
                                   color: Colors.white,
                                   size: 36,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                widget.mutedAutoplay
-                                    ? 'Pojacaj zvuk'
-                                    : 'Pokreni video',
+                                'Pojacaj zvuk',
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -254,6 +256,8 @@ class _VideoPanelState extends State<VideoPanel> {
               ],
             ),
           ),
+
+          if (_ytMode) YouTubeModeBar(onExit: _exitYtMode),
 
           // Controls
           Padding(
@@ -597,97 +601,6 @@ class _CurrentSpeakerRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-class _FullscreenSpeakerLabel extends StatelessWidget {
-  final Player player;
-  final SpeakerTimeline speakerTimeline;
-  final List<SummarySpeaker> speakers;
-  final Map<String, Color> speakerColors;
-
-  const _FullscreenSpeakerLabel({
-    required this.player,
-    required this.speakerTimeline,
-    required this.speakers,
-    required this.speakerColors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: player.stream.position,
-      builder: (context, snapshot) {
-        final pos = snapshot.data ?? Duration.zero;
-        final speakerId = speakerTimeline.speakerAt(pos);
-        if (speakerId == null) return const SizedBox.shrink();
-
-        SummarySpeaker? speaker;
-        for (final s in speakers) {
-          if (s.id == speakerId) {
-            speaker = s;
-            break;
-          }
-        }
-        if (speaker == null) return const SizedBox.shrink();
-
-        final color = speakerColors[speakerId] ?? Colors.white;
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.black54,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Anonymous host (suggested_name == role) → samo roleLabel
-              // umjesto duplog "Voditelj voditelj".
-              if (speaker.displayName != null) ...[
-                Text(
-                  speaker.displayName!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (speaker.roleLabel.isNotEmpty) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    '· ${speaker.roleLabel}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ] else
-                Text(
-                  speaker.roleLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

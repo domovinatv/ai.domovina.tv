@@ -294,6 +294,7 @@ SpeakerTimeline _parseSrt(String raw) {
       startMs: startMs,
       endMs: endMs,
       speakerId: speakerMatch.group(1)!,
+      text: text.replaceFirst(_speakerRegex, '').trim(),
     ));
   }
 

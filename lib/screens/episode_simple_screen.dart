@@ -20,12 +20,14 @@ import '../services/open_url.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
+import '../widgets/episode_video.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/language_toggle_chip.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/speaker_chip.dart';
 import '../widgets/view_mode_toggle_button.dart';
+import '../widgets/youtube_embed.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
 /// Optimiziran za slušanje u autu — 3 taba: Player, Poglavlja, Info.
@@ -157,6 +159,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   bool _isPlaying = false;
+
+  /// In-app YouTube embed mode — native player pauziran, iframe preuzima.
+  bool _ytMode = false;
 
   /// URL sync — zadnja sekunda za koju smo update-ali address bar.
   int _lastUrlSyncedSec = -1;
@@ -467,6 +472,12 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         position: _position,
         duration: _duration,
         isPlaying: _isPlaying,
+        ytMode: _ytMode,
+        onEnterYtMode: () {
+          _player?.pause();
+          setState(() => _ytMode = true);
+        },
+        onExitYtMode: () => setState(() => _ytMode = false),
         onPlayPause: () {
           if (_isPlaying) {
             _player?.pause();
@@ -758,6 +769,9 @@ class _PlayerTab extends StatelessWidget {
   final Duration position;
   final Duration duration;
   final bool isPlaying;
+  final bool ytMode;
+  final VoidCallback onEnterYtMode;
+  final VoidCallback onExitYtMode;
   final VoidCallback onPlayPause;
   final void Function(Duration) onSeek;
 
@@ -769,6 +783,9 @@ class _PlayerTab extends StatelessWidget {
     required this.position,
     required this.duration,
     required this.isPlaying,
+    required this.ytMode,
+    required this.onEnterYtMode,
+    required this.onExitYtMode,
     required this.onPlayPause,
     required this.onSeek,
   });
@@ -800,11 +817,23 @@ class _PlayerTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Video player or thumbnail
+          // Video player (native ili YouTube embed) or thumbnail
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: videoReady && videoController != null
-                ? Video(controller: videoController!)
+            child: ytMode
+                ? YouTubeEmbed(
+                    videoId: data.youtubeId,
+                    startSeconds: position.inSeconds,
+                  )
+                : videoReady && videoController != null && player != null
+                ? EpisodeVideo(
+                    player: player!,
+                    controller: videoController!,
+                    speakerTimeline: data.speakerTimeline,
+                    speakers: summary?.speakers ?? const [],
+                    onYouTubeMode:
+                        youTubeEmbedSupported ? onEnterYtMode : null,
+                  )
                 : Container(
                     color: Colors.black,
                     child: info.thumbnail.isNotEmpty
@@ -831,8 +860,10 @@ class _PlayerTab extends StatelessWidget {
                   ),
           ),
 
+          if (ytMode) YouTubeModeBar(onExit: onExitYtMode),
+
           // Seek bar
-          if (videoReady) ...[
+          if (videoReady && !ytMode) ...[
             SliderTheme(
               data: SliderThemeData(
                 trackHeight: 3,
