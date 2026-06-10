@@ -116,7 +116,12 @@ class AppUser {
   factory AppUser.fromSupabase(sb.User u) {
     final meta = u.userMetadata ?? const {};
     final appMeta = u.appMetadata;
-    final isCertilia = appMeta['provider'] == 'certilia';
+    // Certilia se NE detektira samo preko app_metadata['provider'] — to polje
+    // održava i GoTrue (postavi ga prvi provider, npr. 'google') pa ga merge
+    // s postojećim računom može pregaziti. kyc_verified piše isključivo
+    // certilia edge fn i preživljava merge → robustan signal.
+    final isCertilia = appMeta['provider'] == 'certilia' ||
+        appMeta['kyc_verified'] == true;
 
     String? displayName = meta['name'] as String?
         ?? meta['full_name'] as String?
@@ -126,20 +131,21 @@ class AppUser {
       displayName = u.email?.split('@').firstOrNull;
     }
 
-    // Detektiraj koji je provider linked. Certilia ide preko app_metadata
-    // (synthetic email user); inače OAuth identities; fallback magic link.
+    // Detektiraj koji je provider linked. OAuth identities imaju prednost
+    // (merged račun: chip kaže "preko Google", KYC badge ide odvojeno);
+    // certilia za synthetic-email usere bez OAuth identiteta.
     AuthProvider? provider;
     final identities = u.identities ?? const [];
     final providerNames = identities
         .map((i) => i.provider)
         .where((p) => p != 'email')
         .toList();
-    if (isCertilia) {
-      provider = AuthProvider.certilia;
-    } else if (providerNames.contains('google')) {
+    if (providerNames.contains('google')) {
       provider = AuthProvider.google;
     } else if (providerNames.contains('apple')) {
       provider = AuthProvider.apple;
+    } else if (isCertilia) {
+      provider = AuthProvider.certilia;
     } else if (u.email != null && !u.isAnonymous) {
       provider = AuthProvider.email;
     }
@@ -523,7 +529,10 @@ class AuthService extends ChangeNotifier {
           providers.add(AuthProvider.email);
       }
     }
-    if (u.appMetadata['provider'] == 'certilia') {
+    // kyc_verified piše samo certilia edge fn — robusnije od 'provider' polja
+    // koje GoTrue merge može pregaziti (isti email → Google ostane provider).
+    if (u.appMetadata['provider'] == 'certilia' ||
+        u.appMetadata['kyc_verified'] == true) {
       providers.add(AuthProvider.certilia);
     }
     return providers.toList();

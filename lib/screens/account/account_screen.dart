@@ -10,6 +10,7 @@
 /// degradira graceful (PasskeyFailure.unsupported / 404 poruke).
 library;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../main.dart' show log, rootScaffoldMessengerKey;
@@ -398,6 +399,60 @@ class _AccountScreenState extends State<AccountScreen> {
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Dodaj passkey na ovom uređaju'),
               onPressed: _addPasskey,
+            ),
+          ),
+          const Divider(height: 1),
+          _passkeyProviderHint(theme),
+        ],
+      ),
+    );
+  }
+
+  /// Uputa o passkey store-u, adaptirano iz pay.domovina.ai/wallet
+  /// (passkeyProviderHint). HARD WebAuthn limit: stranica NE MOŽE birati
+  /// manager (Apple Passwords vs LastPass) — to korisnik bira u OS
+  /// postavkama, pa ga copy tamo i upućuje.
+  Widget _passkeyProviderHint(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final steps = switch (defaultTargetPlatform) {
+      TargetPlatform.iOS || TargetPlatform.macOS =>
+        'Postavke → Aplikacije → Lozinke → Opcije lozinki → "Automatski '
+            'popunjavaj" — odaberi Lozinke (iCloud).',
+      TargetPlatform.android =>
+        'Postavke → Lozinke i računi → Zadana usluga za pristupne ključeve '
+            '→ odaberi Google Password Manager.',
+      _ =>
+        'U postavkama OS-a odaberi sustavski menadžer pristupnih ključeva '
+            '(Apple Passwords / Google Password Manager).',
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tips_and_updates_outlined,
+                  size: 16, color: cs.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Gdje se sprema passkey?',
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Preporučujemo Apple Passwords ili Google Password Manager — '
+            'passkey je tada vezan uz Face ID / otisak i sinkroniziran na '
+            'sve tvoje uređaje. Ako koristiš ekstenziju poput LastPass ili '
+            '1Password, isključi ju za domovina.ai (ili ju makni kao zadani '
+            'menadžer ključeva) jer presreće passkey prozor i kvari prijavu.\n\n'
+            '$steps',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              height: 1.45,
             ),
           ),
         ],

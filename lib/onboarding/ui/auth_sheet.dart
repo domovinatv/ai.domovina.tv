@@ -184,56 +184,37 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   // ── providers view ─────────────────────────────────────────────────────
 
   List<Widget> _providerChildren(ColorScheme cs) => [
-        // Passkey — preporučena metoda.
+        // Passkey LOGIN — primarna metoda (najmanji friction za returning
+        // usere). Kreiranje passkeyja namjerno NIJE u sheetu: novi korisnik
+        // bi si nakreirao više passkeyja (i računa) u Apple/Google manageru.
+        // Passkey se dodaje kao provider u Moj račun NAKON prijave →
+        // 1 osoba = 1 račun s N providera (GoTrue merga po emailu).
         AuthProviderTile(
           primary: true,
           badge: 'PREPORUČENO',
           iconBg: Colors.white.withValues(alpha: 0.16),
           iconChild:
               const Icon(Icons.fingerprint, color: Colors.white, size: 22),
-          label: 'Kreiraj passkey',
-          subtitle: 'Najsigurnije — bez lozinke, uz Face ID / otisak',
+          label: 'Prijavi se passkeyom',
+          subtitle: 'Najbrže — Face ID / otisak, bez lozinke',
           enabled: !_busy,
-          loading: _pending == AuthProvider.passkey,
-          onTap: () => _doLink(AuthProvider.passkey),
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.center,
-          child: TextButton.icon(
-            onPressed: _busy ? null : _signInWithExistingPasskey,
-            style: TextButton.styleFrom(
-              foregroundColor: cs.primary,
-              visualDensity: VisualDensity.compact,
-            ),
-            icon: _passkeyLoginPending
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(cs.primary),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-            label: const Text('Već imaš passkey? Prijavi se'),
-          ),
+          loading: _passkeyLoginPending,
+          onTap: _signInWithExistingPasskey,
         ),
         const SizedBox(height: 12),
         const LabeledDivider(),
         const SizedBox(height: 16),
-        // Apple iznad Googlea + točan copy ("Nastavi s računom Apple") —
-        // Apple HIG traži ravnopravnu/veću istaknutost od konkurentskih
-        // providera, inače App Store review zna odbiti.
         AuthProviderTile(
-          iconBg: const Color(0xFF111111),
-          iconChild: const Icon(Icons.apple, color: Colors.white, size: 24),
-          label: 'Nastavi s računom Apple',
-          badge: _lastUsedBadge(AuthProvider.apple),
+          iconBg: AppTheme.croRed.withValues(alpha: 0.10),
+          iconChild: const Icon(Icons.badge_outlined,
+              color: AppTheme.croRed, size: 22),
+          label: 'Prijava eOsobnom',
+          subtitle: 'Hrvatska e-osobna (Certilia / NIAS)',
+          badge: _lastUsedBadge(AuthProvider.certilia),
           badgeColor: AppTheme.croBlue,
           enabled: !_busy,
-          loading: _pending == AuthProvider.apple,
-          onTap: () => _doLink(AuthProvider.apple),
+          loading: _pending == AuthProvider.certilia,
+          onTap: () => _doLink(AuthProvider.certilia),
         ),
         const SizedBox(height: 10),
         // Službeni Google "G" asset (brand guidelines) na bijeloj podlozi.
@@ -254,6 +235,17 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         ),
         const SizedBox(height: 10),
         AuthProviderTile(
+          iconBg: const Color(0xFF111111),
+          iconChild: const Icon(Icons.apple, color: Colors.white, size: 24),
+          label: 'Nastavi s računom Apple',
+          badge: _lastUsedBadge(AuthProvider.apple),
+          badgeColor: AppTheme.croBlue,
+          enabled: !_busy,
+          loading: _pending == AuthProvider.apple,
+          onTap: () => _doLink(AuthProvider.apple),
+        ),
+        const SizedBox(height: 10),
+        AuthProviderTile(
           iconBg: AppTheme.croBlue.withValues(alpha: 0.10),
           iconChild: const Icon(Icons.alternate_email,
               color: AppTheme.croBlue, size: 21),
@@ -264,22 +256,13 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
           enabled: !_busy,
           onTap: _openEmailEntry,
         ),
-        const SizedBox(height: 10),
-        AuthProviderTile(
-          iconBg: AppTheme.croRed.withValues(alpha: 0.10),
-          iconChild: const Icon(Icons.badge_outlined,
-              color: AppTheme.croRed, size: 22),
-          label: 'Prijava eOsobnom',
-          subtitle: 'Hrvatska e-osobna (Certilia / NIAS)',
-          badge: _lastUsedBadge(AuthProvider.certilia),
-          badgeColor: AppTheme.croBlue,
-          enabled: !_busy,
-          loading: _pending == AuthProvider.certilia,
-          onTap: () => _doLink(AuthProvider.certilia),
-        ),
         if (_error != null) ...[
           const SizedBox(height: 14),
           _ErrorNote(message: _error!),
+        ],
+        if (_notice != null) ...[
+          const SizedBox(height: 14),
+          _NoticeNote(message: _notice!),
         ],
         const SizedBox(height: 18),
         _ReassuranceNote(origin: origin),
@@ -453,6 +436,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     setState(() {
       _pending = p;
       _error = null;
+      _notice = null;
     });
     // NE popati sheet prije async rada — context bi se unmountao pa bi
     // linkIdentity rano izašao na `context.mounted` guardu. Sheet ostaje
@@ -474,6 +458,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     setState(() {
       _passkeyLoginPending = true;
       _error = null;
+      _notice = null;
     });
     final result = await AuthService.instance.signInWithPasskey(context);
     if (!mounted) return;
@@ -482,28 +467,12 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       setLocalStorageString(lastProviderKey, AuthProvider.passkey.name);
     }
     if (result.passkeyMissing) {
-      // Nema passkeyja na uređaju → ponudi kreiranje umjesto suhe greške.
-      final create = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Nema passkeyja na ovom uređaju'),
-          content: const Text(
-              'Želiš li kreirati novi passkey za prijavu na ovom uređaju?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Odustani'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Kreiraj passkey'),
-            ),
-          ],
-        ),
-      );
-      if (create == true && mounted) {
-        await _doLink(AuthProvider.passkey);
-      }
+      // Nema passkeyja na uređaju → uputi na druge metode. Kreiranje NIJE
+      // ovdje (anti multiple-passkeys/accounts) — dodaje se u Moj račun
+      // nakon prijave, vezano uz postojeći račun.
+      setState(() => _notice =
+          'Na ovom uređaju još nema passkeyja za DOMOVINA.ai. Prijavi se '
+          'drugom metodom — passkey zatim dodaš u Moj račun.');
       return;
     }
     _handleResult(result);
