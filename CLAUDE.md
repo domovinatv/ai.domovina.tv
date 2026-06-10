@@ -124,6 +124,26 @@ analiza: `docs/android-tv-performance.md`.
 NE koristiti `FlutterEngineCache` engine pre-warm — collide-a s
 audio_service `provideFlutterEngine()` (dupli `main()`). Detalji u perf docu.
 
+### media_kit web — fullscreen/tap/subtitle gotchasi
+
+media_kit (2.0.1) na webu ima 4 zamke; sve ih rješava zajednički wrapper
+`lib/widgets/episode_video.dart` (koriste ga VideoPanel i episode_simple_screen):
+
+1. Ulazak u fullscreen pauzira video — enterFullscreen pusha novu rutu s novim
+   `Video` widgetom pa se `<video>` re-parenta u DOM-u (remove+insert = pauza
+   po HTML spec-u). Fix: auto-resume nakon tranzicije (retry 300/900 ms).
+2. Esc izađe iz browser fullscreena, ali Flutter fullscreen ruta ostane —
+   paket nema `fullscreenchange` listener. Fix: `lib/services/browser_fullscreen.dart`
+   (conditional import web/stub) + exit preko `GlobalKey<VideoState>`.
+3. `playAndPauseOnTap` je default OFF — klik na video ne radi ništa bez toga.
+4. `setSubtitleTrack` na webu traži VTT (`<track>` element; SRT ne radi) i u
+   sourcu piše "UNTESTED". Titlove rendamo SAMI: `diarized.srt` → cue text u
+   `SpeakerTimeline` → overlay kroz `controls:` builder (radi i u fullscreenu).
+
+**Rule**: za video u episode ekranima koristi `EpisodeVideo`, ne goli `Video`.
+YouTube embed mode = službeni youtube-nocookie iframe (`lib/widgets/youtube_embed.dart`,
+web-only) — NIKAD ad-stripping ili stream extraction (YouTube ToS).
+
 ### Thumbnail caching — cached_network_image (TV)
 
 TV thumbnail-i koriste `CachedThumbnail` widget (`lib/widgets/cached_thumbnail.dart`)
