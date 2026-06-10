@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../onboarding/ui/auth_sheet.dart';
+import '../screens/account/account_screen.dart' show confirmAndSignOut;
 import '../services/auth_service.dart';
 
 
@@ -153,6 +154,14 @@ class _SignedInChip extends StatelessWidget {
         ),
         const PopupMenuDivider(),
         const PopupMenuItem(
+          value: 'account',
+          child: ListTile(
+            leading: Icon(Icons.manage_accounts_outlined),
+            title: Text('Moj račun'),
+            dense: true,
+          ),
+        ),
+        const PopupMenuItem(
           value: 'channels',
           child: ListTile(
             leading: Icon(Icons.smart_display_outlined),
@@ -220,6 +229,9 @@ class _SignedInChip extends StatelessWidget {
 
   void _onSelected(BuildContext context, String value) {
     switch (value) {
+      case 'account':
+        context.go('/account');
+        break;
       case 'channels':
         context.go('/account/channels');
         break;
@@ -227,7 +239,7 @@ class _SignedInChip extends StatelessWidget {
         context.go('/handoff');
         break;
       case 'signout':
-        AuthService.instance.signOut(context);
+        confirmAndSignOut(context);
         break;
     }
   }

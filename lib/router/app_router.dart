@@ -8,6 +8,7 @@ import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
 import '../screens/search/meili_search_screen.dart';
+import '../screens/account/account_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
 import '../screens/ownership/channel_ownership_screen.dart';
@@ -310,6 +311,14 @@ GoRouter createRouter() {
         pageBuilder: (context, state) => const NoTransitionPage(
           key: ValueKey('meili-search'),
           child: MeiliSearchScreen(),
+        ),
+      ),
+      // Moj račun — account management (identiteti, passkeyji, brisanje)
+      GoRoute(
+        path: '/account',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('account'),
+          child: AccountScreen(),
         ),
       ),
       // M4 handoff — cross-device sign-in transfer

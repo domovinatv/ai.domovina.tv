@@ -26,12 +26,40 @@ import '../main.dart' show log;
 
 /// Greška mapirana na hrvatski tekst + zastavica je li login pao zato što na
 /// uređaju nema passkeyja (poziv mjesta odlučuje hoće li ponuditi registraciju).
+/// [unsupported] = backend još nema endpoint (graceful degradacija u UI-ju).
 class PasskeyFailure implements Exception {
   final String message;
   final bool noCredential;
-  const PasskeyFailure(this.message, {this.noCredential = false});
+  final bool unsupported;
+  const PasskeyFailure(
+    this.message, {
+    this.noCredential = false,
+    this.unsupported = false,
+  });
   @override
   String toString() => message;
+}
+
+/// Jedan registrirani passkey (red iz public.user_passkeys) — za Moj račun.
+class PasskeyInfo {
+  final String id;
+  final String? deviceName;
+  final DateTime? createdAt;
+  final DateTime? lastUsedAt;
+
+  const PasskeyInfo({
+    required this.id,
+    this.deviceName,
+    this.createdAt,
+    this.lastUsedAt,
+  });
+
+  factory PasskeyInfo.fromJson(Map<String, dynamic> json) => PasskeyInfo(
+        id: json['id'] as String,
+        deviceName: json['device_name'] as String?,
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+        lastUsedAt: DateTime.tryParse(json['last_used_at'] as String? ?? ''),
+      );
 }
 
 class PasskeyService {
@@ -140,6 +168,46 @@ class PasskeyService {
       });
     } finally {
       _ceremonyInProgress = false;
+    }
+  }
+
+  /// Lista passkeyja trenutnog (signed-in) usera — za Moj račun ekran.
+  /// Backend: `passkey/list` grana (JWT iz sesije; spec u
+  /// docs/backend-prompts/10-account-management.md). Dok grana ne postoji,
+  /// edge fn vraća 404 → [PasskeyFailure.unsupported].
+  Future<List<PasskeyInfo>> listPasskeys() async {
+    final client = sb.Supabase.instance.client;
+    try {
+      final res = await client.functions.invoke('passkey/list', body: {});
+      final data = (res.data as Map).cast<String, dynamic>();
+      return (data['passkeys'] as List? ?? const [])
+          .map((row) =>
+              PasskeyInfo.fromJson((row as Map).cast<String, dynamic>()))
+          .toList();
+    } on sb.FunctionException catch (e) {
+      log('listPasskeys FunctionException: ${e.status}');
+      if (e.status == 404) {
+        throw const PasskeyFailure(
+            'Upravljanje passkeyjima još nije dostupno.',
+            unsupported: true);
+      }
+      throw PasskeyFailure('Dohvat passkeyja nije uspio (${e.status}).');
+    }
+  }
+
+  /// Ukloni passkey [id] s računa. Backend: `passkey/delete` grana.
+  Future<void> deletePasskey(String id) async {
+    final client = sb.Supabase.instance.client;
+    try {
+      await client.functions.invoke('passkey/delete', body: {'id': id});
+    } on sb.FunctionException catch (e) {
+      log('deletePasskey FunctionException: ${e.status}');
+      if (e.status == 404) {
+        throw const PasskeyFailure(
+            'Uklanjanje passkeyja još nije dostupno.',
+            unsupported: true);
+      }
+      throw PasskeyFailure('Uklanjanje passkeyja nije uspjelo (${e.status}).');
     }
   }
 
