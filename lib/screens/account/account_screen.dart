@@ -17,6 +17,7 @@ import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
 import '../../services/passkey_service.dart';
+import '../../theme/app_theme.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -222,15 +223,23 @@ class _AccountScreenState extends State<AccountScreen> {
         padding: const EdgeInsets.all(18),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: cs.primary,
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.fromBorderSide(
+                  AppTheme.brandRim(theme.brightness),
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 26,
+                backgroundColor: AppTheme.croBlue,
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
                 ),
               ),
             ),

@@ -7,6 +7,8 @@
 library;
 
 import 'package:flutter/material.dart';
+
+import '../../theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
@@ -145,8 +147,8 @@ class _SendTabState extends State<_SendTab> {
                     : const Icon(Icons.bolt),
                 label: const Text('Generiraj kod'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
+                  backgroundColor: AppTheme.croBlue,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 28, vertical: 14),
                 ),
@@ -493,8 +495,8 @@ class _ConsumedSuccess extends StatelessWidget {
             FilledButton(
               onPressed: () => context.go('/'),
               style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
+                backgroundColor: AppTheme.croBlue,
+                foregroundColor: Colors.white,
               ),
               child: const Text('Idi na početnu'),
             ),
@@ -540,8 +542,8 @@ class _NotSignedInPrompt extends StatelessWidget {
               icon: const Icon(Icons.login),
               label: const Text('Prijavi se'),
               style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
+                backgroundColor: AppTheme.croBlue,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 14),
               ),

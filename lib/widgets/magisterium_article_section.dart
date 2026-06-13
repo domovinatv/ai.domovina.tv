@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/magisterium_data.dart';
 import '../services/episode_language.dart';
@@ -202,14 +204,17 @@ class _IterationArticle extends StatelessWidget {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
+                    color: AppTheme.croBlue,
                     borderRadius: BorderRadius.circular(5),
+                    border: Border.fromBorderSide(
+                      AppTheme.brandRim(theme.brightness),
+                    ),
                   ),
                   child: Center(
                     child: Text(
                       '${iteration.iterationNumber}',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),

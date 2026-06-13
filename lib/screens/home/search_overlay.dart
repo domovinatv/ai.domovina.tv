@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../../theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import '../../models/channel_index.dart';
 import '../../models/channel_detail.dart';
@@ -1011,8 +1013,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                   FilledButton(
                     onPressed: _openVideoId,
                     style: FilledButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
+                      backgroundColor: AppTheme.croBlue,
+                      foregroundColor: Colors.white,
                     ),
                     child: const Icon(Icons.play_arrow, size: 18),
                   ),

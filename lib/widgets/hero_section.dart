@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../services/cdn_config.dart';
@@ -74,10 +76,10 @@ class HeroSection extends StatelessWidget {
                   label: Text(
                     info.channel,
                     style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.onPrimary),
+                        ?.copyWith(color: Colors.white),
                   ),
-                  backgroundColor: theme.colorScheme.primary,
-                  side: BorderSide.none,
+                  backgroundColor: AppTheme.croBlue,
+                  side: AppTheme.brandRim(theme.brightness),
                   padding: EdgeInsets.zero,
                 ),
                 const SizedBox(height: 12),

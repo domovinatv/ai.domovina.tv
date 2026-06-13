@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
 import '../models/magisterium_data.dart';
 import '../services/episode_language.dart';
 
@@ -139,14 +141,17 @@ class MagisteriumSection extends StatelessWidget {
                         width: 20,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
+                          color: AppTheme.croBlue,
                           borderRadius: BorderRadius.circular(4),
+                          border: Border.fromBorderSide(
+                            AppTheme.brandRim(theme.brightness),
+                          ),
                         ),
                         child: Center(
                           child: Text(
                             '${b.iteration}',
-                            style: TextStyle(
-                              color: theme.colorScheme.onPrimary,
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),

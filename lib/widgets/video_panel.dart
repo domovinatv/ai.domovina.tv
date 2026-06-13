@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
@@ -230,8 +232,11 @@ class _VideoPanelState extends State<VideoPanel> {
                                 width: 64,
                                 height: 64,
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary,
+                                  color: AppTheme.croBlue,
                                   shape: BoxShape.circle,
+                                  border: Border.fromBorderSide(
+                                    AppTheme.brandRim(theme.brightness),
+                                  ),
                                 ),
                                 child: const Icon(
                                   Icons.volume_up,

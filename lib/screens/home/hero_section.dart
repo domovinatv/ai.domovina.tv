@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../theme/app_theme.dart';
 import '../../services/cdn_config.dart';
 
 import '../../theme/typography.dart';
@@ -142,8 +144,8 @@ class HeroSection extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withValues(alpha: 0.7),
+            AppTheme.croBlue,
+            AppTheme.croBlue.withValues(alpha: 0.7),
           ],
         ),
       ),
@@ -221,12 +223,13 @@ class HeroSection extends StatelessWidget {
               icon: const Icon(Icons.play_arrow, size: 20),
               label: const Text('Slušaj'),
               style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
+                backgroundColor: AppTheme.croBlue,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 18, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
+                  side: AppTheme.brandRim(theme.brightness),
                 ),
               ),
             ),

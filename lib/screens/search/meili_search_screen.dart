@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import '../../theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../services/cdn_config.dart';
@@ -267,10 +269,13 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
           onSelected: (_) => onTap(),
           labelStyle: theme.textTheme.labelMedium?.copyWith(
             color: selected
-                ? theme.colorScheme.onPrimary
+                ? Colors.white
                 : theme.colorScheme.onSurfaceVariant,
           ),
-          selectedColor: theme.colorScheme.primary,
+          selectedColor: AppTheme.croBlue,
+          side: selected
+              ? AppTheme.brandRim(theme.brightness)
+              : BorderSide.none,
           showCheckmark: false,
         ),
       ),

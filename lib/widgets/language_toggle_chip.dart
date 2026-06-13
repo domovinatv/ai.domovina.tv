@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/episode_language.dart';
 
 /// Pill toggle HR ↔ EN za per-episode jezik prikaza tekstualnog sadrzaja.
@@ -91,9 +93,9 @@ class _Segment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bg = isSelected ? theme.colorScheme.primary : Colors.transparent;
+    final bg = isSelected ? AppTheme.croBlue : Colors.transparent;
     final fg = isSelected
-        ? theme.colorScheme.onPrimary
+        ? Colors.white
         : theme.colorScheme.onSurface.withAlpha(160);
 
     return Semantics(
@@ -114,6 +116,11 @@ class _Segment extends StatelessWidget {
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(18),
+              border: Border.fromBorderSide(
+                isSelected
+                    ? AppTheme.brandRim(theme.brightness)
+                    : BorderSide.none,
+              ),
             ),
             child: Text(
               label,

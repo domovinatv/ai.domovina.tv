@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../theme/app_theme.dart';
 import '../../models/channel_index.dart';
 
 import '../../theme/typography.dart';
@@ -167,8 +169,8 @@ class _ChannelCardState extends State<ChannelCard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withValues(alpha: 0.75),
+            AppTheme.croBlue,
+            AppTheme.croBlue.withValues(alpha: 0.75),
           ],
         ),
         borderRadius: BorderRadius.circular(radius),
@@ -185,8 +187,8 @@ class _ChannelCardState extends State<ChannelCard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withValues(alpha: 0.75),
+            AppTheme.croBlue,
+            AppTheme.croBlue.withValues(alpha: 0.75),
           ],
         ),
       ),
