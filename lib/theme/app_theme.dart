@@ -17,6 +17,14 @@ class AppTheme {
   /// daje "papir" osjećaj koji odgovara serif typography-ju.
   static const Color _surfaceCream = Color(0xFFFAF7F2);
 
+  /// Suptilni svjetliji rub za navy brand-plohe (Prijava pill, avatar,
+  /// filled gumbi) — u dark temi ih odvaja od tamne pozadine, u light temi
+  /// se ne crta (navy na cream-u već ima kontrast). Vidi account_chip.dart.
+  static BorderSide brandRim(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const BorderSide(color: Color(0x29FFFFFF))
+          : BorderSide.none;
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: croBlue,
@@ -68,6 +76,10 @@ class AppTheme {
   static ThemeData _build(ColorScheme scheme) {
     final textTheme = AppTypography.textTheme(scheme);
 
+    // Suptilni svjetliji rub odvaja navy filled gumbe od tamne pozadine
+    // (navy-na-crnom inače utopi rubove). U svijetloj temi se ne crta.
+    final BorderSide darkRim = brandRim(scheme.brightness);
+
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
@@ -107,6 +119,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
+            side: darkRim,
           ),
           textStyle: textTheme.labelLarge,
         ),

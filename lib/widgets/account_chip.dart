@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../onboarding/ui/auth_sheet.dart';
 import '../screens/account/account_screen.dart' show confirmAndSignOut;
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 
 
 class AccountChip extends StatelessWidget {
@@ -36,13 +37,17 @@ class _AnonymousChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    // Filled navy pill — visok kontrast na cream/dark surface (raniji "Prijava"
-    // u bijelom na transparentnom bio je nevidljiv na svijetloj pozadini).
+    // Filled BRAND navy pill (#002F6C) — ne cs.primary, jer ga M3 u dark temi
+    // tonalno pomakne u blijedo-plavo (tone 80) pa bijeli tekst na njemu
+    // izgleda isprano. Fiksna zastavna navy + svjetliji rub da se odvoji od
+    // tamne pozadine; u light temi rub se ne crta (navy na cream-u već čita).
     return Material(
-      color: cs.primary,
-      borderRadius: BorderRadius.circular(22),
+      color: AppTheme.croBlue,
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: AppTheme.brandRim(theme.brightness),
+      ),
       child: InkWell(
         onTap: () => showAuthSheet(context),
         child: Padding(
@@ -191,15 +196,25 @@ class _SignedInChip extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: theme.colorScheme.primary,
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+            // Brand navy avatar (ne cs.primary — vidi _AnonymousChip komentar).
+            // Suptilni rub u dark temi da se krug odvoji od tamne pozadine.
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.fromBorderSide(
+                  AppTheme.brandRim(theme.brightness),
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 14,
+                backgroundColor: AppTheme.croBlue,
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
