@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Store distribucija iz postojeće arhive. Xcode 16+/26 koristi
+	     "app-store-connect"; stariji "app-store" je alias. -->
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>teamID</key>
+	<string>6SCK58757K</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>destination</key>
+	<string>export</string>
+	<!-- Upload dSYM-ova za crash symbolication. -->
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>
