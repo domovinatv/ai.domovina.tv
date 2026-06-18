@@ -36,12 +36,18 @@ class HeroSection extends StatelessWidget {
   final VoidCallback onSave;
   final bool isMobile;
 
+  /// Vanjski razmak oko kartice. Default ostavlja zracni prostor ispod hero-a;
+  /// [HeroCarousel] ga stisne jer kontrolnu traku (rotacija + dots) crta sam
+  /// ispod kartice.
+  final EdgeInsets outerPadding;
+
   const HeroSection({
     super.key,
     required this.featured,
     required this.onPlay,
     required this.onSave,
     required this.isMobile,
+    this.outerPadding = const EdgeInsets.fromLTRB(16, 8, 16, 24),
   });
 
   @override
@@ -49,7 +55,7 @@ class HeroSection extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: outerPadding,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Material(

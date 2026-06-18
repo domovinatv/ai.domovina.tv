@@ -18,7 +18,7 @@ import 'episodes_rail.dart';
 import 'footer.dart';
 import 'home_app_bar.dart';
 import 'home_feed.dart';
-import 'hero_section.dart';
+import 'hero_carousel.dart';
 import 'search_overlay.dart';
 import 'skeletons.dart';
 import 'sort_mode.dart';
@@ -398,8 +398,12 @@ class _ChannelGridView extends StatelessWidget {
             // uvijek pokazuje pun listing po aktivnom sort modu.
             final allVids = channelCache.allVideos;
             final hasMinData = HomeFeed.hasMinimumData(channelCache);
+            // Uži izbor (do 5) za hero karusel; prvi je dnevni pick.
+            final featuredPicks = hasMinData
+                ? HomeFeed.pickFeaturedCarousel(allVids)
+                : const <FeaturedPick>[];
             final featured =
-                hasMinData ? HomeFeed.pickFeatured(allVids) : null;
+                featuredPicks.isEmpty ? null : featuredPicks.first;
             // "Upravo stiglo" — tek pristigle, još neobrađene epizode.
             final freshlyArrived = featured != null
                 ? HomeFeed.freshlyArrived(allVids,
@@ -418,13 +422,14 @@ class _ChannelGridView extends StatelessWidget {
                   ),
                 ),
 
-                // Hero — featured epizoda (ili skeleton dok prefetch ne stigne).
-                if (featured != null)
+                // Hero — uži izbor istaknutih epizoda u karuselu (ili skeleton
+                // dok prefetch ne stigne).
+                if (featuredPicks.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: HeroSection(
-                      featured: featured,
+                    child: HeroCarousel(
+                      picks: featuredPicks,
                       isMobile: isMobile,
-                      onPlay: () => onVideoTap(featured.video.video.id),
+                      onPlay: (id) => onVideoTap(id),
                       onSave: () => _showComingSoon(context),
                     ),
                   )
