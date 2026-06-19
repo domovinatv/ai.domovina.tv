@@ -12,6 +12,7 @@ import '../../services/channel_cache.dart';
 import '../../services/local_prefs.dart';
 import '../../services/view_mode.dart';
 import '../../services/watch_progress_service.dart';
+import '../../widgets/founder_booking.dart';
 import 'channel_card.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
@@ -255,6 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
+      floatingActionButton: const FounderBookingBubble(),
       body: SafeArea(
         child: CallbackShortcuts(
           bindings: {

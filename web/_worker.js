@@ -19,6 +19,85 @@
 const CDN = 'https://cdn.domovina.ai';
 const SITE = 'https://domovina.ai';
 
+// --- Cal.com booking ("15 min DOMOVINA.ai", stepanic/15min) ---------------
+// eventTypeId je stabilan (dohvaćen iz /v2/event-types). Ključ dolazi SAMO iz
+// env.CAL_API_KEY (Pages secret) — nikad hardkodiran jer je _worker.js u gitu.
+const CAL_API = 'https://api.cal.com/v2';
+const CAL_EVENT_TYPE_ID = 1787504;
+const CAL_TIMEZONE = 'Europe/Zagreb';
+// Permisivni CORS — native app + lokalni web dev (localhost) zovu cross-origin.
+// U produkciji je web same-origin pa CORS ne smeta.
+const CAL_CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400',
+};
+
+async function handleCalProxy(request, env, path) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CAL_CORS });
+  }
+  const key = env.CAL_API_KEY;
+  const jsonHeaders = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+    ...CAL_CORS,
+  };
+  const err = (message, status) =>
+    new Response(JSON.stringify({ status: 'error', message }), { status, headers: jsonHeaders });
+
+  try {
+    if (path === '/api/cal/slots' && request.method === 'GET') {
+      const u = new URL(request.url);
+      const start = u.searchParams.get('start');
+      const end = u.searchParams.get('end');
+      const tz = u.searchParams.get('timeZone') || CAL_TIMEZONE;
+      if (!start || !end) return err('start i end su obavezni', 400);
+      const api = `${CAL_API}/slots?eventTypeId=${CAL_EVENT_TYPE_ID}`
+        + `&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+        + `&timeZone=${encodeURIComponent(tz)}`;
+      const headers = { 'cal-api-version': '2024-09-04' };
+      if (key) headers['Authorization'] = `Bearer ${key}`;
+      const res = await fetch(api, { headers });
+      return new Response(await res.text(), { status: res.status, headers: jsonHeaders });
+    }
+
+    if (path === '/api/cal/book' && request.method === 'POST') {
+      if (!key) return err('CAL_API_KEY nije konfiguriran na serveru', 500);
+      const input = await request.json();
+      if (!input.start || !input.name || !input.email) {
+        return err('start, name i email su obavezni', 400);
+      }
+      const payload = {
+        start: input.start,
+        eventTypeId: CAL_EVENT_TYPE_ID,
+        attendee: {
+          name: input.name,
+          email: input.email,
+          timeZone: input.timeZone || CAL_TIMEZONE,
+          language: input.language || 'hr',
+        },
+      };
+      if (input.notes) payload.bookingFieldsResponses = { notes: input.notes };
+      const res = await fetch(`${CAL_API}/bookings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'cal-api-version': '2024-08-13',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      return new Response(await res.text(), { status: res.status, headers: jsonHeaders });
+    }
+
+    return err('nepoznata Cal.com ruta', 404);
+  } catch (e) {
+    return err(String(e), 500);
+  }
+}
+
 // .well-known — serviramo iz workera (NE iz ASSETS) jer:
 //   1. apple-app-site-association nema ekstenziju → fall-through na SPA fallback
 //   2. flutter build web zna preskočiti `.`-prefiksirane direktorije (web/.well-known/
@@ -102,6 +181,13 @@ export default {
     if (path === '/.well-known/assetlinks.json') return wellKnownResponse(ASSETLINKS_JSON);
     if (path === '/.well-known/apple-app-site-association') return wellKnownResponse(AASA_JSON);
     if (path === '/.well-known/webauthn') return wellKnownResponse(WEBAUTHN_JSON);
+
+    // Cal.com booking proxy — drži CAL_API_KEY server-side (env secret), NIKAD
+    // u web bundleu. Slotovi su javni (reflektiraju Google Calendar kolizije),
+    // booking POST traži ključ. Flutter app zove same-origin /api/cal/*.
+    if (path === '/api/cal/slots' || path === '/api/cal/book') {
+      return handleCalProxy(request, env, path);
+    }
 
     // Statički asseti (JS, CSS, slike, fontovi...) — direktno iz ASSETS.
     // KRITIČNO: env.ASSETS.fetch ne aplicira web/_headers automatski kad
