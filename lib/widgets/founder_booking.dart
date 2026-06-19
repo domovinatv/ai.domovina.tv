@@ -5,9 +5,10 @@ import '../services/cal_booking_service.dart';
 import '../services/open_url.dart';
 import '../theme/app_theme.dart';
 
-/// Floating "bubble" koji otvara native booking sheet za 15-min razgovor s
-/// osnivačem (Cal.com event "15 min DOMOVINA.ai"). Postavi ga kao
-/// `floatingActionButton:` na bilo koji Scaffold.
+/// Floating "bubble" koji otvara native booking sheet za 15-min Google Meet
+/// poziv s osnivačem. Korisnici mogu osobno razgovarati s osnivačem, dati
+/// feedback i sudjelovati u oblikovanju platforme.
+/// Postavi ga kao `floatingActionButton:` na bilo koji Scaffold.
 class FounderBookingBubble extends StatelessWidget {
   const FounderBookingBubble({super.key});
 
@@ -22,7 +23,7 @@ class FounderBookingBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         side: AppTheme.brandRim(Theme.of(context).brightness),
       ),
-      tooltip: '15 min s osnivačem',
+      tooltip: 'Razgovaraj s osnivačem',
       child: const Icon(Icons.event_available_rounded),
     );
   }
@@ -395,10 +396,10 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('15 minuta s osnivačem', style: theme.textTheme.titleMedium),
+              Text('Budi dio DOMOVINA priče', style: theme.textTheme.titleMedium),
               const SizedBox(height: 2),
               Text(
-                'Matija Stepanić · Google Meet',
+                '15 min Google Meet · osobno s osnivačem · pomogni oblikovati platformu',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
