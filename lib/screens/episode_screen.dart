@@ -18,6 +18,7 @@ import '../services/data_service.dart';
 import '../services/cdn_config.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
+import '../services/player_resume.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -654,37 +655,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
       final player = Player();
       final controller = VideoController(player);
 
-      if (kIsWeb) {
-        // Web: pokusaj unmuted autoplay (radi ako korisnik ima MEI score
-        // za domenu — tj. vec je klikao na stranici). Ako browser odbije,
-        // fallback na muted autoplay.
-        await player.open(Media(videoUri), play: false);
-        if (startAt != null) {
-          await player.seek(Duration(seconds: startAt));
-        }
-        try {
-          await player.play();
-          // Uspjelo! Browser dopustio unmuted autoplay.
-        } catch (_) {
-          // Browser odbio — muted autoplay fallback
-          await player.setVolume(0);
-          await player.play();
-          _mutedAutoplay = true;
-        }
-        // Ako player nije pokrenuo (tihi fail bez exceptiona),
-        // provjeri playing state nakon kratke pauze
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        if (!player.state.playing) {
-          await player.setVolume(0);
-          await player.play();
-          _mutedAutoplay = true;
-        }
-      } else {
-        // Native: autoplay radi normalno
-        await player.open(Media(videoUri), play: true);
-        if (startAt != null) {
-          await player.seek(Duration(seconds: startAt));
-        }
+      // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
+      // na iOS odbaci seek pa video kreće od 0). Web vraća false ako je browser
+      // odbio unmuted autoplay → muted fallback.
+      final unmuted = await openAndResume(
+        player,
+        uri: videoUri,
+        startAtSeconds: startAt,
+      );
+      if (kIsWeb && !unmuted) {
+        _mutedAutoplay = true;
       }
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
@@ -920,8 +900,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
     if (sLock != null && now.difference(sLock) < _seekLockDuration) return;
     final scLock = _scrollLock;
     if (scLock != null &&
-        now.difference(scLock) < const Duration(milliseconds: 300))
+        now.difference(scLock) < const Duration(milliseconds: 300)) {
       return;
+    }
     _lastManualScroll = now;
     _updateActiveSectionFromScroll();
   }

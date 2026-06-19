@@ -225,7 +225,12 @@ class AuthService extends ChangeNotifier {
   }
 
   void _runMigrations(String userId) {
-    WatchProgressService.instance.migrateToSupabase(userId);
+    // Prvo gurni lokalnu povijest gore (idempotent, gate-an per user), pa
+    // povuci remote natrag u lokalni cache da resume putanja (getSync) vidi
+    // pozicije s drugih uređaja / nakon force-quita.
+    WatchProgressService.instance
+        .migrateToSupabase(userId)
+        .then((_) => WatchProgressService.instance.hydrateFromSupabase());
     FavoritesService.instance.migrateToSupabase(userId);
   }
 

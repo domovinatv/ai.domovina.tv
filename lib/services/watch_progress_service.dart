@@ -267,6 +267,54 @@ class WatchProgressService extends ChangeNotifier {
     }
   }
 
+  /// Povuci cijelu `watch_progress` tablicu za ulogiranog usera u lokalni
+  /// `_byEpisode` cache. Trigger: AuthService nakon detekcije permanent usera
+  /// (uz [migrateToSupabase]). Razlog: resume putanja u episode ekranima čita
+  /// SAMO lokalni cache (`getSync`) — bez ovoga pozicija s drugog uređaja ili
+  /// nakon force-quita (kad fire-and-forget lokalni zapis nije dospio na disk)
+  /// se nikad ne vrati i video kreće od 0.
+  ///
+  /// Merge politika: noviji `lastWatchedAt` pobjeđuje, da hidratacija ne pregazi
+  /// svježiju lokalnu poziciju iz tekuće sesije (koja možda još nije upsertana).
+  /// Pozovi POSLIJE [migrateToSupabase] da se lokalna povijest prvo gurne gore.
+  Future<void> hydrateFromSupabase() async {
+    await init();
+    try {
+      final client = sb.Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user == null) return;
+      final rows = await client
+          .schema('domovina_ai')
+          .from('watch_progress')
+          .select();
+      var changed = false;
+      for (final r in rows) {
+        final remote = WatchProgress(
+          episodeId: r['episode_id'] as String,
+          channelId: r['channel_id'] as String?,
+          positionSeconds: (r['position_seconds'] as num).toInt(),
+          durationSeconds: (r['duration_seconds'] as num).toInt(),
+          episodeTitle: r['episode_title'] as String?,
+          episodeThumbnailUrl: r['episode_thumbnail_url'] as String?,
+          lastWatchedAt: DateTime.parse(r['last_watched_at'] as String),
+        );
+        final local = _byEpisode[remote.episodeId];
+        if (local == null ||
+            remote.lastWatchedAt.isAfter(local.lastWatchedAt)) {
+          _byEpisode[remote.episodeId] = remote;
+          changed = true;
+        }
+      }
+      if (changed) {
+        _persistSync();
+        notifyListeners();
+        log('watch_progress: hydrated ${rows.length} remote rows');
+      }
+    } catch (e) {
+      log('watch_progress hydrate failed: $e');
+    }
+  }
+
   Future<bool> _readFlag(String key) async {
     if (kIsWeb) return getLocalStorageString(key) == '1';
     final prefs = await SharedPreferences.getInstance();

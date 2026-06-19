@@ -10,6 +10,7 @@ import '../../main.dart' show log;
 import '../../models/podcast_outline.dart';
 import '../../services/cdn_config.dart';
 import '../../services/data_service.dart';
+import '../../services/player_resume.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
@@ -229,11 +230,14 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
 
     log('TvEpisode: opening ${data.videoUri}');
     _loadStartedAt = DateTime.now();
-    await player.open(Media(data.videoUri), play: true);
+    // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
+    // odbaci seek prije prvog frame-a pa video kreće od 0).
+    await openAndResume(
+      player,
+      uri: data.videoUri,
+      startAtSeconds: startAt,
+    );
     log('TvEpisode: open() returned');
-    if (startAt != null) {
-      await player.seek(Duration(seconds: startAt));
-    }
 
     _positionSub = player.stream.position.listen((pos) {
       if (!mounted) return;

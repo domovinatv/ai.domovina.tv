@@ -17,6 +17,7 @@ import '../services/data_service.dart';
 import '../services/episode_language.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
+import '../services/player_resume.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -332,28 +333,14 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         }
       });
 
-      if (kIsWeb) {
-        await player.open(Media(widget.data.videoUri), play: false);
-        if (startAt != null) {
-          await player.seek(Duration(seconds: startAt));
-        }
-        try {
-          await player.play();
-        } catch (_) {
-          await player.setVolume(0);
-          await player.play();
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        if (!player.state.playing) {
-          await player.setVolume(0);
-          await player.play();
-        }
-      } else {
-        await player.open(Media(widget.data.videoUri), play: true);
-        if (startAt != null) {
-          await player.seek(Duration(seconds: startAt));
-        }
-      }
+      // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
+      // na iOS odbaci seek pa video kreće od 0). Web fallback na muted autoplay
+      // je u helperu.
+      await openAndResume(
+        player,
+        uri: widget.data.videoUri,
+        startAtSeconds: startAt,
+      );
 
       if (mounted) {
         setState(() {
