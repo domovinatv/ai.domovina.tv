@@ -36,7 +36,7 @@ enum _Mode { sepa, onchain }
 
 enum _Phase { idle, creating, awaiting, paid }
 
-enum _WalletPhase { idle, sending, confirming }
+enum _WalletPhase { idle, connecting, sending, confirming }
 
 class _PinkaContributePanelState extends State<PinkaContributePanel> {
   static const _presetsCents = [200, 500, 1000, 2000];
@@ -130,9 +130,15 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     }
     setState(() {
       _walletNote = null;
-      _walletPhase = _WalletPhase.sending;
+      _walletPhase = _WalletPhase.connecting;
     });
     try {
+      // Osiguraj povezani novčanik. Prvi put (bez keša) ovo radi full-page
+      // handoff na wallet.domovina.ai i ne vrati se — korisnik se vrati i
+      // ponovno tapne "Plati" (tada je identitet keširan pa je instant).
+      await pinkaWalletConnect(sdkUrl: widget.config.walletSdkUrl);
+      if (!mounted) return;
+      setState(() => _walletPhase = _WalletPhase.sending);
       final txHash = await pinkaWalletSend(
         to: dest,
         amount: (_amountCents / 100).toStringAsFixed(2),
@@ -372,6 +378,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                   )
                 : const Icon(Icons.account_balance_wallet, size: 18),
             label: Text(switch (_walletPhase) {
+              _WalletPhase.connecting => 'Povezujem novčanik…',
               _WalletPhase.sending => 'Otvaram novčanik…',
               _WalletPhase.confirming => 'Potvrđujem na lancu…',
               _WalletPhase.idle =>

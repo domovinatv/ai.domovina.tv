@@ -55,6 +55,24 @@ class PinkaSupportCard extends StatefulWidget {
           previewCount: previewCount,
         );
 
+  /// Epizoda: subject_ref = YouTube video id.
+  PinkaSupportCard.episode({
+    Key? key,
+    required String youtubeId,
+    required void Function(PinkaCampaign campaign) onOpen,
+    PinkaClient? client,
+    PinkaConfig config = PinkaConfig.defaults,
+    int previewCount = 3,
+  }) : this(
+          key: key,
+          subjectType: PinkaSubject.episode,
+          subjectRefs: [youtubeId],
+          onOpen: onOpen,
+          client: client,
+          config: config,
+          previewCount: previewCount,
+        );
+
   @override
   State<PinkaSupportCard> createState() => _PinkaSupportCardState();
 }

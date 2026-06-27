@@ -157,6 +157,23 @@ GoRouter createRouter() {
           );
         },
       ),
+      // "Zid podrške" za epizodu — pinka.finance donacije/crowdfunding po
+      // epizodi. Subjekt = podcast_episode; ref = YouTube video id. SEPA (EPC
+      // QR) + on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik. Sam se
+      // sakrije/prazni ako epizoda nema aktivnu kampanju. Pandan /c/:slug/support.
+      GoRoute(
+        path: '/v/:videoId/support',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          return NoTransitionPage(
+            key: ValueKey('support-v-$videoId'),
+            child: PinkaCampaignScreen.episode(
+              youtubeId: videoId,
+              episodeTitle: state.uri.queryParameters['name'],
+            ),
+          );
+        },
+      ),
       // Android TV reader mode — "Čitaj kao blog" prikaz s PiP videom u
       // kutu. Samo TV: na desktopu/mobitelu se redirecta na klasični
       // episode screen (na webu nema D-pad-a, nema smisla).
