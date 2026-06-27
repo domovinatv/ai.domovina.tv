@@ -38,6 +38,9 @@ class ParallelArticleView extends StatelessWidget {
   final void Function(String timestamp)? onPlayTap;
   final double columnGap;
 
+  /// Kad false (audio-only epizode), sekcije ne renderiraju screenshot blok.
+  final bool showScreenshot;
+
   const ParallelArticleView({
     super.key,
     required this.article,
@@ -46,6 +49,7 @@ class ParallelArticleView extends StatelessWidget {
     required this.sectionKeys,
     this.onPlayTap,
     this.columnGap = 32,
+    this.showScreenshot = true,
   });
 
   @override
@@ -59,47 +63,52 @@ class ParallelArticleView extends StatelessWidget {
 
     var firstSection = true;
     for (final iter in article.iterations) {
-      children.add(Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-        child: ArticleIterationHeader(iteration: iter),
-      ));
+      children.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+          child: ArticleIterationHeader(iteration: iter),
+        ),
+      );
       for (final sec in iter.sections) {
         final mag = magisterium.forTimestamp(sec.screenshotTimestamp);
-        children.add(Padding(
-          padding: EdgeInsets.fromLTRB(20, firstSection ? 20 : 44, 20, 0),
-          child: KeyedSubtree(
-            key: sectionKeys[sec.screenshotTimestamp],
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: kArticleColumnFlex,
-                  child: ArticleSectionCard(
-                    section: sec,
-                    youtubeId: youtubeId,
-                    onPlayTap: onPlayTap,
-                    showInlineMagisterium: false,
-                    padding: EdgeInsets.zero,
+        children.add(
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, firstSection ? 20 : 44, 20, 0),
+            child: KeyedSubtree(
+              key: sectionKeys[sec.screenshotTimestamp],
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: kArticleColumnFlex,
+                    child: ArticleSectionCard(
+                      section: sec,
+                      youtubeId: youtubeId,
+                      onPlayTap: onPlayTap,
+                      showInlineMagisterium: false,
+                      padding: EdgeInsets.zero,
+                      showScreenshot: showScreenshot,
+                    ),
                   ),
-                ),
-                SizedBox(width: columnGap),
-                Expanded(
-                  flex: kMagColumnFlex,
-                  child: (mag != null && mag.assessment.isNotEmpty)
-                      ? MagisteriumSectionAnalysis(
-                          timestamp: sec.screenshotTimestamp,
-                          subtitle: sec.subtitle,
-                          subtitleEn: sec.subtitleEn,
-                          mag: mag,
-                          showDivider: false,
-                          padding: EdgeInsets.zero,
-                        )
-                      : _NoAnalysisSlot(isEn: isEn),
-                ),
-              ],
+                  SizedBox(width: columnGap),
+                  Expanded(
+                    flex: kMagColumnFlex,
+                    child: (mag != null && mag.assessment.isNotEmpty)
+                        ? MagisteriumSectionAnalysis(
+                            timestamp: sec.screenshotTimestamp,
+                            subtitle: sec.subtitle,
+                            subtitleEn: sec.subtitleEn,
+                            mag: mag,
+                            showDivider: false,
+                            padding: EdgeInsets.zero,
+                          )
+                        : _NoAnalysisSlot(isEn: isEn),
+                  ),
+                ],
+              ),
             ),
           ),
-        ));
+        );
         firstSection = false;
       }
     }
@@ -180,7 +189,10 @@ class ParallelColumnsStickyDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final theme = Theme.of(context);
     // DecoratedBox + Center: Center vertikalno (i horizontalno) centrira
     // shrink-wrapani header u fiksnoj visini bara. (Stari Container.alignment +
@@ -257,8 +269,10 @@ class _MagisteriumColumnHeader extends StatelessWidget {
             if (score != null) ...[
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: color.withAlpha(25),
                   borderRadius: BorderRadius.circular(12),

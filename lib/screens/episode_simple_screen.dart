@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../pinka_sdk/pinka_sdk.dart';
 import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
@@ -21,6 +22,7 @@ import '../services/player_resume.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
+import '../widgets/audio_poster.dart';
 import '../widgets/episode_video.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/language_toggle_chip.dart';
@@ -164,6 +166,10 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   /// In-app YouTube embed mode — native player pauziran, iframe preuzima.
   bool _ytMode = false;
 
+  /// Cover-art za audio-only epizode (CORS-safe channel avatar square).
+  /// Razrješava se u [_initVideo] iz channel cachea.
+  String? _audioArtUrl;
+
   /// URL sync — zadnja sekunda za koju smo update-ali address bar.
   int _lastUrlSyncedSec = -1;
 
@@ -174,7 +180,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
 
   /// Flat lista svih poglavlja iz outline-a za brz pristup.
   late final List<({String timestamp, String topic, int totalSeconds})>
-      _chapters;
+  _chapters;
 
   late final WatchSecondsTracker _watchTracker;
 
@@ -255,8 +261,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   List<({String timestamp, String topic, int totalSeconds})> _buildChapters() {
     final outline = widget.data.outline;
     if (outline == null) return const [];
-    final list =
-        <({String timestamp, String topic, int totalSeconds})>[];
+    final list = <({String timestamp, String topic, int totalSeconds})>[];
     for (final iter in outline.iterations) {
       for (final ch in iter.chapters) {
         list.add((
@@ -271,14 +276,20 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   }
 
   Future<void> _initVideo() async {
+    // Nema playabilne medije (sva 3 probe-a 404) — ne otvaraj player; _PlayerTab
+    // prikazuje jasnu poruku umjesto beskonačnog spinnera.
+    if (!widget.data.hasMedia || widget.data.videoUri.isEmpty) {
+      return;
+    }
     // URL explicit timestamp (`/m/<id>/t/<sec>`) ima prednost nad saved
     // progress-om. Inače resume na zadnju poziciju ako > 5s i nije completed
     // (rewatch konvencija — kreni od početka).
     int? startAt = widget.startAtSeconds;
     bool resumedFromSaved = false;
     if (startAt == null) {
-      final saved =
-          WatchProgressService.instance.getSync(widget.data.youtubeId);
+      final saved = WatchProgressService.instance.getSync(
+        widget.data.youtubeId,
+      );
       if (saved != null && !saved.completed && saved.positionSeconds > 5) {
         startAt = saved.positionSeconds;
         resumedFromSaved = true;
@@ -314,8 +325,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             durationSeconds: widget.data.info.duration,
             channelId: widget.data.info.channelId,
             episodeTitle: widget.data.displayTitle,
-            episodeThumbnailUrl:
-                CdnConfig.thumbnailUrl(widget.data.youtubeId),
+            episodeThumbnailUrl: CdnConfig.thumbnailUrl(widget.data.youtubeId),
           );
         }
       });
@@ -362,6 +372,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         await channelCache.loadIndex();
         final channelName = widget.data.info.channel;
         final squareUrl = channelCache.avatarSquareForChannelName(channelName);
+        if (mounted && squareUrl != null) {
+          setState(() => _audioArtUrl = squareUrl);
+        }
         final thumbUrl = widget.data.info.thumbnail;
         final composed = squareUrl != null
             ? await NotificationArt.composeForAndroid(
@@ -460,6 +473,9 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         duration: _duration,
         isPlaying: _isPlaying,
         ytMode: _ytMode,
+        audioOnly: data.isAudioOnly,
+        hasMedia: data.hasMedia,
+        posterUrl: _audioArtUrl,
         onEnterYtMode: () {
           _player?.pause();
           setState(() => _ytMode = true);
@@ -515,120 +531,124 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       language: _language,
       hasTranslationEn: data.hasTranslationEn,
       child: Scaffold(
-      backgroundColor: theme.colorScheme.surfaceContainerLow,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-        title: Text(
-          data.info.channel,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/'),
           ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Center(
-              child: Text(
-                data.info.id,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontFamily: 'monospace',
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+          title: Text(
+            data.info.channel,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          FavoriteButton(episodeId: data.youtubeId),
-          if (data.hasTranslationEn)
+          actions: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.only(right: 4),
               child: Center(
-                child: LanguageToggleChip(
-                  current: _language,
-                  onChanged: _onLanguageChanged,
-                  compact: true,
-                ),
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            tooltip: 'Kopiraj link na trenutni trenutak',
-            onPressed: () => _copyMomentLink(context, data.youtubeId),
-          ),
-          IconButton(
-            icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
-            tooltip: 'Otvori na YouTube',
-            onPressed: () =>
-                openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
-          ),
-          ViewModeToggleButton(
-            toSimple: false,
-            onPressed: () async {
-              await saveSimpleModePref(false);
-              if (!context.mounted) return;
-              final target = _language == EpisodeLanguage.en
-                  ? '/v/${data.youtubeId}/en'
-                  : '/v/${data.youtubeId}';
-              context.go(target);
-            },
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Responzivnost: koliko tabova stane side-by-side?
-              // ~440px je minimum prije nego sadrzaj (video 16:9, lista poglavlja,
-              // markdown clanak) postane previse skucen.
-              const minPanelWidth = 440.0;
-              final visibleCount = (constraints.maxWidth / minPanelWidth)
-                  .floor()
-                  .clamp(1, tabs.length);
-              return _ResponsiveTabLayout(
-                tabs: tabs,
-                destinations: destinations,
-                selectedIndex: safeIndex,
-                visibleCount: visibleCount,
-                onSelect: (i) => setState(() => _tabIndex = i),
-                theme: theme,
-              );
-            },
-          ),
-          Positioned(
-            top: 12,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  transitionBuilder: (child, anim) => FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, -0.2),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: child,
-                    ),
+                child: Text(
+                  data.info.id,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  child: _resumeHintSeconds == null
-                      ? const SizedBox.shrink()
-                      : ResumeHintBanner(
-                          key: ValueKey(_resumeHintSeconds),
-                          seconds: _resumeHintSeconds!,
-                        ),
                 ),
               ),
             ),
-          ),
-        ],
+            FavoriteButton(episodeId: data.youtubeId),
+            if (data.hasTranslationEn)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Center(
+                  child: LanguageToggleChip(
+                    current: _language,
+                    onChanged: _onLanguageChanged,
+                    compact: true,
+                  ),
+                ),
+              ),
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Kopiraj link na trenutni trenutak',
+              onPressed: () => _copyMomentLink(context, data.youtubeId),
+            ),
+            if (data.info.sourceUrl != null)
+              IconButton(
+                icon: data.isAudioOnly
+                    ? const Icon(Icons.open_in_new)
+                    : const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
+                tooltip: data.isAudioOnly
+                    ? 'Otvori izvor'
+                    : 'Otvori na YouTube',
+                onPressed: () => openUrl(data.info.sourceUrl!),
+              ),
+            ViewModeToggleButton(
+              toSimple: false,
+              onPressed: () async {
+                await saveSimpleModePref(false);
+                if (!context.mounted) return;
+                final target = _language == EpisodeLanguage.en
+                    ? '/v/${data.youtubeId}/en'
+                    : '/v/${data.youtubeId}';
+                context.go(target);
+              },
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Responzivnost: koliko tabova stane side-by-side?
+                // ~440px je minimum prije nego sadrzaj (video 16:9, lista poglavlja,
+                // markdown clanak) postane previse skucen.
+                const minPanelWidth = 440.0;
+                final visibleCount = (constraints.maxWidth / minPanelWidth)
+                    .floor()
+                    .clamp(1, tabs.length);
+                return _ResponsiveTabLayout(
+                  tabs: tabs,
+                  destinations: destinations,
+                  selectedIndex: safeIndex,
+                  visibleCount: visibleCount,
+                  onSelect: (i) => setState(() => _tabIndex = i),
+                  theme: theme,
+                );
+              },
+            ),
+            Positioned(
+              top: 12,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, -0.2),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
+                      ),
+                    ),
+                    child: _resumeHintSeconds == null
+                        ? const SizedBox.shrink()
+                        : ResumeHintBanner(
+                            key: ValueKey(_resumeHintSeconds),
+                            seconds: _resumeHintSeconds!,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -661,10 +681,10 @@ class _ResponsiveTabLayout extends StatelessWidget {
   });
 
   Widget _columnDivider() => VerticalDivider(
-        width: 1,
-        thickness: 1,
-        color: theme.colorScheme.outlineVariant.withAlpha(80),
-      );
+    width: 1,
+    thickness: 1,
+    color: theme.colorScheme.outlineVariant.withAlpha(80),
+  );
 
   Widget _navBar({
     required int idx,
@@ -714,8 +734,7 @@ class _ResponsiveTabLayout extends StatelessWidget {
     final swapStart = pinnedCount;
     final swapTabs = tabs.sublist(swapStart);
     final swapDestinations = destinations.sublist(swapStart);
-    final swapIndex =
-        (selectedIndex - swapStart).clamp(0, swapTabs.length - 1);
+    final swapIndex = (selectedIndex - swapStart).clamp(0, swapTabs.length - 1);
 
     return Column(
       children: [
@@ -757,6 +776,9 @@ class _PlayerTab extends StatelessWidget {
   final Duration duration;
   final bool isPlaying;
   final bool ytMode;
+  final bool audioOnly;
+  final bool hasMedia;
+  final String? posterUrl;
   final VoidCallback onEnterYtMode;
   final VoidCallback onExitYtMode;
   final VoidCallback onPlayPause;
@@ -771,6 +793,9 @@ class _PlayerTab extends StatelessWidget {
     required this.duration,
     required this.isPlaying,
     required this.ytMode,
+    required this.audioOnly,
+    required this.hasMedia,
+    required this.posterUrl,
     required this.onEnterYtMode,
     required this.onExitYtMode,
     required this.onPlayPause,
@@ -791,8 +816,9 @@ class _PlayerTab extends StatelessWidget {
     final info = data.info;
     final lang = EpisodeLanguageScope.of(context);
     final summaryHr = data.summary?.summary;
-    final summary =
-        lang == EpisodeLanguage.en ? (data.summaryEn?.summary ?? summaryHr) : summaryHr;
+    final summary = lang == EpisodeLanguage.en
+        ? (data.summaryEn?.summary ?? summaryHr)
+        : summaryHr;
     // Lokalizirani naslov: prefer EN summary.titleEn → HR summary.titleHr → YouTube original.
     String displayTitle = data.displayTitle;
     if (lang == EpisodeLanguage.en && summary != null) {
@@ -804,10 +830,12 @@ class _PlayerTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Video player (native ili YouTube embed) or thumbnail
+          // Video player (native ili YouTube embed), audio cover-art or thumbnail
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: ytMode
+            child: audioOnly
+                ? AudioPoster(artUrl: posterUrl)
+                : ytMode
                 ? YouTubeEmbed(
                     videoId: data.youtubeId,
                     startSeconds: position.inSeconds,
@@ -818,8 +846,29 @@ class _PlayerTab extends StatelessWidget {
                     controller: videoController!,
                     speakerTimeline: data.speakerTimeline,
                     speakers: summary?.speakers ?? const [],
-                    onYouTubeMode:
-                        youTubeEmbedSupported ? onEnterYtMode : null,
+                    onYouTubeMode: youTubeEmbedSupported ? onEnterYtMode : null,
+                  )
+                : !hasMedia
+                ? const ColoredBox(
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.music_off,
+                            color: Colors.white54,
+                            size: 40,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Media nije dostupna za ovu epizodu.',
+                            style: TextStyle(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 : Container(
                     color: Colors.black,
@@ -854,28 +903,22 @@ class _PlayerTab extends StatelessWidget {
             SliderTheme(
               data: SliderThemeData(
                 trackHeight: 3,
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 7,
-                ),
-                overlayShape: const RoundSliderOverlayShape(
-                  overlayRadius: 16,
-                ),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
                 activeTrackColor: theme.colorScheme.primary,
-                inactiveTrackColor:
-                    theme.colorScheme.primary.withAlpha(40),
+                inactiveTrackColor: theme.colorScheme.primary.withAlpha(40),
                 thumbColor: theme.colorScheme.primary,
               ),
               child: Slider(
                 value: duration.inMilliseconds > 0
                     ? position.inMilliseconds
-                        .clamp(0, duration.inMilliseconds)
-                        .toDouble()
+                          .clamp(0, duration.inMilliseconds)
+                          .toDouble()
                     : 0,
                 max: duration.inMilliseconds > 0
                     ? duration.inMilliseconds.toDouble()
                     : 1,
-                onChanged: (v) =>
-                    onSeek(Duration(milliseconds: v.toInt())),
+                onChanged: (v) => onSeek(Duration(milliseconds: v.toInt())),
               ),
             ),
 
@@ -905,9 +948,7 @@ class _PlayerTab extends StatelessWidget {
                   const SizedBox(width: 8),
                   // Play/Pause
                   IconButton.filled(
-                    icon: Icon(
-                      isPlaying ? Icons.pause : Icons.play_arrow,
-                    ),
+                    icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
                     iconSize: 40,
                     onPressed: onPlayPause,
                   ),
@@ -916,9 +957,8 @@ class _PlayerTab extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.forward_30),
                     iconSize: 32,
-                    onPressed: () => onSeek(
-                      Duration(seconds: position.inSeconds + 30),
-                    ),
+                    onPressed: () =>
+                        onSeek(Duration(seconds: position.inSeconds + 30)),
                   ),
                   const Spacer(),
                   Text(
@@ -995,6 +1035,19 @@ class _PlayerTab extends StatelessWidget {
                   ),
                 ],
               ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+          // "Zid podrške" za epizodu — sam se sakrije ako epizoda nema aktivnu
+          // pinka kampanju. SEPA QR + on-chain EURe (Gnosis Safe) + in-app wallet.
+          PinkaSupportCard.episode(
+            youtubeId: data.youtubeId,
+            onOpen: (_) => context.push(
+              Uri(
+                path: '/v/${data.youtubeId}/support',
+                queryParameters: {'name': data.displayTitle},
+              ).toString(),
             ),
           ),
 
@@ -1121,8 +1174,7 @@ class _InfoTab extends StatelessWidget {
     final lang = EpisodeLanguageScope.of(context);
     final isEn = lang == EpisodeLanguage.en;
     final summaryHr = data.summary?.summary;
-    final summary =
-        isEn ? (data.summaryEn?.summary ?? summaryHr) : summaryHr;
+    final summary = isEn ? (data.summaryEn?.summary ?? summaryHr) : summaryHr;
     String displayTitle = data.displayTitle;
     if (isEn && summary != null) {
       final en = summary.titleEn;
@@ -1179,145 +1231,157 @@ class _InfoTab extends StatelessWidget {
 
         // Abstract
         if (summary != null) ...[
-          Builder(builder: (_) {
-            final abstractText =
-                pickLang(lang, summary.abstractHr, summary.abstractEn);
-            if (abstractText.isEmpty) return const SizedBox.shrink();
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withAlpha(120),
-                    borderRadius: BorderRadius.circular(12),
+          Builder(
+            builder: (_) {
+              final abstractText = pickLang(
+                lang,
+                summary.abstractHr,
+                summary.abstractEn,
+              );
+              if (abstractText.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withAlpha(120),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      abstractText,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                    ),
                   ),
-                  child: Text(
-                    abstractText,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            );
-          }),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
         ],
 
         // Key topics
         if (summary != null) ...[
-          Builder(builder: (_) {
-            final topics =
-                pickLangList(lang, summary.keyTopics, summary.keyTopicsEn);
-            if (topics.isEmpty) return const SizedBox.shrink();
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionTitle(
+          Builder(
+            builder: (_) {
+              final topics = pickLangList(
+                lang,
+                summary.keyTopics,
+                summary.keyTopicsEn,
+              );
+              if (topics.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionTitle(
                     icon: Icons.topic,
-                    label: isEn ? 'Key topics' : 'Ključne teme'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: topics.map((t) {
-                    return Chip(
-                      label: Text(t, style: const TextStyle(fontSize: 12)),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-              ],
-            );
-          }),
+                    label: isEn ? 'Key topics' : 'Ključne teme',
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: topics.map((t) {
+                      return Chip(
+                        label: Text(t, style: const TextStyle(fontSize: 12)),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
         ],
 
         // Key points
         if (summary != null && summary.keyPoints.isNotEmpty) ...[
           _SectionTitle(
-              icon: Icons.format_list_bulleted,
-              label: isEn ? 'Key takeaways' : 'Ključne točke'),
+            icon: Icons.format_list_bulleted,
+            label: isEn ? 'Key takeaways' : 'Ključne točke',
+          ),
           const SizedBox(height: 8),
-          ...pickLangList(lang, summary.keyPoints, summary.keyPointsEn)
-              .map((kp) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Icon(
-                        Icons.circle,
-                        size: 6,
-                        color: theme.colorScheme.primary,
-                      ),
+          ...pickLangList(lang, summary.keyPoints, summary.keyPointsEn).map(
+            (kp) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: theme.colorScheme.primary,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        kp,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          height: 1.4,
-                        ),
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      kp,
+                      style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
         ],
 
         // Speakers
         if (summary != null && summary.speakers.isNotEmpty) ...[
           _SectionTitle(
-              icon: Icons.people,
-              label: isEn ? 'Speakers' : 'Govornici'),
+            icon: Icons.people,
+            label: isEn ? 'Speakers' : 'Govornici',
+          ),
           const SizedBox(height: 8),
           ...summary.speakers.map((s) {
             final roleLabel = isEn ? s.roleLabelEn() : s.roleLabel;
             return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Icon(
-                        Icons.person,
-                        size: 18,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.person,
+                      size: 18,
+                      color: theme.colorScheme.onPrimaryContainer,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          // Ako pipeline nije izvukao pravo ime (host se ne
+                          // predstavlja), suggested_name je == role — tada
+                          // prikazi samo capitalized roleLabel.
+                          s.displayName ?? roleLabel,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (s.displayName != null && s.role.isNotEmpty)
                           Text(
-                            // Ako pipeline nije izvukao pravo ime (host se ne
-                            // predstavlja), suggested_name je == role — tada
-                            // prikazi samo capitalized roleLabel.
-                            s.displayName ?? roleLabel,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            roleLabel,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          if (s.displayName != null && s.role.isNotEmpty)
-                            Text(
-                              roleLabel,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              );
+                  ),
+                ],
+              ),
+            );
           }),
           const SizedBox(height: 16),
         ],

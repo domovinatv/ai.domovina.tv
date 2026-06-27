@@ -19,6 +19,18 @@ class PodcastInfo {
   final List<YtChapter> chapters;
   final List<YtThumbnail> thumbnails;
 
+  /// Izvor epizode — npr. `youtube` (default) ili `beamly` (audio podcast feed
+  /// preko transistor.fm-a). Iz info.json `_source`.
+  final String source;
+
+  /// Direktni link na audio (mp3) za audio-only epizode. Iz info.json
+  /// `_sound_link`. Null za standardne (video) epizode.
+  final String? soundLink;
+
+  /// `_yt_matched` — false kad epizoda NIJE povezana s YouTube videom (nema
+  /// `video.mp4` na CDN-u). Default true (stare/YT epizode nemaju ovo polje).
+  final bool ytMatched;
+
   const PodcastInfo({
     required this.id,
     required this.title,
@@ -38,6 +50,9 @@ class PodcastInfo {
     required this.categories,
     required this.chapters,
     required this.thumbnails,
+    this.source = 'youtube',
+    this.soundLink,
+    this.ytMatched = true,
   });
 
   factory PodcastInfo.fromJson(Map<String, dynamic> json) {
@@ -64,7 +79,22 @@ class PodcastInfo {
       thumbnails: (json['thumbnails'] as List<dynamic>? ?? [])
           .map((t) => YtThumbnail.fromJson(t as Map<String, dynamic>))
           .toList(),
+      source: json['_source'] as String? ?? 'youtube',
+      soundLink: json['_sound_link'] as String?,
+      ytMatched: json['_yt_matched'] as bool? ?? true,
     );
+  }
+
+  /// Link na izvornu epizodu za "Otvori izvor" akciju. Kad epizoda NIJE
+  /// povezana s YouTube videom (`_yt_matched == false`, npr. beamly/transistor
+  /// audio podcasti) vodi na `webpage_url` (launchedfm.com/episode/…); inače na
+  /// YouTube watch URL. Null ako nema upotrebljivog URL-a.
+  ///
+  /// NB: audio-vs-video odluku za PLAYBACK/UI radi probe (`EpisodeData.isAudioOnly`),
+  /// ne ovaj getter — `_sound_link` postoji i na video epizodama.
+  String? get sourceUrl {
+    if (!ytMatched) return webpageUrl.isNotEmpty ? webpageUrl : null;
+    return 'https://www.youtube.com/watch?v=$id';
   }
 
   /// Kanonski YouTube channel ID (`UC…`) ili null. yt-dlp `channel_id` JEST

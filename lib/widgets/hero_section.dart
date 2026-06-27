@@ -6,7 +6,7 @@ import '../models/podcast_summary.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 
-class HeroSection extends StatelessWidget {
+class HeroSection extends StatefulWidget {
   final PodcastInfo info;
   final String youtubeId;
 
@@ -23,16 +23,26 @@ class HeroSection extends StatelessWidget {
   });
 
   @override
+  State<HeroSection> createState() => _HeroSectionState();
+}
+
+class _HeroSectionState extends State<HeroSection> {
+  /// True kad hero thumbnail ne postoji (404) — npr. audio-only epizode nemaju
+  /// `thumbnail.png`. Tada sakrivamo cijeli image blok (umjesto broken-image
+  /// placeholdera); cover-art audio epizode ionako pokazuje player panel.
+  bool _thumbFailed = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final info = widget.info;
     final uploadDt = info.uploadDateTime;
-    final dateStr =
-        '${uploadDt.day}.${uploadDt.month}.${uploadDt.year}.';
+    final dateStr = '${uploadDt.day}.${uploadDt.month}.${uploadDt.year}.';
     final lang = EpisodeLanguageScope.of(context);
 
     // Prefer lokalizirani naslov iz summary-a (HR ili EN), fallback YouTube original.
     String displayTitle = info.title;
-    final s = summary;
+    final s = widget.summary;
     if (s != null) {
       if (lang == EpisodeLanguage.en) {
         if (s.titleEn != null && s.titleEn!.isNotEmpty) {
@@ -50,21 +60,24 @@ class HeroSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Image.network(
-              CdnConfig.thumbnailUrl(youtubeId),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: theme.colorScheme.surfaceContainerHighest,
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  size: 48,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+          if (!_thumbFailed)
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.network(
+                CdnConfig.thumbnailUrl(widget.youtubeId),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Nema thumbnaila → kolabiraj blok (post-frame setState da se
+                  // ne dogodi tijekom build/paint faze).
+                  if (!_thumbFailed) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) setState(() => _thumbFailed = true);
+                    });
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
             ),
-          ),
 
           Padding(
             padding: const EdgeInsets.all(20),
@@ -75,8 +88,9 @@ class HeroSection extends StatelessWidget {
                 Chip(
                   label: Text(
                     info.channel,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: Colors.white),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                    ),
                   ),
                   backgroundColor: AppTheme.croBlue,
                   side: AppTheme.brandRim(theme.brightness),
@@ -169,8 +183,9 @@ class _Stat extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

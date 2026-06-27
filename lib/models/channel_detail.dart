@@ -59,6 +59,19 @@ class ChannelDetail {
     required this.videos,
   });
 
+  /// True kad je kanal audio-only izvor (podcast feed, npr. launchedfm.com /
+  /// subclub.com) — `youtube_channel_url` host nije youtube.com/youtu.be.
+  /// Pouzdano na razini KANALA (vlastiti URL kanala), za razliku od per-epizoda
+  /// heuristike koja false-pozitivira (i video epizode na tim kanalima imaju
+  /// ne-YouTube URL). Koristi se da channel listing prikaže "Audio Only"
+  /// placeholder umjesto generičkog video placeholdera kad epizoda nema thumbnail.
+  bool get isAudioSource {
+    final host = Uri.tryParse(youtubeChannelUrl)?.host ?? '';
+    return host.isNotEmpty &&
+        !host.contains('youtube.com') &&
+        !host.contains('youtu.be');
+  }
+
   factory ChannelDetail.fromJson(Map<String, dynamic> json) {
     return ChannelDetail(
       version: json['version'] as String? ?? '1.0',
@@ -103,6 +116,12 @@ class ChannelVideo {
   final int? magisteriumScore;
   final VideoPipeline? pipeline;
 
+  /// Izvor epizode (npr. `youtube`/`beamly`) i direktni audio link — prisutni
+  /// samo ako ih pipeline upiše u channel listing (trenutno još nije slučaj;
+  /// detekcija pada na [isAudioOnly] heuristiku po [youtubeUrl] hostu).
+  final String? source;
+  final String? soundLink;
+
   const ChannelVideo({
     required this.id,
     required this.title,
@@ -119,10 +138,20 @@ class ChannelVideo {
     this.speakers = const [],
     this.magisteriumScore,
     this.pipeline,
+    this.source,
+    this.soundLink,
   });
 
   /// Display title — prefer Croatian title.
   String get displayTitle => titleHr ?? title;
+
+  /// True SAMO kad channel listing eksplicitno nosi [soundLink] (trenutno ne).
+  /// NE smije se izvoditi heuristikom iz [youtubeUrl] hosta — i video epizode
+  /// na ne-YouTube kanalima (npr. subclub.com) imaju takav URL, pa bi se sve
+  /// lažno označilo kao audio. Autoritativna audio-vs-video odluka je probe na
+  /// episode ekranu (`EpisodeData.isAudioOnly` — postoji li `audio.mp3`); u
+  /// channel listingu nema pouzdanog signala dok ga pipeline ne doda.
+  bool get isAudioOnly => soundLink != null && soundLink!.isNotEmpty;
 
   factory ChannelVideo.fromJson(Map<String, dynamic> json) {
     // speakers can be List<String> or List<{id, suggested_name, role}>
@@ -153,6 +182,9 @@ class ChannelVideo {
       pipeline: json['pipeline'] != null
           ? VideoPipeline.fromJson(json['pipeline'] as Map<String, dynamic>)
           : null,
+      source: json['source'] as String? ?? json['_source'] as String?,
+      soundLink:
+          json['sound_link'] as String? ?? json['_sound_link'] as String?,
     );
   }
 }

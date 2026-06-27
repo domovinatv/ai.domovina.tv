@@ -18,6 +18,9 @@ class ArticleSection extends StatelessWidget {
   final void Function(String timestamp)? onPlayTap;
   final MagisteriumData? magisterium;
 
+  /// Kad false (audio-only epizode), sekcije ne renderiraju screenshot blok.
+  final bool showScreenshot;
+
   const ArticleSection({
     super.key,
     required this.article,
@@ -25,6 +28,7 @@ class ArticleSection extends StatelessWidget {
     required this.sectionKeys,
     this.onPlayTap,
     this.magisterium,
+    this.showScreenshot = true,
   });
 
   @override
@@ -53,6 +57,7 @@ class ArticleSection extends StatelessWidget {
             sectionKeys: sectionKeys,
             onPlayTap: onPlayTap,
             magisterium: magisterium,
+            showScreenshot: showScreenshot,
           ),
         ),
       ],
@@ -66,6 +71,7 @@ class _IterationBlock extends StatelessWidget {
   final Map<String, GlobalKey> sectionKeys;
   final void Function(String timestamp)? onPlayTap;
   final MagisteriumData? magisterium;
+  final bool showScreenshot;
 
   const _IterationBlock({
     required this.iteration,
@@ -73,6 +79,7 @@ class _IterationBlock extends StatelessWidget {
     required this.sectionKeys,
     required this.onPlayTap,
     this.magisterium,
+    this.showScreenshot = true,
   });
 
   @override
@@ -101,6 +108,7 @@ class _IterationBlock extends StatelessWidget {
                     sec.screenshotTimestamp,
                   ),
                   padding: const EdgeInsets.only(bottom: 56),
+                  showScreenshot: showScreenshot,
                 ),
               ),
             ),
@@ -183,6 +191,10 @@ class ArticleSectionCard extends StatefulWidget {
   /// layout prosljeduje EdgeInsets.zero (razmak hendla parent red).
   final EdgeInsetsGeometry padding;
 
+  /// Kad false, ne renderira screenshot blok (audio-only epizode nemaju
+  /// screenshote — inače bi se vidio prazan sivi placeholder).
+  final bool showScreenshot;
+
   const ArticleSectionCard({
     super.key,
     required this.section,
@@ -191,6 +203,7 @@ class ArticleSectionCard extends StatefulWidget {
     this.sectionMagisterium,
     this.showInlineMagisterium = true,
     this.padding = const EdgeInsets.only(bottom: 56, top: 80),
+    this.showScreenshot = true,
   });
 
   @override
@@ -199,6 +212,10 @@ class ArticleSectionCard extends StatefulWidget {
 
 class _ArticleSectionCardState extends State<ArticleSectionCard> {
   bool _citationsExpanded = false;
+
+  /// True kad screenshot za ovu sekciju ne postoji (404) — tada kolabiramo
+  /// cijeli blok da se ne vidi prazan sivi placeholder.
+  bool _screenshotFailed = false;
 
   int _tsToSeconds(String ts) {
     final parts = ts.split(':').map(int.parse).toList();
@@ -349,37 +366,60 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
           // Screenshot — AspectRatio rezervira mjesto PRIJE async load-a slike.
           // Bez ovoga: section anchor scroll na page load promaši target jer
           // slike iznad load-aju asinkrono pa layout naraste poslije scrolla,
           // što je posebno loše na shared timestamp URL-ovima (mobile worst).
           // 16:9 odgovara originalnim screenshotima (1920×1080 PNG iz pipeline-a).
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Container(
-                color: theme.colorScheme.surfaceContainerHighest,
-                child: Image.network(
-                  CdnConfig.screenshotUrl(
-                    widget.youtubeId,
-                    section.screenshotTimestamp,
+          // maxHeight 270 cap: na širim stupcima 16:9 puni širinu izgleda
+          // predominantno (npr. 860px → 483px visoko); kapiranjem na 270px
+          // (≈480px široko) slika sjedne ljepše, left-aligned.
+          // Audio-only epizode nemaju screenshote (showScreenshot=false) →
+          // preskačemo blok. Isto i kad screenshot 404-a (_screenshotFailed) —
+          // da se ne vidi prazan sivi placeholder.
+          if (widget.showScreenshot && !_screenshotFailed) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 270),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Container(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: Image.network(
+                        CdnConfig.screenshotUrl(
+                          widget.youtubeId,
+                          section.screenshotTimestamp,
+                        ),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        // Fade-in kad slika stigne — sprječava flash blank → loaded.
+                        frameBuilder: (context, child, frame, wasSyncLoaded) {
+                          if (wasSyncLoaded || frame != null) return child;
+                          return const SizedBox.shrink();
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          // Nema screenshota → kolabiraj blok (post-frame da se
+                          // setState ne dogodi tijekom build/paint faze).
+                          if (!_screenshotFailed) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() => _screenshotFailed = true);
+                              }
+                            });
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
                   ),
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  // Fade-in kad slika stigne — sprječava flash blank → loaded.
-                  frameBuilder: (context, child, frame, wasSyncLoaded) {
-                    if (wasSyncLoaded || frame != null) return child;
-                    return const SizedBox.shrink();
-                  },
-                  errorBuilder: (context, error, stackTrace) =>
-                      const SizedBox.shrink(),
                 ),
               ),
             ),
-          ),
+          ],
 
           if (screenshotDesc.isNotEmpty)
             Padding(

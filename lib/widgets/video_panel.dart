@@ -6,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
 import '../models/podcast_summary.dart';
+import 'audio_poster.dart';
 import 'episode_video.dart';
 import 'youtube_embed.dart';
 
@@ -42,6 +43,13 @@ class VideoPanel extends StatefulWidget {
   /// YouTube ID epizode — omogućuje in-app YouTube embed mode (web).
   final String? youtubeId;
 
+  /// True kad je epizoda audio-only — umjesto video površine prikazuje
+  /// [AudioPoster] (cover-art), bez YouTube embed gumba.
+  final bool audioOnly;
+
+  /// Cover-art URL za audio-only mod (CORS-safe channel avatar).
+  final String? posterUrl;
+
   const VideoPanel({
     super.key,
     required this.player,
@@ -58,6 +66,8 @@ class VideoPanel extends StatefulWidget {
     this.mutedAutoplay = false,
     this.onUnmute,
     this.youtubeId,
+    this.audioOnly = false,
+    this.posterUrl,
   });
 
   @override
@@ -180,9 +190,7 @@ class _VideoPanelState extends State<VideoPanel> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: widget.width != null
-            ? Border(
-                left: BorderSide(color: theme.colorScheme.outlineVariant),
-              )
+            ? Border(left: BorderSide(color: theme.colorScheme.outlineVariant))
             : null,
       ),
       child: Column(
@@ -195,7 +203,9 @@ class _VideoPanelState extends State<VideoPanel> {
               children: [
                 Container(
                   color: Colors.black,
-                  child: _ytMode && widget.youtubeId != null
+                  child: widget.audioOnly
+                      ? AudioPoster(artUrl: widget.posterUrl)
+                      : _ytMode && widget.youtubeId != null
                       ? YouTubeEmbed(
                           videoId: widget.youtubeId!,
                           startSeconds: _position.inSeconds,
@@ -207,8 +217,8 @@ class _VideoPanelState extends State<VideoPanel> {
                           speakers: widget.speakers,
                           onYouTubeMode:
                               youTubeEmbedSupported && widget.youtubeId != null
-                                  ? _enterYtMode
-                                  : null,
+                              ? _enterYtMode
+                              : null,
                         ),
                 ),
                 // Web overlay: unmute CTA za muted autoplay (browser policy).
@@ -275,19 +285,21 @@ class _VideoPanelState extends State<VideoPanel> {
                     padding: const EdgeInsets.only(bottom: 2),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(3),
-                      child: LayoutBuilder(builder: (context, constraints) {
-                        return SizedBox(
-                          height: 6,
-                          width: constraints.maxWidth,
-                          child: CustomPaint(
-                            painter: _SpeakerBarPainter(
-                              segments: widget.speakerTimeline!.segments,
-                              totalMs: totalMs,
-                              colors: colors,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SizedBox(
+                            height: 6,
+                            width: constraints.maxWidth,
+                            child: CustomPaint(
+                              painter: _SpeakerBarPainter(
+                                segments: widget.speakerTimeline!.segments,
+                                totalMs: totalMs,
+                                colors: colors,
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        },
+                      ),
                     ),
                   ),
 
@@ -335,24 +347,29 @@ class _VideoPanelState extends State<VideoPanel> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.replay_10),
-                      onPressed: () => widget.player
-                          .seek(_position - const Duration(seconds: 10)),
+                      onPressed: () => widget.player.seek(
+                        _position - const Duration(seconds: 10),
+                      ),
                       tooltip: '-10s',
                     ),
                     IconButton(
                       iconSize: 40,
-                      icon: Icon(_playing
-                          ? Icons.pause_circle_filled
-                          : Icons.play_circle_filled),
+                      icon: Icon(
+                        _playing
+                            ? Icons.pause_circle_filled
+                            : Icons.play_circle_filled,
+                      ),
                       color: theme.colorScheme.primary,
                       tooltip: _playing ? 'Pauziraj' : 'Reproduciraj',
-                      onPressed: () =>
-                          _playing ? widget.player.pause() : widget.player.play(),
+                      onPressed: () => _playing
+                          ? widget.player.pause()
+                          : widget.player.play(),
                     ),
                     IconButton(
                       icon: const Icon(Icons.forward_10),
-                      onPressed: () => widget.player
-                          .seek(_position + const Duration(seconds: 10)),
+                      onPressed: () => widget.player.seek(
+                        _position + const Duration(seconds: 10),
+                      ),
                       tooltip: '+10s',
                     ),
                   ],
@@ -390,13 +407,14 @@ class _VideoPanelState extends State<VideoPanel> {
                 children: [
                   for (final ch in widget.chapters)
                     _ChapterListItem(
-                    key: _chapterKeys[ch.timestamp],
-                    chapter: ch,
-                    isPlaying: ch.timestamp == widget.activeTimestamp,
-                    isScrolled: ch.timestamp == widget.scrollTimestamp &&
-                        ch.timestamp != widget.activeTimestamp,
-                    onTap: () => widget.onChapterTap(ch.timestamp),
-                  ),
+                      key: _chapterKeys[ch.timestamp],
+                      chapter: ch,
+                      isPlaying: ch.timestamp == widget.activeTimestamp,
+                      isScrolled:
+                          ch.timestamp == widget.scrollTimestamp &&
+                          ch.timestamp != widget.activeTimestamp,
+                      onTap: () => widget.onChapterTap(ch.timestamp),
+                    ),
                 ],
               ),
             ),
@@ -434,19 +452,21 @@ class _SeekBar extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         // Chapter markers (renderiraju se ispod Slidera)
-        LayoutBuilder(builder: (context, constraints) {
-          return SizedBox(
-            height: 24,
-            width: constraints.maxWidth,
-            child: CustomPaint(
-              painter: _ChapterMarkerPainter(
-                chapters: chapters,
-                totalMs: totalMs,
-                color: theme.colorScheme.primary.withAlpha(120),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              height: 24,
+              width: constraints.maxWidth,
+              child: CustomPaint(
+                painter: _ChapterMarkerPainter(
+                  chapters: chapters,
+                  totalMs: totalMs,
+                  color: theme.colorScheme.primary.withAlpha(120),
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 3,
@@ -537,10 +557,7 @@ class _CurrentSpeakerRow extends StatelessWidget {
   final SummarySpeaker speaker;
   final Color color;
 
-  const _CurrentSpeakerRow({
-    required this.speaker,
-    required this.color,
-  });
+  const _CurrentSpeakerRow({required this.speaker, required this.color});
 
   String get _initials {
     final name = speaker.displayName ?? speaker.roleLabel;
@@ -650,9 +667,7 @@ class _ChapterListItem extends StatelessWidget {
         decoration: isHighlighted
             ? BoxDecoration(
                 color: accentColor.withAlpha(isPlaying ? 120 : 40),
-                border: Border(
-                  left: BorderSide(color: accentColor, width: 3),
-                ),
+                border: Border(left: BorderSide(color: accentColor, width: 3)),
               )
             : null,
         padding: EdgeInsets.fromLTRB(isHighlighted ? 9 : 12, 6, 8, 6),
@@ -681,8 +696,9 @@ class _ChapterListItem extends StatelessWidget {
                   color: isHighlighted
                       ? theme.colorScheme.onSurface
                       : theme.colorScheme.onSurfaceVariant,
-                  fontWeight:
-                      isHighlighted ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isHighlighted
+                      ? FontWeight.w600
+                      : FontWeight.normal,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

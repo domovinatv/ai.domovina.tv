@@ -29,7 +29,8 @@ class ChannelService {
       throw Exception('HTTP ${response.statusCode}: channels/index.json');
     }
     return ChannelIndex.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   static Future<ChannelDetail> loadChannel(String channelId) async {
@@ -39,7 +40,8 @@ class ChannelService {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
     return ChannelDetail.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 }
 
@@ -64,7 +66,9 @@ class DataService {
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
-    return PodcastInfo.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return PodcastInfo.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// Summary — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
@@ -77,7 +81,8 @@ class DataService {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
     return PodcastSummary.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// EN-overlay verzija summary.json — sadrzi HR polja + dodana `_en` polja.
@@ -90,7 +95,8 @@ class DataService {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
     return PodcastSummary.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// Outline — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
@@ -102,7 +108,8 @@ class DataService {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
     return PodcastOutline.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// Article — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
@@ -114,7 +121,8 @@ class DataService {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
     return PodcastArticle.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// EN-overlay verzija article.json — vraca null ako prijevod ne postoji.
@@ -126,7 +134,8 @@ class DataService {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
     return PodcastArticle.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// Magisterium teološko obogaćivanje — opcionalno (nije obavezan asset).
@@ -174,7 +183,8 @@ class DataService {
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullUrl(youtubeId));
       return MagisteriumFullData.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>);
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
     } catch (_) {
       return null;
     }
@@ -194,7 +204,8 @@ class DataService {
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullV2Url(youtubeId));
       return MagisteriumFullV2Data.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>);
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
     } catch (_) {
       return null;
     }
@@ -205,7 +216,8 @@ class DataService {
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullV2EnUrl(youtubeId));
       return MagisteriumFullV2Data.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>);
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
     } catch (_) {
       return null;
     }
@@ -220,22 +232,40 @@ class DataService {
     }
   }
 
-  /// Vraća CDN URL videa za reprodukciju.
-  ///
-  /// Prioritet: `video_h264.mp4` (H.264 — univerzalno HW-dekodira na svim
-  /// platformama/browserima/Android TV box-evima) ako postoji. Inače fallback
-  /// na izvorni `video.mp4` (može biti AV1/VP9 koji stariji uređaji ne
-  /// dekodiraju HW). Probe je HEAD request; 404/greška → fallback.
-  Future<String> resolveVideoUri() async {
+  /// HEAD probe — true ako resurs vraća 200. Mreža/CORS greška → false.
+  /// HEAD (ne GET) da ne skidamo cijeli media file.
+  Future<bool> _exists(String url) async {
     try {
-      // Probe s cache-busterom (izbjegava stale 404); playback koristi čisti URL.
-      final response =
-          await http.head(Uri.parse(CdnConfig.videoH264ProbeUrl(youtubeId)));
-      if (response.statusCode == 200) return CdnConfig.videoH264Url(youtubeId);
+      final r = await http.head(Uri.parse(url));
+      return r.statusCode == 200;
     } catch (_) {
-      // Mreža/CORS — padaj na izvorni video.mp4 koji uvijek postoji.
+      return false;
     }
-    return CdnConfig.videoUrl(youtubeId);
+  }
+
+  /// Razrješava playabilnu mediju po OBAVEZNOM redoslijedu iz data_contract.md
+  /// §8.1 (HEAD probe, cache-buster zbog 4h CDN 404 cache-a):
+  ///   1. `video_h264.mp4` → VIDEO (univerzalni HW-decode, sve platforme)
+  ///   2. `audio.mp3`      → AUDIO (audio-only beamly/transistor epizode)
+  ///   3. legacy `video.mp4` → VIDEO (može biti AV1/VP9; stariji HW ne dekodira)
+  ///   4. ništa od navedenog → [EpisodeMediaKind.none] (graceful "nema medije")
+  ///
+  /// NB: oslanjamo se na CDN realnost (probe), NE na info.json `_sound_link`
+  /// koji POSTOJI i na video epizodama (yt-matched) pa nije audio-only signal.
+  Future<({String uri, EpisodeMediaKind kind})> resolveMedia() async {
+    if (await _exists(CdnConfig.videoH264ProbeUrl(youtubeId))) {
+      return (
+        uri: CdnConfig.videoH264Url(youtubeId),
+        kind: EpisodeMediaKind.video,
+      );
+    }
+    if (await _exists(CdnConfig.audioProbeUrl(youtubeId))) {
+      return (uri: CdnConfig.audioUrl(youtubeId), kind: EpisodeMediaKind.audio);
+    }
+    if (await _exists(CdnConfig.videoProbeUrl(youtubeId))) {
+      return (uri: CdnConfig.videoUrl(youtubeId), kind: EpisodeMediaKind.video);
+    }
+    return (uri: '', kind: EpisodeMediaKind.none);
   }
 
   /// Ucitaj diariziran SRT i parsiraj u SpeakerTimeline.
@@ -290,16 +320,21 @@ SpeakerTimeline _parseSrt(String raw) {
     final speakerMatch = _speakerRegex.firstMatch(text);
     if (speakerMatch == null) continue;
 
-    segments.add(SpeakerSegment(
-      startMs: startMs,
-      endMs: endMs,
-      speakerId: speakerMatch.group(1)!,
-      text: text.replaceFirst(_speakerRegex, '').trim(),
-    ));
+    segments.add(
+      SpeakerSegment(
+        startMs: startMs,
+        endMs: endMs,
+        speakerId: speakerMatch.group(1)!,
+        text: text.replaceFirst(_speakerRegex, '').trim(),
+      ),
+    );
   }
 
   return SpeakerTimeline(segments: segments);
 }
+
+/// Vrsta playabilne medije razriješena probe-om (vidi [DataService.resolveMedia]).
+enum EpisodeMediaKind { video, audio, none }
 
 /// Svi podaci za jednu podcast epizodu, ucitani s CDN-a.
 ///
@@ -326,11 +361,18 @@ class EpisodeData {
   final MagisteriumFullV2Data? magisteriumFullV2En;
   final String? magisteriumFullV2Prompt;
   final SpeakerTimeline? speakerTimeline;
+
+  /// Playabilni media URI razriješen probe-om: `video_h264.mp4` / `audio.mp3` /
+  /// legacy `video.mp4`. Prazan string kad nema medije ([hasMedia] == false).
   final String videoUri;
+
+  /// Vrsta medije iz probe-a. Driver za UI (audio cover-art vs video render).
+  final EpisodeMediaKind mediaKind;
 
   const EpisodeData({
     required this.youtubeId,
     required this.info,
+    this.mediaKind = EpisodeMediaKind.video,
     this.summary,
     this.summaryEn,
     this.outline,
@@ -352,6 +394,15 @@ class EpisodeData {
   /// True kad AI pipeline (clanak) nije produkcijski gotov. UI tada pokazuje
   /// samo player + basic info i opcionalno YouTube chapters iz info.json.
   bool get hasAiContent => article != null;
+
+  /// True kad je razriješena media AUDIO (`audio.mp3` na CDN-u). Autoritativno
+  /// iz probe-a ([DataService.resolveMedia]), NE iz info.json flagova. UI tada
+  /// prikazuje cover-art umjesto video površine i sakriva video/YT akcije.
+  bool get isAudioOnly => mediaKind == EpisodeMediaKind.audio;
+
+  /// False kad nijedan media asset ne postoji (sva 3 probe-a 404) — UI tada
+  /// prikazuje jasnu poruku umjesto beskonačnog spinnera.
+  bool get hasMedia => mediaKind != EpisodeMediaKind.none;
 
   /// True kad za ovaj video postoji EN prijevod na CDN-u. Trigger za toggle UI.
   /// Article je core artifact — bez njega nema sto prevodi. Summary je nice-to-have
@@ -380,10 +431,13 @@ class EpisodeData {
 
   /// All available Magisterium variants as (label, data) pairs.
   /// [wantEn] swap-a u EN-superset verziju ako postoji prijevod.
-  List<(String, MagisteriumData)> magisteriumVariantsFor({bool wantEn = false}) {
+  List<(String, MagisteriumData)> magisteriumVariantsFor({
+    bool wantEn = false,
+  }) {
     final mag = wantEn ? (magisteriumEn ?? magisterium) : magisterium;
-    final magBatch =
-        wantEn ? (magisteriumBatchEn ?? magisteriumBatch) : magisteriumBatch;
+    final magBatch = wantEn
+        ? (magisteriumBatchEn ?? magisteriumBatch)
+        : magisteriumBatch;
     return [
       if (mag != null) ('Po sekciji', mag),
       if (magBatch != null) ('Po bloku', magBatch),
@@ -414,28 +468,31 @@ class EpisodeData {
   static Future<EpisodeData> load({required String youtubeId}) async {
     final svc = DataService(youtubeId: youtubeId);
     final results = await Future.wait([
-      svc.loadInfo(),                   // 0 — required (VideoNotFoundException ako 404)
-      svc.loadSummary(),                // 1 — nullable (404 → null)
-      svc.loadOutline(),                // 2 — nullable
-      svc.loadArticle(),                // 3 — nullable
-      svc.loadMagisterium(),            // 4
-      svc.loadMagisteriumBatch(),       // 5
-      svc.loadSpeakerTimeline(),        // 6
-      svc.loadMagisteriumFull(),        // 7
-      svc.loadMagisteriumFullPrompt(),  // 8
-      svc.loadMagisteriumFullV2(),      // 9
-      svc.loadMagisteriumFullV2Prompt(),// 10
+      svc.loadInfo(), // 0 — required (VideoNotFoundException ako 404)
+      svc.loadSummary(), // 1 — nullable (404 → null)
+      svc.loadOutline(), // 2 — nullable
+      svc.loadArticle(), // 3 — nullable
+      svc.loadMagisterium(), // 4
+      svc.loadMagisteriumBatch(), // 5
+      svc.loadSpeakerTimeline(), // 6
+      svc.loadMagisteriumFull(), // 7
+      svc.loadMagisteriumFullPrompt(), // 8
+      svc.loadMagisteriumFullV2(), // 9
+      svc.loadMagisteriumFullV2Prompt(), // 10
       // EN overlays — 404 → null kad prijevod nije producran.
-      svc.loadSummaryEn(),              // 11
-      svc.loadArticleEn(),              // 12
-      svc.loadMagisteriumEn(),          // 13
-      svc.loadMagisteriumBatchEn(),     // 14
-      svc.loadMagisteriumFullV2En(),    // 15
-      svc.resolveVideoUri(),            // 16 — H.264 probe + fallback
+      svc.loadSummaryEn(), // 11
+      svc.loadArticleEn(), // 12
+      svc.loadMagisteriumEn(), // 13
+      svc.loadMagisteriumBatchEn(), // 14
+      svc.loadMagisteriumFullV2En(), // 15
+      svc.resolveMedia(), // 16 — video_h264 → audio.mp3 → legacy video probe
     ]);
+    final info = results[0] as PodcastInfo;
+    final media = results[16] as ({String uri, EpisodeMediaKind kind});
     return EpisodeData(
       youtubeId: youtubeId,
-      info: results[0] as PodcastInfo,
+      info: info,
+      mediaKind: media.kind,
       summary: results[1] as PodcastSummary?,
       outline: results[2] as PodcastOutline?,
       article: results[3] as PodcastArticle?,
@@ -451,7 +508,7 @@ class EpisodeData {
       magisteriumEn: results[13] as MagisteriumData?,
       magisteriumBatchEn: results[14] as MagisteriumData?,
       magisteriumFullV2En: results[15] as MagisteriumFullV2Data?,
-      videoUri: results[16] as String,
+      videoUri: media.uri,
     );
   }
 
@@ -494,29 +551,40 @@ class EpisodeData {
     final outlineF = trackOptional('Poglavlja', svc.loadOutline());
     final articleF = trackOptional('Članak', svc.loadArticle());
     final magF = trackOptional('Magisterium', svc.loadMagisterium());
-    final magBatchF =
-        trackOptional('Magisterium batch', svc.loadMagisteriumBatch());
-    final magFullF =
-        trackOptional('Magisterium full', svc.loadMagisteriumFull());
-    final magPromptF =
-        trackOptional('Magisterium prompt', svc.loadMagisteriumFullPrompt());
-    final magFullV2F =
-        trackOptional('Magisterium v2', svc.loadMagisteriumFullV2());
+    final magBatchF = trackOptional(
+      'Magisterium batch',
+      svc.loadMagisteriumBatch(),
+    );
+    final magFullF = trackOptional(
+      'Magisterium full',
+      svc.loadMagisteriumFull(),
+    );
+    final magPromptF = trackOptional(
+      'Magisterium prompt',
+      svc.loadMagisteriumFullPrompt(),
+    );
+    final magFullV2F = trackOptional(
+      'Magisterium v2',
+      svc.loadMagisteriumFullV2(),
+    );
     final magV2PromptF = trackOptional(
-        'Magisterium v2 prompt', svc.loadMagisteriumFullV2Prompt());
+      'Magisterium v2 prompt',
+      svc.loadMagisteriumFullV2Prompt(),
+    );
     final srtF = trackOptional('Transkript', svc.loadSpeakerTimeline());
     // EN overlays — kreni paralelno; 404 → null kad prijevod nije producran.
-    final summaryEnF =
-        trackOptional('Sažetak (EN)', svc.loadSummaryEn());
-    final articleEnF =
-        trackOptional('Članak (EN)', svc.loadArticleEn());
-    final magEnF =
-        trackOptional('Magisterium (EN)', svc.loadMagisteriumEn());
+    final summaryEnF = trackOptional('Sažetak (EN)', svc.loadSummaryEn());
+    final articleEnF = trackOptional('Članak (EN)', svc.loadArticleEn());
+    final magEnF = trackOptional('Magisterium (EN)', svc.loadMagisteriumEn());
     final magBatchEnF = trackOptional(
-        'Magisterium batch (EN)', svc.loadMagisteriumBatchEn());
+      'Magisterium batch (EN)',
+      svc.loadMagisteriumBatchEn(),
+    );
     final magFullV2EnF = trackOptional(
-        'Magisterium v2 (EN)', svc.loadMagisteriumFullV2En());
-    final videoUriF = svc.resolveVideoUri();
+      'Magisterium v2 (EN)',
+      svc.loadMagisteriumFullV2En(),
+    );
+    final mediaF = svc.resolveMedia();
 
     // Await all (required ones may throw)
     final info = await infoF;
@@ -535,11 +603,12 @@ class EpisodeData {
     final magEn = await magEnF;
     final magBatchEn = await magBatchEnF;
     final magFullV2En = await magFullV2EnF;
-    final videoUri = await videoUriF;
+    final media = await mediaF;
 
     return EpisodeData(
       youtubeId: youtubeId,
       info: info,
+      mediaKind: media.kind,
       summary: summary,
       summaryEn: summaryEn,
       outline: outline,
@@ -555,7 +624,7 @@ class EpisodeData {
       magisteriumFullV2En: magFullV2En,
       magisteriumFullV2Prompt: magV2Prompt,
       speakerTimeline: srt,
-      videoUri: videoUri,
+      videoUri: media.uri,
     );
   }
 }

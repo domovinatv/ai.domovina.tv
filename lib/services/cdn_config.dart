@@ -46,10 +46,8 @@ class CdnConfig {
 
   // English translation overlays — superset HR + dodana `_en` polja.
   // 404 dok pipeline jos nije producirao prijevod za dani video.
-  static String summaryEnUrl(String ytId) =>
-      '$base/data/$ytId/summary.en.json';
-  static String articleEnUrl(String ytId) =>
-      '$base/data/$ytId/article.en.json';
+  static String summaryEnUrl(String ytId) => '$base/data/$ytId/summary.en.json';
+  static String articleEnUrl(String ytId) => '$base/data/$ytId/article.en.json';
   static String magisteriumEnUrl(String ytId) =>
       '$base/data/$ytId/article.magisterium.en.json';
   static String magisteriumBatchEnUrl(String ytId) =>
@@ -64,16 +62,31 @@ class CdnConfig {
 
   /// H.264 transcode — univerzalno HW-dekodirajuć (Android 4+, svi browseri,
   /// iOS). Pipeline producira ovo paralelno s `video.mp4`. Postoji samo za
-  /// epizode koje su prošle transcode korak; vidi [DataService.resolveVideoUri]
+  /// epizode koje su prošle transcode korak; vidi [DataService.resolveMedia]
   /// koji probe-a postojanje i fallback-a na [videoUrl] ako 404.
-  static String videoH264Url(String ytId) =>
-      '$base/data/$ytId/video_h264.mp4';
+  static String videoH264Url(String ytId) => '$base/data/$ytId/video_h264.mp4';
 
   /// Probe URL za H.264 postojanje — s cache-busterom da stale 404 (od prije
   /// nego je transcode završio) ne zaglavi fallback na izvorni video.
   /// Playback i dalje koristi čisti [videoH264Url] (immutable cache OK).
   static String videoH264ProbeUrl(String ytId) =>
       '$base/data/$ytId/video_h264.mp4?${_channelCacheBuster()}';
+
+  /// Probe URL za legacy `video.mp4` postojanje (cache-buster zbog 404 cache-a).
+  static String videoProbeUrl(String ytId) =>
+      '$base/data/$ytId/video.mp4?${_channelCacheBuster()}';
+
+  /// Audio MP3 — AUDIO-ONLY epizode (beamly/transistor kanali bez YouTube
+  /// videa, npr. subclub/launched). Pipeline uploada `audio.mp3` (audio/mpeg,
+  /// immutable) za epizode kojima je `_yt_matched === false`. Podržava HTTP 206
+  /// range requeste (seek). Vidi data_contract.md §8.1 + [DataService.resolveMedia].
+  static String audioUrl(String ytId) => '$base/data/$ytId/audio.mp3';
+
+  /// Probe URL za `audio.mp3` postojanje — s cache-busterom (CDN cache-ira 404
+  /// 4h, pa stale 404 od prije uploada ne smije zaglaviti detekciju).
+  /// Playback koristi čisti [audioUrl] (immutable cache OK).
+  static String audioProbeUrl(String ytId) =>
+      '$base/data/$ytId/audio.mp3?${_channelCacheBuster()}';
 
   /// Thumbnail epizode
   static String thumbnailUrl(String ytId) => '$base/images/$ytId/thumbnail.png';

@@ -63,10 +63,10 @@ class _ChannelScreenState extends State<ChannelScreen> {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      _resolvedName ??
-                          widget.channelId.replaceAll('_', ' '),
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      _resolvedName ?? widget.channelId.replaceAll('_', ' '),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -131,6 +131,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
                         child: _ResponsiveVideoList(
                           videos: detail.videos,
                           onVideoTap: _openVideo,
+                          isAudioSource: detail.isAudioSource,
                         ),
                       ),
                     ],
@@ -149,9 +150,13 @@ class _ResponsiveVideoList extends StatelessWidget {
   final List<ChannelVideo> videos;
   final void Function(String videoId) onVideoTap;
 
+  /// Kanal je audio-only izvor → kartice bez thumbnaila pokazuju "Audio Only".
+  final bool isAudioSource;
+
   const _ResponsiveVideoList({
     required this.videos,
     required this.onVideoTap,
+    required this.isAudioSource,
   });
 
   static const double _maxCardWidth = 300;
@@ -168,6 +173,7 @@ class _ResponsiveVideoList extends StatelessWidget {
             itemBuilder: (context, i) => _VideoCard(
               video: videos[i],
               onTap: () => onVideoTap(videos[i].id),
+              isAudioSource: isAudioSource,
             ),
           );
         }
@@ -180,13 +186,16 @@ class _ResponsiveVideoList extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: videos
-                .map((v) => SizedBox(
-                      width: cardWidth,
-                      child: _VideoGridCard(
-                        video: v,
-                        onTap: () => onVideoTap(v.id),
-                      ),
-                    ))
+                .map(
+                  (v) => SizedBox(
+                    width: cardWidth,
+                    child: _VideoGridCard(
+                      video: v,
+                      onTap: () => onVideoTap(v.id),
+                      isAudioSource: isAudioSource,
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         );
@@ -198,13 +207,22 @@ class _ResponsiveVideoList extends StatelessWidget {
 class _VideoCard extends StatelessWidget {
   final ChannelVideo video;
   final VoidCallback onTap;
+  final bool isAudioSource;
 
-  const _VideoCard({required this.video, required this.onTap});
+  const _VideoCard({
+    required this.video,
+    required this.onTap,
+    this.isAudioSource = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasArticle = video.pipeline?.hasArticle ?? false;
+    // Audio-only kanali: nedostatak thumbnaila = audio epizoda → "Audio Only".
+    Widget placeholder() => isAudioSource
+        ? audioPlaceholder(theme, 120, 68)
+        : videoPlaceholder(theme, 120, 68);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -224,10 +242,9 @@ class _VideoCard extends StatelessWidget {
                         width: 120,
                         height: 68,
                         fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) =>
-                            videoPlaceholder(theme, 120, 68),
+                        errorBuilder: (c, e, s) => placeholder(),
                       )
-                    : videoPlaceholder(theme, 120, 68),
+                    : placeholder(),
               ),
               const SizedBox(width: 12),
               Expanded(child: videoMeta(theme, video, hasArticle)),
@@ -242,13 +259,21 @@ class _VideoCard extends StatelessWidget {
 class _VideoGridCard extends StatelessWidget {
   final ChannelVideo video;
   final VoidCallback onTap;
+  final bool isAudioSource;
 
-  const _VideoGridCard({required this.video, required this.onTap});
+  const _VideoGridCard({
+    required this.video,
+    required this.onTap,
+    this.isAudioSource = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasArticle = video.pipeline?.hasArticle ?? false;
+    // Audio-only kanali: nedostatak thumbnaila = audio epizoda → "Audio Only".
+    Widget placeholder() =>
+        isAudioSource ? audioPlaceholder(theme) : videoPlaceholder(theme);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -264,9 +289,9 @@ class _VideoGridCard extends StatelessWidget {
                       video.thumbnail!,
                       fit: BoxFit.cover,
                       width: double.infinity,
-                      errorBuilder: (c, e, s) => videoPlaceholder(theme),
+                      errorBuilder: (c, e, s) => placeholder(),
                     )
-                  : videoPlaceholder(theme),
+                  : placeholder(),
             ),
             Padding(
               padding: const EdgeInsets.all(10),
@@ -285,114 +310,152 @@ class _VideoGridCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 Widget videoPlaceholder(ThemeData theme, [double? w, double? h]) => Container(
-      width: w,
-      height: h,
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(Icons.ondemand_video,
-            color: theme.colorScheme.onSurfaceVariant),
-      ),
-    );
+  width: w,
+  height: h,
+  color: theme.colorScheme.surfaceContainerHighest,
+  child: Center(
+    child: Icon(
+      Icons.ondemand_video,
+      color: theme.colorScheme.onSurfaceVariant,
+    ),
+  ),
+);
 
-Widget videoMeta(ThemeData theme, ChannelVideo video, bool hasArticle) =>
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          video.displayTitle,
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            if (video.date != null)
-              videoMetaChip(theme, Icons.calendar_today, video.date!),
-            if (video.durationDisplay != null)
-              videoMetaChip(theme, Icons.schedule, video.durationDisplay!),
-          ],
-        ),
-        const SizedBox(height: 4),
-        if (video.speakers.isNotEmpty)
-          Text(
-            video.speakers.join(', '),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            if (video.magisteriumScore != null) ...[
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: MagisteriumSection.scoreColor(video.magisteriumScore)
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: MagisteriumSection.scoreColor(video.magisteriumScore)
-                          .withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.church,
-                        size: 11,
-                        color: MagisteriumSection.scoreColor(
-                            video.magisteriumScore)),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${video.magisteriumScore}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: MagisteriumSection.scoreColor(
-                            video.magisteriumScore),
-                      ),
-                    ),
-                  ],
-                ),
+/// "Audio Only" placeholder za epizode bez thumbnaila na audio-only kanalima
+/// (vidi [ChannelDetail.isAudioSource]). Mali list-card ([h] ~68) prikazuje
+/// samo ikonu; veći (grid 16:9) i tekst.
+Widget audioPlaceholder(ThemeData theme, [double? w, double? h]) {
+  final compact = h != null && h < 90;
+  return Container(
+    width: w,
+    height: h,
+    color: theme.colorScheme.surfaceContainerHighest,
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.podcasts, color: theme.colorScheme.onSurfaceVariant),
+          if (!compact) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Audio Only',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
               ),
-              const SizedBox(width: 6),
-            ],
-            if (!hasArticle)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+Widget videoMeta(
+  ThemeData theme,
+  ChannelVideo video,
+  bool hasArticle,
+) => Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(
+      video.displayTitle,
+      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    ),
+    const SizedBox(height: 4),
+    Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        if (video.date != null)
+          videoMetaChip(theme, Icons.calendar_today, video.date!),
+        if (video.durationDisplay != null)
+          videoMetaChip(theme, Icons.schedule, video.durationDisplay!),
+      ],
+    ),
+    const SizedBox(height: 4),
+    if (video.speakers.isNotEmpty)
+      Text(
+        video.speakers.join(', '),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    const SizedBox(height: 6),
+    Row(
+      children: [
+        if (video.magisteriumScore != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: MagisteriumSection.scoreColor(
+                video.magisteriumScore,
+              ).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: MagisteriumSection.scoreColor(
+                  video.magisteriumScore,
+                ).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.church,
+                  size: 11,
+                  color: MagisteriumSection.scoreColor(video.magisteriumScore),
                 ),
-                child: Text(
-                  'U obradi',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(width: 3),
+                Text(
+                  '${video.magisteriumScore}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: MagisteriumSection.scoreColor(
+                      video.magisteriumScore,
+                    ),
                   ),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+        if (!hasArticle)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'U obradi',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-          ],
-        ),
+            ),
+          ),
       ],
-    );
+    ),
+  ],
+);
 
 Widget videoMetaChip(ThemeData theme, IconData icon, String text) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 3),
-        Text(
-          text,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+    const SizedBox(width: 3),
+    Text(
+      text,
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    ),
+  ],
+);

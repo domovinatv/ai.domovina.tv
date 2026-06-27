@@ -25,7 +25,7 @@ import '../services/watch_progress_service.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/language_toggle_chip.dart';
-import '../widgets/support_episode_panel.dart';
+import '../pinka_sdk/pinka_sdk.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
@@ -175,78 +175,77 @@ class _LoadingScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Progress ring
-                SizedBox(
-                  width: 64,
-                  height: 64,
-                  child: CircularProgressIndicator(
-                    value: assetStatus.isEmpty ? null : progress,
-                    strokeWidth: 4,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Ucitavanje epizode',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  youtubeId,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontFamily: 'monospace',
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Asset status list
-                ...assetStatus.entries.map((e) {
-                  final (done, ok) = e.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: done
-                              ? Icon(
-                                  ok
-                                      ? Icons.check_circle
-                                      : Icons.remove_circle_outline,
-                                  size: 18,
-                                  color: ok
-                                      ? const Color(0xFF2E7D32)
-                                      : theme.colorScheme.onSurfaceVariant
-                                            .withAlpha(100),
-                                )
-                              : const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          e.key,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: done && !ok
-                                ? theme.colorScheme.onSurfaceVariant.withAlpha(
-                                    100,
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ],
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: CircularProgressIndicator(
+                      value: assetStatus.isEmpty ? null : progress,
+                      strokeWidth: 4,
                     ),
-                  );
-                }),
-              ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Ucitavanje epizode',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    youtubeId,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontFamily: 'monospace',
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Asset status list
+                  ...assetStatus.entries.map((e) {
+                    final (done, ok) = e.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: done
+                                ? Icon(
+                                    ok
+                                        ? Icons.check_circle
+                                        : Icons.remove_circle_outline,
+                                    size: 18,
+                                    color: ok
+                                        ? const Color(0xFF2E7D32)
+                                        : theme.colorScheme.onSurfaceVariant
+                                              .withAlpha(100),
+                                  )
+                                : const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            e.key,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: done && !ok
+                                  ? theme.colorScheme.onSurfaceVariant
+                                        .withAlpha(100)
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
-        ),
         ),
       ),
     );
@@ -329,17 +328,16 @@ class _Breadcrumb extends StatelessWidget {
         crumb('Početna', onTap: () => context.go('/')),
         if (hasChannel) ...[
           sep(),
-          node(crumb(
-            channelName,
-            onTap: () => context.go('/c/$slug'),
-            // Kad epizodu skrivamo (širina 600–760), kanal je zadnji čvor.
-            current: !showEpisode,
-          )),
+          node(
+            crumb(
+              channelName,
+              onTap: () => context.go('/c/$slug'),
+              // Kad epizodu skrivamo (širina 600–760), kanal je zadnji čvor.
+              current: !showEpisode,
+            ),
+          ),
         ],
-        if (showEpisode) ...[
-          sep(),
-          node(crumb(episodeTitle, current: true)),
-        ],
+        if (showEpisode) ...[sep(), node(crumb(episodeTitle, current: true))],
       ],
     );
 
@@ -455,6 +453,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// breadcrumb tada sakrije kanal-čvor.
   String? _channelSlug;
 
+  /// Cover-art za audio-only epizode (CORS-safe channel avatar square).
+  /// Razrješava se iz channel indexa u [_resolveChannelSlug].
+  String? _audioArtUrl;
+
   @override
   void initState() {
     super.initState();
@@ -490,8 +492,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _sectionKeys = {
       if (article != null)
         for (final iter in article.iterations)
-          for (final sec in iter.sections)
-            sec.screenshotTimestamp: GlobalKey(),
+          for (final sec in iter.sections) sec.screenshotTimestamp: GlobalKey(),
     };
 
     // Keys za Magisterium stupac — scroll sync (primary variant)
@@ -595,9 +596,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
   Future<void> _resolveChannelSlug() async {
     await channelCache.loadIndex();
     if (!mounted) return;
-    final id = channelCache.channelIdForName(widget.data.info.channel);
-    if (id == null) return;
-    setState(() => _channelSlug = id.replaceAll('_', '-'));
+    final name = widget.data.info.channel;
+    final id = channelCache.channelIdForName(name);
+    final art = channelCache.avatarSquareForChannelName(name);
+    setState(() {
+      if (id != null) _channelSlug = id.replaceAll('_', '-');
+      _audioArtUrl = art;
+    });
   }
 
   Duration _parseDuration(String ts) {
@@ -633,13 +638,23 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
   Future<void> _initVideo() async {
     final videoUri = widget.data.videoUri;
+    // Nema playabilne medije (sva 3 probe-a 404) — ne pokušavaj otvoriti player
+    // (izbjegava beskonačni spinner / open na prazan URI). UI ostaje graceful.
+    if (!widget.data.hasMedia || videoUri.isEmpty) {
+      debugPrint(
+        'Video: no media for ${widget.data.youtubeId} — skipping player',
+      );
+      return;
+    }
     // URL explicit timestamp (`/v/<id>/t/<sec>` ili `?t=`) ima prednost nad
     // saved progress-om. Inače resume na zadnju poziciju ako > 5s i ako
     // epizoda nije completed (≥ 90% rewatch konvencija — kreni od početka).
     int? startAt = widget.startAtSeconds;
     bool resumedFromSaved = false;
     if (startAt == null) {
-      final saved = WatchProgressService.instance.getSync(widget.data.youtubeId);
+      final saved = WatchProgressService.instance.getSync(
+        widget.data.youtubeId,
+      );
       if (saved != null && !saved.completed && saved.positionSeconds > 5) {
         startAt = saved.positionSeconds;
         resumedFromSaved = true;
@@ -949,8 +964,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
             ? topInset + kToolbarHeight + kParallelStickyHeaderHeight
             : topInset + kToolbarHeight;
         final desiredY = pinned + gap;
-        final target = (_scrollController.offset + (currentY - desiredY))
-            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        final target = (_scrollController.offset + (currentY - desiredY)).clamp(
+          0.0,
+          _scrollController.position.maxScrollExtent,
+        );
         _scrollController.jumpTo(target);
       } else {
         Scrollable.ensureVisible(
@@ -1041,6 +1058,25 @@ class _EpisodeContentState extends State<_EpisodeContent>
     );
   }
 
+  /// AppBar akcija za otvaranje izvora epizode: YouTube za standardne, izvorna
+  /// podcast stranica (webpage_url) za audio-only. Null kad nema URL-a.
+  Widget? _sourceAction(EpisodeData data) {
+    final url = data.info.sourceUrl;
+    if (url == null) return null;
+    if (data.isAudioOnly) {
+      return IconButton(
+        icon: const Icon(Icons.open_in_new),
+        tooltip: 'Otvori izvor',
+        onPressed: () => openUrl(url),
+      );
+    }
+    return IconButton(
+      icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
+      tooltip: 'Otvori na YouTube',
+      onPressed: () => openUrl(url),
+    );
+  }
+
   String _formatClock(int seconds) {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
@@ -1096,158 +1132,162 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final isMobileWithTabs = !isWide && hasMag;
 
     final appBar = _episodeAppBar(
-          twoRow: width < 600,
-          title: _Breadcrumb(
-            channelName: data.info.channel,
-            channelSlug: _channelSlug,
-            episodeTitle: data.displayTitle,
+      twoRow: width < 600,
+      title: _Breadcrumb(
+        channelName: data.info.channel,
+        channelSlug: _channelSlug,
+        episodeTitle: data.displayTitle,
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: Center(
+            child: Text(
+              data.info.id,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontFamily: 'monospace',
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Center(
-                child: Text(
-                  data.info.id,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontFamily: 'monospace',
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+        ),
+        FavoriteButton(episodeId: data.youtubeId),
+        if (data.hasTranslationEn)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Center(
+              child: LanguageToggleChip(
+                current: _language,
+                onChanged: _onLanguageChanged,
+                compact: true,
               ),
             ),
-            FavoriteButton(episodeId: data.youtubeId),
-            if (data.hasTranslationEn)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Center(
-                  child: LanguageToggleChip(
-                    current: _language,
-                    onChanged: _onLanguageChanged,
-                    compact: true,
-                  ),
-                ),
-              ),
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              tooltip: 'Kopiraj link na trenutni trenutak',
-              onPressed: () => _copyMomentLink(context, data.youtubeId),
+          ),
+        IconButton(
+          icon: const Icon(Icons.share_outlined),
+          tooltip: 'Kopiraj link na trenutni trenutak',
+          onPressed: () => _copyMomentLink(context, data.youtubeId),
+        ),
+        if (_sourceAction(data) != null) _sourceAction(data)!,
+        ViewModeToggleButton(
+          toSimple: true,
+          onPressed: () async {
+            await saveSimpleModePref(true);
+            if (!context.mounted) return;
+            final target = _language == EpisodeLanguage.en
+                ? '/m/${data.youtubeId}/en'
+                : '/m/${data.youtubeId}';
+            context.go(target);
+          },
+        ),
+        if (_videoReady && !showVideo)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.ondemand_video),
+              tooltip: 'Video',
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
-            IconButton(
-              icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
-              tooltip: 'Otvori na YouTube',
-              onPressed: () =>
-                  openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
-            ),
-            ViewModeToggleButton(
-              toSimple: true,
-              onPressed: () async {
-                await saveSimpleModePref(true);
-                if (!context.mounted) return;
-                final target = _language == EpisodeLanguage.en
-                    ? '/m/${data.youtubeId}/en'
-                    : '/m/${data.youtubeId}';
-                context.go(target);
-              },
-            ),
-            if (_videoReady && !showVideo)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: IconButton(
-                  icon: const Icon(Icons.ondemand_video),
-                  tooltip: 'Video',
-                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-                ),
-              ),
-          ],
-        );
+          ),
+      ],
+    );
 
     final standardContent = SliverToBoxAdapter(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 860),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HeroSection(
-                    info: data.info,
-                    youtubeId: data.youtubeId,
-                    summary: summaryForUi.summary,
-                  ),
-                  SupportEpisodePanel(
-                    youtubeId: data.youtubeId,
-                    episodeTitle: data.displayTitle,
-                  ),
-                  if (data.hasTranslationEn)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: Row(
-                        children: [
-                          Text(
-                            _language == EpisodeLanguage.en
-                                ? 'Language:'
-                                : 'Jezik:',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          LanguageToggleChip(
-                            current: _language,
-                            onChanged: _onLanguageChanged,
-                          ),
-                        ],
-                      ),
-                    ),
-                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                  SummarySection(summary: summaryForUi),
-                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                  const SizedBox(height: 12),
-                  ChaptersSection(outline: data.outline!),
-                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                  const SizedBox(height: 12),
-                  ArticleSection(
-                    article: articleForUi,
-                    youtubeId: data.youtubeId,
-                    sectionKeys: _sectionKeys,
-                    onPlayTap: _videoReady
-                        ? (ts) {
-                            _seekAndPlay(ts, preroll: true);
-                            // Na mobilu (!isWide) korisnik vidi samo text — bez
-                            // drawera, klik na play je "tihi seek" bez vizuala.
-                            // Otvori endDrawer s playerom da odmah vidi video.
-                            // Wide mode ima video panel/stupac side-by-side
-                            // pa drawer otvaranje nije potrebno.
-                            if (!isWide) {
-                              _scaffoldKey.currentState?.openEndDrawer();
-                            }
-                          }
-                        : null,
-                    magisterium: magPrimary,
-                  ),
-                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                  const SizedBox(height: 12),
-                  // Magisterium inline: samo kad NIJE prikazan kao stupac
-                  // i kad nismo u mobile-tab modu (tamo ima svoj zasebni tab).
-                  if (hasMag && !showMagColumn && !isMobileWithTabs) ...[
-                    if (magV2 != null)
-                      MagisteriumV2View(data: magV2)
-                    else
-                      MagisteriumPanel(
-                        variants: magVariants,
-                        magisteriumFull: data.magisteriumFull,
-                        magisteriumFullPrompt: data.magisteriumFullPrompt,
-                      ),
-                    Divider(height: 1, color: theme.colorScheme.outlineVariant),
-                    const SizedBox(height: 12),
-                  ],
-                  EntitiesSection(summary: summaryForUi.summary),
-                  _MetadataFooter(data: data),
-                ],
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HeroSection(
+                info: data.info,
+                youtubeId: data.youtubeId,
+                summary: summaryForUi.summary,
               ),
-            ),
+              // "Zid podrške" za epizodu — sam se sakrije ako epizoda nema
+              // aktivnu pinka kampanju (vidi lib/pinka_sdk/). SEPA QR +
+              // on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik.
+              PinkaSupportCard.episode(
+                youtubeId: data.youtubeId,
+                onOpen: (_) => context.push(
+                  Uri(
+                    path: '/v/${data.youtubeId}/support',
+                    queryParameters: {'name': data.displayTitle},
+                  ).toString(),
+                ),
+              ),
+              if (data.hasTranslationEn)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Row(
+                    children: [
+                      Text(
+                        _language == EpisodeLanguage.en
+                            ? 'Language:'
+                            : 'Jezik:',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      LanguageToggleChip(
+                        current: _language,
+                        onChanged: _onLanguageChanged,
+                      ),
+                    ],
+                  ),
+                ),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              SummarySection(summary: summaryForUi),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              const SizedBox(height: 12),
+              ChaptersSection(outline: data.outline!),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              const SizedBox(height: 12),
+              ArticleSection(
+                article: articleForUi,
+                youtubeId: data.youtubeId,
+                sectionKeys: _sectionKeys,
+                showScreenshot: !data.isAudioOnly,
+                onPlayTap: _videoReady
+                    ? (ts) {
+                        _seekAndPlay(ts, preroll: true);
+                        // Na mobilu (!isWide) korisnik vidi samo text — bez
+                        // drawera, klik na play je "tihi seek" bez vizuala.
+                        // Otvori endDrawer s playerom da odmah vidi video.
+                        // Wide mode ima video panel/stupac side-by-side
+                        // pa drawer otvaranje nije potrebno.
+                        if (!isWide) {
+                          _scaffoldKey.currentState?.openEndDrawer();
+                        }
+                      }
+                    : null,
+                magisterium: magPrimary,
+              ),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              const SizedBox(height: 12),
+              // Magisterium inline: samo kad NIJE prikazan kao stupac
+              // i kad nismo u mobile-tab modu (tamo ima svoj zasebni tab).
+              if (hasMag && !showMagColumn && !isMobileWithTabs) ...[
+                if (magV2 != null)
+                  MagisteriumV2View(data: magV2)
+                else
+                  MagisteriumPanel(
+                    variants: magVariants,
+                    magisteriumFull: data.magisteriumFull,
+                    magisteriumFullPrompt: data.magisteriumFullPrompt,
+                  ),
+                Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                const SizedBox(height: 12),
+              ],
+              EntitiesSection(summary: summaryForUi.summary),
+              _MetadataFooter(data: data),
+            ],
           ),
-        );
+        ),
+      ),
+    );
 
     // Paralelni desktop sadrzaj: hero/sazetak/poglavlja na citkoj sirini (860),
     // pa clanak ‖ Magisterium per-sekcija na siroj (dijele isti scroll →
@@ -1268,9 +1308,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         youtubeId: data.youtubeId,
                         summary: summaryForUi.summary,
                       ),
-                      SupportEpisodePanel(
+                      // "Zid podrške" za epizodu — vidi standardni layout iznad.
+                      PinkaSupportCard.episode(
                         youtubeId: data.youtubeId,
-                        episodeTitle: data.displayTitle,
+                        onOpen: (_) => context.push(
+                          Uri(
+                            path: '/v/${data.youtubeId}/support',
+                            queryParameters: {'name': data.displayTitle},
+                          ).toString(),
+                        ),
                       ),
                       if (data.hasTranslationEn)
                         Padding(
@@ -1294,14 +1340,20 @@ class _EpisodeContentState extends State<_EpisodeContent>
                           ),
                         ),
                       Divider(
-                          height: 1, color: theme.colorScheme.outlineVariant),
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                       SummarySection(summary: summaryForUi),
                       Divider(
-                          height: 1, color: theme.colorScheme.outlineVariant),
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                       const SizedBox(height: 12),
                       ChaptersSection(outline: data.outline!),
                       Divider(
-                          height: 1, color: theme.colorScheme.outlineVariant),
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                     ],
                   ),
                 ),
@@ -1314,7 +1366,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   delegate: ParallelColumnsStickyDelegate(
                     // Score je jezicno-neovisan; EN overlay varijanta cesto nema
                     // overall_score pa fallbackamo na HR primary score.
-                    overallScore: magPrimary.overallScore ??
+                    overallScore:
+                        magPrimary.overallScore ??
                         data.magisteriumPrimary?.overallScore,
                   ),
                 ),
@@ -1327,6 +1380,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         magisterium: magPrimary,
                         youtubeId: data.youtubeId,
                         sectionKeys: _sectionKeys,
+                        showScreenshot: !data.isAudioOnly,
                         onPlayTap: _videoReady
                             ? (ts) => _seekAndPlay(ts, preroll: true)
                             : null,
@@ -1344,7 +1398,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Divider(
-                          height: 1, color: theme.colorScheme.outlineVariant),
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                       const SizedBox(height: 12),
                       EntitiesSection(summary: summaryForUi.summary),
                       _MetadataFooter(data: data),
@@ -1358,7 +1414,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
-      slivers: useParallel ? [appBar, ...parallelSlivers] : [appBar, standardContent],
+      slivers: useParallel
+          ? [appBar, ...parallelSlivers]
+          : [appBar, standardContent],
     );
 
     // Mobile Magisterium tab — zasebni scroll view s istim SliverAppBar patternom
@@ -1401,8 +1459,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   child: IconButton(
                     icon: const Icon(Icons.ondemand_video),
                     tooltip: 'Video',
-                    onPressed: () =>
-                        _scaffoldKey.currentState?.openEndDrawer(),
+                    onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                   ),
                 ),
             ],
@@ -1481,6 +1538,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
             VideoPanel(
               player: _player!,
               youtubeId: widget.data.youtubeId,
+              audioOnly: data.isAudioOnly,
+              posterUrl: _audioArtUrl,
               controller: _videoController!,
               chapters: _videoChapters,
               activeTimestamp: _activeTimestamp,
@@ -1511,6 +1570,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
           VideoPanel(
             player: _player!,
             youtubeId: widget.data.youtubeId,
+            audioOnly: data.isAudioOnly,
+            posterUrl: _audioArtUrl,
             controller: _videoController!,
             chapters: _videoChapters,
             activeTimestamp: _activeTimestamp,
@@ -1557,6 +1618,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
           VideoPanel(
             player: _player!,
             youtubeId: widget.data.youtubeId,
+            audioOnly: data.isAudioOnly,
+            posterUrl: _audioArtUrl,
             controller: _videoController!,
             chapters: _videoChapters,
             activeTimestamp: _activeTimestamp,
@@ -1602,160 +1665,162 @@ class _EpisodeContentState extends State<_EpisodeContent>
       language: _language,
       hasTranslationEn: data.hasTranslationEn,
       child: Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: theme.colorScheme.surfaceContainerLow,
-      onEndDrawerChanged: (isOpen) {
-        if (isOpen) {
-          // Snapshot playing state odmah pri otvaranju — service-class
-          // resume detekcija pri close.
-          _wasPlayingWhenDrawerOpened = _player?.state.playing ?? false;
-        } else {
-          // Drawer zatvoren. Ako je bio playing kad je otvoren i sad nije
-          // (media_kit ga pauzirao zbog Video widget detach), resume.
-          if (_wasPlayingWhenDrawerOpened) {
-            Future<void>.delayed(const Duration(milliseconds: 120), () {
-              if (!mounted) return;
-              if (!(_player?.state.playing ?? false)) {
-                _player?.play();
-              }
-            });
+        key: _scaffoldKey,
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
+        onEndDrawerChanged: (isOpen) {
+          if (isOpen) {
+            // Snapshot playing state odmah pri otvaranju — service-class
+            // resume detekcija pri close.
+            _wasPlayingWhenDrawerOpened = _player?.state.playing ?? false;
+          } else {
+            // Drawer zatvoren. Ako je bio playing kad je otvoren i sad nije
+            // (media_kit ga pauzirao zbog Video widget detach), resume.
+            if (_wasPlayingWhenDrawerOpened) {
+              Future<void>.delayed(const Duration(milliseconds: 120), () {
+                if (!mounted) return;
+                if (!(_player?.state.playing ?? false)) {
+                  _player?.play();
+                }
+              });
+            }
           }
-        }
-      },
-      drawer: isWide
-          ? null
-          : Drawer(
-              child: SafeArea(
-                child: TableOfContents(
-                  article: articleForUi,
-                  activeTimestamp: _activeTimestamp,
-                  scrollTimestamp: _scrollTimestamp,
-                  onSectionTap: _drawerTap,
-                ),
-              ),
-            ),
-      endDrawer: _videoReady && !showVideo
-          ? Drawer(
-              width: 360,
-              child: SafeArea(
-                child: VideoPanel(
-                  player: _player!,
-                  youtubeId: widget.data.youtubeId,
-                  controller: _videoController!,
-                  chapters: _videoChapters,
-                  activeTimestamp: _activeTimestamp,
-                  onChapterTap: _seekAndPlay,
-                  onSeek: _onVideoSeek,
-                  totalDurationSeconds: data.info.duration,
-                  speakerTimeline: data.speakerTimeline,
-                  speakers: summaryForUi.summary.speakers,
-                  width: null,
-                ),
-              ),
-            )
-          : null,
-      // SliverAppBar (primary: true) respektira top safe area, pa top: false.
-      // Bottom: true samo kad nema bottomNavigationBara (inace bi stvorilo gap).
-      body: SafeArea(
-        top: false,
-        bottom: !showMobileBottomBar,
-        child: Stack(
-          children: [
-            body,
-            Positioned(
-              top: 12,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  transitionBuilder: (child, anim) => FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, -0.2),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: child,
-                    ),
+        },
+        drawer: isWide
+            ? null
+            : Drawer(
+                child: SafeArea(
+                  child: TableOfContents(
+                    article: articleForUi,
+                    activeTimestamp: _activeTimestamp,
+                    scrollTimestamp: _scrollTimestamp,
+                    onSectionTap: _drawerTap,
                   ),
-                  child: _resumeHintSeconds == null
-                      ? const SizedBox.shrink()
-                      : ResumeHintBanner(
-                          key: ValueKey(_resumeHintSeconds),
-                          seconds: _resumeHintSeconds!,
-                        ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: showMobileBottomBar
-          ? Material(
-              color: theme.colorScheme.surface,
-              elevation: 3,
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  height: 64,
-                  child: Row(
-                    children: [
-                      _BottomBarButton(
-                        icon: Icons.menu,
-                        label: 'Sadržaj',
-                        isActive: false,
-                        onTap: () {
-                          final s = _scaffoldKey.currentState;
-                          if (s == null) return;
-                          if (s.isDrawerOpen) {
-                            s.closeDrawer();
-                          } else {
-                            s.openDrawer();
-                          }
-                        },
+        endDrawer: _videoReady && !showVideo
+            ? Drawer(
+                width: 360,
+                child: SafeArea(
+                  child: VideoPanel(
+                    player: _player!,
+                    youtubeId: widget.data.youtubeId,
+                    audioOnly: data.isAudioOnly,
+                    posterUrl: _audioArtUrl,
+                    controller: _videoController!,
+                    chapters: _videoChapters,
+                    activeTimestamp: _activeTimestamp,
+                    onChapterTap: _seekAndPlay,
+                    onSeek: _onVideoSeek,
+                    totalDurationSeconds: data.info.duration,
+                    speakerTimeline: data.speakerTimeline,
+                    speakers: summaryForUi.summary.speakers,
+                    width: null,
+                  ),
+                ),
+              )
+            : null,
+        // SliverAppBar (primary: true) respektira top safe area, pa top: false.
+        // Bottom: true samo kad nema bottomNavigationBara (inace bi stvorilo gap).
+        body: SafeArea(
+          top: false,
+          bottom: !showMobileBottomBar,
+          child: Stack(
+            children: [
+              body,
+              Positioned(
+                top: 12,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, -0.2),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
                       ),
-                      if (isMobileWithTabs) ...[
+                    ),
+                    child: _resumeHintSeconds == null
+                        ? const SizedBox.shrink()
+                        : ResumeHintBanner(
+                            key: ValueKey(_resumeHintSeconds),
+                            seconds: _resumeHintSeconds!,
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: showMobileBottomBar
+            ? Material(
+                color: theme.colorScheme.surface,
+                elevation: 3,
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: 64,
+                    child: Row(
+                      children: [
                         _BottomBarButton(
-                          icon: _mobileTab == 0
-                              ? Icons.article
-                              : Icons.article_outlined,
-                          label: 'Članak',
-                          isActive: _mobileTab == 0,
-                          onTap: () => setState(() => _mobileTab = 0),
+                          icon: Icons.menu,
+                          label: 'Sadržaj',
+                          isActive: false,
+                          onTap: () {
+                            final s = _scaffoldKey.currentState;
+                            if (s == null) return;
+                            if (s.isDrawerOpen) {
+                              s.closeDrawer();
+                            } else {
+                              s.openDrawer();
+                            }
+                          },
                         ),
+                        if (isMobileWithTabs) ...[
+                          _BottomBarButton(
+                            icon: _mobileTab == 0
+                                ? Icons.article
+                                : Icons.article_outlined,
+                            label: 'Članak',
+                            isActive: _mobileTab == 0,
+                            onTap: () => setState(() => _mobileTab = 0),
+                          ),
+                          _BottomBarButton(
+                            icon: _mobileTab == 1
+                                ? Icons.menu_book
+                                : Icons.menu_book_outlined,
+                            label: 'Magisterium',
+                            isActive: _mobileTab == 1,
+                            onTap: () => setState(() => _mobileTab = 1),
+                          ),
+                        ],
                         _BottomBarButton(
-                          icon: _mobileTab == 1
-                              ? Icons.menu_book
-                              : Icons.menu_book_outlined,
-                          label: 'Magisterium',
-                          isActive: _mobileTab == 1,
-                          onTap: () => setState(() => _mobileTab = 1),
+                          icon: Icons.ondemand_video,
+                          label: 'Video',
+                          isActive: false,
+                          onTap: _videoReady
+                              ? () {
+                                  final s = _scaffoldKey.currentState;
+                                  if (s == null) return;
+                                  if (s.isEndDrawerOpen) {
+                                    s.closeEndDrawer();
+                                  } else {
+                                    s.openEndDrawer();
+                                  }
+                                }
+                              : null,
                         ),
                       ],
-                      _BottomBarButton(
-                        icon: Icons.ondemand_video,
-                        label: 'Video',
-                        isActive: false,
-                        onTap: _videoReady
-                            ? () {
-                                final s = _scaffoldKey.currentState;
-                                if (s == null) return;
-                                if (s.isEndDrawerOpen) {
-                                  s.closeEndDrawer();
-                                } else {
-                                  s.openEndDrawer();
-                                }
-                              }
-                            : null,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            )
-          : null,
-    ),
+              )
+            : null,
+      ),
     );
   }
 
@@ -1800,12 +1865,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               tooltip: 'Kopiraj link na trenutni trenutak',
               onPressed: () => _copyMomentLink(context, data.youtubeId),
             ),
-            IconButton(
-              icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
-              tooltip: 'Otvori na YouTube',
-              onPressed: () =>
-                  openUrl('https://www.youtube.com/watch?v=${data.youtubeId}'),
-            ),
+            if (_sourceAction(data) != null) _sourceAction(data)!,
             if (_videoReady && !showVideo)
               Padding(
                 padding: const EdgeInsets.only(right: 4),
@@ -1832,7 +1892,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.tertiaryContainer.withAlpha(140),
+                        color: theme.colorScheme.tertiaryContainer.withAlpha(
+                          140,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: theme.colorScheme.tertiary.withAlpha(80),
@@ -1855,16 +1917,22 @@ class _EpisodeContentState extends State<_EpisodeContent>
                                   'AI obrada još nije gotova',
                                   style: theme.textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onTertiaryContainer,
+                                    color:
+                                        theme.colorScheme.onTertiaryContainer,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Prikazujem samo video i osnovne podatke s YouTube-a. '
-                                  'Sažetak, poglavlja, članak i teološka analiza dolaze '
-                                  'kad pipeline obradi epizodu.',
+                                  data.isAudioOnly
+                                      ? 'Prikazujem audio i osnovne podatke. '
+                                            'Sažetak, poglavlja, članak i teološka '
+                                            'analiza dolaze kad pipeline obradi epizodu.'
+                                      : 'Prikazujem samo video i osnovne podatke s YouTube-a. '
+                                            'Sažetak, poglavlja, članak i teološka analiza dolaze '
+                                            'kad pipeline obradi epizodu.',
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onTertiaryContainer,
+                                    color:
+                                        theme.colorScheme.onTertiaryContainer,
                                     height: 1.4,
                                   ),
                                 ),
@@ -1875,22 +1943,52 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Video još nije na CDN-u dok pipeline ne završi obradu, pa
-                    // je YouTube jedini watch path za tek pristigle epizode.
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () => openUrl(
-                            'https://www.youtube.com/watch?v=${data.youtubeId}'),
-                        icon: const Icon(Icons.smart_display),
-                        label: const Text('Gledaj na YouTubeu'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF0000),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                    // Audio-only: audio se već reproducira (panel/endDrawer), pa
+                    // nudimo "Slušaj" koji (re)otvara player na mobilnom.
+                    // YT-matched: crveni YouTube watch gumb (video još nije na
+                    // CDN-u). Inače (ne-YT izvor / nema medije): "Otvori izvor".
+                    if (data.isAudioOnly) ...[
+                      if (_videoReady && !showVideo)
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () =>
+                                _scaffoldKey.currentState?.openEndDrawer(),
+                            icon: const Icon(Icons.headphones),
+                            label: const Text('Slušaj epizodu'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                    ] else if (data.info.ytMatched)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => openUrl(
+                            'https://www.youtube.com/watch?v=${data.youtubeId}',
+                          ),
+                          icon: const Icon(Icons.smart_display),
+                          label: const Text('Gledaj na YouTubeu'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF0000),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      )
+                    else if (data.info.sourceUrl != null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => openUrl(data.info.sourceUrl!),
+                          icon: const Icon(Icons.open_in_new),
+                          label: const Text('Otvori izvor'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -1909,6 +2007,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
           VideoPanel(
             player: _player!,
             youtubeId: widget.data.youtubeId,
+            audioOnly: data.isAudioOnly,
+            posterUrl: _audioArtUrl,
             controller: _videoController!,
             chapters: const [],
             onChapterTap: (_) {},
@@ -1946,6 +2046,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 child: VideoPanel(
                   player: _player!,
                   youtubeId: widget.data.youtubeId,
+                  audioOnly: data.isAudioOnly,
+                  posterUrl: _audioArtUrl,
                   controller: _videoController!,
                   chapters: const [],
                   onChapterTap: (_) {},
