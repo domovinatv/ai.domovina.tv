@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
+import 'services/revenue_cat_service.dart';
 import 'services/theme_mode_service.dart';
 import 'services/tv_mode.dart';
 import 'services/update_notifier.dart';
@@ -77,6 +78,11 @@ void main() async {
   } else {
     log('Supabase: SUPABASE_URL / SUPABASE_ANON_KEY not set; running offline');
   }
+
+  // RevenueCat mora biti konfiguriran PRIJE AuthService.init() jer init odmah
+  // resolva trenutnog usera pa Purchases.logIn(uid) treba configured SDK.
+  // No-op na webu/TV-u (SDK bypassan) — vidi revenue_cat_service.dart.
+  await RevenueCatService.instance.configure();
 
   await AuthService.instance.init();
   await WatchProgressService.instance.init();
