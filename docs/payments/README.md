@@ -50,7 +50,7 @@ owner/store actions with no API. See the PR for the full human-step list.
 - [ ] App Store Connect products created (+ Paid Apps agreement, first-IAP submission) — **human**
 - [ ] Play Console products created (mind the one-time/lifetime Billing-Library caveat) — **human**
 - [ ] RevenueCat Web Billing connected to Stripe — **human**
-- [x] Supabase `subscriptions` table + RLS migration written (`sql/migrations/001_subscriptions.sql`) — **apply via domovina-api backend**
+- [x] Supabase `subscriptions` table + RLS migration written in **domovina-api** (`supabase/migrations/20260628120000_revenuecat_subscriptions.sql`, PR #1) — apply with `scripts/db-migrate.sh`
 - [x] Flutter SDK + RevenueCatService + entitlement state wired (web/TV bypass the SDK)
 - [x] Paywall UI + feature gates (additive; cross-device-sync gating left as an owner decision)
 - [x] Cloudflare Worker webhook → Supabase implemented + unit-tested (`scripts/test-revenuecat-webhook.mjs`); **set secrets + deploy** = human
