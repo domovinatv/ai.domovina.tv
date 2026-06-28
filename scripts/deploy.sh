@@ -91,8 +91,11 @@ else
   sed -i.bak "s/^version: ${OLD_VERSION}$/version: ${VERSION}/" pubspec.yaml
   rm -f pubspec.yaml.bak
 
-  # Sync u lib/main.dart — appVersion konstanta koja se prikazuje u footeru
-  sed -i.bak "s/const String appVersion = '${OLD_APP}';/const String appVersion = '${APP_VERSION}';/" lib/main.dart
+  # Sync u lib/main.dart — appVersion konstanta koja se prikazuje u footeru.
+  # Regex matcha BILO KOJU postojeću vrijednost ('[^']*') umjesto OLD_APP iz
+  # pubspec-a: ako appVersion driftne od pubspec verzije, exact-match sed bi
+  # tiho no-opao i footer bi zauvijek pokazivao staru verziju (bug do v2.0.60).
+  sed -i.bak "s/const String appVersion = '[^']*';/const String appVersion = '${APP_VERSION}';/" lib/main.dart
   rm -f lib/main.dart.bak
 fi
 
