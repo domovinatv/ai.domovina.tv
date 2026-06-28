@@ -42,17 +42,20 @@ the alternative (RevenueCat mobile + Stripe-direct web) and why we did not pick 
 
 ## Status
 
+Code (branch `feature/revenuecat-billing`) is complete; remaining boxes are
+owner/store actions with no API. See the PR for the full human-step list.
+
 - [ ] Pricing confirmed by owner (numbers in `pricing-and-tiers.md` are proposals)
-- [ ] RevenueCat project + apps + entitlement + offering provisioned
-- [ ] App Store Connect products created (+ Paid Apps agreement, first-IAP submission)
-- [ ] Play Console products created (mind the one-time/lifetime Billing-Library caveat)
-- [ ] RevenueCat Web Billing connected to Stripe
-- [ ] Supabase `subscriptions` table + RLS migrated
-- [ ] Flutter SDK + RevenueCatService + entitlement state wired
-- [ ] Paywall UI + feature gates
-- [ ] Cloudflare Worker webhook → Supabase deployed + registered
-- [ ] TestStore / sandbox E2E verified
-- [ ] PRODUCTION env flip
+- [x] RevenueCat project + entitlement (`domovina_plus`) + 3 products + `default` offering + webhook provisioned (TestStore app; iOS/Android/Web-Billing apps are human steps)
+- [ ] App Store Connect products created (+ Paid Apps agreement, first-IAP submission) — **human**
+- [ ] Play Console products created (mind the one-time/lifetime Billing-Library caveat) — **human**
+- [ ] RevenueCat Web Billing connected to Stripe — **human**
+- [x] Supabase `subscriptions` table + RLS migration written (`sql/migrations/001_subscriptions.sql`) — **apply via domovina-api backend**
+- [x] Flutter SDK + RevenueCatService + entitlement state wired (web/TV bypass the SDK)
+- [x] Paywall UI + feature gates (additive; cross-device-sync gating left as an owner decision)
+- [x] Cloudflare Worker webhook → Supabase implemented + unit-tested (`scripts/test-revenuecat-webhook.mjs`); **set secrets + deploy** = human
+- [x] TestStore webhook E2E unit-tested; **live sandbox purchase E2E** = human (needs store products + secrets)
+- [ ] PRODUCTION env flip (`REVENUECAT_REQUIRE_PRODUCTION=true` + live keys) — **human, do last**
 
 ## Guardrails (apply to every change here)
 
