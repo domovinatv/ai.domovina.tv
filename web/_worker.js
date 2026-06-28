@@ -98,6 +98,192 @@ async function handleCalProxy(request, env, path) {
   }
 }
 
+// --- RevenueCat webhook → Supabase ---------------------------------------
+//
+// Entitlement mirror writer. This endpoint is the SINGLE source of truth writer
+// for domovina_ai.subscriptions; the Flutter client only ever reads its own row
+// (RLS). Security invariants (do NOT regress — see docs/payments/architecture.md):
+//   1. Bearer-auth against env.REVENUECAT_WEBHOOK_AUTH (set identically in the
+//      RevenueCat webhook config). Reject mismatch with 401.
+//   2. Validate app_user_id is a strict UUID BEFORE any DB access — blocks a
+//      crafted id from writing another user's row.
+//   3. SANDBOX/PRODUCTION gate: set env.REVENUECAT_REQUIRE_PRODUCTION=true for
+//      the production flip; until then SANDBOX/TestStore events are accepted.
+//   4. Allowlist product_id; gate on the domovina_plus entitlement only.
+//   5. Service-role upsert (bypasses RLS) of ONLY the entitlement columns.
+//   6. Return 200 fast; RevenueCat retries non-2xx.
+
+const RC_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+// Store product ids we recognise. Production ids per pricing-and-tiers.md plus
+// the TestStore identifiers used for sandbox E2E.
+const RC_PRODUCT_ALLOWLIST = new Set([
+  'domovina_plus_monthly', 'domovina_plus_annual', 'domovina_plus_lifetime',
+  'monthly', 'yearly', 'annual', 'lifetime', // TestStore
+]);
+
+// event.type → entitlement state. CANCELLATION keeps access until expiry.
+const RC_ACTIVE_EVENTS = new Set([
+  'INITIAL_PURCHASE', 'RENEWAL', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE',
+  'PRODUCT_CHANGE', 'SUBSCRIPTION_EXTENDED', 'TEMPORARY_ENTITLEMENT_GRANT',
+  'CANCELLATION',
+]);
+const RC_EXPIRE_EVENTS = new Set([
+  'EXPIRATION', 'BILLING_ISSUE', 'SUBSCRIPTION_PAUSED', 'REFUND',
+]);
+
+function rcStoreSlug(store) {
+  switch (store) {
+    case 'APP_STORE':
+    case 'MAC_APP_STORE':
+      return 'app_store';
+    case 'PLAY_STORE':
+    case 'AMAZON':
+      return 'play_store';
+    case 'STRIPE':
+    case 'RC_BILLING':
+    case 'PADDLE':
+      return 'rc_billing';
+    default:
+      return store ? String(store).toLowerCase() : null;
+  }
+}
+
+async function handleRevenueCatWebhook(request, env) {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  // 1. Bearer auth — exact match against the configured shared secret.
+  const expected = env.REVENUECAT_WEBHOOK_AUTH;
+  const provided = request.headers.get('Authorization');
+  if (!expected || !provided || provided !== expected) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    // Misconfiguration — fail loud so RevenueCat retries once secrets land.
+    return new Response('Service role key not configured', { status: 500 });
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (_) {
+    return new Response('Bad JSON', { status: 400 });
+  }
+  const event = payload && payload.event;
+  if (!event || typeof event !== 'object') {
+    return new Response('No event', { status: 400 });
+  }
+
+  const appUserId = event.app_user_id;
+  // 2. UUID validation BEFORE any DB access. Anonymous RC ids ($RCAnonymousID:…)
+  //    and crafted ids fail here and never touch the DB.
+  if (typeof appUserId !== 'string' || !RC_UUID_RE.test(appUserId)) {
+    // 400, no write. (Anonymous-user events legitimately land here — they have
+    // no Supabase row to write until the account is linked.)
+    return new Response('Invalid app_user_id', { status: 400 });
+  }
+
+  const type = event.type;
+  const environment = event.environment; // 'SANDBOX' | 'PRODUCTION'
+
+  // 3. Environment gate (production flip).
+  const requireProd = env.REVENUECAT_REQUIRE_PRODUCTION === 'true';
+  if (requireProd && environment !== 'PRODUCTION') {
+    // Accepted-but-ignored: 200 so RevenueCat doesn't retry sandbox traffic.
+    return rcOk('ignored: non-production');
+  }
+
+  // 4a. Entitlement gate — only act on domovina_plus.
+  const entitlementIds = Array.isArray(event.entitlement_ids)
+    ? event.entitlement_ids
+    : (event.entitlement_id ? [event.entitlement_id] : []);
+  if (entitlementIds.length > 0 && !entitlementIds.includes('domovina_plus')) {
+    return rcOk('ignored: other entitlement');
+  }
+
+  // 4b. Product allowlist (defense against typos / cross-project leakage).
+  const productId = event.product_id;
+  if (productId && !RC_PRODUCT_ALLOWLIST.has(productId)) {
+    return rcOk('ignored: product not allowlisted');
+  }
+
+  // Ignore event types that don't change our access state (TRANSFER, etc.).
+  let status;
+  if (RC_ACTIVE_EVENTS.has(type)) {
+    status = 'active';
+  } else if (RC_EXPIRE_EVENTS.has(type)) {
+    status = 'expired';
+  } else {
+    return rcOk(`ignored: event type ${type}`);
+  }
+
+  const isActive = status === 'active';
+  const expirationMs = event.expiration_at_ms;
+  const periodType = event.period_type
+    ? String(event.period_type).toLowerCase()
+    : null;
+
+  const row = {
+    user_id: appUserId,
+    rc_app_user_id: appUserId,
+    status,
+    entitlement: isActive ? 'domovina_plus' : null,
+    product_id: productId || null,
+    store: rcStoreSlug(event.store),
+    period_type: periodType,
+    current_period_end:
+      typeof expirationMs === 'number'
+        ? new Date(expirationMs).toISOString()
+        : null,
+    rc_event_type: type,
+    environment: environment || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  // 5. Service-role upsert of ONLY the entitlement columns. Content-Profile
+  //    targets the non-public schema; on_conflict + merge-duplicates makes
+  //    replays idempotent (keyed by user_id).
+  const supabaseUrl = (env.SUPABASE_URL || 'https://api.domovina.ai').replace(/\/$/, '');
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/subscriptions?on_conflict=user_id`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': 'application/json',
+          'Content-Profile': 'domovina_ai',
+          'Prefer': 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify([row]),
+      },
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      // 500 → RevenueCat retries. Don't leak the body.
+      console.log(`RC webhook upsert failed ${res.status}: ${body.slice(0, 200)}`);
+      return new Response('Upsert failed', { status: 500 });
+    }
+  } catch (e) {
+    console.log(`RC webhook upsert error: ${String(e).slice(0, 200)}`);
+    return new Response('Upsert error', { status: 500 });
+  }
+
+  return rcOk(`applied ${type} → ${status}`);
+}
+
+function rcOk(message) {
+  return new Response(JSON.stringify({ ok: true, message }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  });
+}
+
 // .well-known — serviramo iz workera (NE iz ASSETS) jer:
 //   1. apple-app-site-association nema ekstenziju → fall-through na SPA fallback
 //   2. flutter build web zna preskočiti `.`-prefiksirane direktorije (web/.well-known/
@@ -187,6 +373,12 @@ export default {
     // booking POST traži ključ. Flutter app zove same-origin /api/cal/*.
     if (path === '/api/cal/slots' || path === '/api/cal/book') {
       return handleCalProxy(request, env, path);
+    }
+
+    // RevenueCat webhook — the ONLY writer of entitlement state into
+    // domovina_ai.subscriptions (service role). See handleRevenueCatWebhook.
+    if (path === '/api/revenuecat/webhook') {
+      return handleRevenueCatWebhook(request, env);
     }
 
     // Statički asseti (JS, CSS, slike, fontovi...) — direktno iz ASSETS.
