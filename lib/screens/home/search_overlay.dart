@@ -8,6 +8,7 @@ import '../../models/channel_index.dart';
 import '../../models/channel_detail.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
+import '../../services/entitlement_service.dart';
 import '../../services/search_service.dart';
 import '../../utils/text_search.dart';
 import '../../widgets/episode_age.dart';
@@ -164,7 +165,9 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 
   Future<void> _runSemantic(String q) async {
     setState(() => _semanticLoading = true);
-    final results = await SearchService.search(q, limit: 12);
+    // DOMOVINA Plus dobiva veći set rezultata (free ostaje pun i koristan).
+    final limit = EntitlementService.instance.isPlus.value ? 30 : 12;
+    final results = await SearchService.search(q, limit: limit);
     if (!mounted) return;
     // Odbaci stale odgovor (upit se promijenio u međuvremenu).
     if (_searchController.text.trim() != q) return;
