@@ -29,7 +29,7 @@ flowchart TD
     Android -->|purchases_flutter → Play Billing| RC
     Web -->|redirect to RC-hosted checkout| WB["RevenueCat Web Billing<br/>(Stripe-backed)"]
     WB --> RC
-    RC -->|webhook (entitlement events)| WK["Cloudflare Worker<br/>/api/revenuecat/webhook"]
+    RC -->|webhook (entitlement events)| WK["Supabase Edge Function<br/>revenuecat-webhook"]
     WK -->|service-role write| DB[("Supabase Postgres<br/>domovina_ai.subscriptions")]
     App -->|read own row (RLS)| DB
     iOS -.optimistic CustomerInfo.-> App
@@ -116,16 +116,21 @@ A single repository exposes one boolean the whole app gates on:
 - Expose as e.g. `EntitlementService` / a `ValueNotifier<bool> isPlus` consumed by
   feature gates. Never gate on a specific product id — always on the entitlement.
 
-## Webhook handler (Cloudflare Worker)
+## Webhook handler (Supabase Edge Function)
 
-Add a route to the existing Pages worker (`web/_worker.js`) — it already holds secrets
-(`env`) and is the deployed edge surface. A standalone Worker at `webhooks.domovina.ai`
-is an equivalent alternative if you prefer isolation.
+The webhook **writes** entitlement state to our Postgres for a logged-in user, so
+per the backend-placement rule (`domovina-api/docs/backend-architecture.md`) it is
+a **Supabase Edge Function** (`domovina-api/supabase/functions/revenuecat-webhook/`),
+not a Cloudflare Pages worker route. This keeps the service-role key on Coolify
+(auto-injected into the edge runtime) instead of duplicating it into Cloudflare,
+and keeps the Cloudflare worker for frontend/OG/third-party-SaaS proxy duties only
+(e.g. Cal.com). `verify_jwt = false` (server-to-server; we check the shared secret
+ourselves). Decision logic is pure + unit-tested in `logic.ts` / `logic_test.ts`.
 
-**Endpoint:** `POST /api/revenuecat/webhook`
+**Endpoint:** `POST https://api.domovina.ai/functions/v1/revenuecat-webhook`
 
 **Flow:**
-1. **Auth:** compare `Authorization` header against `env.REVENUECAT_WEBHOOK_AUTH`
+1. **Auth:** compare `Authorization` header against `REVENUECAT_WEBHOOK_AUTH`
    (a shared secret you set in RevenueCat's webhook config). Reject on mismatch (401).
 2. Parse the event; read `event.app_user_id`, `event.type`, `event.environment`,
    `event.product_id`, `event.entitlement_ids`, `event.expiration_at_ms`, `event.store`.
@@ -140,16 +145,18 @@ is an equivalent alternative if you prefer isolation.
    | CANCELLATION | (keep `active` until expiry) | `domovina_plus` |
    | EXPIRATION, BILLING_ISSUE (after grace) | `expired` | `null` |
 6. **Allowlist** `product_id` against the three known products; ignore unknown ids.
-7. **Write** via Supabase service-role (REST `PATCH`/`POST` with `Prefer: resolution=merge-duplicates`
-   on `domovina_ai.subscriptions`, keyed by `user_id`). Service role bypasses RLS.
+7. **Write** with the service-role supabase-js client
+   (`.schema('domovina_ai').from('subscriptions').upsert(row, { onConflict: 'user_id' })`).
+   Service role bypasses RLS; upsert keyed on `user_id` is idempotent.
 8. Return `200` quickly; RevenueCat retries non-2xx.
 
 ### Security invariants (do not regress)
 
 - `app_user_id` MUST match `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
   before any DB access.
-- The **service-role key is a Worker secret only** — never shipped to the client,
-  never in `--dart-define`, never logged.
+- The **service-role key lives only in the Supabase edge runtime env (Coolify)** —
+  auto-injected, never shipped to the client, never in `--dart-define`, never in
+  Cloudflare, never logged.
 - The webhook writes **only** the entitlement columns; everything else is untouched.
 - Reject events whose `product_id` isn't in the allowlist (defense against typos /
   cross-project leakage).
@@ -160,9 +167,9 @@ is an equivalent alternative if you prefer isolation.
 |---|---|---|
 | `RC_PUBLIC_SDK_KEY_IOS` (`appl_…`) | `--dart-define` at iOS/macOS build (`scripts/build-mobile-release.sh`) | Public by design |
 | `RC_PUBLIC_SDK_KEY_ANDROID` (`goog_…`) | `--dart-define` at Android build | Public by design |
-| `REVENUECAT_WEBHOOK_AUTH` | Cloudflare Worker secret + RevenueCat webhook config | **Secret** |
-| `SUPABASE_SERVICE_ROLE_KEY` | Cloudflare Worker secret | **Secret** |
-| `SUPABASE_URL` | Worker env (already known) | Safe |
+| `REVENUECAT_WEBHOOK_AUTH` | Supabase edge runtime env (Coolify) + RevenueCat webhook config | **Secret** |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase edge runtime env (Coolify) — auto-injected | **Secret** |
+| `SUPABASE_URL` | Supabase edge runtime env — auto-injected | Safe |
 | App Store In-App-Purchase Key (`.p8`), Play service-account JSON | uploaded **into RevenueCat dashboard**, not the repo | Secret |
 
 Web Billing publishable config (Stripe) is managed inside RevenueCat — the Flutter web

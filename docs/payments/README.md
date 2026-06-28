@@ -53,7 +53,7 @@ owner/store actions with no API. See the PR for the full human-step list.
 - [x] Supabase `subscriptions` table + RLS migration written in **domovina-api** (`supabase/migrations/20260628120000_revenuecat_subscriptions.sql`, PR #1) — apply with `scripts/db-migrate.sh`
 - [x] Flutter SDK + RevenueCatService + entitlement state wired (web/TV bypass the SDK)
 - [x] Paywall UI + feature gates (additive; cross-device-sync gating left as an owner decision)
-- [x] Cloudflare Worker webhook → Supabase implemented + unit-tested (`scripts/test-revenuecat-webhook.mjs`); **set secrets + deploy** = human
+- [x] Supabase Edge Function webhook (`domovina-api/supabase/functions/revenuecat-webhook/`) implemented + unit-tested (`deno test logic_test.ts`); URL repointed in RC; **set `REVENUECAT_WEBHOOK_AUTH` in Coolify edge env + deploy-functions.sh** = human
 - [x] TestStore webhook E2E unit-tested; **live sandbox purchase E2E** = human (needs store products + secrets)
 - [ ] PRODUCTION env flip (`REVENUECAT_REQUIRE_PRODUCTION=true` + live keys) — **human, do last**
 
@@ -63,7 +63,9 @@ owner/store actions with no API. See the PR for the full human-step list.
   right after Supabase auth resolves, including already-signed-in sessions.
 - **No secrets in the repo.** Publishable SDK keys (`appl_…`/`goog_…`) are public
   by design and travel via `--dart-define`; the webhook shared secret and Supabase
-  **service-role** key live only as Cloudflare Worker secrets.
+  **service-role** key live only in the Supabase edge runtime env (Coolify).
+- **Webhook is a Supabase Edge Function, not a Cloudflare route** — it writes our
+  DB, so it belongs with the backend (see `domovina-api/docs/backend-architecture.md`).
 - **Webhook is the only writer of entitlement state.** It validates the incoming
   `app_user_id` as a real UUID before touching any row, deep-merges only
   server-owned fields, and gates SANDBOX vs PRODUCTION.
