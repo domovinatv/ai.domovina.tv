@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
+import 'services/entitlement_service.dart';
 import 'services/revenue_cat_service.dart';
 import 'services/theme_mode_service.dart';
 import 'services/tv_mode.dart';
@@ -85,6 +86,9 @@ void main() async {
   await RevenueCatService.instance.configure();
 
   await AuthService.instance.init();
+  // Entitlement state (domovina_plus) — čita Supabase red na svim platformama
+  // + folda mobilni optimistic SDK unlock. Mora poslije AuthService.init().
+  await EntitlementService.instance.init();
   await WatchProgressService.instance.init();
   // Ucitaj spremljenu temu (default tamna za nove korisnike).
   await ThemeController.instance.init();
