@@ -52,6 +52,12 @@ fi
 if [[ -n "${MEILI_SEARCH_KEY:-}" ]]; then
   SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=MEILI_SEARCH_KEY=${MEILI_SEARCH_KEY}"
 fi
+# RevenueCat Web Billing hosted-checkout base URL (web nema SDK). Supabase UUID
+# se appenda kao customer id: <base>/<uuid>. Prazno dok Web Billing/Stripe nije
+# spojen u RC dashboardu — paywall tad pokaže "uskoro" umjesto checkout-a.
+if [[ -n "${RC_WEB_CHECKOUT_URL:-}" ]]; then
+  SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=RC_WEB_CHECKOUT_URL=${RC_WEB_CHECKOUT_URL}"
+fi
 
 # Auto-bump verzije na svakom deployu — pomaže korisniku znati treba li
 # hard-refresh: ako footer prikazuje istu verziju kao prije, browser servira

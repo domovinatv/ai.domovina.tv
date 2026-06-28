@@ -16,8 +16,12 @@ import 'package:go_router/go_router.dart';
 import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
+import '../../services/entitlement_service.dart';
 import '../../services/passkey_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/plus_badge.dart';
+import '../subscribe/paywall_screen.dart';
+import '../subscribe/upgrade_trigger.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -140,6 +144,12 @@ class _AccountScreenState extends State<AccountScreen> {
                 label: const Text('Prijavi se'),
                 onPressed: () => showAuthSheet(context),
               ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                icon: const Icon(Icons.workspace_premium_outlined),
+                label: const Text('Saznaj o DOMOVINA Plus'),
+                onPressed: () => openPaywall(context, UpgradeTrigger.generic),
+              ),
             ],
           ),
         ),
@@ -161,6 +171,9 @@ class _AccountScreenState extends State<AccountScreen> {
             children: [
               _profileCard(theme, user),
               const SizedBox(height: 16),
+              _sectionLabel(theme, 'PRETPLATA'),
+              _plusCard(theme),
+              const SizedBox(height: 16),
               _sectionLabel(theme, 'PRIJAVNE METODE'),
               _identitiesCard(theme),
               const SizedBox(height: 16),
@@ -179,6 +192,69 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// DOMOVINA Plus status + entry point. Active → supporter confirmation +
+  /// (mobile) manage link; inactive → upgrade CTA opening the paywall.
+  Widget _plusCard(ThemeData theme) {
+    final cs = theme.colorScheme;
+    return ValueListenableBuilder<bool>(
+      valueListenable: EntitlementService.instance.isPlus,
+      builder: (context, isPlus, _) {
+        if (isPlus) {
+          return _card(
+            theme,
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Icon(Icons.verified, color: cs.primary),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text('DOMOVINA Plus',
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 8),
+                          const PlusBadge(),
+                        ]),
+                        const SizedBox(height: 2),
+                        Text('Hvala na podršci hrvatske arhive.',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: cs.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => openPaywall(context),
+                    child: const Text('Detalji'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return _card(
+          theme,
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            leading: Icon(Icons.workspace_premium_outlined, color: cs.primary),
+            title: const Text('Postani DOMOVINA Plus'),
+            subtitle: Text(
+              'Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => openPaywall(context, UpgradeTrigger.generic),
+          ),
+        );
+      },
     );
   }
 

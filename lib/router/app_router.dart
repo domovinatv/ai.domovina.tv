@@ -8,6 +8,8 @@ import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
 import '../screens/search/meili_search_screen.dart';
+import '../screens/subscribe/paywall_screen.dart';
+import '../screens/subscribe/upgrade_trigger.dart';
 import '../screens/account/account_screen.dart';
 import '../screens/auth/auth_callback_screen.dart';
 import '../screens/auth/invite_screen.dart';
@@ -329,6 +331,21 @@ GoRouter createRouter() {
           key: ValueKey('meili-search'),
           child: MeiliSearchScreen(),
         ),
+      ),
+      // DOMOVINA Plus paywall — kontekstualni ?from=<trigger> (offline, export,
+      // sync, search, enFirst, magisterium, badge). Mobile kupuje preko SDK-a,
+      // web preusmjerava na RevenueCat Web Billing hosted checkout.
+      GoRoute(
+        path: '/subscribe',
+        pageBuilder: (context, state) {
+          final from = state.uri.queryParameters['from'];
+          return NoTransitionPage(
+            key: ValueKey('subscribe-${from ?? 'generic'}'),
+            child: PaywallScreen(
+              trigger: UpgradeTriggerCopy.fromSlug(from),
+            ),
+          );
+        },
       ),
       // Moj račun — account management (identiteti, passkeyji, brisanje)
       GoRoute(

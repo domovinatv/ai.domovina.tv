@@ -87,12 +87,15 @@ to link before purchase.
 
 ## Phase 5 — Webhook (Cloudflare Worker → Supabase)
 
-- Add `POST /api/revenuecat/webhook` to `web/_worker.js` (or a standalone Worker).
+- Implement as a **Supabase Edge Function** `domovina-api/supabase/functions/revenuecat-webhook/`
+  (it writes our DB → backend, not the Cloudflare worker; see
+  `domovina-api/docs/backend-architecture.md`).
 - Implement exactly per `architecture.md` → "Webhook handler" + "Security invariants":
   bearer-auth against `REVENUECAT_WEBHOOK_AUTH`; **UUID-validate** `app_user_id`;
   SANDBOX/PRODUCTION gate; event→status map; product allowlist; service-role upsert into
-  `domovina_ai.subscriptions`; fast `200`.
-- Secrets via `wrangler secret put` (`REVENUECAT_WEBHOOK_AUTH`, `SUPABASE_SERVICE_ROLE_KEY`).
+  `domovina_ai.subscriptions`; fast `200`. Pure logic in `logic.ts` (unit-tested).
+- `verify_jwt = false` in `config.toml`; `REVENUECAT_WEBHOOK_AUTH` in the Coolify edge
+  env (service role auto-injected). Deploy with `scripts/deploy-functions.sh`.
 
 **Acceptance:** a RevenueCat **test webhook** with a valid UUID upserts the row; a crafted
 non-UUID `app_user_id` is rejected without any DB write; a non-allowlisted `product_id`

@@ -42,6 +42,22 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 
 **Rule**: Use PNG (`Image.asset`) instead of SVG for in-app images on web.
 
+### Backend placement — Cloudflare Worker vs Supabase Edge Function
+
+**Rule (decide by purpose):** does the backend code read/write our Postgres
+(`api.domovina.ai`, Supabase on Coolify) for a logged-in user, or need the
+service role / GoTrue admin / RLS context?
+
+- **No** (pure proxy / presentation / third-party SaaS that hides a vendor key
+  but doesn't touch our DB) → **Cloudflare Pages Worker** (`web/_worker.js`).
+  Examples: SPA routing, OG injection, the Cal.com proxy (`/api/cal/*`,
+  `CAL_API_KEY`). Never put `SUPABASE_SERVICE_ROLE_KEY` or DB writes here.
+- **Yes** → **Supabase Edge Function** (`domovina-api/supabase/functions/`),
+  where the service role is auto-injected and lives only on Coolify. Examples:
+  `revenuecat-webhook` (writes entitlement state), `pinka-webhook`, auth bridges.
+
+Full rationale + examples: `domovina-api/docs/backend-architecture.md`.
+
 ### Cloudflare Pages pretty URLs
 
 Cloudflare auto-strips `.html` extensions (`/social-test.html` → `/social-test`). The worker in `_worker.js` checks for `.html` files in ASSETS before falling back to SPA routing.

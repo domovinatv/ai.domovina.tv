@@ -67,6 +67,7 @@ dependencies:
   # zasebnom repou. certilia-server proxy se deploya odvojeno (certilia.domovina.ai).
   flutter_certilia:
     path: ../../stepanic/flutter_certilia
+  purchases_flutter: ^10.3.0
 
 dev_dependencies:
   flutter_test:

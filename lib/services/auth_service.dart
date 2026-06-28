@@ -16,6 +16,7 @@ import 'certilia_service.dart';
 import 'favorites_service.dart';
 import 'local_prefs.dart';
 import 'passkey_service.dart';
+import 'revenue_cat_service.dart';
 import 'watch_progress_service.dart';
 
 /// localStorage ključ — anon user UUID koji čeka migraciju u permanent
@@ -221,6 +222,14 @@ class AuthService extends ChangeNotifier {
     if (next != null && !next.isAnonymous) {
       _runMigrations(next.id);
       _migrateAnonDataIfPending(next.id);
+      // Alias RevenueCat customer na Supabase UUID (mobile) tako da kupnje
+      // prate korisnika kroz uređaje/platforme. No-op na webu/TV-u. Anonymous
+      // usere NE prijavljujemo — RC zadržava vlastiti anon id dok korisnik ne
+      // poveže račun (purchase se gate-a iza link-account, vidi paywall).
+      RevenueCatService.instance.logIn(next.id);
+    } else {
+      // Odjava ili pad na anonymous → odveži RC customer (mobile).
+      RevenueCatService.instance.logOut();
     }
   }
 
