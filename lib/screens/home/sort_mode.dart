@@ -5,6 +5,10 @@ import '../../services/local_prefs.dart';
 
 const String _sortKey = 'channel_sort_v1';
 
+/// Kljuc za korisnikov spremljeni redoslijed kanala (shuffle / custom order).
+/// Dijeljen s home-om (vidi `home_screen.dart` `_channelOrderKey`).
+const String _orderKey = 'channel_order';
+
 /// Sort opcije za channel grid.
 enum ChannelSortMode {
   /// Po datumu zadnje epizode (najnoviji prvi).
@@ -108,5 +112,27 @@ Future<void> saveSortMode(ChannelSortMode mode) async {
   } else {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_sortKey, mode.name);
+  }
+}
+
+/// Ucitaj korisnikov spremljeni redoslijed kanala (ID lista). null ako nikad
+/// nije spremljen. Web koristi localStorage (SharedPreferences puca u release
+/// dart2js buildu — vidi CLAUDE.md).
+Future<List<String>?> loadCustomOrder() async {
+  if (kIsWeb) {
+    final raw = getLocalStorageString(_orderKey);
+    if (raw == null || raw.isEmpty) return null;
+    return raw.split(',');
+  }
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getStringList(_orderKey);
+}
+
+Future<void> saveCustomOrder(List<String> ids) async {
+  if (kIsWeb) {
+    setLocalStorageString(_orderKey, ids.join(','));
+  } else {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_orderKey, ids);
   }
 }

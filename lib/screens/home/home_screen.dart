@@ -13,7 +13,6 @@ import '../../services/local_prefs.dart';
 import '../../services/view_mode.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/founder_booking.dart';
-import 'channel_card.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
 import 'footer.dart';
@@ -118,26 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _sortMode = initial);
   }
 
-  Future<void> _setSortMode(ChannelSortMode mode) async {
-    await saveSortMode(mode);
-    final index = await _indexFuture;
-    List<String>? customOrder;
-    if (mode == ChannelSortMode.custom) {
-      if (kIsWeb) {
-        customOrder = _loadOrderWeb();
-      } else {
-        final prefs = await SharedPreferences.getInstance();
-        customOrder = prefs.getStringList(_channelOrderKey);
-      }
-    }
-    if (!mounted) return;
-    setState(() {
-      _sortMode = mode;
-      _orderedChannels =
-          applySortMode(index.channels, mode, customOrder: customOrder);
-    });
-  }
-
   Future<void> _loadContinueWatching() async {
     final list =
         await WatchProgressService.instance.continueWatching(limit: 12);
@@ -216,27 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return applySortMode(channels, _sortMode, customOrder: savedOrder);
   }
 
-  Future<void> _shuffle() async {
-    if (_orderedChannels == null) return;
-    final shuffled = List<ChannelSummary>.from(_orderedChannels!)
-      ..shuffle(Random());
-    final ids = shuffled.map((c) => c.id).toList();
-
-    if (kIsWeb) {
-      _saveOrderWeb(ids);
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_channelOrderKey, ids);
-    }
-    // Shuffle implicitno postavlja mode na custom — to su user-owned redoslijed.
-    await saveSortMode(ChannelSortMode.custom);
-    if (!mounted) return;
-    setState(() {
-      _sortMode = ChannelSortMode.custom;
-      _orderedChannels = shuffled;
-    });
-  }
-
   void _selectChannel(ChannelSummary channel) {
     final slug = channel.id.replaceAll('_', '-');
     context.go('/c/$slug');
@@ -273,8 +231,6 @@ class _HomeScreenState extends State<HomeScreen> {
               orderedChannels: _orderedChannels,
               channelCache: _channelCache,
               continueWatching: _continueWatching,
-              sortMode: _sortMode,
-              onSortModeChanged: _setSortMode,
               onChannelsLoaded: (channels) async {
                 final ordered = await _applyOrder(channels);
                 if (mounted) {
@@ -283,8 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
                 _channelCache.prefetchAll(channels);
               },
-              onChannelTap: _selectChannel,
-              onShuffle: _shuffle,
               onSearchTap: _openSearchOverlay,
               onVideoTap: _openVideo,
             ),
@@ -304,11 +258,7 @@ class _ChannelGridView extends StatelessWidget {
   final List<ChannelSummary>? orderedChannels;
   final ChannelCache channelCache;
   final List<WatchProgress> continueWatching;
-  final ChannelSortMode sortMode;
-  final Future<void> Function(ChannelSortMode) onSortModeChanged;
   final Future<void> Function(List<ChannelSummary>) onChannelsLoaded;
-  final void Function(ChannelSummary) onChannelTap;
-  final VoidCallback onShuffle;
   final VoidCallback onSearchTap;
   final void Function(String videoId) onVideoTap;
 
@@ -317,21 +267,13 @@ class _ChannelGridView extends StatelessWidget {
     required this.orderedChannels,
     required this.channelCache,
     required this.continueWatching,
-    required this.sortMode,
-    required this.onSortModeChanged,
     required this.onChannelsLoaded,
-    required this.onChannelTap,
-    required this.onShuffle,
     required this.onSearchTap,
     required this.onVideoTap,
   });
 
-  static const double _maxCardWidth = 360;
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return FutureBuilder<ChannelIndex>(
       future: indexFuture,
       builder: (context, snap) {
@@ -515,44 +457,13 @@ class _ChannelGridView extends StatelessWidget {
                     ),
                   ),
 
-                if (channels.isNotEmpty) ...[
-                  // Sekcija naslov "KANALI (23)" + sort dropdown desno
+                // Puni popis kanala je premjesten s home-a na zaseban surface
+                // (lazy lista + filter) radi scroll-perf-a — na home-u sad samo
+                // lagani CTA. Vidi all_channels_screen.dart.
+                if (channels.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 2,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'KANALI (${channels.length})',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                          const Spacer(),
-                          _SortDropdown(
-                            mode: sortMode,
-                            onChanged: onSortModeChanged,
-                            onShuffle: onShuffle,
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: _AllChannelsCta(count: channels.length),
                   ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverToBoxAdapter(
-                      child: _buildWrap(channels, width),
-                    ),
-                  ),
-                ],
 
                 SliverToBoxAdapter(child: HomeFooter(channels: channels)),
               ],
@@ -563,32 +474,96 @@ class _ChannelGridView extends StatelessWidget {
     );
   }
 
-  Widget _buildWrap(List<ChannelSummary> channels, double screenWidth) {
-    final availableWidth = screenWidth - 32;
-    // Mobile (< 600): 1 stupac. Tablet/desktop: clamp na minimum 320px width.
-    final columns = screenWidth < 600
-        ? 1
-        : (availableWidth / _maxCardWidth).floor().clamp(2, 99);
-    final cardWidth = columns == 1
-        ? availableWidth
-        : (availableWidth - (columns - 1) * 16) / columns;
+}
 
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: [
-        for (int i = 0; i < channels.length; i++)
-          SizedBox(
-            width: cardWidth,
-            child: ChannelCard(
-              channel: channels[i],
-              onTap: () => onChannelTap(channels[i]),
+// ---------------------------------------------------------------------------
+// "Svi kanali" CTA
+// ---------------------------------------------------------------------------
+
+/// Lagani ulaz na zaseban "Svi kanali" surface (`/channels` ruta).
+/// Zamjenjuje stari eager channel grid.
+class _AllChannelsCta extends StatelessWidget {
+  final int count;
+
+  const _AllChannelsCta({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(width: 24, height: 2, color: cs.primary),
+              const SizedBox(width: 10),
+              Text(
+                'KANALI',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Material(
+            color: cs.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(14),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => context.go('/channels'),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.grid_view_rounded,
+                          color: cs.primary, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Svi kanali',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pretraži i pregledaj svih $count kanala',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward,
+                        color: cs.onSurfaceVariant, size: 20),
+                  ],
+                ),
+              ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -636,99 +611,6 @@ class _HomeHeader extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Search result card for a video found across all channels.
-// ---------------------------------------------------------------------------
-
-/// PopupMenuButton-based sort selektor pored "KANALI (X)" sekcijskog naslova.
-///
-/// Sadrži sve sort opcije + shuffle kao posebnu akciju (shuffle re-randomizira
-/// i prebacuje mode na `custom`).
-class _SortDropdown extends StatelessWidget {
-  final ChannelSortMode mode;
-  final Future<void> Function(ChannelSortMode) onChanged;
-  final VoidCallback onShuffle;
-
-  const _SortDropdown({
-    required this.mode,
-    required this.onChanged,
-    required this.onShuffle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return PopupMenuButton<String>(
-      tooltip: 'Sortiraj kanale',
-      offset: const Offset(0, 36),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      onSelected: (value) {
-        if (value == '__shuffle__') {
-          onShuffle();
-        } else {
-          final m = ChannelSortMode.values.firstWhere((e) => e.name == value);
-          onChanged(m);
-        }
-      },
-      itemBuilder: (context) => [
-        for (final m in ChannelSortMode.values)
-          PopupMenuItem<String>(
-            value: m.name,
-            child: Row(
-              children: [
-                Icon(
-                  m == mode ? Icons.check : Icons.circle_outlined,
-                  size: 14,
-                  color: m == mode
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.3),
-                ),
-                const SizedBox(width: 10),
-                Text(m.label, style: theme.textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        const PopupMenuDivider(),
-        PopupMenuItem<String>(
-          value: '__shuffle__',
-          child: Row(
-            children: [
-              Icon(Icons.shuffle,
-                  size: 14, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 10),
-              Text('Promiješaj', style: theme.textTheme.bodyMedium),
-            ],
-          ),
-        ),
-      ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              mode.label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down,
-                size: 18,
-                color: theme.colorScheme.onSurfaceVariant),
-          ],
-        ),
       ),
     );
   }

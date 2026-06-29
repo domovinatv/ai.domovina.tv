@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../onboarding/moments/m4_handoff_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/channels/all_channels_screen.dart';
 import '../screens/channel/channel_screen.dart';
 import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
@@ -36,6 +37,17 @@ GoRouter createRouter() {
           // rute u Fazi 1 jos uvijek koriste desktop/mobile ekran — TV
           // varijante stizu u Fazi 2-4. Vidi lib/services/tv_mode.dart.
           child: TvMode.isTv ? const TvHomeScreen() : const HomeScreen(),
+        ),
+      ),
+      // Svi kanali — odvojen ekran s lazy listom + filterom (vidi
+      // all_channels_screen.dart; maknuto s home-a radi scroll-perf-a).
+      // Na mobitelu se s home-a otvara kao bottom sheet; ova ruta je za
+      // desktop / direktni deep-link.
+      GoRoute(
+        path: '/channels',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('all-channels'),
+          child: AllChannelsScreen(),
         ),
       ),
       GoRoute(
