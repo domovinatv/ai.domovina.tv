@@ -25,6 +25,10 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 > **Web delivery, rendering & caching** (service worker staleness, cache-busting
 > header strategy, channel-list scroll perf, prefetch race, Flutter-web image
 > debug decision tree) — vidi `docs/web-delivery-and-rendering.md`.
+>
+> **Tech-stack odluka (Flutter vs Expo/RN, 2026)** — zašto OSTAJEMO na Flutteru
+> unatoč web-bolu, i kad bi Expo bio bolji: `docs/tech-stack-assessment-flutter-vs-expo.md`.
+> TL;DR: ne prepisivati; web zamke su omeđene i dokumentirane.
 
 ### SharedPreferences crashes on web release builds
 
