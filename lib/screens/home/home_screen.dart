@@ -76,7 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Simple/Detailed mode — auto-defaults to simple on mobile
   bool _simpleMode = false;
-  bool _simpleModeLoaded = false;
 
   // "Nastavi slušati" rail data — live from WatchProgressService.
   List<WatchProgress> _continueWatching = [];
@@ -88,6 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _indexFuture = _channelCache.loadIndex();
+    // Prefetch svih channel detalja čim index stigne — DETERMINISTIČKI, neovisno
+    // o build timingu i simpleMode pref-u. (Ranije se zvao iz onChannelsLoaded
+    // iza `if (!_simpleModeLoaded) return;`, što je preskakalo prefetch kad bi
+    // index stigao prije simpleMode pref-a → hero/thumbnaili ostali prazni.)
+    // prefetchAll ima vlastiti guard protiv dvostrukog pokretanja.
+    _indexFuture.then((index) => _channelCache.prefetchAll(index.channels));
     _channelCache.addListener(_onCacheUpdate);
     WatchProgressService.instance.addListener(_loadContinueWatching);
     _loadSimpleMode();
@@ -126,10 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadSimpleMode() async {
     final saved = await loadSimpleModePref();
     if (mounted) {
-      setState(() {
-        _simpleMode = saved ?? false;
-        _simpleModeLoaded = true;
-      });
+      setState(() => _simpleMode = saved ?? false);
     }
   }
 
@@ -232,12 +234,10 @@ class _HomeScreenState extends State<HomeScreen> {
               channelCache: _channelCache,
               continueWatching: _continueWatching,
               onChannelsLoaded: (channels) async {
+                // Samo izračun redoslijeda za prikaz. Prefetch je premješten u
+                // initState (vezan na index load) da se ne preskoči zbog race-a.
                 final ordered = await _applyOrder(channels);
-                if (mounted) {
-                  setState(() => _orderedChannels = ordered);
-                  if (!_simpleModeLoaded) return;
-                }
-                _channelCache.prefetchAll(channels);
+                if (mounted) setState(() => _orderedChannels = ordered);
               },
               onSearchTap: _openSearchOverlay,
               onVideoTap: _openVideo,
