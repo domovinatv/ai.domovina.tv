@@ -22,6 +22,10 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 
 ## Known Issues & Gotchas
 
+> **Web delivery, rendering & caching** (service worker staleness, cache-busting
+> header strategy, channel-list scroll perf, prefetch race, Flutter-web image
+> debug decision tree) — vidi `docs/web-delivery-and-rendering.md`.
+
 ### SharedPreferences crashes on web release builds
 
 `SharedPreferences` throws `MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)` in dart2js release mode. The method channel plugin registration is stripped during minification.
