@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/magisterium_data.dart';
 import '../../models/podcast_article.dart';
@@ -301,6 +302,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: PopScope(
@@ -330,17 +332,17 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                   DirectionalFocusIntent(TraversalDirection.right),
             },
             child: _error != null
-                ? _buildError(theme)
+                ? _buildError(theme, l)
                 : (_data == null
-                    ? _buildLoading(theme)
-                    : _buildReader(theme, _data!)),
+                    ? _buildLoading(theme, l)
+                    : _buildReader(theme, l, _data!)),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLoading(ThemeData theme) {
+  Widget _buildLoading(ThemeData theme, AppLocalizations l) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -354,7 +356,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
             ),
           ),
           const SizedBox(height: 18),
-          Text('Pripremam reader…', style: theme.textTheme.titleMedium),
+          Text(l.tvReaderPreparing, style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             widget.youtubeId,
@@ -368,7 +370,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
     );
   }
 
-  Widget _buildError(ThemeData theme) {
+  Widget _buildError(ThemeData theme, AppLocalizations l) {
     final notAi = _error is StateError &&
         (_error as StateError).message == 'not-ai-processed';
     return Center(
@@ -385,8 +387,8 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
             const SizedBox(height: 16),
             Text(
               notAi
-                  ? 'Ova epizoda još nije AI-obrađena.\nReader prikaz nije moguć.'
-                  : 'Greška pri učitavanju:\n$_error',
+                  ? l.tvReaderNotAiProcessed
+                  : l.tvLoadError('$_error'),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium,
             ),
@@ -400,7 +402,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                     horizontal: 32, vertical: 16),
                 color: theme.colorScheme.tertiary,
                 child: Text(
-                  'Otvori klasični prikaz',
+                  l.tvReaderOpenClassic,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onTertiary,
                     fontWeight: FontWeight.w700,
@@ -414,15 +416,15 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
     );
   }
 
-  Widget _buildReader(ThemeData theme, EpisodeData data) {
-    if (_sections.isEmpty) return _buildError(theme);
+  Widget _buildReader(ThemeData theme, AppLocalizations l, EpisodeData data) {
+    if (_sections.isEmpty) return _buildError(theme, l);
     final section = _sections[_currentIdx];
     final ts = section.screenshotTimestamp;
     final mag = _magBySection[ts];
 
     return Column(
       children: [
-        _buildTopBar(theme, data),
+        _buildTopBar(theme, l, data),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(40, 12, 40, 8),
@@ -436,18 +438,18 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                 const SizedBox(width: 24),
                 Expanded(
                   flex: 38,
-                  child: _buildSidePanel(theme, data, mag),
+                  child: _buildSidePanel(theme, l, data, mag),
                 ),
               ],
             ),
           ),
         ),
-        _buildFooter(theme),
+        _buildFooter(theme, l),
       ],
     );
   }
 
-  Widget _buildTopBar(ThemeData theme, EpisodeData data) {
+  Widget _buildTopBar(ThemeData theme, AppLocalizations l, EpisodeData data) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(40, 12, 40, 6),
       child: Row(
@@ -492,7 +494,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                     size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'Sekcija ${_currentIdx + 1} / ${_sections.length}',
+                  l.tvReaderSectionOf(_currentIdx + 1, _sections.length),
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
@@ -722,21 +724,21 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
     return KeyEventResult.ignored;
   }
 
-  Widget _buildSidePanel(
-      ThemeData theme, EpisodeData data, SectionMagisterium? mag) {
+  Widget _buildSidePanel(ThemeData theme, AppLocalizations l, EpisodeData data,
+      SectionMagisterium? mag) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildPip(theme, data),
+        _buildPip(theme, l, data),
         const SizedBox(height: 10),
         _buildTransport(theme),
         const SizedBox(height: 16),
-        Expanded(child: _buildMagisteriumCard(theme, mag)),
+        Expanded(child: _buildMagisteriumCard(theme, l, mag)),
       ],
     );
   }
 
-  Widget _buildPip(ThemeData theme, EpisodeData data) {
+  Widget _buildPip(ThemeData theme, AppLocalizations l, EpisodeData data) {
     final controller = _controller;
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -794,7 +796,9 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      _playing ? 'UŽIVO' : 'PAUZA',
+                      _playing
+                          ? l.tvLive.toUpperCase()
+                          : l.tvPaused.toUpperCase(),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: _playing
                             ? theme.colorScheme.onTertiary
@@ -860,7 +864,8 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
     );
   }
 
-  Widget _buildMagisteriumCard(ThemeData theme, SectionMagisterium? mag) {
+  Widget _buildMagisteriumCard(
+      ThemeData theme, AppLocalizations l, SectionMagisterium? mag) {
     if (mag == null) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -881,7 +886,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                     .withValues(alpha: 0.5)),
             const SizedBox(height: 8),
             Text(
-              'Nema teološkog komentara\nza ovu sekciju.',
+              l.tvReaderNoCommentary,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -963,7 +968,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Crkveno učenje za ovu sekciju',
+              l.tvReaderChurchTeaching,
               style: theme.textTheme.titleSmall?.copyWith(
                 color: theme.colorScheme.onTertiaryContainer,
                 fontWeight: FontWeight.w700,
@@ -993,7 +998,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'OK — otvori puni komentar',
+                  l.tvReaderOpenFullCommentary,
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: focused
                         ? theme.colorScheme.onTertiaryContainer
@@ -1038,7 +1043,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
     return KeyEventResult.ignored;
   }
 
-  Widget _buildFooter(ThemeData theme) {
+  Widget _buildFooter(ThemeData theme, AppLocalizations l) {
     final prevSub =
         _currentIdx > 0 ? _sections[_currentIdx - 1].subtitle : null;
     final nextSub = _currentIdx < _sections.length - 1
@@ -1061,7 +1066,7 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Text(
-              'OK = play/pause   ◀ ▶ = sekcije   ▼ = Magisterium   BACK = video',
+              l.tvReaderControlsHint,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 letterSpacing: 0.4,
@@ -1138,6 +1143,7 @@ class _MagisteriumOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Dialog(
       backgroundColor: theme.colorScheme.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 80, vertical: 36),
@@ -1201,7 +1207,8 @@ class _MagisteriumOverlay extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Heading(theme, 'Procjena', theme.colorScheme.tertiary),
+                      _Heading(theme, l.tvReaderHeadingAssessment,
+                          theme.colorScheme.tertiary),
                       MarkdownBody(
                         data: magisterium.assessment,
                         styleSheet:
@@ -1214,7 +1221,7 @@ class _MagisteriumOverlay extends StatelessWidget {
                       ),
                       if (magisterium.concerns.isNotEmpty) ...[
                         const SizedBox(height: 22),
-                        _Heading(theme, 'Pažljivosti',
+                        _Heading(theme, l.tvReaderHeadingConcerns,
                             theme.colorScheme.error),
                         ...magisterium.concerns.map((c) => Padding(
                               padding: const EdgeInsets.only(bottom: 8),
@@ -1237,7 +1244,7 @@ class _MagisteriumOverlay extends StatelessWidget {
                       ],
                       if (magisterium.enrichment.isNotEmpty) ...[
                         const SizedBox(height: 22),
-                        _Heading(theme, 'Pojašnjenje',
+                        _Heading(theme, l.tvReaderHeadingEnrichment,
                             theme.colorScheme.tertiary),
                         MarkdownBody(
                           data: magisterium.enrichment,
@@ -1252,7 +1259,7 @@ class _MagisteriumOverlay extends StatelessWidget {
                       ],
                       if (magisterium.citations.isNotEmpty) ...[
                         const SizedBox(height: 22),
-                        _Heading(theme, 'Citati iz Magisterija',
+                        _Heading(theme, l.tvReaderHeadingCitations,
                             theme.colorScheme.primary),
                         ...magisterium.citations.map((c) => Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -1302,7 +1309,7 @@ class _MagisteriumOverlay extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'BACK ili OK = zatvori',
+                    l.tvReaderCloseHint,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.5,
@@ -1318,7 +1325,7 @@ class _MagisteriumOverlay extends StatelessWidget {
                           horizontal: 26, vertical: 12),
                       color: theme.colorScheme.tertiary,
                       child: Text(
-                        'Zatvori',
+                        l.commonClose,
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: theme.colorScheme.onTertiary,
                           fontWeight: FontWeight.w800,

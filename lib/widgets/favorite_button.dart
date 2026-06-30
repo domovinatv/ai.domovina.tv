@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../onboarding/moments/m3_favorite_sync_inline.dart';
 import '../services/favorites_service.dart';
 
@@ -63,11 +64,12 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final isFav = _isFav ?? false;
     final color = widget.activeColor ?? const Color(0xFFFF0000);
 
     return IconButton(
-      tooltip: isFav ? 'Ukloni iz favorita' : 'Dodaj u favorite',
+      tooltip: isFav ? l.mediaRemoveFavorite : l.mediaAddFavorite,
       onPressed: _toggle,
       icon: Icon(
         isFav ? Icons.favorite : Icons.favorite_border,

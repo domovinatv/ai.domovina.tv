@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../l10n/app_localizations.dart';
 import '../pinka_sdk/pinka_sdk.dart';
 import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
@@ -87,6 +88,7 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
     if (_error != null) {
       final notFound = _error is VideoNotFoundException;
       final theme = Theme.of(context);
+      final l = AppLocalizations.of(context);
       return Scaffold(
         backgroundColor: theme.colorScheme.surfaceContainerLow,
         body: SafeArea(
@@ -104,15 +106,15 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
                   const SizedBox(height: 12),
                   Text(
                     notFound
-                        ? 'Epizoda "${widget.youtubeId}" nije pronađena.'
-                        : 'Greška pri učitavanju:\n$_error',
+                        ? l.episodeNotFound(widget.youtubeId)
+                        : l.episodeLoadError('$_error'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () => context.go('/'),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Natrag'),
+                    label: Text(l.commonBack),
                   ),
                 ],
               ),
@@ -433,11 +435,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       String p(int n) => n.toString().padLeft(2, '0');
       label = h > 0 ? '$h:${p(m)}:${p(s)}' : '$m:${p(s)}';
     } else {
-      label = 'cijela epizoda';
+      label = AppLocalizations.of(context).episodeWholeEpisode;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Link kopiran ($label)'),
+        content: Text(AppLocalizations.of(context).episodeLinkCopied(label)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -458,6 +460,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final data = widget.data;
     final wantEn = _language == EpisodeLanguage.en;
     final magV2 = data.magisteriumFullV2For(wantEn: wantEn);
@@ -501,15 +504,15 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     ];
 
     final destinations = <NavigationDestination>[
-      const NavigationDestination(
-        icon: Icon(Icons.play_circle_outline),
-        selectedIcon: Icon(Icons.play_circle_filled),
-        label: 'Player',
+      NavigationDestination(
+        icon: const Icon(Icons.play_circle_outline),
+        selectedIcon: const Icon(Icons.play_circle_filled),
+        label: l.episodeTabPlayer,
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.list_outlined),
-        selectedIcon: Icon(Icons.list),
-        label: 'Poglavlja',
+      NavigationDestination(
+        icon: const Icon(Icons.list_outlined),
+        selectedIcon: const Icon(Icons.list),
+        label: l.episodeTabChapters,
       ),
       if (magV2 != null)
         const NavigationDestination(
@@ -517,10 +520,10 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           selectedIcon: Icon(Icons.menu_book),
           label: 'Magisterium',
         ),
-      const NavigationDestination(
-        icon: Icon(Icons.info_outline),
-        selectedIcon: Icon(Icons.info),
-        label: 'Info',
+      NavigationDestination(
+        icon: const Icon(Icons.info_outline),
+        selectedIcon: const Icon(Icons.info),
+        label: l.episodeTabInfo,
       ),
     ];
 
@@ -571,7 +574,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
               ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
-              tooltip: 'Kopiraj link na trenutni trenutak',
+              tooltip: l.episodeCopyMomentLink,
               onPressed: () => _copyMomentLink(context, data.youtubeId),
             ),
             if (data.info.sourceUrl != null)
@@ -580,8 +583,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                     ? const Icon(Icons.open_in_new)
                     : const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
                 tooltip: data.isAudioOnly
-                    ? 'Otvori izvor'
-                    : 'Otvori na YouTube',
+                    ? l.commonOpenSource
+                    : l.episodeOpenOnYouTube,
                 onPressed: () => openUrl(data.info.sourceUrl!),
               ),
             ViewModeToggleButton(
@@ -813,6 +816,7 @@ class _PlayerTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final info = data.info;
     final lang = EpisodeLanguageScope.of(context);
     final summaryHr = data.summary?.summary;
@@ -849,21 +853,21 @@ class _PlayerTab extends StatelessWidget {
                     onYouTubeMode: youTubeEmbedSupported ? onEnterYtMode : null,
                   )
                 : !hasMedia
-                ? const ColoredBox(
+                ? ColoredBox(
                     color: Colors.black,
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.music_off,
                             color: Colors.white54,
                             size: 40,
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Text(
-                            'Media nije dostupna za ovu epizodu.',
-                            style: TextStyle(color: Colors.white70),
+                            l.episodeMediaUnavailable,
+                            style: const TextStyle(color: Colors.white70),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -1086,11 +1090,12 @@ class _ChaptersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     if (chapters.isEmpty) {
       return Center(
         child: Text(
-          'Nema poglavlja za ovu epizodu.',
+          l.episodeNoChapters,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -1170,6 +1175,7 @@ class _InfoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final info = data.info;
     final lang = EpisodeLanguageScope.of(context);
     final isEn = lang == EpisodeLanguage.en;
@@ -1215,8 +1221,7 @@ class _InfoTab extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'AI obrada još nije gotova — prikazujem samo osnovne podatke. '
-                    'Sažetak, poglavlja i članak dolaze kad pipeline završi.',
+                    l.episodeAiPendingInfo,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onTertiaryContainer,
                       height: 1.4,
@@ -1276,7 +1281,7 @@ class _InfoTab extends StatelessWidget {
                 children: [
                   _SectionTitle(
                     icon: Icons.topic,
-                    label: isEn ? 'Key topics' : 'Ključne teme',
+                    label: l.episodeKeyTopics,
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -1302,7 +1307,7 @@ class _InfoTab extends StatelessWidget {
         if (summary != null && summary.keyPoints.isNotEmpty) ...[
           _SectionTitle(
             icon: Icons.format_list_bulleted,
-            label: isEn ? 'Key takeaways' : 'Ključne točke',
+            label: l.episodeKeyTakeaways,
           ),
           const SizedBox(height: 8),
           ...pickLangList(lang, summary.keyPoints, summary.keyPointsEn).map(
@@ -1337,7 +1342,7 @@ class _InfoTab extends StatelessWidget {
         if (summary != null && summary.speakers.isNotEmpty) ...[
           _SectionTitle(
             icon: Icons.people,
-            label: isEn ? 'Speakers' : 'Govornici',
+            label: l.episodeSpeakers,
           ),
           const SizedBox(height: 8),
           ...summary.speakers.map((s) {
@@ -1391,13 +1396,13 @@ class _InfoTab extends StatelessWidget {
         const SizedBox(height: 8),
         _MetaRow(
           icon: Icons.calendar_today,
-          label: isEn ? 'Date' : 'Datum',
+          label: l.episodeMetaDate,
           value: _formatDate(info.uploadDate),
           theme: theme,
         ),
         _MetaRow(
           icon: Icons.schedule,
-          label: isEn ? 'Duration' : 'Trajanje',
+          label: l.episodeMetaDuration,
           value: info.durationString,
           theme: theme,
         ),

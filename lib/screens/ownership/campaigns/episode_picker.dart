@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_detail.dart';
+import '../../../services/locale_service.dart';
 
 /// Multi-select epizoda kanala za dodjelu kampanji. Pre-checked iz trenutnog
 /// seta; "Spremi" zove [onSave] (koja smije baciti — npr. epizoda već u drugoj
@@ -54,27 +56,28 @@ class _EpisodePickerState extends State<EpisodePicker> {
         _dirty = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Epizode spremljene')),
+        SnackBar(content: Text(appStrings.ownershipEpisodesSaved)),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
         _error = e.toString().contains('episode_taken')
-            ? 'Jedna od epizoda je već u drugoj kampanji.'
-            : 'Spremanje nije uspjelo. Pokušaj ponovno.';
+            ? appStrings.ownershipEpisodeTaken
+            : appStrings.ownershipSaveFailedRetry;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     if (widget.videos.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
-          'Nema dostupnih epizoda za ovaj kanal.',
+          l.ownershipNoEpisodesAvailable,
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -88,7 +91,7 @@ class _EpisodePickerState extends State<EpisodePicker> {
             children: [
               Expanded(
                 child: Text(
-                  'Odabrano: ${_selected.length} epizoda',
+                  l.ownershipSelectedCount(_selected.length),
                   style: theme.textTheme.labelLarge,
                 ),
               ),
@@ -100,7 +103,7 @@ class _EpisodePickerState extends State<EpisodePicker> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.save, size: 18),
-                label: const Text('Spremi'),
+                label: Text(l.commonSave),
               ),
             ],
           ),

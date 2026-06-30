@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/magisterium_data.dart';
 import '../models/podcast_article.dart';
-import '../services/episode_language.dart';
+import '../l10n/app_localizations.dart';
 import 'article_section.dart';
 import 'magisterium_article_section.dart';
 import 'magisterium_section.dart';
@@ -54,9 +54,6 @@ class ParallelArticleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lang = EpisodeLanguageScope.of(context);
-    final isEn = lang == EpisodeLanguage.en;
-
     // Naslovi stupaca ("Članak" / "Magisterium AI") renderira sticky
     // SliverPersistentHeader u parentu (ParallelColumnsHeader), ne ovdje.
     final children = <Widget>[];
@@ -102,7 +99,7 @@ class ParallelArticleView extends StatelessWidget {
                             showDivider: false,
                             padding: EdgeInsets.zero,
                           )
-                        : _NoAnalysisSlot(isEn: isEn),
+                        : const _NoAnalysisSlot(),
                   ),
                 ],
               ),
@@ -136,8 +133,7 @@ class ParallelColumnsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final lang = EpisodeLanguageScope.of(context);
-    final isEn = lang == EpisodeLanguage.en;
+    final l = AppLocalizations.of(context);
 
     // start poravnanje: "Članak" sjeda na istu liniju kao "Magisterium AI"
     // naslov (desni blok je dvoredni). Cijeli red delegat vertikalno centrira
@@ -148,7 +144,7 @@ class ParallelColumnsHeader extends StatelessWidget {
         Expanded(
           flex: kArticleColumnFlex,
           child: Text(
-            isEn ? 'Article' : 'Članak',
+            l.sectionArticle,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -241,8 +237,7 @@ class _MagisteriumColumnHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final lang = EpisodeLanguageScope.of(context);
-    final isEn = lang == EpisodeLanguage.en;
+    final l = AppLocalizations.of(context);
     final score = overallScore;
     final color = MagisteriumSection.scoreColor(score);
 
@@ -293,9 +288,7 @@ class _MagisteriumColumnHeader extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 28, top: 1),
           child: Text(
-            isEn
-                ? 'Theological analysis, section by section'
-                : 'Teološka analiza, sekciju po sekciju',
+            l.sectionTheologicalAnalysisSubtitle,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -308,17 +301,13 @@ class _MagisteriumColumnHeader extends StatelessWidget {
 
 /// Placeholder kad sekcija nema teolosku analizu — drzi red poravnatim.
 class _NoAnalysisSlot extends StatelessWidget {
-  final bool isEn;
-
-  const _NoAnalysisSlot({required this.isEn});
+  const _NoAnalysisSlot();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Text(
-      isEn
-          ? 'No theological analysis for this section.'
-          : 'Nema teološke analize za ovu sekciju.',
+      AppLocalizations.of(context).sectionNoTheologicalAnalysis,
       style: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
         fontStyle: FontStyle.italic,

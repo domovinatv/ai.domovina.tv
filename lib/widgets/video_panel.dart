@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -179,6 +180,7 @@ class _VideoPanelState extends State<VideoPanel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final totalMs = _duration.inMilliseconds > 0
         ? _duration.inMilliseconds
         : widget.totalDurationSeconds * 1000;
@@ -256,7 +258,7 @@ class _VideoPanelState extends State<VideoPanel> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Pojacaj zvuk',
+                                l.mediaBoostVolume,
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -360,7 +362,7 @@ class _VideoPanelState extends State<VideoPanel> {
                             : Icons.play_circle_filled,
                       ),
                       color: theme.colorScheme.primary,
-                      tooltip: _playing ? 'Pauziraj' : 'Reproduciraj',
+                      tooltip: _playing ? l.mediaPause : l.mediaPlay,
                       onPressed: () => _playing
                           ? widget.player.pause()
                           : widget.player.play(),
@@ -391,7 +393,7 @@ class _VideoPanelState extends State<VideoPanel> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: Text(
-              'Poglavlja',
+              l.mediaChapters,
               style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurfaceVariant,

@@ -17,10 +17,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
 import '../../services/entitlement_service.dart';
+import '../../services/locale_service.dart';
 import '../../services/open_url.dart';
 import '../../services/revenue_cat_service.dart';
 import '../../theme/app_theme.dart';
@@ -45,20 +47,23 @@ class _IndicativePlan {
       [this.note]);
 }
 
-const List<_IndicativePlan> _indicativePlans = [
-  _IndicativePlan(RcPlan.annual, 'Godišnje', '39,99 €', '/ god', '~33% jeftinije'),
-  _IndicativePlan(RcPlan.monthly, 'Mjesečno', '4,99 €', '/ mj'),
-  _IndicativePlan(RcPlan.lifetime, 'Zauvijek', '99,99 €', 'jednokratno', 'Founder'),
+List<_IndicativePlan> _indicativePlans(AppLocalizations l) => [
+  _IndicativePlan(RcPlan.annual, l.channelPlanAnnual, '39,99 €',
+      l.channelPlanPerYear, l.channelPlanSaveBadge),
+  _IndicativePlan(RcPlan.monthly, l.channelPlanMonthly, '4,99 €',
+      l.channelPlanPerMonth),
+  _IndicativePlan(RcPlan.lifetime, l.channelPlanLifetime, '99,99 €',
+      l.channelPlanOneTime, l.channelPlanFounderBadge),
 ];
 
-const List<(IconData, String)> _plusBenefits = [
-  (Icons.sync, 'Sinkronizacija favorita i napretka na svim uređajima'),
-  (Icons.download_for_offline, 'Preuzimanje epizoda za slušanje bez interneta'),
-  (Icons.description_outlined, 'Izvoz transkripata i sažetaka (PDF, Markdown, DOCX)'),
-  (Icons.search, 'Neograničena semantička pretraga'),
-  (Icons.translate, 'Engleski prijevodi prikazani prvi'),
-  (Icons.church_outlined, 'Puna Magisterium AI analiza s izvorima'),
-  (Icons.favorite, 'Bedž podupiratelja i ime na zidu zahvale'),
+List<(IconData, String)> _plusBenefits(AppLocalizations l) => [
+  (Icons.sync, l.channelBenefitSync),
+  (Icons.download_for_offline, l.channelBenefitOffline),
+  (Icons.description_outlined, l.channelBenefitExport),
+  (Icons.search, l.channelBenefitSearch),
+  (Icons.translate, l.channelBenefitEnglishFirst),
+  (Icons.church_outlined, l.channelBenefitMagisterium),
+  (Icons.favorite, l.channelBenefitBadge),
 ];
 
 /// Open the contextual paywall for a gated feature. Use from any feature gate:
@@ -103,12 +108,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
   bool get _isAnonymous => AuthService.instance.isAnonymous;
 
   Future<void> _promptLinkAccount() async {
+    final l = AppLocalizations.of(context);
     await showAuthSheet(
       context,
       origin: AuthSheetOrigin.account,
-      headlineOverride: 'Prijavi se za nastavak',
-      subtitleOverride:
-          'Pretplata se veže uz tvoj račun kako bi radila na svim uređajima.',
+      headlineOverride: l.channelSignInToContinue,
+      subtitleOverride: l.channelSubscriptionTiedToAccount,
     );
     if (mounted) setState(() {}); // refresh anon state after the sheet closes
   }
@@ -128,14 +133,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
     switch (result.status) {
       case RcPurchaseStatus.success:
         unawaited(EntitlementService.instance.refresh());
-        _snack('Dobrodošao u DOMOVINA Plus! Hvala na podršci.');
+        _snack(appStrings.channelWelcomeToPlus);
         if (mounted) context.pop();
       case RcPurchaseStatus.cancelled:
         break; // silent — user backed out
       case RcPurchaseStatus.unsupported:
-        _snack('Kupnja nije dostupna na ovom uređaju.');
+        _snack(appStrings.channelPurchaseUnavailableDevice);
       case RcPurchaseStatus.error:
-        _snack(result.message ?? 'Kupnja nije uspjela. Pokušaj ponovo.');
+        _snack(result.message ?? appStrings.channelPurchaseFailed);
     }
   }
 
@@ -146,10 +151,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
     setState(() => _purchasing = false);
     if (result.ok) {
       unawaited(EntitlementService.instance.refresh());
-      _snack('Pretplata je vraćena.');
+      _snack(appStrings.channelSubscriptionRestored);
       if (mounted) context.pop();
     } else {
-      _snack(result.message ?? 'Nismo pronašli kupnju za vraćanje.');
+      _snack(result.message ?? appStrings.channelNoPurchaseToRestore);
     }
   }
 
@@ -169,7 +174,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     }
     final uid = AuthService.instance.userId;
     if (_webCheckoutBase.isEmpty || uid.isEmpty) {
-      _snack('Web naplata uskoro. Za sada se pretplati u mobilnoj aplikaciji.');
+      _snack(appStrings.channelWebBillingSoon);
       log('Paywall: web checkout base not configured');
       return;
     }
@@ -269,7 +274,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   Widget _benefits(ColorScheme cs) => Column(
         children: [
-          for (final (icon, label) in _plusBenefits)
+          for (final (icon, label) in _plusBenefits(AppLocalizations.of(context)))
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
@@ -285,7 +290,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
         ],
       );
 
-  Widget _linkAccountCard(ColorScheme cs) => Card(
+  Widget _linkAccountCard(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return Card(
         margin: const EdgeInsets.only(bottom: 16),
         color: cs.surfaceContainerHighest,
         child: Padding(
@@ -293,28 +300,29 @@ class _PaywallScreenState extends State<PaywallScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Prvo se prijavi',
+              Text(l.channelSignInFirst,
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
                       ?.copyWith(color: cs.primary)),
               const SizedBox(height: 6),
-              Text(
-                  'Pretplata se veže uz tvoj račun kako bi radila na svim uređajima.',
+              Text(l.channelSubscriptionTiedToAccount,
                   style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: _promptLinkAccount,
-                child: const Text('Prijavi se'),
+                child: Text(l.commonSignIn),
               ),
             ],
           ),
         ),
       );
+  }
 
   /// Mobile real packages when available; otherwise indicative tiles (web or
   /// SDK offering missing).
   List<Widget> _planSection(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
     final offerings = _offerings;
     final realPackages = offerings == null
         ? const <RcPackage>[]
@@ -331,13 +339,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
         Center(
           child: TextButton(
             onPressed: _restore,
-            child: const Text('Vrati kupnje'),
+            child: Text(l.channelRestorePurchases),
           ),
         ),
         Center(
           child: TextButton(
             onPressed: _openManageSubscription,
-            child: const Text('Upravljaj pretplatom'),
+            child: Text(l.channelManageSubscription),
           ),
         ),
       ];
@@ -345,12 +353,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     // Web / fallback: indicative tiles → hosted checkout.
     return [
-      for (final p in _indicativePlans) _indicativeTile(cs, p),
+      for (final p in _indicativePlans(l)) _indicativeTile(cs, p),
       const SizedBox(height: 12),
       Text(
-        kIsWeb
-            ? 'Naplatu vodi sigurni RevenueCat / Stripe checkout. Konačna cijena prikazana je na stranici za naplatu.'
-            : 'Cijene su okvirne; konačna cijena prikazana je u trgovini.',
+        kIsWeb ? l.channelCheckoutNote : l.channelPricesIndicative,
         style: Theme.of(context)
             .textTheme
             .bodySmall
@@ -492,7 +498,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _alreadyPlus(ColorScheme cs) => Card(
+  Widget _alreadyPlus(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return Card(
         color: cs.surfaceContainerHighest,
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -500,31 +508,31 @@ class _PaywallScreenState extends State<PaywallScreen> {
             children: [
               Icon(Icons.verified, size: 48, color: cs.primary),
               const SizedBox(height: 12),
-              Text('Već si DOMOVINA Plus',
+              Text(l.channelAlreadyPlus,
                   style: Theme.of(context)
                       .textTheme
                       .titleLarge
                       ?.copyWith(color: cs.primary)),
               const SizedBox(height: 6),
-              Text('Hvala na podršci hrvatske arhive.',
+              Text(l.channelThanksSupportingArchive,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 16),
               if (_sdkSupported)
                 OutlinedButton(
                   onPressed: _openManageSubscription,
-                  child: const Text('Upravljaj pretplatom'),
+                  child: Text(l.channelManageSubscription),
                 ),
             ],
           ),
         ),
       );
+  }
 
   Widget _legal(ColorScheme cs) => Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text(
-          'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš '
-          'bilo kad u postavkama trgovine. Doživotni paket je jednokratna kupnja.',
+          AppLocalizations.of(context).channelLegalAutoRenew,
           style: Theme.of(context)
               .textTheme
               .bodySmall

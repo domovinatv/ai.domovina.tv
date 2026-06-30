@@ -10,6 +10,7 @@ import '../services/episode_language.dart';
 import 'magisterium_section.dart';
 import 'citation_helpers.dart';
 import '../services/open_url.dart';
+import '../l10n/app_localizations.dart';
 
 class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
@@ -34,8 +35,8 @@ class ArticleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final lang = EpisodeLanguageScope.of(context);
-    final title = lang == EpisodeLanguage.en ? 'Article' : 'Članak';
+    final l = AppLocalizations.of(context);
+    final title = l.sectionArticle;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,6 +225,7 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
   }
 
   void _copyShareLink(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final seconds = _tsToSeconds(widget.section.screenshotTimestamp);
     // Path-based URL → distinct crawler cache entry po timestampu.
     // Vidi web/_worker.js — chapter-aware OG injection na ovaj path.
@@ -231,7 +233,9 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Link kopiran: ${widget.section.screenshotTimestamp}'),
+        content: Text(
+          l.sectionLinkCopied(widget.section.screenshotTimestamp),
+        ),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -240,6 +244,7 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final section = widget.section;
     final mag = widget.sectionMagisterium;
     final lang = EpisodeLanguageScope.of(context);
@@ -293,7 +298,7 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                         size: 20,
                         color: theme.colorScheme.primary,
                       ),
-                      tooltip: 'Pusti od ${section.screenshotTimestamp}',
+                      tooltip: l.sectionPlayFrom(section.screenshotTimestamp),
                       onPressed: () =>
                           widget.onPlayTap!(section.screenshotTimestamp),
                     ),
@@ -311,7 +316,7 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                       size: 18,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    tooltip: 'Kopiraj link',
+                    tooltip: l.sectionCopyLink,
                     onPressed: () => _copyShareLink(context),
                   ),
                 ),
@@ -506,6 +511,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final color = MagisteriumSection.scoreColor(mag.score);
     final mdStyle = MarkdownStyleSheet.fromTheme(
       theme,
@@ -514,9 +520,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
     final assessment = pickLang(lang, mag.assessment, mag.assessmentEn);
     final enrichment = pickLang(lang, mag.enrichment, mag.enrichmentEn);
     final concerns = pickLangList(lang, mag.concerns, mag.concernsEn);
-    final heading = lang == EpisodeLanguage.en
-        ? 'Theological assessment'
-        : 'Teoloska procjena';
+    final heading = l.sectionTheologicalAssessment;
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -608,7 +612,7 @@ class _MagisteriumEnrichment extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${mag.citations.length} izvor${mag.citations.length == 1 ? '' : 'a'}',
+                      l.sectionSources(mag.citations.length),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,

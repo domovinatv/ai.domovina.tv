@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/theme_mode_service.dart';
 
 /// Sunce/mjesec ikona u home app baru — prebacuje tamnu ↔ svijetlu temu.
@@ -16,13 +17,14 @@ class ThemeToggleButton extends StatelessWidget {
       animation: ThemeController.instance,
       builder: (context, _) {
         final isDark = ThemeController.instance.isDark;
+        final l = AppLocalizations.of(context);
         return IconButton(
           icon: Icon(
             isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             size: 20,
           ),
           tooltip:
-              isDark ? 'Prebaci na svijetlu temu' : 'Prebaci na tamnu temu',
+              isDark ? l.mediaSwitchToLightTheme : l.mediaSwitchToDarkTheme,
           onPressed: ThemeController.instance.toggle,
         );
       },

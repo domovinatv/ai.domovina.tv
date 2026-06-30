@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/cdn_config.dart';
+import '../../services/locale_service.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../theme/typography.dart';
 import 'home_feed.dart';
@@ -176,7 +178,7 @@ class HeroSection extends StatelessWidget {
             Container(width: 24, height: 2, color: theme.colorScheme.tertiary),
             const SizedBox(width: 10),
             Text(
-              'ISTAKNUTO',
+              appStrings.homeHeroEyebrow.toUpperCase(),
               style: AppTypography.eyebrowStyle(theme.colorScheme)
                   .copyWith(color: subColor),
             ),
@@ -227,7 +229,7 @@ class HeroSection extends StatelessWidget {
             FilledButton.icon(
               onPressed: onPlay,
               icon: const Icon(Icons.play_arrow, size: 20),
-              label: const Text('Slušaj'),
+              label: Text(appStrings.homeHeroListen),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.croBlue,
                 foregroundColor: Colors.white,
@@ -243,7 +245,7 @@ class HeroSection extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onSave,
               icon: const Icon(Icons.bookmark_border, size: 18),
-              label: const Text('Spremi'),
+              label: Text(appStrings.commonSave),
               style: OutlinedButton.styleFrom(
                 foregroundColor: textColor,
                 side: BorderSide(
@@ -294,17 +296,11 @@ class HeroSection extends StatelessWidget {
     try {
       final d = DateTime.parse(iso);
       final days = DateTime.now().difference(d).inDays;
-      if (days == 0) return 'danas';
-      if (days == 1) return 'jučer';
-      if (days < 7) return 'prije $days dana';
-      if (days < 30) {
-        final weeks = (days / 7).floor();
-        return 'prije $weeks ${weeks == 1 ? 'tjedan' : 'tjedna'}';
-      }
-      if (days < 365) {
-        final months = (days / 30).floor();
-        return 'prije $months ${months == 1 ? 'mjesec' : 'mjeseca'}';
-      }
+      if (days == 0) return appStrings.homeAgoToday;
+      if (days == 1) return appStrings.homeAgoYesterday;
+      if (days < 7) return appStrings.homeAgoDays(days);
+      if (days < 30) return appStrings.homeAgoWeeks((days / 7).floor());
+      if (days < 365) return appStrings.homeAgoMonths((days / 30).floor());
       return iso;
     } catch (_) {
       return iso;
@@ -338,7 +334,7 @@ class _WhyButton extends StatelessWidget {
               Icon(Icons.help_outline, size: 11, color: color),
               const SizedBox(width: 4),
               Text(
-                'ZAŠTO?',
+                AppLocalizations.of(context).homeHeroWhyButton.toUpperCase(),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -370,6 +366,7 @@ class _WhyDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -379,7 +376,7 @@ class _WhyDialog extends StatelessWidget {
           Container(width: 24, height: 2, color: theme.colorScheme.tertiary),
           const SizedBox(width: 10),
           Text(
-            'KRITERIJI ZA ISTAKNUTO',
+            l.homeWhyDialogTitle.toUpperCase(),
             style: AppTypography.eyebrowStyle(theme.colorScheme),
           ),
         ],
@@ -407,7 +404,7 @@ class _WhyDialog extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'KAKO RADI ALGORITAM',
+                    l.homeWhyAlgorithmHeading.toUpperCase(),
                     style: AppTypography.eyebrowStyle(theme.colorScheme),
                   ),
                   const SizedBox(height: 10),
@@ -417,10 +414,7 @@ class _WhyDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Istaknuto se mijenja svaki dan u ponoć — algoritam izvlači '
-              'pet najboljih kandidata iz aktivnog razreda i bira jednoga '
-              'prema danu u godini. Tijekom dana izbor ostaje isti '
-              '(deterministički).',
+              l.homeWhyDialogExplainer,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.45,
@@ -432,7 +426,7 @@ class _WhyDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Razumijem'),
+          child: Text(l.homeWhyGotIt),
         ),
       ],
     );
@@ -441,32 +435,36 @@ class _WhyDialog extends StatelessWidget {
   String _reasonHeadline(FeaturedReason reason) {
     switch (reason) {
       case FeaturedReason.hiQualityRecent:
-        return 'Visoka ocjena, svježa epizoda';
+        return appStrings.homeReasonHeadlineHiQualityRecent;
       case FeaturedReason.hiQuality:
-        return 'Visoka Magisterium ocjena';
+        return appStrings.homeReasonHeadlineHiQuality;
       case FeaturedReason.anyMagisterium:
-        return 'AI-obrađena epizoda';
+        return appStrings.homeReasonHeadlineAnyMagisterium;
       case FeaturedReason.newest:
-        return 'Najnovija epizoda';
+        return appStrings.homeReasonHeadlineNewest;
     }
   }
 
   Widget _factsTable(ThemeData theme, FeaturedPick pick) {
+    final l = appStrings;
     final rows = <(String, String)>[
-      ('Kanal', pick.video.channelName),
+      (l.homeWhyFactChannel, pick.video.channelName),
       if (pick.magisteriumScore != null)
-        ('Magisterium score', '${pick.magisteriumScore} / 100'),
-      if (pick.daysAgo != null) ('Objavljeno', _daysAgoLabel(pick.daysAgo!)),
+        (l.homeWhyFactScore, '${pick.magisteriumScore} / 100'),
+      if (pick.daysAgo != null)
+        (l.homeWhyFactPublished, _daysAgoLabel(pick.daysAgo!)),
       (
-        'AI obrada',
+        l.homeWhyFactAiProcessing,
         (pick.video.video.pipeline?.hasMagisterium ?? false)
-            ? 'Da (transkript + sažetak + Magisterium analiza)'
-            : 'Ne'
+            ? l.homeWhyFactAiYes
+            : l.homeWhyFactAiNo
       ),
       if (pick.combinedScore != null)
-        ('Algoritamska težina',
-            '${pick.combinedScore!.toStringAsFixed(1)} (score × 0,6 + svježina × 0,4)'),
-      ('Skupina kandidata', '${pick.candidatePool} epizoda u istom razredu'),
+        (
+          l.homeWhyFactWeight,
+          l.homeWhyFactWeightValue(pick.combinedScore!.toStringAsFixed(1))
+        ),
+      (l.homeWhyFactPool, l.homeWhyFactPoolValue(pick.candidatePool)),
     ];
 
     return Column(
@@ -503,28 +501,27 @@ class _WhyDialog extends StatelessWidget {
   }
 
   Widget _algorithmTiers(ThemeData theme, FeaturedReason activeTier) {
+    final l = appStrings;
     final tiers = [
       (
         FeaturedReason.hiQualityRecent,
-        '1. Najbolji izbor',
-        'AI obrada + ocjena ≥ 70 + objavljeno u zadnjih 14 dana. '
-            'Sortirano po (score × 0,6 + svježina × 0,4). Pet najboljih ulazi '
-            'u dnevnu rotaciju.',
+        l.homeTier1Title,
+        l.homeTier1Desc,
       ),
       (
         FeaturedReason.hiQuality,
-        '2. Visoka ocjena',
-        'AI obrada + ocjena ≥ 70 (bilo koji datum). Sortirano po ocjeni.',
+        l.homeTier2Title,
+        l.homeTier2Desc,
       ),
       (
         FeaturedReason.anyMagisterium,
-        '3. AI-obrađeno',
-        'Bilo koja epizoda s AI obradom. Sortirano po datumu.',
+        l.homeTier3Title,
+        l.homeTier3Desc,
       ),
       (
         FeaturedReason.newest,
-        '4. Najnovije',
-        'Pričuva — najnovija epizoda bez ikakve obrade.',
+        l.homeTier4Title,
+        l.homeTier4Desc,
       ),
     ];
 
@@ -583,17 +580,11 @@ class _WhyDialog extends StatelessWidget {
   }
 
   String _daysAgoLabel(int days) {
-    if (days == 0) return 'danas';
-    if (days == 1) return 'jučer';
-    if (days < 7) return 'prije $days dana';
-    if (days < 30) {
-      final w = (days / 7).floor();
-      return 'prije $w ${w == 1 ? 'tjedan' : 'tjedna'}';
-    }
-    if (days < 365) {
-      final m = (days / 30).floor();
-      return 'prije $m ${m == 1 ? 'mjesec' : 'mjeseca'}';
-    }
-    return '${(days / 365).floor()} godina';
+    if (days == 0) return appStrings.homeAgoToday;
+    if (days == 1) return appStrings.homeAgoYesterday;
+    if (days < 7) return appStrings.homeAgoDays(days);
+    if (days < 30) return appStrings.homeAgoWeeks((days / 7).floor());
+    if (days < 365) return appStrings.homeAgoMonths((days / 30).floor());
+    return appStrings.homeAgoYears((days / 365).floor());
   }
 }

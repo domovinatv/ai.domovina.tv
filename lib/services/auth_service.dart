@@ -15,6 +15,7 @@ import '../onboarding/ui/auth_ui.dart';
 import 'certilia_service.dart';
 import 'favorites_service.dart';
 import 'local_prefs.dart';
+import 'locale_service.dart';
 import 'passkey_service.dart';
 import 'revenue_cat_service.dart';
 import 'watch_progress_service.dart';
@@ -205,8 +206,8 @@ class AuthService extends ChangeNotifier {
     // (OAuth redirect path ima vlastitu potvrdu u AuthCallbackScreen.)
     final wasAnonymous = _user?.isAnonymous ?? false;
     if (wasAnonymous && next != null && !next.isAnonymous) {
-      _showSnack(
-          'Prijavljen si kao ${next.displayName ?? next.email ?? 'korisnik'}.');
+      _showSnack(appStrings.serviceSignedInAs(
+          next.displayName ?? next.email ?? appStrings.serviceGenericUser));
       if (next.provider != null) {
         setLocalStorageString(lastProviderKey, next.provider!.name);
       }
@@ -305,8 +306,7 @@ class AuthService extends ChangeNotifier {
     log('AuthService.linkIdentity($provider)');
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure(
-          'Supabase nije konfiguriran — prijava nije moguća.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
 
     try {
@@ -334,7 +334,7 @@ class AuthService extends ChangeNotifier {
           // handla state + migraciju po povratku). Native: otvoren je
           // vanjski browser pa korisniku treba hint gdje nastaviti.
           if (!kIsWeb) {
-            _showSnack('Nastavi prijavu u pregledniku…');
+            _showSnack(appStrings.serviceContinueSignInBrowser);
           }
           return AuthFlowResult.redirect;
 
@@ -357,8 +357,7 @@ class AuthService extends ChangeNotifier {
       return AuthFlowResult.failure(friendlyAuthError(e));
     } catch (e, stackTrace) {
       log('linkIdentity neocekivana greska: $e\n$stackTrace');
-      return AuthFlowResult.failure(
-          'Neočekivana greška pri prijavi. Pokušaj ponovo.');
+      return AuthFlowResult.failure(appStrings.serviceUnexpectedSignInError);
     }
   }
 
@@ -369,22 +368,22 @@ class AuthService extends ChangeNotifier {
       'over_email_send_rate_limit' ||
       'over_request_rate_limit' ||
       'over_sms_send_rate_limit' =>
-        'Previše pokušaja — pričekaj minutu pa pokušaj ponovo.',
+        appStrings.serviceAuthRateLimited,
       'email_address_invalid' || 'validation_failed' =>
-        'E-mail adresa ne izgleda ispravno. Provjeri unos.',
-      'otp_expired' => 'Kod je istekao — zatraži novi.',
-      'otp_disabled' => 'Prijava kodom trenutno nije dostupna.',
-      'user_banned' => 'Ovaj račun je privremeno blokiran.',
-      'signup_disabled' => 'Registracija novih računa trenutno nije moguća.',
-      'provider_disabled' => 'Ova metoda prijave trenutno nije dostupna.',
-      'email_not_confirmed' => 'E-mail adresa još nije potvrđena.',
+        appStrings.serviceAuthEmailInvalid,
+      'otp_expired' => appStrings.serviceAuthOtpExpired,
+      'otp_disabled' => appStrings.serviceAuthOtpDisabled,
+      'user_banned' => appStrings.serviceAuthUserBanned,
+      'signup_disabled' => appStrings.serviceAuthSignupDisabled,
+      'provider_disabled' => appStrings.serviceAuthProviderDisabled,
+      'email_not_confirmed' => appStrings.serviceAuthEmailNotConfirmed,
       _ => null,
     };
     if (byCode != null) return byCode;
     if (e is sb.AuthRetryableFetchException) {
-      return 'Nema veze s poslužiteljem. Provjeri internet pa pokušaj ponovo.';
+      return appStrings.serviceAuthNoServerConnection;
     }
-    return 'Prijava nije uspjela. Pokušaj ponovo.';
+    return appStrings.serviceAuthSignInFailed;
   }
 
   /// Registracija passkeyja (poziva se iz auth_sheet primary gumba).
@@ -395,7 +394,7 @@ class AuthService extends ChangeNotifier {
   Future<AuthFlowResult> _registerPasskey(BuildContext context) async {
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
     final current = client.auth.currentUser;
     final isPermanent = current != null && !current.isAnonymous;
@@ -404,8 +403,7 @@ class AuthService extends ChangeNotifier {
     if (isPermanent) {
       email = current.email;
       if (email == null || email.isEmpty) {
-        return AuthFlowResult.failure(
-            'Tvoj račun nema e-mail — passkey trenutno nije moguć.');
+        return AuthFlowResult.failure(appStrings.serviceAccountNoEmailPasskey);
       }
     } else {
       email = await _promptForEmail(context, null);
@@ -421,7 +419,9 @@ class AuthService extends ChangeNotifier {
       await PasskeyService.instance.registerPasskey(email: email);
       return AuthFlowResult(
         AuthFlowStatus.success,
-        isPermanent ? 'Passkey je dodan na tvoj račun.' : 'Passkey je kreiran.',
+        isPermanent
+            ? appStrings.servicePasskeyAddedToAccount
+            : appStrings.servicePasskeyCreated,
       );
     } on PasskeyFailure catch (e) {
       log('_registerPasskey PasskeyFailure: ${e.message}');
@@ -433,7 +433,7 @@ class AuthService extends ChangeNotifier {
   Future<AuthFlowResult> signInWithPasskey(BuildContext context) async {
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
     try {
       await PasskeyService.instance.loginWithPasskey();
@@ -451,7 +451,7 @@ class AuthService extends ChangeNotifier {
   Future<AuthFlowResult> signInWithCertilia(BuildContext context) async {
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
     final current = client.auth.currentUser;
     String? anonId;
@@ -477,7 +477,7 @@ class AuthService extends ChangeNotifier {
     log('AuthService.sendEmailOtp($email)');
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
     final currentUser = client.auth.currentUser;
     if (currentUser?.isAnonymous == true && currentUser != null) {
@@ -496,8 +496,7 @@ class AuthService extends ChangeNotifier {
       return AuthFlowResult.failure(friendlyAuthError(e));
     } catch (e) {
       log('sendEmailOtp unexpected: $e');
-      return AuthFlowResult.failure(
-          'Slanje e-maila nije uspjelo. Pokušaj ponovo.');
+      return AuthFlowResult.failure(appStrings.serviceEmailSendFailed);
     }
   }
 
@@ -507,7 +506,7 @@ class AuthService extends ChangeNotifier {
     log('AuthService.verifyEmailOtp email=$email');
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
     try {
       await client.auth.verifyOTP(
@@ -515,14 +514,14 @@ class AuthService extends ChangeNotifier {
         email: email,
         token: code,
       );
-      return const AuthFlowResult(AuthFlowStatus.success, 'Prijava uspješna.');
+      return AuthFlowResult(
+          AuthFlowStatus.success, appStrings.serviceSignInSuccess);
     } on sb.AuthException catch (e) {
       log('verifyEmailOtp error: ${e.message} (code: ${e.code})');
-      return AuthFlowResult.failure(
-          'Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.');
+      return AuthFlowResult.failure(appStrings.serviceOtpInvalidOrExpired);
     } catch (e) {
       log('verifyEmailOtp unexpected: $e');
-      return AuthFlowResult.failure('Provjera koda nije uspjela.');
+      return AuthFlowResult.failure(appStrings.serviceOtpCheckFailed);
     }
   }
 
@@ -561,7 +560,7 @@ class AuthService extends ChangeNotifier {
     log('AuthService.deleteAccount');
     final client = _client();
     if (client == null) {
-      return AuthFlowResult.failure('Supabase nije konfiguriran.');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
     }
     try {
       await client.functions.invoke('account-delete');
@@ -570,15 +569,13 @@ class AuthService extends ChangeNotifier {
       log('deleteAccount FunctionException: ${e.status} ${e.details}');
       if (e.status == 404) {
         return AuthFlowResult.failure(
-            'Brisanje računa kroz aplikaciju još nije dostupno. '
-            'Pošalji zahtjev na privacy@italk.hr i izbrisat ćemo ga ručno.');
+            appStrings.serviceAccountDeleteUnavailable);
       }
       return AuthFlowResult.failure(
-          'Brisanje računa nije uspjelo (${e.status}). Pokušaj ponovo.');
+          appStrings.serviceAccountDeleteFailedWithStatus('${e.status}'));
     } catch (e) {
       log('deleteAccount unexpected: $e');
-      return AuthFlowResult.failure(
-          'Brisanje računa nije uspjelo. Pokušaj ponovo.');
+      return AuthFlowResult.failure(appStrings.serviceAccountDeleteFailed);
     }
 
     try {
@@ -592,8 +589,8 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       log('deleteAccount: anon re-signin failed — $e');
     }
-    return const AuthFlowResult(
-        AuthFlowStatus.success, 'Račun je trajno izbrisan.');
+    return AuthFlowResult(
+        AuthFlowStatus.success, appStrings.serviceAccountDeleted);
   }
 
   Future<void> signOut(BuildContext context) async {
@@ -605,7 +602,7 @@ class AuthService extends ChangeNotifier {
       // Odmah kreiraj novu anonymous sesiju da app ostane funkcionalan.
       await client.auth.signInAnonymously();
       if (context.mounted) {
-        _snack(context, 'Odjavljen — nastavljaš kao gost');
+        _snack(context, appStrings.serviceSignedOutGuest);
       }
     } on sb.AuthException catch (e) {
       log('signOut error: ${e.message}');
@@ -625,13 +622,13 @@ class AuthService extends ChangeNotifier {
   Future<String?> _promptForEmail(BuildContext context, String? prefill) {
     return showAuthInputDialog(
       context,
-      title: 'Tvoj e-mail',
-      message: 'Pošaljemo ti link i 6-znamenkasti kod za prijavu.',
-      hint: 'ime@primjer.com',
+      title: appStrings.serviceEmailDialogTitle,
+      message: appStrings.serviceEmailDialogMessage,
+      hint: appStrings.serviceEmailDialogHint,
       icon: Icons.alternate_email,
       keyboardType: TextInputType.emailAddress,
       autofillHints: const [AutofillHints.email],
-      confirmLabel: 'Pošalji',
+      confirmLabel: appStrings.serviceEmailDialogConfirm,
     );
   }
 

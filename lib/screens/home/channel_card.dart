@@ -5,6 +5,7 @@ import '../../models/channel_index.dart';
 
 import '../../theme/typography.dart';
 import '../../widgets/magisterium_section.dart';
+import '../../services/locale_service.dart';
 
 /// Editorial channel kartica s **dva layouta** ovisno o dimenzijama cover-a.
 ///
@@ -201,7 +202,9 @@ class _ChannelCardState extends State<ChannelCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'KANAL  ·  ${c.videoCount} EP  ·  ${c.durationDisplay}',
+          appStrings
+              .homeChannelCardMeta(c.videoCount, c.durationDisplay)
+              .toUpperCase(),
           style: AppTypography.eyebrowStyle(theme.colorScheme),
         ),
         const SizedBox(height: 6),
@@ -227,8 +230,7 @@ class _ChannelCardState extends State<ChannelCard> {
     final color = MagisteriumSection.scoreColor(score);
     final label = MagisteriumSection.scoreLabel(score);
     return Tooltip(
-      message:
-          '$label\nProcjena usklađenosti s katoličkim naukom (0–100).',
+      message: appStrings.homeChannelMagisteriumTooltip(label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(

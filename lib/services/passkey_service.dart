@@ -23,6 +23,7 @@ import 'package:passkeys_platform_interface/types/types.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:url_launcher/url_launcher.dart';
 import '../main.dart' show log;
+import 'locale_service.dart';
 
 /// Greška mapirana na hrvatski tekst + zastavica je li login pao zato što na
 /// uređaju nema passkeyja (poziv mjesta odlučuje hoće li ponuditi registraciju).
@@ -82,8 +83,7 @@ class PasskeyService {
   Future<void> registerPasskey({required String email}) async {
     log('PasskeyService.registerPasskey email=$email');
     if (_ceremonyInProgress) {
-      throw const PasskeyFailure(
-          'Passkey zahtjev je već u tijeku — pričekaj da završi ili osvježi stranicu.');
+      throw PasskeyFailure(appStrings.servicePasskeyRequestInProgress);
     }
     _ceremonyInProgress = true;
     try {
@@ -101,16 +101,16 @@ class PasskeyService {
         log('passkey register PlatformException: ${e.code} ${e.message}');
         throw PasskeyFailure(switch (e.code) {
           'cancelled' || 'NotAllowedError' =>
-            'Registracija passkeyja je otkazana ili je istekla. Pokušaj ponovo.',
+            appStrings.servicePasskeyRegisterCancelled,
           'OperationError' =>
-            'Password manager (npr. LastPass) blokira passkey. U njegovom prozoru klikni „Use a different passkey" i odaberi iCloud/Apple Passwords — ili isključi LastPass za ovaj site.',
+            appStrings.servicePasskeyPasswordManagerBlockRegister,
           'exclude-credentials-match' || 'InvalidStateError' =>
-            'Na ovom uređaju već postoji passkey za ovaj račun.',
+            appStrings.servicePasskeyAlreadyExists,
           'domain-not-associated' =>
-            'Domena nije povezana za passkey (provjeri assetlinks/AASA).',
+            appStrings.servicePasskeyDomainNotAssociated,
           'deviceNotSupported' || 'android-passkey-unsupported' =>
-            'Ovaj uređaj ne podržava passkey.',
-          _ => 'Passkey nije moguće kreirati na ovom uređaju.',
+            appStrings.servicePasskeyDeviceUnsupported,
+          _ => appStrings.servicePasskeyCreateFailed,
         });
       }
 
@@ -130,8 +130,7 @@ class PasskeyService {
   Future<void> loginWithPasskey() async {
     log('PasskeyService.loginWithPasskey');
     if (_ceremonyInProgress) {
-      throw const PasskeyFailure(
-          'Passkey zahtjev je već u tijeku — pričekaj da završi ili osvježi stranicu.');
+      throw PasskeyFailure(appStrings.servicePasskeyRequestInProgress);
     }
     _ceremonyInProgress = true;
     try {
@@ -148,17 +147,17 @@ class PasskeyService {
         log('passkey login PlatformException: ${e.code} ${e.message}');
         if (e.code == 'no-credentials-available' ||
             e.code == 'android-no-credential') {
-          throw const PasskeyFailure('Nema passkeyja na ovom uređaju.',
+          throw PasskeyFailure(appStrings.servicePasskeyNoneOnDevice,
               noCredential: true);
         }
         throw PasskeyFailure(switch (e.code) {
           'cancelled' || 'NotAllowedError' =>
-            'Prijava passkeyom je otkazana ili je istekla. Pokušaj ponovo.',
+            appStrings.servicePasskeyLoginCancelled,
           'OperationError' =>
-            'Password manager (npr. LastPass) blokira passkey. U njegovom prozoru klikni „Use a different passkey" — ili isključi LastPass za ovaj site.',
+            appStrings.servicePasskeyPasswordManagerBlockLogin,
           'domain-not-associated' =>
-            'Domena nije povezana za passkey (provjeri assetlinks/AASA).',
-          _ => 'Prijava passkeyom nije uspjela.',
+            appStrings.servicePasskeyDomainNotAssociated,
+          _ => appStrings.servicePasskeyLoginFailed,
         });
       }
 
@@ -187,11 +186,12 @@ class PasskeyService {
     } on sb.FunctionException catch (e) {
       log('listPasskeys FunctionException: ${e.status}');
       if (e.status == 404) {
-        throw const PasskeyFailure(
-            'Upravljanje passkeyjima još nije dostupno.',
+        throw PasskeyFailure(
+            appStrings.servicePasskeyManageUnavailable,
             unsupported: true);
       }
-      throw PasskeyFailure('Dohvat passkeyja nije uspio (${e.status}).');
+      throw PasskeyFailure(
+          appStrings.servicePasskeyFetchFailedWithStatus('${e.status}'));
     }
   }
 
@@ -203,11 +203,12 @@ class PasskeyService {
     } on sb.FunctionException catch (e) {
       log('deletePasskey FunctionException: ${e.status}');
       if (e.status == 404) {
-        throw const PasskeyFailure(
-            'Uklanjanje passkeyja još nije dostupno.',
+        throw PasskeyFailure(
+            appStrings.servicePasskeyRemoveUnavailable,
             unsupported: true);
       }
-      throw PasskeyFailure('Uklanjanje passkeyja nije uspjelo (${e.status}).');
+      throw PasskeyFailure(
+          appStrings.servicePasskeyRemoveFailedWithStatus('${e.status}'));
     }
   }
 
@@ -253,14 +254,14 @@ class PasskeyService {
         return; // sesija postavljena → onAuthStateChange odradi ostalo
       } on sb.AuthException catch (e) {
         log('passkey verifyOTP error: ${e.message}');
-        throw const PasskeyFailure('Dovršetak passkey prijave nije uspio.');
+        throw PasskeyFailure(appStrings.servicePasskeyFinishFailed);
       }
     }
 
     // Fallback: otvori action_link (native deep link / stariji backend).
     final actionLink = data['action_link'] as String?;
     if (actionLink == null || actionLink.isEmpty) {
-      throw const PasskeyFailure('Backend nije vratio sign-in podatke.');
+      throw PasskeyFailure(appStrings.serviceBackendNoSignInData);
     }
     await _openActionLink(actionLink);
   }
@@ -280,22 +281,19 @@ class PasskeyService {
   String _mapStartError(sb.FunctionException e) {
     final code = e.details is Map ? (e.details as Map)['error'] : null;
     return switch (code) {
-      'email_required' => 'Unesi e-mail za kreiranje računa s passkeyom.',
-      _ => 'Priprema passkeyja nije uspjela (${e.status}).',
+      'email_required' => appStrings.servicePasskeyEmailRequired,
+      _ => appStrings.servicePasskeyPrepareFailedWithStatus('${e.status}'),
     };
   }
 
   String _mapFinishError(sb.FunctionException e) {
     final code = e.details is Map ? (e.details as Map)['error'] : null;
     return switch (code) {
-      'verification_failed' => 'Passkey nije verificiran. Pokušaj ponovo.',
-      'unknown_credential' =>
-        'Ovaj passkey nije prepoznat — možda je vezan uz drugi račun.',
-      'user_create_failed' =>
-        'Račun s tim e-mailom već postoji — prijavi se passkeyom ili Googleom.',
-      'challenge_not_found_or_expired' =>
-        'Sesija je istekla. Pokušaj ponovo.',
-      _ => 'Dovršetak passkey prijave nije uspio (${e.status}).',
+      'verification_failed' => appStrings.servicePasskeyNotVerified,
+      'unknown_credential' => appStrings.servicePasskeyUnknownCredential,
+      'user_create_failed' => appStrings.servicePasskeyAccountExists,
+      'challenge_not_found_or_expired' => appStrings.serviceSessionExpired,
+      _ => appStrings.servicePasskeyFinishFailedWithStatus('${e.status}'),
     };
   }
 

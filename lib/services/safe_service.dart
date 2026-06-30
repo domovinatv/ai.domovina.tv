@@ -11,6 +11,7 @@ library;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 import '../models/episode_safe.dart';
+import 'locale_service.dart';
 
 class SafeFailure implements Exception {
   final String message;
@@ -86,16 +87,12 @@ class SafeService {
   }
 
   String _mapReason(String? code) => switch (code) {
-        'not_eligible' =>
-          'Nisi ispunio uvjete za isplatu (vlasništvo, identitet ili svježina).',
-        'kyc_required' =>
-          'Za isplatu prvo verificiraj identitet eOsobnom (Certilia).',
-        'wallet_not_registered' =>
-          'Adresa novčanika nije registrirana na tvom računu.',
-        'no_safe' => 'Za ovu epizodu još ne postoji novčanik.',
-        'safe_frozen' => 'Novčanik epizode je trenutno zamrznut.',
-        'reverify_needed' =>
-          'Vlasništvo treba ponovo potvrditi prije isplate (D4).',
-        _ => 'Povezivanje s novčanikom nije uspjelo. Pokušaj ponovo.',
+        'not_eligible' => appStrings.serviceSafeNotEligible,
+        'kyc_required' => appStrings.serviceSafeKycRequired,
+        'wallet_not_registered' => appStrings.serviceSafeWalletNotRegistered,
+        'no_safe' => appStrings.serviceSafeNoSafe,
+        'safe_frozen' => appStrings.serviceSafeFrozen,
+        'reverify_needed' => appStrings.serviceSafeReverifyNeeded,
+        _ => appStrings.serviceSafeConnectFailed,
       };
 }

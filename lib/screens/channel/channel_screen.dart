@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/channel_detail.dart';
+import '../../services/locale_service.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
 import '../../widgets/magisterium_section.dart';
@@ -45,6 +47,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
@@ -57,7 +60,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    tooltip: 'Natrag',
+                    tooltip: l.commonBack,
                     onPressed: _back,
                   ),
                   const SizedBox(width: 4),
@@ -76,7 +79,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
                   if (_resolvedUcId != null)
                     IconButton(
                       icon: const Icon(Icons.verified_user_outlined),
-                      tooltip: 'Preuzmi vlasništvo',
+                      tooltip: l.channelClaimOwnership,
                       onPressed: () => context.push(
                         '/c/${widget.channelId.replaceAll('_', '-')}/claim',
                       ),
@@ -93,7 +96,11 @@ class _ChannelScreenState extends State<ChannelScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snap.hasError) {
-                    return Center(child: Text('Greska: ${snap.error}'));
+                    return Center(
+                      child: Text(
+                        l.commonErrorWithDetails('${snap.error}'),
+                      ),
+                    );
                   }
                   final detail = snap.data!;
                   if (detail.name != _resolvedName ||
@@ -338,7 +345,7 @@ Widget audioPlaceholder(ThemeData theme, [double? w, double? h]) {
           if (!compact) ...[
             const SizedBox(height: 6),
             Text(
-              'Audio Only',
+              appStrings.channelAudioOnly,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -435,7 +442,7 @@ Widget videoMeta(
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'U obradi',
+              appStrings.channelInProcessing,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

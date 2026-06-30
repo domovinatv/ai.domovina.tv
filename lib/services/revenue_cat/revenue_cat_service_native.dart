@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../main.dart' show log;
+import '../locale_service.dart';
 import '../tv_mode.dart';
 import 'rc_models.dart';
 
@@ -120,8 +121,8 @@ class RevenueCatService {
     if (!_configured) return RcPurchaseResult.unsupported;
     final native = await _nativePackage(package.id);
     if (native == null) {
-      return const RcPurchaseResult(RcPurchaseStatus.error,
-          message: 'Paket više nije dostupan. Pokušaj ponovo.');
+      return RcPurchaseResult(RcPurchaseStatus.error,
+          message: appStrings.servicePurchasePackageUnavailable);
     }
     try {
       final result = await Purchases.purchase(PurchaseParams.package(native));
@@ -131,7 +132,7 @@ class RevenueCatService {
       return RcPurchaseResult(
         active ? RcPurchaseStatus.success : RcPurchaseStatus.error,
         isPlusActive: active,
-        message: active ? null : 'Kupnja nije aktivirala pretplatu.',
+        message: active ? null : appStrings.servicePurchaseNotActivated,
       );
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
@@ -143,8 +144,8 @@ class RevenueCatService {
           message: _friendly(code));
     } catch (e) {
       log('RevenueCatService.purchase unexpected: $e');
-      return const RcPurchaseResult(RcPurchaseStatus.error,
-          message: 'Kupnja nije uspjela. Pokušaj ponovo.');
+      return RcPurchaseResult(RcPurchaseStatus.error,
+          message: appStrings.servicePurchaseFailed);
     }
   }
 
@@ -158,12 +159,12 @@ class RevenueCatService {
       return RcPurchaseResult(
         active ? RcPurchaseStatus.success : RcPurchaseStatus.error,
         isPlusActive: active,
-        message: active ? null : 'Nismo pronašli aktivnu pretplatu za vraćanje.',
+        message: active ? null : appStrings.serviceRestoreNoSubscription,
       );
     } catch (e) {
       log('RevenueCatService.restore failed: $e');
-      return const RcPurchaseResult(RcPurchaseStatus.error,
-          message: 'Vraćanje kupnji nije uspjelo. Pokušaj ponovo.');
+      return RcPurchaseResult(RcPurchaseStatus.error,
+          message: appStrings.serviceRestoreFailed);
     }
   }
 
@@ -200,15 +201,15 @@ class RevenueCatService {
 
   String _friendly(PurchasesErrorCode code) => switch (code) {
         PurchasesErrorCode.purchaseNotAllowedError =>
-          'Kupnja nije dopuštena na ovom uređaju.',
+          appStrings.servicePurchaseNotAllowed,
         PurchasesErrorCode.paymentPendingError =>
-          'Plaćanje je u obradi — pretplata se aktivira čim bude potvrđeno.',
+          appStrings.servicePurchasePending,
         PurchasesErrorCode.productAlreadyPurchasedError =>
-          'Već imaš ovu pretplatu. Pokušaj "Vrati kupnje".',
+          appStrings.servicePurchaseAlreadyOwned,
         PurchasesErrorCode.networkError =>
-          'Nema veze s trgovinom. Provjeri internet pa pokušaj ponovo.',
+          appStrings.servicePurchaseNetworkError,
         PurchasesErrorCode.storeProblemError =>
-          'Trgovina trenutno ne odgovara. Pokušaj kasnije.',
-        _ => 'Kupnja nije uspjela. Pokušaj ponovo.',
+          appStrings.servicePurchaseStoreProblem,
+        _ => appStrings.servicePurchaseFailed,
       };
 }

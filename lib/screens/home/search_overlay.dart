@@ -15,6 +15,7 @@ import '../../widgets/episode_age.dart';
 import '../../widgets/highlight_text.dart';
 
 import '../../theme/typography.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Otvori search overlay (modal) povrh home screen-a.
 ///
@@ -33,7 +34,7 @@ Future<void> showSearchOverlay(
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Zatvori pretragu',
+    barrierLabel: AppLocalizations.of(context).homeSearchBarrierLabel,
     barrierColor: Colors.black.withValues(alpha: 0.45),
     transitionDuration: const Duration(milliseconds: 180),
     pageBuilder: (_, _, _) => _SearchOverlay(
@@ -365,6 +366,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   Widget _searchHeader(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
       child: Row(
@@ -390,7 +392,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 filled: false,
-                hintText: 'Pretraži kanale, epizode i sadržaj…',
+                hintText: l.homeSearchHint,
                 hintStyle: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant
                       .withValues(alpha: 0.5),
@@ -411,7 +413,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ),
           IconButton(
             icon: const Icon(Icons.close, size: 20),
-            tooltip: 'Zatvori',
+            tooltip: l.commonClose,
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -440,7 +442,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
         padding: const EdgeInsets.all(32),
         child: Center(
           child: Text(
-            'Nema rezultata za "$_query"',
+            AppLocalizations.of(context).homeSearchNoResults(_query),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -485,18 +487,19 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 
   // Lijevi stupac — kanali + epizode (PO NASLOVU). [] ako nema lokalnih.
   List<Widget> _leftChildren(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final c = _visibleChannels.length;
     final v = _visibleVideos.length;
     if (c == 0 && v == 0) return const [];
     return [
       if (c > 0) ...[
-        _sectionLabel(theme, 'KANALI'),
+        _sectionLabel(theme, l.homeSearchSectionChannels),
         for (var i = 0; i < c; i++)
           _selectableRow(
               pane: 0, index: i, child: _channelRow(theme, _visibleChannels[i])),
       ],
       if (v > 0) ...[
-        _sectionLabel(theme, 'EPIZODE'),
+        _sectionLabel(theme, l.homeSearchSectionEpisodes),
         for (var i = 0; i < v; i++)
           _selectableRow(
               pane: 0,
@@ -544,11 +547,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   Widget _paneEmpty(ThemeData theme, int pane) {
+    final l = AppLocalizations.of(context);
     final msg = pane == 0
-        ? 'Nema podudaranja u\nnaslovima'
+        ? l.homeSearchNoTitleMatches
         : (_semanticLoading
-            ? 'Pretražujem…'
-            : 'Nema podudaranja u\nsadržaju');
+            ? l.homeSearchSearching
+            : l.homeSearchNoContentMatches);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Center(
@@ -582,6 +586,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   Widget _emptyState(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(36),
       child: Center(
@@ -595,14 +600,14 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Počni tipkati za pretragu',
+              l.homeSearchEmptyTitle,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Pretražuje kanale, epizode i sam sadržaj razgovora',
+              l.homeSearchEmptySubtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -610,7 +615,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ),
             const SizedBox(height: 10),
             Text(
-              '↑ ↓ kroz listu · ← → između stupaca · ↵ odabir',
+              l.homeSearchKeyboardHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
@@ -626,7 +631,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 16, 6),
       child: Text(
-        text,
+        text.toUpperCase(),
         style: AppTypography.eyebrowStyle(theme.colorScheme),
       ),
     );
@@ -641,7 +646,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               size: 13, color: theme.colorScheme.primary),
           const SizedBox(width: 6),
           Text(
-            'U SADRŽAJU',
+            AppLocalizations.of(context).homeSearchSectionContent.toUpperCase(),
             style: AppTypography.eyebrowStyle(theme.colorScheme),
           ),
         ],
@@ -664,7 +669,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
           ),
           const SizedBox(width: 12),
           Text(
-            'Pretražujem sadržaj razgovora…',
+            AppLocalizations.of(context).homeSearchSemanticLoading,
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -709,7 +714,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    '${ch.videoCount} epizoda · ${ch.durationDisplay}',
+                    AppLocalizations.of(context)
+                        .homeSearchChannelMeta(ch.videoCount, ch.durationDisplay),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -934,8 +940,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ? const Color(0xFFF9A825) // jantar — srednji
             : theme.colorScheme.outline; // slab
     return Tooltip(
-      message:
-          'Relevantnost (semantička sličnost): ${score.toStringAsFixed(2)}',
+      message: AppLocalizations.of(context)
+          .homeSearchRelevanceTooltip(score.toStringAsFixed(2)),
       child: SizedBox(
         width: 36,
         child: Column(
@@ -965,6 +971,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   Widget _idInputSection(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return AnimatedSize(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
@@ -986,7 +993,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Otvori po YouTube ID-u',
+                    l.homeSearchOpenById,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -1004,8 +1011,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                     child: TextField(
                       controller: _idController,
                       style: theme.textTheme.bodyMedium,
-                      decoration: const InputDecoration(
-                        hintText: 'npr. H-p2Hl6x7I0',
+                      decoration: InputDecoration(
+                        hintText: l.homeSearchIdHint,
                         isDense: true,
                       ),
                       textInputAction: TextInputAction.go,

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_detail.dart';
 import '../../../models/channel_index.dart';
 import '../../../models/owner_wallet.dart';
 import '../../../pinka_sdk/pinka_sdk.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/data_service.dart';
+import '../../../services/locale_service.dart';
 import '../../../services/wallet_service.dart';
 import 'episode_picker.dart';
 
@@ -69,26 +71,27 @@ class _CampaignManageScreenState extends State<CampaignManageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final c = _campaign;
     return DefaultTabController(
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(c?.title ?? 'Kampanja'),
-          bottom: const TabBar(
+          title: Text(c?.title ?? l.ownershipCampaignFallback),
+          bottom: TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Uredi'),
-              Tab(text: 'Epizode'),
-              Tab(text: 'Statistika'),
-              Tab(text: 'Isplata'),
+              Tab(text: l.ownershipTabEdit),
+              Tab(text: l.ownershipTabEpisodes),
+              Tab(text: l.ownershipTabStats),
+              Tab(text: l.ownershipTabPayout),
             ],
           ),
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : c == null
-                ? const Center(child: Text('Kampanja nije pronađena.'))
+                ? Center(child: Text(l.ownershipCampaignNotFound))
                 : TabBarView(
                     children: [
                       _EditTab(campaign: c, admin: _admin, onSaved: _load),
@@ -170,13 +173,14 @@ class _EditTabState extends State<_EditTab> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Spremljeno')),
+        SnackBar(content: Text(AppLocalizations.of(context).ownershipSaved)),
       );
       widget.onSaved();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Spremanje nije uspjelo.')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).ownershipSaveFailed)),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -185,20 +189,21 @@ class _EditTabState extends State<_EditTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         TextField(
           controller: _title,
-          decoration: const InputDecoration(labelText: 'Naslov'),
+          decoration: InputDecoration(labelText: l.ownershipFieldTitle),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _desc,
           maxLines: 4,
           minLines: 2,
-          decoration: const InputDecoration(labelText: 'Opis'),
+          decoration: InputDecoration(labelText: l.ownershipFieldDescription),
         ),
         const SizedBox(height: 12),
         Row(
@@ -207,8 +212,9 @@ class _EditTabState extends State<_EditTab> {
               child: TextField(
                 controller: _goal,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    labelText: 'Cilj (€)', hintText: 'prazno = bez cilja'),
+                decoration: InputDecoration(
+                    labelText: l.ownershipFieldGoal,
+                    hintText: l.ownershipFieldGoalHint),
               ),
             ),
             const SizedBox(width: 12),
@@ -216,7 +222,8 @@ class _EditTabState extends State<_EditTab> {
               child: TextField(
                 controller: _minc,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Min. iznos (€)'),
+                decoration:
+                    InputDecoration(labelText: l.ownershipFieldMinAmount),
               ),
             ),
           ],
@@ -224,7 +231,7 @@ class _EditTabState extends State<_EditTab> {
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _state,
-          decoration: const InputDecoration(labelText: 'Stanje'),
+          decoration: InputDecoration(labelText: l.ownershipFieldState),
           items: [
             for (final s in _states)
               DropdownMenuItem(value: s, child: Text(_stateLabel(s))),
@@ -234,7 +241,7 @@ class _EditTabState extends State<_EditTab> {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: _visibility,
-          decoration: const InputDecoration(labelText: 'Vidljivost'),
+          decoration: InputDecoration(labelText: l.ownershipFieldVisibility),
           items: [
             for (final v in _vis)
               DropdownMenuItem(value: v, child: Text(_visLabel(v))),
@@ -243,8 +250,7 @@ class _EditTabState extends State<_EditTab> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Napomena: SEPA/on-chain detalji (IBAN, Safe adresa) i slug se ne '
-          'mijenjaju ovdje.',
+          l.ownershipEditNote,
           style: theme.textTheme.labelSmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -257,23 +263,23 @@ class _EditTabState extends State<_EditTab> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.save),
-          label: const Text('Spremi promjene'),
+          label: Text(l.ownershipSaveChanges),
         ),
       ],
     );
   }
 
   static String _stateLabel(String s) => switch (s) {
-        'draft' => 'Skica',
-        'active' => 'Aktivna',
-        'closed' => 'Zatvorena',
-        'cancelled' => 'Otkazana',
+        'draft' => appStrings.ownershipStateDraft,
+        'active' => appStrings.ownershipStateActive,
+        'closed' => appStrings.ownershipStateClosed,
+        'cancelled' => appStrings.ownershipStateCancelled,
         _ => s,
       };
   static String _visLabel(String v) => switch (v) {
-        'public' => 'Javna',
-        'unlisted' => 'Neuvrštena',
-        'private' => 'Privatna',
+        'public' => appStrings.ownershipVisPublic,
+        'unlisted' => appStrings.ownershipVisUnlisted,
+        'private' => appStrings.ownershipVisPrivate,
         _ => v,
       };
 }
@@ -308,6 +314,7 @@ class _StatsTabState extends State<_StatsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final c = widget.campaign;
     final raised = (c.totalRaisedCents / 100);
@@ -334,12 +341,13 @@ class _StatsTabState extends State<_StatsTab> {
           ),
         const SizedBox(height: 8),
         Text(
-          '${c.contributorCount} podržavatelja · ${c.contributionCount} uplata',
+          l.ownershipSupportersContributions(
+              c.contributorCount, c.contributionCount),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 20),
-        Text('Zid podrške',
+        Text(l.ownershipSupportWall,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
@@ -348,7 +356,7 @@ class _StatsTabState extends State<_StatsTab> {
               padding: EdgeInsets.all(16),
               child: CircularProgressIndicator()))
         else if (_wall.isEmpty)
-          Text('Još nema javnih doprinosa.',
+          Text(l.ownershipNoPublicContributions,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
         else
@@ -417,15 +425,15 @@ class _PayoutTabState extends State<_PayoutTab> {
     setState(() => _error = null);
     final cents = _eurToCents(_amountCtrl.text);
     if (cents == null) {
-      setState(() => _error = 'Unesi ispravan iznos.');
+      setState(() => _error = appStrings.ownershipEnterValidAmount);
       return;
     }
     if (cents > availableCents) {
-      setState(() => _error = 'Iznos premašuje raspoloživo.');
+      setState(() => _error = appStrings.ownershipAmountExceedsAvailable);
       return;
     }
     if (_destCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Unesi odredište (0x adresa ili IBAN).');
+      setState(() => _error = appStrings.ownershipEnterDestination);
       return;
     }
     setState(() => _submitting = true);
@@ -438,7 +446,7 @@ class _PayoutTabState extends State<_PayoutTab> {
       if (!mounted) return;
       _amountCtrl.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Zahtjev za isplatu poslan')),
+        SnackBar(content: Text(appStrings.ownershipPayoutRequestSent)),
       );
       await _load();
     } on PinkaFailure catch (f) {
@@ -446,24 +454,25 @@ class _PayoutTabState extends State<_PayoutTab> {
       setState(() => _error = _mapErr(f.code));
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Zahtjev nije uspio. Pokušaj ponovno.');
+      setState(() => _error = appStrings.ownershipRequestFailedRetry);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
   static String _mapErr(String code) => switch (code) {
-        'kyc_required' =>
-          'Potrebna je eOsobna (KYC) verifikacija prije isplate.',
-        'invalid_destination' => 'Neispravno odredište (0x adresa ili IBAN).',
-        'amount_exceeds_available' => 'Iznos premašuje raspoloživo.',
-        'invalid_amount' => 'Neispravan iznos.',
-        'not_authorized' => 'Nemaš ovlasti za ovu kampanju.',
-        _ => 'Zahtjev nije uspio.',
+        'kyc_required' => appStrings.ownershipErrKycRequired,
+        'invalid_destination' => appStrings.ownershipErrInvalidDestination,
+        'amount_exceeds_available' =>
+          appStrings.ownershipAmountExceedsAvailable,
+        'invalid_amount' => appStrings.ownershipErrInvalidAmount,
+        'not_authorized' => appStrings.ownershipErrNotAuthorized,
+        _ => appStrings.ownershipErrRequestFailed,
       };
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
@@ -486,23 +495,20 @@ class _PayoutTabState extends State<_PayoutTab> {
         if (!kyc)
           Card(
             color: theme.colorScheme.errorContainer.withValues(alpha: 0.4),
-            child: const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'Za isplatu je potrebna eOsobna (KYC) verifikacija. '
-                'Dovrši je u "Moji kanali".',
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(l.ownershipPayoutNeedsKyc),
             ),
           ),
         if (kyc) ...[
-          Text('Zatraži isplatu',
+          Text(l.ownershipRequestPayout,
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           TextField(
             controller: _destCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Odredište (0x adresa ili IBAN)',
+            decoration: InputDecoration(
+              labelText: l.ownershipDestinationLabel,
               isDense: true,
             ),
           ),
@@ -524,9 +530,9 @@ class _PayoutTabState extends State<_PayoutTab> {
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'Iznos (€)',
+              labelText: l.ownershipAmountLabel,
               isDense: true,
-              helperText: 'Raspoloživo: ${_eur(summary.availableCents)} €',
+              helperText: l.ownershipAvailableHelper(_eur(summary.availableCents)),
             ),
           ),
           if (_error != null) ...[
@@ -545,16 +551,16 @@ class _PayoutTabState extends State<_PayoutTab> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.payments_outlined),
-            label: const Text('Zatraži isplatu'),
+            label: Text(l.ownershipRequestPayout),
           ),
         ],
         const SizedBox(height: 24),
-        Text('Povijest isplata',
+        Text(l.ownershipPayoutHistory,
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         if (_payouts.isEmpty)
-          Text('Još nema isplata.',
+          Text(l.ownershipNoPayouts,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
         else
@@ -574,7 +580,7 @@ class _PayoutTabState extends State<_PayoutTab> {
       if (!mounted) return;
       setState(() => _yieldEnabled = !on); // revert
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Promjena nije uspjela.')),
+        SnackBar(content: Text(appStrings.ownershipChangeFailed)),
       );
     } finally {
       if (mounted) setState(() => _yieldBusy = false);
@@ -597,10 +603,9 @@ class _PayoutTabState extends State<_PayoutTab> {
             onChanged: _yieldBusy ? null : _toggleYield,
             secondary: Icon(Icons.savings_outlined,
                 color: theme.colorScheme.tertiary),
-            title: const Text('Oplođuj sredstva (Aave v3 · Gnosis)'),
+            title: Text(appStrings.ownershipYieldTitle),
             subtitle: Text(
-              'Dok sredstva čekaju isplatu, nose prinos (~3,5% APY, promjenjivo). '
-              'Prinos pripada kampanji. DeFi rizik — glavnica nije zajamčena.',
+              appStrings.ownershipYieldSubtitle,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -612,11 +617,14 @@ class _PayoutTabState extends State<_PayoutTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _kv(theme, 'U oplodnji (Aave)', '${_eur(c.principalCents)} €'),
-                  _kv(theme, 'Akumulirani prinos',
+                  _kv(theme, appStrings.ownershipYieldInPool,
+                      '${_eur(c.principalCents)} €'),
+                  _kv(theme, appStrings.ownershipYieldAccrued,
                       '${_eur(c.accruedYieldCents)} €'),
                   if (c.yieldLastSyncedAt != null)
-                    Text('zadnji sync: ${c.yieldLastSyncedAt}',
+                    Text(
+                        appStrings.ownershipYieldLastSync(
+                            '${c.yieldLastSyncedAt}'),
                         style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant)),
                   if (c.yieldAtokenAddress != null &&
@@ -629,7 +637,7 @@ class _PayoutTabState extends State<_PayoutTab> {
                             visualDensity: VisualDensity.compact,
                             alignment: Alignment.centerLeft),
                         icon: const Icon(Icons.open_in_new, size: 16),
-                        label: const Text('aGnoEURe na Gnosisscanu'),
+                        label: Text(appStrings.ownershipYieldTokenLink),
                         onPressed: () => pinkaLaunch(
                           widget.admin.config.tokenForAddressUrl(
                             c.yieldAtokenAddress!,
@@ -679,12 +687,14 @@ class _PayoutTabState extends State<_PayoutTab> {
       ),
       child: Column(
         children: [
-          row('Prikupljeno', s.raisedCents),
-          if (s.accruedYieldCents > 0) row('Prinos (Aave)', s.accruedYieldCents),
-          row('U obradi', s.pendingCents),
-          row('Isplaćeno', s.paidCents),
+          row(appStrings.ownershipSummaryRaised, s.raisedCents),
+          if (s.accruedYieldCents > 0)
+            row(appStrings.ownershipSummaryYield, s.accruedYieldCents),
+          row(appStrings.ownershipSummaryPending, s.pendingCents),
+          row(appStrings.ownershipSummaryPaid, s.paidCents),
           const Divider(),
-          row('Raspoloživo', s.availableCents, bold: true),
+          row(appStrings.ownershipSummaryAvailable, s.availableCents,
+              bold: true),
         ],
       ),
     );
@@ -721,11 +731,11 @@ class _PayoutTabState extends State<_PayoutTab> {
       : a;
 
   static String _stateLabel(String s) => switch (s) {
-        'requested' => 'Zatraženo',
-        'approved' => 'Odobreno',
-        'submitted' => 'U obradi',
-        'confirmed' => 'Isplaćeno',
-        'failed' => 'Neuspjelo',
+        'requested' => appStrings.ownershipPayoutStateRequested,
+        'approved' => appStrings.ownershipPayoutStateApproved,
+        'submitted' => appStrings.ownershipSummaryPending,
+        'confirmed' => appStrings.ownershipSummaryPaid,
+        'failed' => appStrings.ownershipPayoutStateFailed,
         _ => s,
       };
 }

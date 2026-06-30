@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show rootScaffoldMessengerKey;
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
@@ -133,7 +134,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   }
 
   String? _lastUsedBadge(AuthProvider p) =>
-      _lastUsed == p ? 'ZADNJI PUT' : null;
+      _lastUsed == p ? AppLocalizations.of(context).authBadgeLastUsed : null;
 
   @override
   void dispose() {
@@ -183,7 +184,9 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
 
   // ── providers view ─────────────────────────────────────────────────────
 
-  List<Widget> _providerChildren(ColorScheme cs) => [
+  List<Widget> _providerChildren(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return [
         // Passkey LOGIN — primarna metoda (najmanji friction za returning
         // usere). Kreiranje passkeyja namjerno NIJE u sheetu: novi korisnik
         // bi si nakreirao više passkeyja (i računa) u Apple/Google manageru.
@@ -191,25 +194,25 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         // 1 osoba = 1 račun s N providera (GoTrue merga po emailu).
         AuthProviderTile(
           primary: true,
-          badge: 'PREPORUČENO',
+          badge: l.authBadgeRecommended,
           iconBg: Colors.white.withValues(alpha: 0.16),
           iconChild:
               const Icon(Icons.fingerprint, color: Colors.white, size: 22),
-          label: 'Prijavi se passkeyom',
-          subtitle: 'Najbrže — Face ID / otisak, bez lozinke',
+          label: l.authSignInWithPasskey,
+          subtitle: l.authPasskeyTileSub,
           enabled: !_busy,
           loading: _passkeyLoginPending,
           onTap: _signInWithExistingPasskey,
         ),
         const SizedBox(height: 12),
-        const LabeledDivider(),
+        LabeledDivider(label: l.authOr),
         const SizedBox(height: 16),
         AuthProviderTile(
           iconBg: AppTheme.croRed.withValues(alpha: 0.10),
           iconChild: const Icon(Icons.badge_outlined,
               color: AppTheme.croRed, size: 22),
-          label: 'Prijava eOsobnom',
-          subtitle: 'Hrvatska e-osobna (Certilia / NIAS)',
+          label: l.authSignInWithEid,
+          subtitle: l.authProviderCertilia,
           badge: _lastUsedBadge(AuthProvider.certilia),
           badgeColor: AppTheme.croBlue,
           enabled: !_busy,
@@ -226,7 +229,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
             height: 22,
             filterQuality: FilterQuality.high,
           ),
-          label: 'Nastavi s Googleom',
+          label: l.authContinueWithGoogle,
           badge: _lastUsedBadge(AuthProvider.google),
           badgeColor: AppTheme.croBlue,
           enabled: !_busy,
@@ -237,7 +240,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         AuthProviderTile(
           iconBg: const Color(0xFF111111),
           iconChild: const Icon(Icons.apple, color: Colors.white, size: 24),
-          label: 'Nastavi s računom Apple',
+          label: l.authContinueWithApple,
           badge: _lastUsedBadge(AuthProvider.apple),
           badgeColor: AppTheme.croBlue,
           enabled: !_busy,
@@ -249,8 +252,8 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
           iconBg: AppTheme.croBlue.withValues(alpha: 0.10),
           iconChild: const Icon(Icons.alternate_email,
               color: AppTheme.croBlue, size: 21),
-          label: 'E-mail magic link',
-          subtitle: 'Pošaljemo ti link i kod za prijavu',
+          label: l.authEmailMagicLink,
+          subtitle: l.authEmailTileSub,
           badge: _lastUsedBadge(AuthProvider.email),
           badgeColor: AppTheme.croBlue,
           enabled: !_busy,
@@ -272,15 +275,20 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            origin == AuthSheetOrigin.moment2 ? 'Možda kasnije' : 'Zatvori',
+            origin == AuthSheetOrigin.moment2
+                ? l.commonMaybeLater
+                : l.commonClose,
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
         ),
       ];
+  }
 
   // ── e-mail entry view ──────────────────────────────────────────────────
 
-  List<Widget> _emailEntryChildren(ColorScheme cs) => [
+  List<Widget> _emailEntryChildren(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return [
         AutofillGroup(
           child: TextField(
             controller: _emailCtrl,
@@ -290,9 +298,9 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _sendEmailCode(),
-            decoration: const InputDecoration(
-              hintText: 'ime@primjer.com',
-              prefixIcon: Icon(Icons.alternate_email, size: 20),
+            decoration: InputDecoration(
+              hintText: l.authEmailHint,
+              prefixIcon: const Icon(Icons.alternate_email, size: 20),
             ),
           ),
         ),
@@ -309,21 +317,24 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Pošalji kod'),
+              : Text(l.authSendCode),
         ),
         const SizedBox(height: 4),
         TextButton(
           onPressed: _emailBusy ? null : _backToProviders,
           child: Text(
-            'Natrag',
+            l.commonBack,
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
         ),
       ];
+  }
 
   // ── OTP entry view ─────────────────────────────────────────────────────
 
-  List<Widget> _otpEntryChildren(ThemeData theme, ColorScheme cs) => [
+  List<Widget> _otpEntryChildren(ThemeData theme, ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return [
         TextField(
           controller: _otpCtrl,
           autofocus: true,
@@ -365,7 +376,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Potvrdi'),
+              : Text(l.commonConfirm),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -378,56 +389,61 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
                   : _resendEmailCode,
               child: Text(
                 _resendSeconds > 0
-                    ? 'Pošalji novi kod (${_resendSeconds}s)'
-                    : 'Pošalji novi kod',
+                    ? l.authResendCodeIn(_resendSeconds)
+                    : l.authResendCode,
               ),
             ),
             TextButton(
               onPressed: _emailBusy ? null : _backToEmailEntry,
               child: Text(
-                'Promijeni e-mail',
+                l.authChangeEmail,
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
             ),
           ],
         ),
       ];
+  }
 
   // ── copy ───────────────────────────────────────────────────────────────
 
-  String _title() => switch (_view) {
-        _SheetView.providers =>
-          widget.headlineOverride ?? _defaultHeadline(),
-        _SheetView.emailEntry => 'Prijava e-mailom',
-        _SheetView.otpEntry => 'Provjeri e-mail',
-      };
+  String _title() {
+    final l = AppLocalizations.of(context);
+    return switch (_view) {
+      _SheetView.providers => widget.headlineOverride ?? _defaultHeadline(),
+      _SheetView.emailEntry => l.authEmailTitle,
+      _SheetView.otpEntry => l.authCheckEmail,
+    };
+  }
 
-  String _subtitle() => switch (_view) {
-        _SheetView.providers =>
-          widget.subtitleOverride ?? _defaultSubtitle(),
-        _SheetView.emailEntry =>
-          'Pošaljemo ti link i 6-znamenkasti kod za prijavu — bez lozinke.',
-        _SheetView.otpEntry =>
-          'Poslali smo link i kod na $_otpEmail. Upiši kod — ili klikni link u e-mailu.',
-      };
+  String _subtitle() {
+    final l = AppLocalizations.of(context);
+    return switch (_view) {
+      _SheetView.providers => widget.subtitleOverride ?? _defaultSubtitle(),
+      _SheetView.emailEntry => l.authEmailEntrySub,
+      _SheetView.otpEntry => l.authOtpSentTo(_otpEmail),
+    };
+  }
 
-  String _defaultHeadline() => switch (origin) {
-        AuthSheetOrigin.account => 'Prijavi se na DOMOVINA.ai',
-        AuthSheetOrigin.moment2 => 'Spremi napredak na sve uređaje',
-        AuthSheetOrigin.moment3 => 'Spremi favorite u svoj račun',
-        AuthSheetOrigin.handoff => 'Završi prijavu na ovom uređaju',
-      };
+  String _defaultHeadline() {
+    final l = AppLocalizations.of(context);
+    return switch (origin) {
+      AuthSheetOrigin.account => l.authHeadlineAccount,
+      AuthSheetOrigin.moment2 => l.authHeadlineMoment2,
+      AuthSheetOrigin.moment3 => l.authHeadlineMoment3,
+      AuthSheetOrigin.handoff => l.authHeadlineHandoff,
+    };
+  }
 
-  String _defaultSubtitle() => switch (origin) {
-        AuthSheetOrigin.account =>
-          'Bez lozinke. Passkey ili tvoj postojeći Google / Apple račun.',
-        AuthSheetOrigin.moment2 =>
-          'Trenutno tvoja pozicija reprodukcije ostaje samo na ovom uređaju.',
-        AuthSheetOrigin.moment3 =>
-          'Da favoriti ostanu dostupni na svim tvojim uređajima.',
-        AuthSheetOrigin.handoff =>
-          'Kod je verificiran — odaberi kako želiš nastaviti.',
-      };
+  String _defaultSubtitle() {
+    final l = AppLocalizations.of(context);
+    return switch (origin) {
+      AuthSheetOrigin.account => l.authSubAccount,
+      AuthSheetOrigin.moment2 => l.authSubMoment2,
+      AuthSheetOrigin.moment3 => l.authSubMoment3,
+      AuthSheetOrigin.handoff => l.authSubHandoff,
+    };
+  }
 
   // ── actions ────────────────────────────────────────────────────────────
 
@@ -471,8 +487,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       // ovdje (anti multiple-passkeys/accounts) — dodaje se u Moj račun
       // nakon prijave, vezano uz postojeći račun.
       setState(() => _notice =
-          'Na ovom uređaju još nema passkeyja za DOMOVINA.ai. Prijavi se '
-          'drugom metodom — passkey zatim dodaš u Moj račun.');
+          AppLocalizations.of(context).authPasskeyMissingNotice);
       return;
     }
     _handleResult(result);
@@ -508,7 +523,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   Future<void> _sendEmailCode() async {
     final email = _emailCtrl.text.trim();
     if (!_emailRe.hasMatch(email)) {
-      setState(() => _error = 'Unesi ispravnu e-mail adresu.');
+      setState(() => _error = AppLocalizations.of(context).authInvalidEmail);
       return;
     }
     setState(() {
@@ -527,7 +542,8 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       });
       _startResendCountdown();
     } else {
-      setState(() => _error = result.message ?? 'Slanje nije uspjelo.');
+      setState(() => _error =
+          result.message ?? AppLocalizations.of(context).authSendFailed);
     }
   }
 
@@ -540,12 +556,13 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     });
     final result = await AuthService.instance.sendEmailOtp(_otpEmail);
     if (!mounted) return;
+    final l = AppLocalizations.of(context);
     setState(() {
       _emailBusy = false;
       if (result.status == AuthFlowStatus.emailSent) {
-        _notice = 'Novi kod poslan na $_otpEmail.';
+        _notice = l.authNewCodeSentTo(_otpEmail);
       } else {
-        _error = result.message ?? 'Slanje nije uspjelo.';
+        _error = result.message ?? l.authSendFailed;
       }
     });
     if (result.status == AuthFlowStatus.emailSent) _startResendCountdown();
@@ -554,7 +571,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   Future<void> _verifyEmailCode() async {
     final code = _otpCtrl.text.trim();
     if (code.length != 6) {
-      setState(() => _error = 'Kod ima 6 znamenki.');
+      setState(() => _error = AppLocalizations.of(context).authCode6Digits);
       return;
     }
     setState(() {
@@ -569,7 +586,8 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       _handleResult(result);
     } else {
       setState(() {
-        _error = result.message ?? 'Kod nije ispravan.';
+        _error =
+            result.message ?? AppLocalizations.of(context).authCodeInvalid;
         _otpCtrl.clear();
       });
     }
@@ -603,12 +621,12 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
           );
         }
       case AuthFlowStatus.emailSent:
+        final l = AppLocalizations.of(context);
         Navigator.of(context).pop();
         rootScaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text(
-                'Link i kod poslani na ${result.message ?? 'tvoj e-mail'} — '
-                'provjeri sandučić.'),
+                l.authLinkCodeSent(result.message ?? l.authYourEmail)),
             duration: const Duration(seconds: 5),
           ),
         );
@@ -616,7 +634,8 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         // Korisnik odustao — sheet ostaje otvoren, bez greške.
         break;
       case AuthFlowStatus.failure:
-        setState(() => _error = result.message ?? 'Prijava nije uspjela.');
+        setState(() => _error =
+            result.message ?? AppLocalizations.of(context).authSignInFailed);
     }
   }
 }
@@ -630,6 +649,7 @@ class _LegalLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     final base = theme.textTheme.bodySmall?.copyWith(
       color: cs.onSurfaceVariant,
       fontSize: 11.5,
@@ -644,25 +664,25 @@ class _LegalLine extends StatelessWidget {
       TextSpan(
         style: base,
         children: [
-          const TextSpan(text: 'Nastavkom prihvaćaš '),
+          TextSpan(text: l.authLegalPrefix),
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
             child: GestureDetector(
               onTap: () => context.push('/terms'),
-              child: Text('Uvjete korištenja', style: link),
+              child: Text(l.authLegalTerms, style: link),
             ),
           ),
-          const TextSpan(text: ' i '),
+          TextSpan(text: l.authLegalAnd),
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
             child: GestureDetector(
               onTap: () => context.push('/privacy'),
-              child: Text('Pravila privatnosti', style: link),
+              child: Text(l.authLegalPrivacy, style: link),
             ),
           ),
-          const TextSpan(text: '.'),
+          TextSpan(text: l.authLegalSuffix),
         ],
       ),
       textAlign: TextAlign.center,
@@ -764,7 +784,7 @@ class _ReassuranceNote extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Tvoj trenutni napredak ostaje sačuvan i sigurno se povezuje s računom.',
+              AppLocalizations.of(context).authReassurance,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurface,
                 height: 1.4,

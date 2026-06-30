@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../screens/home/home_feed.dart';
 import '../../../services/cdn_config.dart';
 import '../../../widgets/cached_thumbnail.dart';
@@ -216,6 +217,7 @@ class _PlayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return TvFocusable(
       style: TvFocusStyle.primaryButton,
       focusNode: focusNode,
@@ -241,7 +243,7 @@ class _PlayButton extends StatelessWidget {
             ),
             SizedBox(width: 8 * scale),
             Text(
-              'POKRENI',
+              l.tvPlay.toUpperCase(),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: theme.colorScheme.onTertiary,
                 fontWeight: FontWeight.w700,

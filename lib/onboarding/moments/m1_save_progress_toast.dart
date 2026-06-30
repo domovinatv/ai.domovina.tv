@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/onboarding_state.dart';
 
 const _momentId = 'm1';
@@ -12,16 +13,17 @@ Future<void> maybeShowM1(BuildContext context) async {
   await OnboardingState.instance.markSeen(_momentId);
   if (!context.mounted) return;
 
+  final l = AppLocalizations.of(context);
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Row(
         children: [
           const Icon(Icons.devices, color: Colors.white, size: 20),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Tvoj napredak se sprema na ovaj uređaj. Prijavi se da se sinkronizira.',
-              style: TextStyle(color: Colors.white),
+              l.authM1Toast,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -30,7 +32,7 @@ Future<void> maybeShowM1(BuildContext context) async {
       backgroundColor: const Color(0xFF002F6C),
       behavior: SnackBarBehavior.floating,
       action: SnackBarAction(
-        label: 'OK',
+        label: l.commonOk,
         textColor: Colors.white,
         onPressed: () {},
       ),

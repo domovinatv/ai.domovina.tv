@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../models/pinka_link_preview.dart';
 import '../models/pinka_public_contribution.dart';
 import '../util/pinka_money.dart';
@@ -117,6 +118,7 @@ class _LinkPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final p = preview;
     return InkWell(
       onTap: () => pinkaLaunch(p.url),
@@ -132,7 +134,7 @@ class _LinkPreviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${p.siteName ?? 'poveznica'} ↗',
+              '${p.siteName ?? l.pinkaLink} ↗',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 letterSpacing: 0.5,

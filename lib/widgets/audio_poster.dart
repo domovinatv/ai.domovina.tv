@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 /// Cover-art prikaz za audio-only epizode — zamjenjuje crnu media_kit video
 /// površinu (nema video frame-ova). Prikazuje kvadratni artwork (channel
 /// avatar) centriran na tamnoj podlozi + diskretnu "Audio" oznaku.
@@ -49,14 +51,14 @@ class AudioPoster extends StatelessWidget {
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.graphic_eq, size: 14, color: Colors.white),
-                  SizedBox(width: 6),
+                  const Icon(Icons.graphic_eq, size: 14, color: Colors.white),
+                  const SizedBox(width: 6),
                   Text(
-                    'Audio',
-                    style: TextStyle(
+                    AppLocalizations.of(context).sectionAudio,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

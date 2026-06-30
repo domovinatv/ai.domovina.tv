@@ -6,6 +6,7 @@ library;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 import '../models/owner_wallet.dart';
+import 'locale_service.dart';
 
 class WalletFailure implements Exception {
   final String message;
@@ -23,14 +24,12 @@ class WalletService {
   Future<OwnerWallet> register(String address) async {
     final normalized = address.trim();
     if (!kEvmAddressPattern.hasMatch(normalized)) {
-      throw const WalletFailure(
-          'Neispravna adresa novčanika (očekujem 0x + 40 hex znakova).');
+      throw WalletFailure(appStrings.serviceWalletInvalidAddress);
     }
     final client = sb.Supabase.instance.client;
     final user = client.auth.currentUser;
     if (user == null || user.isAnonymous) {
-      throw const WalletFailure(
-          'Za registraciju novčanika moraš biti prijavljen.');
+      throw WalletFailure(appStrings.serviceWalletNotSignedIn);
     }
     try {
       final row = await client
@@ -45,7 +44,7 @@ class WalletService {
       return OwnerWallet.fromJson(row);
     } catch (e) {
       log('wallet register failed: $e');
-      throw const WalletFailure('Spremanje novčanika nije uspjelo.');
+      throw WalletFailure(appStrings.serviceWalletSaveFailed);
     }
   }
 
@@ -81,7 +80,7 @@ class WalletService {
           .eq('id', walletId);
     } catch (e) {
       log('wallet remove failed: $e');
-      throw const WalletFailure('Brisanje novčanika nije uspjelo.');
+      throw WalletFailure(appStrings.serviceWalletRemoveFailed);
     }
   }
 }

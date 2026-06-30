@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_certilia/flutter_certilia.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
+import 'locale_service.dart';
 
 /// URL certilia-server proxyja. Override preko --dart-define (deploy.sh embeda).
 const String certiliaServerUrl = String.fromEnvironment(
@@ -51,18 +52,18 @@ class CertiliaService {
     try {
       user = await sdk.authenticate(context);
     } on CertiliaAuthenticationException {
-      throw const CertiliaFailure('Prijava eOsobnom je otkazana.');
+      throw CertiliaFailure(appStrings.serviceCertiliaCancelled);
     } on CertiliaNetworkException catch (e) {
       log('certilia network: ${e.statusCode} ${e.message}');
-      throw const CertiliaFailure('Certilia server trenutno nije dostupan.');
+      throw CertiliaFailure(appStrings.serviceCertiliaServerUnavailable);
     } catch (e) {
       log('certilia authenticate error: $e');
-      throw const CertiliaFailure('Prijava eOsobnom nije uspjela.');
+      throw CertiliaFailure(appStrings.serviceCertiliaFailed);
     }
 
     final idToken = sdk.currentIdToken as String?;
     if (idToken == null || idToken.isEmpty) {
-      throw const CertiliaFailure('Nedostaje Certilia token.');
+      throw CertiliaFailure(appStrings.serviceCertiliaMissingToken);
     }
     log('CertiliaService: authenticated sub=${user.sub} hasOib=${user.oib != null}');
 
@@ -82,7 +83,7 @@ class CertiliaService {
     final emailOtp = data['email_otp'] as String?;
     final email = data['email'] as String?;
     if (emailOtp == null || emailOtp.isEmpty || email == null) {
-      throw const CertiliaFailure('Backend nije vratio podatke za prijavu.');
+      throw CertiliaFailure(appStrings.serviceBackendNoSignInData);
     }
     try {
       await client.auth.verifyOTP(
@@ -93,16 +94,16 @@ class CertiliaService {
       // Uspjeh → onAuthStateChange postavi permanent sesiju + migracija.
     } on sb.AuthException catch (e) {
       log('certilia verifyOTP error: ${e.message}');
-      throw const CertiliaFailure('Dovršetak prijave eOsobnom nije uspio.');
+      throw CertiliaFailure(appStrings.serviceCertiliaFinishFailed);
     }
   }
 
   String _mapBridgeError(sb.FunctionException e) {
     final code = e.details is Map ? (e.details as Map)['error'] : null;
     return switch (code) {
-      'invalid_token' => 'Certilia token nije valjan. Pokušaj ponovo.',
-      'no_oib_claim' => 'Certilia nije vratila OIB — prijava nije moguća.',
-      _ => 'Povezivanje s računom nije uspjelo (${e.status}).',
+      'invalid_token' => appStrings.serviceCertiliaInvalidToken,
+      'no_oib_claim' => appStrings.serviceCertiliaNoOib,
+      _ => appStrings.serviceCertiliaLinkFailedWithStatus('${e.status}'),
     };
   }
 }

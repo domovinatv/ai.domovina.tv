@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../models/magisterium_data.dart';
 import '../services/episode_language.dart';
+import '../services/locale_service.dart';
 
 /// Overall Magisterium score card with iteration breakdown.
 class MagisteriumSection extends StatelessWidget {
@@ -21,28 +23,26 @@ class MagisteriumSection extends StatelessWidget {
 
   static String scoreLabel(int? score) {
     if (score == null) return 'N/A';
-    if (score >= 90) return 'Aktivno promice katolicki nauk';
-    if (score >= 70) return 'Uglavnom uskladjeno';
-    if (score >= 50) return 'Djelomicno uskladjeno';
-    if (score >= 30) return 'Odstupanje od nauka';
-    return 'Proturjeci nauku';
+    if (score >= 90) return appStrings.magisteriumScoreActivelyPromotes;
+    if (score >= 70) return appStrings.magisteriumScoreMostlyAligned;
+    if (score >= 50) return appStrings.magisteriumScorePartiallyAligned;
+    if (score >= 30) return appStrings.magisteriumScoreDeviates;
+    return appStrings.magisteriumScoreContradicts;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final score = magisterium.overallScore;
     final color = scoreColor(score);
     final lang = EpisodeLanguageScope.of(context);
-    final isEn = lang == EpisodeLanguage.en;
     final interpretation = pickLang(
       lang,
       magisterium.scoreInterpretation ?? scoreLabel(score),
       magisterium.scoreInterpretationEn,
     );
-    final subtitleText = isEn
-        ? 'Alignment with Catholic teaching and Sacred Scripture'
-        : 'Uskladenost s katolickim naukom i Svetim pismom';
+    final subtitleText = l.magisteriumAlignmentSubtitle;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
@@ -114,9 +114,8 @@ class MagisteriumSection extends StatelessWidget {
                       if (magisterium.totalConcerns > 0) ...[
                         const SizedBox(height: 4),
                         Text(
-                          isEn
-                              ? '${magisterium.totalConcerns} theological concerns'
-                              : '${magisterium.totalConcerns} teoloskih zabrinutosti',
+                          l.magisteriumTheologicalConcerns(
+                              magisterium.totalConcerns),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: const Color(0xFFEF6C00),
                             fontWeight: FontWeight.w500,

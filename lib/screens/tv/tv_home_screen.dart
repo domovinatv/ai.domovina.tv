@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/channel_index.dart';
 import '../../screens/home/home_feed.dart';
@@ -148,6 +149,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final metrics = TvMetrics.of(context);
+    final l = AppLocalizations.of(context);
 
     // Jednokratan log MediaQuery dimenzija — pomaze pri kalibraciji TvMetrics
     // na pravim Android TV uredjajima (svaki TV moze imati drugaciji density).
@@ -197,7 +199,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 return _buildLoading(theme, metrics);
               }
               if (snap.hasError) {
-                return _buildError(theme, snap.error);
+                return _buildError(theme, l, snap.error);
               }
               // Index ucitan — kick off per-channel prefetch.
               final channels = snap.data!.channels;
@@ -208,7 +210,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               // Tips karousel ostaje vidljiv sve dok featured nije picked
               // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
               if (!_bootReady) return _buildLoading(theme, metrics);
-              return _buildContent(theme, metrics, channels);
+              return _buildContent(theme, l, metrics, channels);
             },
           ),
         ),
@@ -232,13 +234,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     );
   }
 
-  Widget _buildError(ThemeData theme, Object? err) {
+  Widget _buildError(ThemeData theme, AppLocalizations l, Object? err) {
     log('TvHomeScreen: index ERROR — $err');
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
         child: Text(
-          'Greška pri učitavanju kanala:\n$err',
+          l.tvChannelLoadError('$err'),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyLarge,
         ),
@@ -248,6 +250,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 
   Widget _buildContent(
     ThemeData theme,
+    AppLocalizations l,
     TvMetrics metrics,
     List<ChannelSummary> channels,
   ) {
@@ -268,7 +271,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildAppBar(theme, metrics),
+          _buildAppBar(theme, l, metrics),
           if (featured != null)
             TvHero(
               featured: featured,
@@ -287,7 +290,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 
           if (_continueWatching.isNotEmpty) ...[
             TvRail(
-              eyebrow: 'Nastavi slušati',
+              eyebrow: l.tvRailContinueListening,
               height: metrics.episodeRailHeight,
               cardSpacing: metrics.cardSpacing,
               horizontalPadding:
@@ -310,7 +313,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 
           if (latest.isNotEmpty)
             TvRail(
-              eyebrow: 'Najnovije epizode',
+              eyebrow: l.tvRailLatestEpisodes,
               height: metrics.episodeRailHeight,
               cardSpacing: metrics.cardSpacing,
               horizontalPadding:
@@ -328,15 +331,15 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               ],
             )
           else if (!cacheReady)
-            _buildRailSkeleton(theme, metrics, 'Najnovije epizode'),
+            _buildRailSkeleton(theme, metrics, l.tvRailLatestEpisodes),
 
           SizedBox(height: metrics.sectionGap),
 
           if (channels.isNotEmpty)
-            _buildChannelsSection(theme, metrics, channels),
+            _buildChannelsSection(theme, l, metrics, channels),
 
           SizedBox(height: metrics.sectionGap),
-          _buildCacheStatus(theme, metrics),
+          _buildCacheStatus(theme, l, metrics),
           SizedBox(height: metrics.sectionGap),
         ],
       ),
@@ -347,7 +350,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   // App bar
   // ---------------------------------------------------------------------------
 
-  Widget _buildAppBar(ThemeData theme, TvMetrics metrics) {
+  Widget _buildAppBar(ThemeData theme, AppLocalizations l, TvMetrics metrics) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         metrics.pagePadH,
@@ -394,7 +397,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                   ),
                   SizedBox(width: 8 * metrics.scale),
                   Text(
-                    'Pretraga',
+                    l.tvSearch,
                     style: theme.textTheme.titleSmall,
                   ),
                 ],
@@ -569,6 +572,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 
   Widget _buildChannelsSection(
     ThemeData theme,
+    AppLocalizations l,
     TvMetrics metrics,
     List<ChannelSummary> channels,
   ) {
@@ -595,7 +599,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'KANALI (${ordered.length})',
+                    l.tvChannelsWithCount(ordered.length).toUpperCase(),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
@@ -609,28 +613,28 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 metrics: metrics,
                 sort: _ChannelSort.countDesc,
                 icon: Icons.arrow_downward,
-                label: 'Epizode',
+                label: l.tvSortEpisodes,
               ),
               _buildSortChip(
                 theme: theme,
                 metrics: metrics,
                 sort: _ChannelSort.countAsc,
                 icon: Icons.arrow_upward,
-                label: 'Epizode',
+                label: l.tvSortEpisodes,
               ),
               _buildSortChip(
                 theme: theme,
                 metrics: metrics,
                 sort: _ChannelSort.alpha,
                 icon: Icons.sort_by_alpha,
-                label: 'Abeceda',
+                label: l.tvSortAlpha,
               ),
               _buildSortChip(
                 theme: theme,
                 metrics: metrics,
                 sort: _ChannelSort.shuffle,
                 icon: Icons.shuffle,
-                label: 'Shuffle',
+                label: l.tvSortShuffle,
               ),
             ],
           ),
@@ -712,7 +716,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     );
   }
 
-  Widget _buildCacheStatus(ThemeData theme, TvMetrics metrics) {
+  Widget _buildCacheStatus(
+      ThemeData theme, AppLocalizations l, TvMetrics metrics) {
     if (_channelCache.done) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
@@ -728,7 +733,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            'Učitavam ${_channelCache.loaded}/${_channelCache.total} kanala…',
+            l.tvLoadingChannels(_channelCache.loaded, _channelCache.total),
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

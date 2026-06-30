@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/channel_index.dart';
 import '../../services/channel_cache.dart';
@@ -31,14 +32,15 @@ class AllChannelsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surface,
-        title: const Text('Svi kanali'),
+        title: Text(l.channelAllChannels),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          tooltip: 'Natrag',
+          tooltip: l.commonBack,
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/'),
         ),
@@ -163,18 +165,19 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   }
 
   Widget _searchBar(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: TextField(
         controller: _searchCtrl,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Pretraži kanale…',
+          hintText: l.channelSearchChannelsHint,
           prefixIcon: const Icon(Icons.search, size: 20),
           suffixIcon: _query.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.close, size: 18),
-                  tooltip: 'Očisti',
+                  tooltip: l.channelClear,
                   onPressed: () => _searchCtrl.clear(),
                 )
               : null,
@@ -194,6 +197,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   }
 
   Widget _toolbar(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final count = _visible.length;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
@@ -201,8 +205,8 @@ class _AllChannelsViewState extends State<AllChannelsView> {
         children: [
           Text(
             _query.trim().isEmpty
-                ? '$count ${_kanalaWord(count)}'
-                : '$count ${_rezultatWord(count)}',
+                ? l.channelChannelsCount(count)
+                : l.channelResultsCount(count),
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -221,6 +225,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   }
 
   Widget _list() {
+    final l = AppLocalizations.of(context);
     final items = _visible;
     if (items.isEmpty) {
       return Center(
@@ -228,8 +233,8 @@ class _AllChannelsViewState extends State<AllChannelsView> {
           padding: const EdgeInsets.all(32),
           child: Text(
             _query.trim().isEmpty
-                ? 'Nema kanala.'
-                : 'Nema kanala za „${_query.trim()}".',
+                ? l.channelNoChannels
+                : l.channelNoChannelsForQuery(_query.trim()),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -293,15 +298,6 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     );
   }
 
-  String _kanalaWord(int n) {
-    if (n % 10 == 1 && n % 100 != 11) return 'kanal';
-    return 'kanala';
-  }
-
-  String _rezultatWord(int n) {
-    if (n % 10 == 1 && n % 100 != 11) return 'rezultat';
-    return 'rezultata';
-  }
 }
 
 /// Sort selektor za kanale — PopupMenuButton sa svim sort opcijama + shuffle.
@@ -322,8 +318,9 @@ class ChannelSortDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return PopupMenuButton<String>(
-      tooltip: 'Sortiraj kanale',
+      tooltip: l.channelSortChannels,
       offset: const Offset(0, 36),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onSelected: (value) {
@@ -361,7 +358,7 @@ class ChannelSortDropdown extends StatelessWidget {
               Icon(Icons.shuffle,
                   size: 14, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 10),
-              Text('Promiješaj', style: theme.textTheme.bodyMedium),
+              Text(l.channelShuffle, style: theme.textTheme.bodyMedium),
             ],
           ),
         ),

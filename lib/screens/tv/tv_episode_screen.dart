@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/podcast_outline.dart';
 import '../../services/cdn_config.dart';
@@ -433,6 +434,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
       // PopScope: BACK gumb ili swipe → home, nikad nazad u prazno (TvHome je
@@ -465,23 +467,24 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
               SingleActivator(LogicalKeyboardKey.arrowRight):
                   DirectionalFocusIntent(TraversalDirection.right),
             },
-            child: _buildBody(theme),
+            child: _buildBody(theme, l),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBody(ThemeData theme) {
-    if (_error != null) return _buildError(theme);
+  Widget _buildBody(ThemeData theme, AppLocalizations l) {
+    if (_error != null) return _buildError(theme, l);
     final data = _data;
-    if (data == null) return _buildLoading(theme);
+    if (data == null) return _buildLoading(theme, l);
 
     final chapters = _flatChapters(data.outline);
 
     // Fullscreen mode: video popunjava cijeli SafeArea, sve ostalo skriveno.
     if (_fullscreen) {
-      return _buildHero(theme, data, double.infinity, hasChaptersBeside: false);
+      return _buildHero(theme, l, data, double.infinity,
+          hasChaptersBeside: false);
     }
 
     // Fixed-frame layout (YouTube/Netflix TV konvencija): player se nikad ne
@@ -505,10 +508,10 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
             children: [
               const Spacer(),
               if (data.hasAiContent) ...[
-                _buildReaderButton(theme),
+                _buildReaderButton(theme, l),
                 const SizedBox(width: 12),
               ],
-              _buildFullscreenButton(theme),
+              _buildFullscreenButton(theme, l),
             ],
           ),
         ),
@@ -525,6 +528,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                   flex: hasChapters ? 65 : 100,
                   child: _buildHero(
                     theme,
+                    l,
                     data,
                     double.infinity,
                     hasChaptersBeside: hasChapters,
@@ -534,7 +538,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 35,
-                    child: _buildChaptersVertical(theme, chapters),
+                    child: _buildChaptersVertical(theme, l, chapters),
                   ),
                 ],
               ],
@@ -557,7 +561,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
   /// "Čitaj" gumb — vodi u TvEpisodeReaderScreen. Cuva trenutnu poziciju
   /// kroz query param `?t=` da reader starta na istoj sekciji koju korisnik
   /// trenutno gleda. Vidljiv samo kad epizoda ima AI sadržaj.
-  Widget _buildReaderButton(ThemeData theme) {
+  Widget _buildReaderButton(ThemeData theme, AppLocalizations l) {
     return Focus(
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
@@ -595,7 +599,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Čitaj',
+                l.tvRead,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
@@ -615,7 +619,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
   /// (vise se ne propagira u player jer `_handlePlayerKey` ima
   /// `hasPrimaryFocus` guard, a i strukturno gumb vise nije unutar player
   /// Focus-a).
-  Widget _buildFullscreenButton(ThemeData theme) {
+  Widget _buildFullscreenButton(ThemeData theme, AppLocalizations l) {
     return Focus(
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
@@ -649,7 +653,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                _fullscreen ? 'Izađi iz fullscreen-a' : 'Fullscreen',
+                _fullscreen ? l.tvExitFullscreen : l.tvFullscreen,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
@@ -663,7 +667,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     );
   }
 
-  Widget _buildLoading(ThemeData theme) {
+  Widget _buildLoading(ThemeData theme, AppLocalizations l) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -677,7 +681,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Učitavam epizodu…', style: theme.textTheme.titleMedium),
+          Text(l.tvLoadingEpisode, style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             widget.youtubeId,
@@ -691,7 +695,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     );
   }
 
-  Widget _buildError(ThemeData theme) {
+  Widget _buildError(ThemeData theme, AppLocalizations l) {
     final notFound = _error is VideoNotFoundException;
     return Center(
       child: Padding(
@@ -707,8 +711,8 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
             const SizedBox(height: 16),
             Text(
               notFound
-                  ? 'Epizoda "${widget.youtubeId}" nije pronađena.'
-                  : 'Greška pri učitavanju:\n$_error',
+                  ? l.tvEpisodeNotFound(widget.youtubeId)
+                  : l.tvLoadError('$_error'),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium,
             ),
@@ -725,7 +729,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Natrag na početnu',
+                  l.commonGoHome,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onTertiary,
                     fontWeight: FontWeight.w700,
@@ -745,6 +749,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
 
   Widget _buildHero(
     ThemeData theme,
+    AppLocalizations l,
     EpisodeData data,
     double height, {
     bool hasChaptersBeside = false,
@@ -816,7 +821,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                   Container(
                     color: Colors.black.withValues(alpha: 0.55),
                     alignment: Alignment.center,
-                    child: _buildBufferRing(theme, ready),
+                    child: _buildBufferRing(theme, l, ready),
                   ),
 
                 Positioned.fill(
@@ -837,7 +842,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                   duration: const Duration(milliseconds: 250),
                   child: IgnorePointer(
                     ignoring: !(_showOverlay && _firstFrame),
-                    child: _buildOverlay(theme, progress),
+                    child: _buildOverlay(theme, l, progress),
                   ),
                 ),
               ],
@@ -853,7 +858,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
   ///   - Pre-ready (player jos nije instanciran): indeterminate
   ///   - Initial buffering: ciljano `_bufferTargetSec` sekundi unaprijed
   ///   - Mid-playback re-buffer: cilj isti, ali baseline je trenutna pozicija
-  Widget _buildBufferRing(ThemeData theme, bool ready) {
+  Widget _buildBufferRing(ThemeData theme, AppLocalizations l, bool ready) {
     final indeterminate = !ready;
     double? value;
     String label;
@@ -865,7 +870,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
       // i prelazi 110px container pa overflowa preko prstena. Hint tekst
       // ispod prstena vec govori sto se dogada.
       label = '';
-      hint = 'Pokrećem media engine…';
+      hint = l.tvBufferStartingEngine;
     } else {
       // Real buffer signal (libmpv): koliko sekundi unaprijed je decoded.
       final ahead = (_buffer.inMilliseconds - _position.inMilliseconds)
@@ -890,7 +895,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
       final ratio = realRatio > timeRatio ? realRatio : timeRatio;
       value = ratio;
       label = '${(ratio * 100).round()}%';
-      hint = !_firstFrame ? 'Učitavam video…' : 'Punjenje buffera…';
+      hint = !_firstFrame ? l.tvBufferLoadingVideo : l.tvBufferFilling;
     }
 
     return Column(
@@ -1009,7 +1014,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
     return KeyEventResult.ignored;
   }
 
-  Widget _buildOverlay(ThemeData theme, double progress) {
+  Widget _buildOverlay(ThemeData theme, AppLocalizations l, double progress) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1096,9 +1101,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _fullscreen
-                ? 'OK = play/pause     BACK / F = izađi'
-                : 'OK = play/pause     ▲ = Čitaj / Fullscreen',
+            _fullscreen ? l.tvPlayerHintFullscreen : l.tvPlayerHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.white.withValues(alpha: 0.7),
               letterSpacing: 0.5,
@@ -1176,7 +1179,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
   /// per item drive-aju Scrollable.ensureVisible animaciju iz
   /// _updateActiveChapter (pozvano iz position stream + poll).
   Widget _buildChaptersVertical(
-      ThemeData theme, List<OutlineChapter> chapters) {
+      ThemeData theme, AppLocalizations l, List<OutlineChapter> chapters) {
     // Maintain stable GlobalKey-eve za svaki chapter index. Rebuilds ne
     // mijenjaju identity pa ensureVisible animacija nije razbijena.
     for (int i = 0; i < chapters.length; i++) {
@@ -1200,7 +1203,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'POGLAVLJA (${chapters.length})',
+                    l.tvChaptersWithCount(chapters.length).toUpperCase(),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 1.4,

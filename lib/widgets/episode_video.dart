@@ -24,6 +24,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/podcast_summary.dart';
 import '../models/speaker_timeline.dart';
 import '../services/browser_fullscreen.dart';
@@ -227,9 +228,10 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   Widget? _youTubeButton() {
     final cb = widget.onYouTubeMode;
     if (cb == null) return null;
+    final l = AppLocalizations.of(context);
     return IconButton(
       icon: const Icon(Icons.hd_outlined, color: Colors.white),
-      tooltip: 'YouTube player (viša kvaliteta)',
+      tooltip: l.mediaYouTubeHigherQuality,
       onPressed: cb,
     );
   }
@@ -329,6 +331,7 @@ class _SubtitleToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return ValueListenableBuilder<bool>(
       valueListenable: enabled,
       builder: (context, on, _) => IconButton(
@@ -336,7 +339,7 @@ class _SubtitleToggleButton extends StatelessWidget {
           on ? Icons.closed_caption : Icons.closed_caption_off_outlined,
           color: Colors.white,
         ),
-        tooltip: on ? 'Isključi titlove (C)' : 'Titlovi (C)',
+        tooltip: on ? l.mediaSubtitlesOff : l.mediaSubtitlesOn,
         onPressed: onToggle,
       ),
     );

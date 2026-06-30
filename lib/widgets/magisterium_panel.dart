@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../l10n/app_localizations.dart';
 import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
+import '../services/locale_service.dart';
 import '../services/open_url.dart';
 import 'citation_helpers.dart';
 import 'magisterium_section.dart';
@@ -64,11 +66,11 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
       final full = widget.magisteriumFull!;
       final color = MagisteriumSection.scoreColor(full.overallScore);
       tabs.add(_TabEntry(
-        label: 'Evaluacija',
+        label: appStrings.magisteriumTabEvaluation,
         icon: Icons.auto_awesome,
         badgeColor: color,
         badgeText: '${full.overallScore}',
-        builder: (_, __, ___, ____) =>
+        builder: (_, _, _, _) =>
             _MagisteriumFullContent(data: full),
       ));
     } else {
@@ -90,9 +92,9 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
     // Magisterium Full prompt (raw markdown)
     if (widget.magisteriumFullPrompt != null) {
       tabs.add(_TabEntry(
-        label: 'Prompt',
+        label: appStrings.magisteriumTabPrompt,
         icon: Icons.code,
-        builder: (_, __, ___, ____) =>
+        builder: (_, _, _, _) =>
             _MarkdownContent(markdown: widget.magisteriumFullPrompt!),
       ));
     }
@@ -303,6 +305,7 @@ class _MagisteriumFullContentState extends State<_MagisteriumFullContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final data = widget.data;
     final color = MagisteriumSection.scoreColor(data.overallScore);
 
@@ -334,14 +337,15 @@ class _MagisteriumFullContentState extends State<_MagisteriumFullContent> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Magisterium AI — Teoloska evaluacija',
+                      l.magisteriumFullHeaderTitle,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${data.model ?? 'magisterium-1'}  •  ${data.citations.length} citata',
+                      l.magisteriumModelCitations(
+                          data.model ?? 'magisterium-1', data.citations.length),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -459,7 +463,7 @@ class _MagisteriumFullContentState extends State<_MagisteriumFullContent> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '$count ${count == 1 ? 'izvor' : 'izvora'} iz crkvenih dokumenata',
+                      appStrings.magisteriumSourcesFromChurchDocs(count),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: color,

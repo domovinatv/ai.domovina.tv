@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/magisterium_full_v2_data.dart';
 import '../services/episode_language.dart';
 
@@ -23,14 +24,14 @@ class MagisteriumV2View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final lang = EpisodeLanguageScope.of(context);
     final interpretation =
         pickLang(lang, data.scoreInterpretation, data.scoreInterpretationEn);
     final evaluation = pickLang(lang, data.evaluation, data.evaluationEn);
-    final sourcesLabel = lang == EpisodeLanguage.en ? 'Sources' : 'Izvori';
-    final sourcesSubtitle = lang == EpisodeLanguage.en
-        ? '${data.citations.length} citations from Church documents'
-        : '${data.citations.length} citata iz crkvenih dokumenata';
+    final sourcesLabel = l.magisteriumSourcesTitle;
+    final sourcesSubtitle =
+        l.magisteriumCitationsFromChurchDocs(data.citations.length);
 
     return Padding(
       padding: padding,
@@ -103,6 +104,7 @@ class _ScoreBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final color = _colorForScore(score);
     return Container(
       padding: const EdgeInsets.all(14),
@@ -136,7 +138,7 @@ class _ScoreBadge extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Magisterium score',
+                  l.magisteriumScoreCaption,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     letterSpacing: 0.5,
@@ -191,6 +193,7 @@ class _CitationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final subtitle = [
       if (citation.documentAuthor != null && citation.documentAuthor!.isNotEmpty)
         citation.documentAuthor!,
@@ -260,7 +263,7 @@ class _CitationCard extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () => _openUrl(citation.sourceUrl!),
                       icon: const Icon(Icons.open_in_new, size: 14),
-                      label: const Text('Otvori izvor'),
+                      label: Text(l.commonOpenSource),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                       ),

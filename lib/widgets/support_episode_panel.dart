@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/pinka.dart';
+import '../services/locale_service.dart';
 import '../services/pinka_service.dart';
 
 /// "Podrži ovu epizodu" panel za pinka.finance. Samostalno se sakrije ako
@@ -69,8 +71,8 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
     final c = _campaign;
     if (c == null) return;
     if (_amountCents < c.minContributionCents) {
-      setState(() => _error =
-          'Najmanji iznos je ${_fmtEur(c.minContributionCents)} €');
+      setState(() =>
+          _error = appStrings.mediaMinAmount(_fmtEur(c.minContributionCents)));
       return;
     }
     setState(() {
@@ -96,7 +98,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
       if (!mounted) return;
       setState(() {
         _phase = _Phase.idle;
-        _error = 'Neuspjelo kreiranje uplate. Pokušaj ponovno.';
+        _error = appStrings.mediaPaymentCreateFailed;
       });
     }
   }
@@ -132,6 +134,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
   }
 
   Widget _buildIdle(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final c = _campaign!;
     final creating = _phase == _Phase.creating;
     return Column(
@@ -143,7 +146,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
                 color: theme.colorScheme.tertiary, size: 22),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Podrži ovu epizodu',
+              child: Text(l.mediaSupportEpisode,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700)),
             ),
@@ -151,8 +154,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Doniraj jednim skenom — SEPA, bez naknade. Sredstva idu izravno '
-          'autoru, transparentno na lancu.',
+          l.mediaSupportBlurb,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -169,8 +171,11 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Prikupljeno ${_fmtEur(c.totalRaisedCents)} € '
-            'od ${_fmtEur(c.goalCents!)} € · ${c.contributorCount} podržavatelja',
+            l.mediaRaisedProgress(
+              _fmtEur(c.totalRaisedCents),
+              _fmtEur(c.goalCents!),
+              c.contributorCount,
+            ),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -195,10 +200,10 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
                 controller: _customCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
                   suffixText: '€',
-                  hintText: 'Ostalo',
+                  hintText: l.mediaOtherAmount,
                 ),
                 onChanged: _setAmountFromCustom,
               ),
@@ -227,23 +232,24 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
                       color: Colors.white, strokeWidth: 2))
               : const Icon(Icons.favorite, size: 18),
           label: Text(creating
-              ? 'Pripremam…'
-              : 'Podrži s ${_fmtEur(_amountCents)} €'),
+              ? l.mediaPreparing
+              : l.mediaSupportWithAmount(_fmtEur(_amountCents))),
         ),
       ],
     );
   }
 
   Widget _buildQr(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final contrib = _contribution!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('Skeniraj u svojoj bankovnoj aplikaciji',
+        Text(l.mediaScanInBankApp,
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text('Iznos: ${contrib.amountEur} €',
+        Text(l.mediaAmountValue(contrib.amountEur),
             style: theme.textTheme.bodyMedium),
         const SizedBox(height: 14),
         Container(
@@ -261,8 +267,8 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
         ),
         const SizedBox(height: 14),
         _copyRow(theme, 'IBAN', contrib.iban),
-        _copyRow(theme, 'Primatelj', contrib.beneficiaryName),
-        _copyRow(theme, 'Opis plaćanja', contrib.memo),
+        _copyRow(theme, l.mediaRecipient, contrib.beneficiaryName),
+        _copyRow(theme, l.mediaPaymentReference, contrib.memo),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -272,7 +278,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2)),
             const SizedBox(width: 10),
-            Text('Čekam potvrdu plaćanja…',
+            Text(l.mediaAwaitingPayment,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
@@ -282,15 +288,16 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
   }
 
   Widget _buildPaid(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Column(
       children: [
         Icon(Icons.check_circle, color: theme.colorScheme.tertiary, size: 40),
         const SizedBox(height: 10),
-        Text('Hvala na podršci! 🙏',
+        Text('${l.commonThanksForSupport} 🙏',
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text('Plaćanje je potvrđeno na lancu.',
+        Text(l.mediaPaymentConfirmedOnChain,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ],
@@ -298,6 +305,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
   }
 
   Widget _copyRow(ThemeData theme, String label, String value) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -317,11 +325,11 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.copy, size: 16),
-            tooltip: 'Kopiraj',
+            tooltip: l.commonCopy,
             onPressed: () {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$label kopiran'),
+                SnackBar(content: Text(l.mediaCopiedLabel(label)),
                     duration: const Duration(seconds: 1)),
               );
             },

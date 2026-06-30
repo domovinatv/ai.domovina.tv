@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../l10n/app_localizations.dart';
 import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
 import '../services/open_url.dart';
@@ -32,6 +33,7 @@ void showFullCitationSheet(
 /// Shows a bottom sheet with full citation details and link to source.
 void showCitationSheet(BuildContext context, MagisteriumCitation citation) {
   final theme = Theme.of(context);
+  final l = AppLocalizations.of(context);
 
   showModalBottomSheet(
     context: context,
@@ -145,7 +147,7 @@ void showCitationSheet(BuildContext context, MagisteriumCitation citation) {
                 FilledButton.tonalIcon(
                   onPressed: () => openUrl(citation.sourceUrl),
                   icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Otvori na Magisterium.com'),
+                  label: Text(l.magisteriumOpenOnMagisterium),
                 ),
               ],
             ],

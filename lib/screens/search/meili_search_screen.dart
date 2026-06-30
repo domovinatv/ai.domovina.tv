@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/meili_client.dart';
@@ -123,9 +124,10 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Keyword pretraga'),
+        title: Text(l.channelKeywordSearch),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
@@ -146,6 +148,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   }
 
   Widget _searchField(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: TextField(
@@ -166,7 +169,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
                     _onChanged('');
                   },
                 ),
-          hintText: 'Traži po riječima (typo-tolerantno)…',
+          hintText: l.channelKeywordSearchHint,
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest,
           border: OutlineInputBorder(
@@ -180,13 +183,13 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   }
 
   Widget _meiliDownBanner(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       color: theme.colorScheme.errorContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Text(
-        'Meilisearch nije dostupan na ${MeiliClient.baseUrl}. Pokreni docker '
-        'kontejner i napuni index (domovina-rag repo).',
+        l.channelSearchUnavailable(MeiliClient.baseUrl),
         style: theme.textTheme.labelMedium
             ?.copyWith(color: theme.colorScheme.onErrorContainer),
       ),
@@ -194,17 +197,16 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   }
 
   Widget _statsBar(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final res = _response;
     final muted = theme.colorScheme.onSurfaceVariant;
     String text;
     if (_loading) {
-      text = 'Tražim…';
+      text = l.channelSearching;
     } else if (res != null) {
-      final n = res.estimatedTotalHits;
-      text =
-          '$n ${_plural(n)} u ${res.processingTimeMs} ms · typo-tolerantno';
+      text = l.channelResultsInMs(res.estimatedTotalHits, res.processingTimeMs);
     } else {
-      text = 'Upiši pojam za instant pretragu 2562 epizode';
+      text = l.channelSearchPrompt;
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 2, 16, 8),
@@ -221,15 +223,8 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
     );
   }
 
-  String _plural(int n) {
-    if (n % 10 == 1 && n % 100 != 11) return 'rezultat';
-    if ([2, 3, 4].contains(n % 10) && !(n % 100 >= 12 && n % 100 <= 14)) {
-      return 'rezultata';
-    }
-    return 'rezultata';
-  }
-
   Widget _channelChips(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     // Sortiraj kanale po veličini (najveći prvi).
     final entries = _allChannels.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -243,7 +238,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           children: [
-            _chip(theme, label: 'Svi', selected: _channel == null,
+            _chip(theme, label: l.channelAll, selected: _channel == null,
                 onTap: () => _selectChannel(null)),
             for (final e in entries)
               _chip(theme,
@@ -283,21 +278,23 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   }
 
   Widget _results(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     if (_error != null) {
-      return _centered(theme, 'Greška: $_error');
+      return _centered(theme, l.commonErrorWithDetails(_error!));
     }
     final res = _response;
     if (res == null) {
       return _centered(
         theme,
-        _query.isEmpty
-            ? 'Instant keyword pretraga — počni tipkati.'
-            : 'Tražim…',
+        _query.isEmpty ? l.channelSearchStart : l.channelSearching,
         icon: Icons.search,
       );
     }
     if (res.hits.isEmpty) {
-      return _centered(theme, 'Nema rezultata za "${_controller.text.trim()}".');
+      return _centered(
+        theme,
+        l.channelNoResultsForQuery(_controller.text.trim()),
+      );
     }
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),

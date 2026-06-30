@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../l10n/app_localizations.dart';
 import '../onboarding/ui/auth_sheet.dart';
 import '../screens/account/account_screen.dart' show confirmAndSignOut;
 import '../services/auth_service.dart';
@@ -37,6 +38,7 @@ class _AnonymousChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     // Filled BRAND navy pill (#002F6C) — ne cs.primary, jer ga M3 u dark temi
     // tonalno pomakne u blijedo-plavo (tone 80) pa bijeli tekst na njemu
     // izgleda isprano. Fiksna zastavna navy + svjetliji rub da se odvoji od
@@ -67,7 +69,7 @@ class _AnonymousChip extends StatelessWidget {
               ),
               const SizedBox(width: 7),
               Text(
-                'Prijava',
+                l.commonSignIn,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -98,6 +100,7 @@ class _SignedInChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final initial = (displayName ?? email ?? '?')
         .replaceAll(RegExp(r'[^A-Za-zČčĆćĐđŠšŽž]'), '')
         .characters
@@ -115,7 +118,7 @@ class _SignedInChip extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                displayName ?? 'Korisnik',
+                displayName ?? l.mediaUserFallback,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (email != null)
@@ -128,7 +131,7 @@ class _SignedInChip extends StatelessWidget {
                 ),
               if (provider != null)
                 Text(
-                  'preko ${provider!.displayName}',
+                  l.mediaViaProvider(provider!.displayName),
                   style: TextStyle(
                     fontSize: 10,
                     color: theme.colorScheme.onSurfaceVariant,
@@ -144,7 +147,7 @@ class _SignedInChip extends StatelessWidget {
                           size: 13, color: theme.colorScheme.primary),
                       const SizedBox(width: 4),
                       Text(
-                        'Verificiran identitet',
+                        l.mediaVerifiedIdentity,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -158,35 +161,35 @@ class _SignedInChip extends StatelessWidget {
           ),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'account',
           child: ListTile(
-            leading: Icon(Icons.manage_accounts_outlined),
-            title: Text('Moj račun'),
+            leading: const Icon(Icons.manage_accounts_outlined),
+            title: Text(l.mediaMyAccount),
             dense: true,
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'channels',
           child: ListTile(
-            leading: Icon(Icons.smart_display_outlined),
-            title: Text('Moji kanali'),
+            leading: const Icon(Icons.smart_display_outlined),
+            title: Text(l.mediaMyChannels),
             dense: true,
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'handoff',
           child: ListTile(
-            leading: Icon(Icons.devices_other),
-            title: Text('Prebaci na drugi uređaj'),
+            leading: const Icon(Icons.devices_other),
+            title: Text(l.mediaSwitchDevice),
             dense: true,
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'signout',
           child: ListTile(
-            leading: Icon(Icons.logout),
-            title: Text('Odjavi se'),
+            leading: const Icon(Icons.logout),
+            title: Text(l.commonSignOut),
             dense: true,
           ),
         ),

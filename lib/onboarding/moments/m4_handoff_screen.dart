@@ -8,11 +8,13 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
 import '../../services/handoff_service.dart';
+import '../../services/locale_service.dart';
 import '../ui/auth_sheet.dart';
 
 
@@ -47,10 +49,11 @@ class _HandoffScreenState extends State<HandoffScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
-        title: const Text('Prebaci na drugi uređaj'),
+        title: Text(l.authSwitchDevice),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -66,9 +69,9 @@ class _HandoffScreenState extends State<HandoffScreen>
           labelColor: theme.colorScheme.primary,
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
           indicatorColor: theme.colorScheme.tertiary,
-          tabs: const [
-            Tab(icon: Icon(Icons.upload), text: 'Pošalji'),
-            Tab(icon: Icon(Icons.download), text: 'Primi'),
+          tabs: [
+            Tab(icon: const Icon(Icons.upload), text: l.authTabSend),
+            Tab(icon: const Icon(Icons.download), text: l.authTabReceive),
           ],
         ),
       ),
@@ -102,13 +105,13 @@ class _SendTabState extends State<_SendTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final auth = AuthService.instance;
 
     if (auth.isAnonymous) {
       return _NotSignedInPrompt(
-        title: 'Prvo se prijavi',
-        subtitle:
-            'Da bi prebacio cijeli svoj napredak na drugi uređaj, prvo se prijavi na ovom — onda i drugi uređaj može pristupiti istom računu.',
+        title: l.authHandoffSignInFirst,
+        subtitle: l.authHandoffSignInFirstBody,
       );
     }
 
@@ -121,14 +124,14 @@ class _SendTabState extends State<_SendTab> {
             Icon(Icons.devices_other, size: 56, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text(
-              'Pošalji prijavu na drugi uređaj',
+              l.authHandoffSendTitle,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Otvori DOMOVINA.ai/handoff na drugom uređaju i unesi kod ispod. Kod vrijedi 5 minuta.',
+              l.authHandoffSendBody,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -145,7 +148,7 @@ class _SendTabState extends State<_SendTab> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.bolt),
-                label: const Text('Generiraj kod'),
+                label: Text(l.authGenerateCode),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppTheme.croBlue,
                   foregroundColor: Colors.white,
@@ -162,20 +165,20 @@ class _SendTabState extends State<_SendTab> {
                   OutlinedButton.icon(
                     onPressed: () => _copy(_code!),
                     icon: const Icon(Icons.copy, size: 18),
-                    label: const Text('Kopiraj'),
+                    label: Text(l.commonCopy),
                   ),
                   OutlinedButton.icon(
                     onPressed: () => setState(() {
                       _code = null;
                     }),
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Novi kod'),
+                    label: Text(l.authNewCode),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
               Text(
-                'Vrijedi 5 minuta',
+                l.authValid5Min,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -210,7 +213,7 @@ class _SendTabState extends State<_SendTab> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Greška: $e';
+        _error = appStrings.commonErrorWithDetails(e.toString());
         _loading = false;
       });
     }
@@ -220,7 +223,7 @@ class _SendTabState extends State<_SendTab> {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kod kopiran u clipboard')),
+      SnackBar(content: Text(AppLocalizations.of(context).authCodeCopied)),
     );
   }
 }
@@ -300,6 +303,7 @@ class _ReceiveTabState extends State<_ReceiveTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     if (_opening && AuthService.instance.isSignedIn) {
       return const _ConsumedSuccess();
@@ -318,14 +322,14 @@ class _ReceiveTabState extends State<_ReceiveTab> {
             Icon(Icons.phone_iphone, size: 56, color: theme.colorScheme.tertiary),
             const SizedBox(height: 16),
             Text(
-              'Imaš kod s drugog uređaja?',
+              l.authHandoffReceiveTitle,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Unesi 6-znamenkasti kod koji si dobio na drugom uređaju da preuzmeš njegov račun ovdje.',
+              l.authHandoffReceiveBody,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -371,7 +375,7 @@ class _ReceiveTabState extends State<_ReceiveTab> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text('Preuzmi prijavu'),
+                  : Text(l.authReceiveSignIn),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -391,7 +395,7 @@ class _ReceiveTabState extends State<_ReceiveTab> {
   Future<void> _submit() async {
     final code = _ctrl.text.trim();
     if (code.length != 6) {
-      setState(() => _error = 'Kod mora imati 6 znamenki');
+      setState(() => _error = appStrings.authCode6Digits);
       return;
     }
     setState(() {
@@ -414,7 +418,7 @@ class _ReceiveTabState extends State<_ReceiveTab> {
       setState(() {
         _error = e is StateError || e is FormatException
             ? e.toString().replaceFirst(RegExp(r'^[^:]*: '), '')
-            : 'Greška: $e';
+            : appStrings.commonErrorWithDetails(e.toString());
         _loading = false;
       });
     }
@@ -427,6 +431,7 @@ class _OpeningSignIn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -436,14 +441,14 @@ class _OpeningSignIn extends StatelessWidget {
             const CircularProgressIndicator(),
             const SizedBox(height: 24),
             Text(
-              'Otvaram prijavu…',
+              l.authOpeningSignIn,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Ako se otvori preglednik, potvrdi prijavu pa se vrati u aplikaciju.',
+              l.authOpeningSignInBody,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -462,6 +467,7 @@ class _ConsumedSuccess extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final user = AuthService.instance.currentUser;
     return SafeArea(
       child: Padding(
@@ -472,13 +478,13 @@ class _ConsumedSuccess extends StatelessWidget {
             Icon(Icons.check_circle, size: 72, color: Colors.green.shade600),
             const SizedBox(height: 24),
             Text(
-              'Uspješno!',
+              l.authSuccess,
               style: theme.textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Prijavljen kao ${user?.displayName ?? "korisnik"}.',
+              l.authSignedInAs(user?.displayName ?? l.authUserFallback),
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -498,7 +504,7 @@ class _ConsumedSuccess extends StatelessWidget {
                 backgroundColor: AppTheme.croBlue,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Idi na početnu'),
+              child: Text(l.commonGoHome),
             ),
           ],
         ),
@@ -515,6 +521,7 @@ class _NotSignedInPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -540,7 +547,7 @@ class _NotSignedInPrompt extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton.icon(
               icon: const Icon(Icons.login),
-              label: const Text('Prijavi se'),
+              label: Text(l.commonSignIn),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.croBlue,
                 foregroundColor: Colors.white,
@@ -551,9 +558,8 @@ class _NotSignedInPrompt extends StatelessWidget {
               // vrijedi samo za receive flow; ovdje šaljemo vlastiti copy.
               onPressed: () => showAuthSheet(
                 context,
-                headlineOverride: 'Prijavi se',
-                subtitleOverride:
-                    'Za slanje prijave na drugi uređaj prvo se prijavi na ovom.',
+                headlineOverride: l.commonSignIn,
+                subtitleOverride: l.authHandoffSendSheetSub,
               ),
             ),
           ],

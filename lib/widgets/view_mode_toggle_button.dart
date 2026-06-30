@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 /// Jasno labelirani gumb za prebacivanje izmedju detaljnog (`/v/`) i
 /// jednostavnog (`/m/`) prikaza epizode. Zamjenjuje raniju golu `unfold`
 /// ikonu koja korisnicima nije govorila sto radi.
@@ -22,13 +24,11 @@ class ViewModeToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final label = toSimple ? 'Jednostavno' : 'Detaljno';
+    final l = AppLocalizations.of(context);
+    final label = toSimple ? l.mediaViewSimple : l.mediaViewDetailed;
     final icon = toSimple ? Icons.unfold_less : Icons.unfold_more;
-    final tooltip = toSimple
-        ? 'Prebaci na jednostavni prikaz — veliki player i poglavlja, '
-            'bez članka (idealno za slušanje u autu)'
-        : 'Prebaci na detaljni prikaz — članak, Magisterium ocjena '
-            'i poglavlja uz video';
+    final tooltip =
+        toSimple ? l.mediaViewSimpleTooltip : l.mediaViewDetailedTooltip;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),

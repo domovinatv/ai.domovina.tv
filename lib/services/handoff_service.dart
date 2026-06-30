@@ -16,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:url_launcher/url_launcher.dart';
 import '../main.dart' show log;
 import 'auth_service.dart';
+import 'locale_service.dart';
 
 /// Rezultat generiranja koda na izvornom uređaju.
 class HandoffCode {
@@ -60,7 +61,7 @@ class HandoffService {
   Future<String> consumeCode(String code) async {
     final clean = code.replaceAll(RegExp(r'[^0-9]'), '');
     if (clean.length != 6) {
-      throw const FormatException('Kod mora imati točno 6 znamenki');
+      throw FormatException(appStrings.serviceHandoffCodeSixDigits);
     }
 
     final client = sb.Supabase.instance.client;
@@ -72,7 +73,7 @@ class HandoffService {
       final data = (res.data as Map).cast<String, dynamic>();
       final actionLink = data['action_link'] as String?;
       if (actionLink == null || actionLink.isEmpty) {
-        throw StateError('Backend nije vratio sign-in link');
+        throw StateError(appStrings.serviceHandoffNoSignInLink);
       }
       await _openActionLink(actionLink);
       return data['user_id'] as String? ?? '';
@@ -98,14 +99,13 @@ class HandoffService {
     final details = e.details;
     final code = details is Map ? details['error'] as String? : null;
     return switch (code) {
-      'not_authenticated' =>
-        'Ovaj uređaj nema aktivnu sesiju — osvježi stranicu i pokušaj ponovo',
-      'invalid_code_format' => 'Kod mora imati 6 znamenki',
-      'invalid_or_expired_code' => 'Kod ne postoji ili je istekao',
+      'not_authenticated' => appStrings.serviceHandoffNoActiveSession,
+      'invalid_code_format' => appStrings.serviceHandoffCodeSixDigits,
+      'invalid_or_expired_code' => appStrings.serviceHandoffInvalidOrExpiredCode,
       _ => switch (e.status) {
-          401 => 'Ovaj uređaj nema aktivnu sesiju — osvježi i pokušaj ponovo',
-          405 => 'Greška u pozivu (405)',
-          _ => 'Prijenos nije uspio (${e.status})',
+          401 => appStrings.serviceHandoffNoActiveSession,
+          405 => appStrings.serviceHandoffRequestError,
+          _ => appStrings.serviceHandoffTransferFailedWithStatus('${e.status}'),
         },
     };
   }

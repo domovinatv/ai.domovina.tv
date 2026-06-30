@@ -13,11 +13,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../onboarding/ui/auth_ui.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';
+import '../../services/locale_service.dart';
 
 class AuthCallbackScreen extends StatefulWidget {
   const AuthCallbackScreen({super.key});
@@ -78,15 +80,13 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
     log('AuthCallback: URL error=$error code=$code desc=$description');
 
     return switch (code) {
-      'otp_expired' => 'Link za prijavu je istekao — zatraži novi.',
-      'user_banned' => 'Ovaj račun je privremeno blokiran.',
-      'signup_disabled' =>
-        'Registracija novih računa trenutno nije moguća.',
+      'otp_expired' => appStrings.authErrLinkExpired,
+      'user_banned' => appStrings.authErrUserBanned,
+      'signup_disabled' => appStrings.authErrSignupDisabled,
       _ => switch (error) {
-          'access_denied' => 'Prijava je odbijena ili otkazana.',
-          'server_error' =>
-            'Greška na poslužitelju — pokušaj ponovo za minutu.',
-          _ => 'Prijava nije uspjela. Pokušaj ponovo.',
+          'access_denied' => appStrings.authErrAccessDenied,
+          'server_error' => appStrings.authErrServerError,
+          _ => appStrings.authErrGeneric,
         },
     };
   }
@@ -95,7 +95,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
     if (_navigated || !mounted) return;
     log('AuthCallback: timeout — session never arrived');
     setState(() {
-      _error = 'Prijava traje predugo ili je prekinuta. Pokušaj ponovo.';
+      _error = appStrings.authErrTimeout;
     });
   }
 
@@ -113,8 +113,8 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
       }
       rootScaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
-          content: Text(
-              'Prijavljen si kao ${user?.displayName ?? user?.email ?? 'korisnik'}.'),
+          content: Text(appStrings.authSignedInAs(
+              user?.displayName ?? user?.email ?? appStrings.authUserFallback)),
         ),
       );
       context.go('/');
@@ -133,6 +133,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -160,7 +161,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Prijava u tijeku…',
+                    l.authSigningIn,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -178,13 +179,13 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
                   FilledButton.icon(
                     onPressed: _retry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Pokušaj ponovo'),
+                    label: Text(l.commonRetry),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => context.go('/'),
                     child: Text(
-                      'Natrag na početnu',
+                      l.commonGoHome,
                       style: TextStyle(
                           color: theme.colorScheme.onSurfaceVariant),
                     ),

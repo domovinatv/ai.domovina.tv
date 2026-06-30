@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/channel_claim.dart';
 import '../../models/channel_detail.dart';
@@ -19,6 +20,7 @@ import '../../models/payout_eligibility.dart';
 import '../../services/auth_service.dart';
 import '../../services/channel_ownership_service.dart';
 import '../../services/data_service.dart';
+import '../../services/locale_service.dart';
 import '../../services/wallet_service.dart';
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -119,7 +121,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       log('ownership load failed: $e');
       if (!mounted) return;
       setState(() {
-        _error = 'Učitavanje kanala nije uspjelo.';
+        _error = appStrings.ownershipLoadChannelFailed;
         _loading = false;
       });
     }
@@ -149,7 +151,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     } catch (e) {
       log('startClaim launch failed: $e');
       if (!mounted) return;
-      setState(() => _error = 'Otvaranje autorizacije nije uspjelo.');
+      setState(() => _error = appStrings.ownershipOpenAuthFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -157,18 +159,19 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: _Crumbs([
-          ('Početna', () => context.go('/')),
+          (l.ownershipCrumbHome, () => context.go('/')),
           if (widget.channelId != null)
             (
-              _channel?.name ?? 'Kanal',
+              _channel?.name ?? l.ownershipChannelFallback,
               () => context.go('/c/${widget.channelId!.replaceAll('_', '-')}')
             )
           else
-            ('Moji kanali', () => context.go('/account/channels')),
-          ('Vlasništvo', null),
+            (l.ownershipMyChannels, () => context.go('/account/channels')),
+          (l.ownershipCrumbOwnership, null),
         ]),
       ),
       body: AnimatedBuilder(
@@ -187,13 +190,14 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   }
 
   List<Widget> _buildBody(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final auth = AuthService.instance;
     final ucId = _ucId;
     final title = _channel?.name ?? _claim?.channelTitle ?? ucId;
 
     if (!auth.isSignedIn) {
       return [
-        _infoCard(context, 'Za preuzimanje kanala prvo se prijavi.'),
+        _infoCard(context, l.ownershipSignInToClaim),
       ];
     }
     if (ucId == null) {
@@ -202,9 +206,8 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
             context,
             _error ??
                 (widget.channelId != null
-                    ? 'Ovaj kanal još nema povezan YouTube identifikator pa '
-                        'preuzimanje trenutno nije moguće.'
-                    : 'Kanal nije pronađen.')),
+                    ? l.ownershipNoYoutubeId
+                    : l.ownershipChannelNotFound)),
       ];
     }
 
@@ -239,6 +242,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   // ga poznaje). wa.me/?text=… otvara WhatsApp s prefilanom porukom i pušta
   // korisnika da odabere primatelja (ne treba broj).
   Widget _inviteOwnerCard(BuildContext context, String channelTitle) {
+    final l = AppLocalizations.of(context);
     final slugDashed = widget.channelId!.replaceAll('_', '-');
     return Card(
       child: Padding(
@@ -246,18 +250,15 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Nisi ti vlasnik kanala?',
+            Text(l.ownershipNotOwnerTitle,
                 style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 4),
-            const Text(
-              'Ako poznaješ vlasnika, pošalji mu poruku da preuzme vlasništvo i '
-              'verificira se na DOMOVINA.ai.',
-            ),
+            Text(l.ownershipNotOwnerBody),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => _inviteOwnerWhatsApp(channelTitle, slugDashed),
               icon: const Icon(Icons.chat_outlined),
-              label: const Text('Pozovi vlasnika (WhatsApp)'),
+              label: Text(l.ownershipInviteOwnerWhatsApp),
             ),
           ],
         ),
@@ -268,9 +269,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   Future<void> _inviteOwnerWhatsApp(
       String channelTitle, String slugDashed) async {
     final link = 'https://domovina.ai/c/$slugDashed';
-    final msg = 'Pozdrav! Tvoj YouTube kanal "$channelTitle" je na DOMOVINA.ai. '
-        'Možeš besplatno preuzeti vlasništvo i upravljati svojim sadržajem te '
-        'isplatama — verificiraj se kao vlasnik kanala ovdje: $link';
+    final msg = appStrings.ownershipInviteMessage(channelTitle, link);
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
     await launchUrl(uri,
         mode: kIsWeb
@@ -280,6 +279,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
 
   // Step 1 — vlasništvo (YouTube OAuth).
   Widget _stepOwnership(BuildContext context, PayoutEligibility e) {
+    final l = AppLocalizations.of(context);
     final claim = _claim;
     final reverify = e.block == EligibilityBlock.reverifyNeeded;
     final done = claim?.isVerified == true && !reverify;
@@ -287,30 +287,28 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       context,
       index: 1,
       done: done,
-      title: 'Potvrdi vlasništvo',
+      title: l.ownershipStepConfirmTitle,
       subtitle: reverify
-          ? 'Vlasništvo je starije od 90 dana — potvrdi ponovo.'
+          ? l.ownershipReverifySubtitle
           : claim?.isVerified == true
-              ? 'Vlasništvo potvrđeno preko YouTube računa.'
-              : 'Prijavi se YouTube računom koji posjeduje ovaj kanal.',
-      note: done
-          ? null
-          : 'Vlasništvo može preuzeti samo Google račun koji je VLASNIK kanala. '
-              'Uređivači i menadžeri dodani u YouTube postavkama (Channel permissions) '
-              'ne mogu — YouTube ih ne prikazuje kao vlasnike. Ako kanal pripada Brand '
-              'računu, prijavi se Google računom koji njime upravlja.',
+              ? l.ownershipOwnershipVerifiedSubtitle
+              : l.ownershipSignInYoutubeSubtitle,
+      note: done ? null : l.ownershipOwnershipNote,
       action: done
           ? null
           : FilledButton.icon(
               onPressed: _busy ? null : _startClaim,
               icon: const Icon(Icons.smart_display_outlined),
-              label: Text(reverify ? 'Ponovi potvrdu' : 'Login with YouTube'),
+              label: Text(reverify
+                  ? l.ownershipReverifyAction
+                  : l.ownershipLoginYoutube),
             ),
     );
   }
 
   // Step 2 — KYC (Certilia eOsobna).
   Widget _stepKyc(BuildContext context, PayoutEligibility e) {
+    final l = AppLocalizations.of(context);
     final auth = AuthService.instance;
     final locked = _claim?.isVerified != true;
     final done = auth.currentUser?.isVerified ?? false;
@@ -319,39 +317,40 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       index: 2,
       done: done,
       locked: locked,
-      title: 'Verificiraj identitet',
+      title: l.ownershipStepVerifyIdentityTitle,
       subtitle: done
-          ? 'Identitet verificiran (eOsobna).'
-          : 'Poveži eOsobnu (Certilia) — nužno prije isplate.',
+          ? l.ownershipIdentityVerifiedSubtitle
+          : l.ownershipConnectEosobnaSubtitle,
       action: (locked || done)
           ? null
           : OutlinedButton.icon(
               onPressed: _busy ? null : () => _runKyc(context),
               icon: const Icon(Icons.badge_outlined),
-              label: const Text('Verificiraj eOsobnom'),
+              label: Text(l.ownershipVerifyWithEosobna),
             ),
     );
   }
 
   // Step 3 — wallet (odredište isplate).
   Widget _stepWalletAndSafe(BuildContext context, PayoutEligibility e) {
+    final l = AppLocalizations.of(context);
     final locked = !e.isEligible;
     return _stepCard(
       context,
       index: 3,
       done: false,
       locked: locked,
-      title: 'Poveži novčanik',
+      title: l.ownershipStepConnectWalletTitle,
       subtitle: locked
-          ? 'Dostupno nakon vlasništva i verifikacije identiteta.'
-          : 'Registriraj adresu novčanika za isplatu (odredište).',
+          ? l.ownershipWalletLockedSubtitle
+          : l.ownershipWalletSubtitle,
       action: locked
           ? null
           : FilledButton.icon(
               onPressed:
                   _busy ? null : () => context.push('/account/channels'),
               icon: const Icon(Icons.account_balance_wallet_outlined),
-              label: const Text('Upravljaj novčanikom'),
+              label: Text(l.ownershipManageWallet),
             ),
     );
   }
@@ -481,7 +480,7 @@ class YoutubeClaimCallbackScreen extends StatefulWidget {
 
 class _YoutubeClaimCallbackScreenState
     extends State<YoutubeClaimCallbackScreen> {
-  String _message = 'Provjeravam vlasništvo…';
+  String _message = appStrings.ownershipCheckingOwnership;
   String? _boldTerm;
   bool _done = false;
   bool _ok = false;
@@ -497,7 +496,7 @@ class _YoutubeClaimCallbackScreenState
     final state = widget.state;
     if (code == null || state == null) {
       setState(() {
-        _message = 'Nedostaju podaci autorizacije.';
+        _message = appStrings.ownershipMissingAuthData;
         _done = true;
       });
       return;
@@ -509,9 +508,9 @@ class _YoutubeClaimCallbackScreenState
       setState(() {
         _ok = claim.isVerified;
         _message = claim.isVerified
-            ? 'Vlasništvo potvrđeno: '
-                '${claim.channelTitle ?? claim.youtubeChannelId}'
-            : 'Zahtjev zaprimljen (status: ${claim.status.name}).';
+            ? appStrings.ownershipOwnershipConfirmedWithName(
+                claim.channelTitle ?? claim.youtubeChannelId)
+            : appStrings.ownershipRequestReceivedWithStatus(claim.status.name);
         _done = true;
       });
     } on ChannelOwnershipFailure catch (e) {
@@ -549,8 +548,9 @@ class _YoutubeClaimCallbackScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Potvrda vlasništva')),
+      appBar: AppBar(title: Text(l.ownershipCallbackTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -571,7 +571,7 @@ class _YoutubeClaimCallbackScreenState
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: () => context.go('/account/channels'),
-                  child: const Text('Moji kanali'),
+                  child: Text(l.ownershipMyChannels),
                 ),
               ],
             ],
@@ -654,26 +654,23 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
   }
 
   Future<void> _confirmRevoke(ChannelClaim c) async {
+    final l = AppLocalizations.of(context);
     final name = c.channelTitle ?? c.youtubeChannelId;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Otkvači vlasništvo?'),
-        content: Text(
-          'Odričeš se vlasništva nad kanalom "$name". Verifikacija i status '
-          'isplate se poništavaju, a kanal postaje dostupan za novo preuzimanje. '
-          'Možeš ga ponovno preuzeti bilo kada.',
-        ),
+        title: Text(l.ownershipRevokeDialogTitle),
+        content: Text(l.ownershipRevokeDialogBody(name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Odustani'),
+            child: Text(l.commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(ctx).colorScheme.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Otkvači'),
+            child: Text(l.ownershipRevokeAction),
           ),
         ],
       ),
@@ -684,7 +681,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vlasništvo otkvačeno.')),
+        SnackBar(content: Text(l.ownershipRevokedSnack)),
       );
     } on ChannelOwnershipFailure catch (e) {
       if (!mounted) return;
@@ -695,11 +692,12 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: _Crumbs([
-          ('Početna', () => context.go('/')),
-          ('Moji kanali', null),
+          (l.ownershipCrumbHome, () => context.go('/')),
+          (l.ownershipMyChannels, null),
         ]),
       ),
       body: _loading
@@ -709,7 +707,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Text('Preuzeti kanali',
+                  Text(l.ownershipClaimedChannelsTitle,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   if (_claims.isEmpty)
@@ -717,16 +715,11 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
                   else
                     ..._claims.map(_claimTile),
                   const SizedBox(height: 24),
-                  Text('Novčanici za isplatu',
+                  Text(l.ownershipPayoutWalletsTitle,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Odredište na koje ti se isplaćuju prikupljena sredstva — '
-                    'tvoj kripto-novčanik (0x, Gnosis). Kad zatražiš isplatu, '
-                    'platforma izvrši prijenos na tu adresu.\n\nOvo NIJE adresa '
-                    'na koju stižu donacije: svaka kampanja ima zaseban Safe na '
-                    'koji uplate dolaze (vidljiv svima na Gnosisscanu); isplatu '
-                    'pokrećeš iz upravljanja kampanjom.',
+                    l.ownershipPayoutWalletsDesc,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color:
                               Theme.of(context).colorScheme.onSurfaceVariant,
@@ -742,21 +735,21 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
     );
   }
 
-  Widget _emptyClaims(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Još nemaš nijedan preuzet kanal. Otvori kanal i klikni '
-            '"Preuzmi vlasništvo" za pokretanje verifikacije.',
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => context.go('/'),
-            icon: const Icon(Icons.podcasts),
-            label: const Text('Pregledaj kanale'),
-          ),
-        ],
-      );
+  Widget _emptyClaims(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l.ownershipNoClaimsBody),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () => context.go('/'),
+          icon: const Icon(Icons.podcasts),
+          label: Text(l.ownershipBrowseChannels),
+        ),
+      ],
+    );
+  }
 
   Widget _claimTile(ChannelClaim c) {
     final needsReverify = c.needsReverify(DateTime.now());
@@ -769,10 +762,10 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
         title: Text(c.channelTitle ?? c.youtubeChannelId),
         subtitle: Text(
           '${c.status.name} · ${c.role.name}'
-          '${needsReverify ? ' · treba ponovnu potvrdu' : ''}',
+          '${needsReverify ? ' · ${appStrings.ownershipNeedsReverifyTag}' : ''}',
         ),
         trailing: PopupMenuButton<String>(
-          tooltip: 'Opcije',
+          tooltip: appStrings.ownershipOptionsTooltip,
           onSelected: (v) {
             if (v == 'campaigns') {
               context.push('/account/channels/${c.youtubeChannelId}/campaigns');
@@ -783,14 +776,16 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
           itemBuilder: (_) => [
             // Pinka "Zid podrške" kampanje — samo za verificirane kanale.
             if (c.isVerified)
-              const PopupMenuItem(
-                  value: 'campaigns', child: Text('Kampanje (Zid podrške)')),
+              PopupMenuItem(
+                  value: 'campaigns',
+                  child: Text(appStrings.ownershipCampaignsMenu)),
             if (needsReverify)
-              const PopupMenuItem(
-                  value: 'reverify', child: Text('Ponovi potvrdu')),
-            const PopupMenuItem(
+              PopupMenuItem(
+                  value: 'reverify',
+                  child: Text(appStrings.ownershipReverifyAction)),
+            PopupMenuItem(
               value: 'revoke',
-              child: Text('Otkvači vlasništvo'),
+              child: Text(appStrings.ownershipRevokeMenu),
             ),
           ],
         ),
@@ -806,8 +801,8 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
         leading: const Icon(Icons.account_balance_wallet_outlined),
         title: Text(_shortAddr(w.address)),
         subtitle: Text(w.isVerified
-            ? 'Odredište isplate · potvrđeno'
-            : 'Odredište isplate'),
+            ? appStrings.ownershipWalletDestVerified
+            : appStrings.ownershipWalletDest),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {
@@ -820,6 +815,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
   }
 
   Widget _addWalletForm(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -829,8 +825,8 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
             TextField(
               controller: _walletCtrl,
               decoration: InputDecoration(
-                labelText: 'Adresa tvog novčanika za isplatu (0x…)',
-                helperText: 'EVM adresa (Gnosis) na koju primaš isplate.',
+                labelText: l.ownershipWalletAddressLabel,
+                helperText: l.ownershipWalletAddressHelper,
                 helperMaxLines: 2,
                 errorText: _walletError,
                 border: const OutlineInputBorder(),
@@ -839,7 +835,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _walletBusy ? null : _addWallet,
-              child: const Text('Dodaj novčanik'),
+              child: Text(l.ownershipAddWallet),
             ),
           ],
         ),

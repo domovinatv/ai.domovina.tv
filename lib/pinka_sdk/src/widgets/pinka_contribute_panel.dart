@@ -3,6 +3,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_contribution_intent.dart';
 import '../pinka_client.dart';
@@ -84,7 +85,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   Future<void> _submitSepa() async {
     if (_amountCents < _c.minContributionCents) {
       setState(() =>
-          _error = 'Najmanji iznos je ${fmtEur(_c.minContributionCents)} €');
+          _error = appStrings.pinkaMinAmount(fmtEur(_c.minContributionCents)));
       return;
     }
     setState(() {
@@ -114,7 +115,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       if (!mounted) return;
       setState(() {
         _phase = _Phase.idle;
-        _error = 'Neuspjelo kreiranje uplate. Pokušaj ponovno.';
+        _error = appStrings.pinkaPaymentCreateFailed;
       });
     }
   }
@@ -125,7 +126,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     if (dest == null) return;
     if (_amountCents < _c.minContributionCents) {
       setState(() =>
-          _walletNote = 'Najmanji iznos je ${fmtEur(_c.minContributionCents)} €');
+          _walletNote = appStrings.pinkaMinAmount(fmtEur(_c.minContributionCents)));
       return;
     }
     setState(() {
@@ -162,14 +163,13 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       if (!mounted) return;
       setState(() {
         _walletPhase = _WalletPhase.idle;
-        _walletNote =
-            'Uplata poslana — pojavit će se na zidu čim se potvrdi na lancu.';
+        _walletNote = appStrings.pinkaPaymentSentPending;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _walletPhase = _WalletPhase.idle;
-        _walletNote = 'Slanje iz novčanika nije uspjelo ili je otkazano.';
+        _walletNote = appStrings.pinkaWalletSendFailed;
       });
     }
   }
@@ -204,7 +204,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 color: theme.colorScheme.tertiary, size: 22),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Podrži',
+              child: Text(appStrings.pinkaSupport,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700)),
             ),
@@ -216,9 +216,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         ],
         const SizedBox(height: 6),
         Text(
-          onchain
-              ? 'Pošalji EURe (Gnosis) izravno na lanac — transparentno i bez posrednika.'
-              : 'Doniraj jednim skenom — SEPA, bez naknade. Sredstva idu izravno autoru.',
+          onchain ? appStrings.pinkaOnchainBlurb : appStrings.pinkaSepaBlurb,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -272,10 +270,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           child: TextField(
             controller: _customCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               isDense: true,
               suffixText: '€',
-              hintText: 'Ostalo',
+              hintText: appStrings.pinkaCustomAmountHint,
             ),
             onChanged: _setAmountFromCustom,
           ),
@@ -292,10 +290,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           controller: _nameCtrl,
           enabled: !_anonymous,
           maxLength: _nameMax,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             isDense: true,
             counterText: '',
-            hintText: 'Ime ili nadimak (opcionalno)',
+            hintText: appStrings.pinkaNameHint,
           ),
         ),
         const SizedBox(height: 8),
@@ -305,9 +303,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           maxLength: _msgMax,
           maxLines: 2,
           minLines: 1,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             isDense: true,
-            hintText: 'Poruka uz podršku (opcionalno)',
+            hintText: appStrings.pinkaMessageHint,
           ),
         ),
         const SizedBox(height: 4),
@@ -322,7 +320,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               ),
               Expanded(
                 child: Text(
-                  'Doniraj anonimno (ne prikazuj me na zidu podrške)',
+                  appStrings.pinkaAnonymousLabel,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -350,8 +348,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                   CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
             )
           : const Icon(Icons.favorite, size: 18),
-      label: Text(
-          creating ? 'Pripremam…' : 'Podrži s ${fmtEur(_amountCents)} €'),
+      label: Text(creating
+          ? appStrings.pinkaPreparing
+          : appStrings.pinkaSupportWithAmount(fmtEur(_amountCents))),
     );
   }
 
@@ -378,11 +377,11 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                   )
                 : const Icon(Icons.account_balance_wallet, size: 18),
             label: Text(switch (_walletPhase) {
-              _WalletPhase.connecting => 'Povezujem novčanik…',
-              _WalletPhase.sending => 'Otvaram novčanik…',
-              _WalletPhase.confirming => 'Potvrđujem na lancu…',
+              _WalletPhase.connecting => appStrings.pinkaWalletConnecting,
+              _WalletPhase.sending => appStrings.pinkaWalletOpening,
+              _WalletPhase.confirming => appStrings.pinkaWalletConfirming,
               _WalletPhase.idle =>
-                'Plati ${fmtEur(_amountCents)} € iz DOMOVINA novčanika',
+                appStrings.pinkaPayFromDomovinaWallet(fmtEur(_amountCents)),
             }),
           ),
           if (_walletNote != null) ...[
@@ -398,7 +397,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text('ili skeniraj drugim novčanikom',
+                child: Text(appStrings.pinkaOrScanOtherWallet,
                     style: theme.textTheme.labelSmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ),
@@ -410,19 +409,19 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         Center(child: _qrBox(widget.config.eip681(dest, _amountCents))),
         const SizedBox(height: 12),
         Text(
-          'Skeniraj novčanikom (MetaMask / Monerium) i pošalji '
-          '${fmtEur(_amountCents)} € u EURe.',
+          appStrings.pinkaScanWithWallet(fmtEur(_amountCents)),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 12),
-        PinkaCopyRow(label: 'Primatelj', value: dest),
-        const PinkaCopyRow(
-            label: 'Token', value: 'EURe · Monerium V2 · Gnosis'),
+        PinkaCopyRow(label: appStrings.pinkaRecipient, value: dest),
+        PinkaCopyRow(
+            label: appStrings.pinkaToken,
+            value: 'EURe · Monerium V2 · Gnosis'),
         const SizedBox(height: 8),
         Text(
-          'Donacija se pojavi na zidu podrške kad stigne na lanac (~1–2 min).',
+          appStrings.pinkaOnchainArrivalNote,
           textAlign: TextAlign.center,
           style: theme.textTheme.labelSmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -436,18 +435,20 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('Skeniraj u svojoj bankovnoj aplikaciji',
+        Text(appStrings.pinkaScanInBankApp,
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text('Iznos: ${intent.amountEur} €',
+        Text(appStrings.pinkaAmountLabel(intent.amountEur),
             style: theme.textTheme.bodyMedium),
         const SizedBox(height: 14),
         _qrBox(intent.epcQrData),
         const SizedBox(height: 14),
         PinkaCopyRow(label: 'IBAN', value: intent.iban),
-        PinkaCopyRow(label: 'Primatelj', value: intent.beneficiaryName),
-        PinkaCopyRow(label: 'Opis plaćanja', value: intent.memo),
+        PinkaCopyRow(
+            label: appStrings.pinkaRecipient, value: intent.beneficiaryName),
+        PinkaCopyRow(
+            label: appStrings.pinkaPaymentReference, value: intent.memo),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -457,7 +458,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2)),
             const SizedBox(width: 10),
-            Text('Čekam potvrdu plaćanja…',
+            Text(appStrings.pinkaAwaitingPayment,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
@@ -471,11 +472,11 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       children: [
         Icon(Icons.check_circle, color: theme.colorScheme.tertiary, size: 40),
         const SizedBox(height: 10),
-        Text('Hvala na podršci! 🙏',
+        Text(appStrings.pinkaThanksForSupportEmoji,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text('Plaćanje je potvrđeno na lancu.',
+        Text(appStrings.pinkaPaymentConfirmedOnchain,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ],

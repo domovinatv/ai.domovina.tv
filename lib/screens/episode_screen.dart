@@ -7,11 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../l10n/app_localizations.dart';
 import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
 import '../services/episode_language.dart';
+import '../services/locale_service.dart';
 import '../services/media_session.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
@@ -97,6 +99,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
     if (_error != null) {
       final notFound = _error is VideoNotFoundException;
       final theme = Theme.of(context);
+      final l = AppLocalizations.of(context);
       return Scaffold(
         backgroundColor: theme.colorScheme.surfaceContainerLow,
         body: SafeArea(
@@ -114,8 +117,8 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                   const SizedBox(height: 12),
                   Text(
                     notFound
-                        ? 'Epizoda "${widget.youtubeId}" nije pronađena na CDN-u.\n\nProvjeri je li ID ispravan i jesu li datoteke uploadane.'
-                        : 'Greška pri učitavanju podataka:\n$_error',
+                        ? l.episodeNotFoundDetailed(widget.youtubeId)
+                        : l.episodeLoadError('$_error'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -132,7 +135,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                   FilledButton.icon(
                     onPressed: () => context.go('/'),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Natrag'),
+                    label: Text(l.commonBack),
                   ),
                 ],
               ),
@@ -159,6 +162,7 @@ class _LoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final doneCount = assetStatus.values.where((s) => s.$1).length;
     final totalCount = assetStatus.isEmpty ? 7 : assetStatus.length;
     final progress = totalCount > 0 ? doneCount / totalCount : 0.0;
@@ -185,7 +189,7 @@ class _LoadingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Ucitavanje epizode',
+                    l.episodeLoading,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1049,10 +1053,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
         ? 'https://domovina.ai/v/$youtubeId/t/$sec'
         : 'https://domovina.ai/v/$youtubeId';
     Clipboard.setData(ClipboardData(text: url));
-    final label = sec > 5 ? _formatClock(sec) : 'cijela epizoda';
+    final l = AppLocalizations.of(context);
+    final label = sec > 5 ? _formatClock(sec) : l.episodeWholeEpisode;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Link kopiran ($label)'),
+        content: Text(l.episodeLinkCopied(label)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -1066,13 +1071,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     if (data.isAudioOnly) {
       return IconButton(
         icon: const Icon(Icons.open_in_new),
-        tooltip: 'Otvori izvor',
+        tooltip: appStrings.commonOpenSource,
         onPressed: () => openUrl(url),
       );
     }
     return IconButton(
       icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
-      tooltip: 'Otvori na YouTube',
+      tooltip: appStrings.episodeOpenOnYouTube,
       onPressed: () => openUrl(url),
     );
   }
@@ -1100,6 +1105,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       );
     }
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
@@ -1165,7 +1171,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ),
         IconButton(
           icon: const Icon(Icons.share_outlined),
-          tooltip: 'Kopiraj link na trenutni trenutak',
+          tooltip: l.episodeCopyMomentLink,
           onPressed: () => _copyMomentLink(context, data.youtubeId),
         ),
         if (_sourceAction(data) != null) _sourceAction(data)!,
@@ -1185,7 +1191,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.ondemand_video),
-              tooltip: 'Video',
+              tooltip: l.episodeVideo,
               onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
           ),
@@ -1223,9 +1229,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   child: Row(
                     children: [
                       Text(
-                        _language == EpisodeLanguage.en
-                            ? 'Language:'
-                            : 'Jezik:',
+                        l.episodeLanguageLabel,
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -1324,9 +1328,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                           child: Row(
                             children: [
                               Text(
-                                _language == EpisodeLanguage.en
-                                    ? 'Language:'
-                                    : 'Jezik:',
+                                l.episodeLanguageLabel,
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -1458,7 +1460,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   padding: const EdgeInsets.only(right: 4),
                   child: IconButton(
                     icon: const Icon(Icons.ondemand_video),
-                    tooltip: 'Video',
+                    tooltip: l.episodeVideo,
                     onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                   ),
                 ),
@@ -1768,7 +1770,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       children: [
                         _BottomBarButton(
                           icon: Icons.menu,
-                          label: 'Sadržaj',
+                          label: l.episodeContents,
                           isActive: false,
                           onTap: () {
                             final s = _scaffoldKey.currentState;
@@ -1785,7 +1787,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             icon: _mobileTab == 0
                                 ? Icons.article
                                 : Icons.article_outlined,
-                            label: 'Članak',
+                            label: l.episodeArticle,
                             isActive: _mobileTab == 0,
                             onTap: () => setState(() => _mobileTab = 0),
                           ),
@@ -1800,7 +1802,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         ],
                         _BottomBarButton(
                           icon: Icons.ondemand_video,
-                          label: 'Video',
+                          label: l.episodeVideo,
                           isActive: false,
                           onTap: _videoReady
                               ? () {
@@ -1832,6 +1834,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
   Widget _buildBasicLayout(BuildContext context) {
     final data = widget.data;
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
@@ -1862,7 +1865,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             FavoriteButton(episodeId: data.youtubeId),
             IconButton(
               icon: const Icon(Icons.share_outlined),
-              tooltip: 'Kopiraj link na trenutni trenutak',
+              tooltip: l.episodeCopyMomentLink,
               onPressed: () => _copyMomentLink(context, data.youtubeId),
             ),
             if (_sourceAction(data) != null) _sourceAction(data)!,
@@ -1871,7 +1874,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 padding: const EdgeInsets.only(right: 4),
                 child: IconButton(
                   icon: const Icon(Icons.ondemand_video),
-                  tooltip: 'Video',
+                  tooltip: l.episodeVideo,
                   onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                 ),
               ),
@@ -1914,7 +1917,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'AI obrada još nije gotova',
+                                  l.episodeAiPendingTitle,
                                   style: theme.textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color:
@@ -1924,12 +1927,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                                 const SizedBox(height: 4),
                                 Text(
                                   data.isAudioOnly
-                                      ? 'Prikazujem audio i osnovne podatke. '
-                                            'Sažetak, poglavlja, članak i teološka '
-                                            'analiza dolaze kad pipeline obradi epizodu.'
-                                      : 'Prikazujem samo video i osnovne podatke s YouTube-a. '
-                                            'Sažetak, poglavlja, članak i teološka analiza dolaze '
-                                            'kad pipeline obradi epizodu.',
+                                      ? l.episodeAiPendingAudio
+                                      : l.episodeAiPendingVideo,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color:
                                         theme.colorScheme.onTertiaryContainer,
@@ -1955,7 +1954,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             onPressed: () =>
                                 _scaffoldKey.currentState?.openEndDrawer(),
                             icon: const Icon(Icons.headphones),
-                            label: const Text('Slušaj epizodu'),
+                            label: Text(l.episodeListen),
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
@@ -1969,7 +1968,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             'https://www.youtube.com/watch?v=${data.youtubeId}',
                           ),
                           icon: const Icon(Icons.smart_display),
-                          label: const Text('Gledaj na YouTubeu'),
+                          label: Text(l.episodeWatchOnYouTube),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFFF0000),
                             foregroundColor: Colors.white,
@@ -1983,7 +1982,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         child: OutlinedButton.icon(
                           onPressed: () => openUrl(data.info.sourceUrl!),
                           icon: const Icon(Icons.open_in_new),
-                          label: const Text('Otvori izvor'),
+                          label: Text(l.commonOpenSource),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
@@ -2106,7 +2105,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     children: [
                       _BottomBarButton(
                         icon: Icons.ondemand_video,
-                        label: 'Video',
+                        label: l.episodeVideo,
                         isActive: false,
                         onTap: _videoReady
                             ? () {
@@ -2140,6 +2139,7 @@ class _MetadataFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     // Footer se renderira samo iz full layout-a, koji je guarded
     // `data.hasAiContent` granom na vrhu _EpisodeContent.build() — pa su
     // summary/article ovdje garantirano non-null.
@@ -2153,7 +2153,7 @@ class _MetadataFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Metadata',
+            l.episodeMetadata,
             style: theme.textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurfaceVariant,
@@ -2161,18 +2161,18 @@ class _MetadataFooter extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _MetaRow('YouTube ID', data.info.id),
-          _MetaRow('Kanal', data.info.channel),
-          _MetaRow('Model (sažetak)', summary.model),
-          _MetaRow('Model (članak)', article.metadata.model),
+          _MetaRow(l.episodeMetaChannel, data.info.channel),
+          _MetaRow(l.episodeMetaModelSummary, summary.model),
+          _MetaRow(l.episodeMetaModelArticle, article.metadata.model),
           if (data.magisteriumPrimary != null)
-            _MetaRow('Model (teologija)', data.magisteriumPrimary!.model),
+            _MetaRow(l.episodeMetaModelTheology, data.magisteriumPrimary!.model),
           _MetaRow(
-            'Generirano',
+            l.episodeMetaGenerated,
             summary.generatedAt.toIso8601String().substring(0, 10),
           ),
-          _MetaRow('Jezik', summary.summary.language.toUpperCase()),
-          _MetaRow('Tip sadržaja', summary.summary.contentType),
-          _MetaRow('Sentiment', summary.summary.sentiment),
+          _MetaRow(l.episodeMetaLanguage, summary.summary.language.toUpperCase()),
+          _MetaRow(l.episodeMetaContentType, summary.summary.contentType),
+          _MetaRow(l.episodeMetaSentiment, summary.summary.sentiment),
         ],
       ),
     );

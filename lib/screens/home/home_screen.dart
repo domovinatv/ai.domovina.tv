@@ -13,6 +13,7 @@ import '../../services/local_prefs.dart';
 import '../../services/view_mode.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/founder_booking.dart';
+import '../../l10n/app_localizations.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
 import 'footer.dart';
@@ -47,9 +48,9 @@ void _saveOrderWeb(List<String> ids) {
 /// gumb na hero kartici). Cijela favoriti integracija stize u sljedecem koraku.
 void _showComingSoon(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Funkcija stiže uskoro'),
-      duration: Duration(seconds: 2),
+    SnackBar(
+      content: Text(AppLocalizations.of(context).homeComingSoonSnack),
+      duration: const Duration(seconds: 2),
     ),
   );
 }
@@ -299,7 +300,8 @@ class _ChannelGridView extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                        'Greška pri učitavanju kanala:\n${snap.error}',
+                        AppLocalizations.of(context)
+                            .homeChannelsLoadError('${snap.error}'),
                         textAlign: TextAlign.center),
                   ),
                 ),
@@ -337,6 +339,7 @@ class _ChannelGridView extends StatelessWidget {
           builder: (context, constraints) {
             final width = constraints.maxWidth;
             final isMobile = width < 600;
+            final l = AppLocalizations.of(context);
 
             // Search rezultati su sada u overlay-u (Cmd+K). Channel grid
             // uvijek pokazuje pun listing po aktivnom sort modu.
@@ -389,7 +392,7 @@ class _ChannelGridView extends StatelessWidget {
                 if (continueWatching.isNotEmpty)
                   SliverToBoxAdapter(
                     child: EpisodesRail(
-                      eyebrow: 'Nastavi slušati',
+                      eyebrow: l.homeRailContinue,
                       isMobile: isMobile,
                       cards: continueWatching
                           .map((wp) => EpisodeRailCard(
@@ -412,7 +415,7 @@ class _ChannelGridView extends StatelessWidget {
                 if (featured != null && allVids.isNotEmpty)
                   SliverToBoxAdapter(
                     child: EpisodesRail(
-                      eyebrow: 'Najnovije epizode',
+                      eyebrow: l.homeRailLatest,
                       isMobile: isMobile,
                       cards: HomeFeed.latestEpisodes(allVids,
                               limit: 12, excludeFeatured: featured.video)
@@ -440,7 +443,7 @@ class _ChannelGridView extends StatelessWidget {
                 if (freshlyArrived.isNotEmpty)
                   SliverToBoxAdapter(
                     child: EpisodesRail(
-                      eyebrow: 'Upravo stiglo',
+                      eyebrow: l.homeRailFreshlyArrived,
                       isMobile: isMobile,
                       cards: freshlyArrived
                           .map((fv) => EpisodeRailCard(
@@ -449,7 +452,7 @@ class _ChannelGridView extends StatelessWidget {
                                 thumbnailUrl:
                                     CdnConfig.thumbnailUrl(fv.video.id),
                                 dateLabel: fv.video.date,
-                                statusBadge: 'U obradi',
+                                statusBadge: l.homeStatusProcessing,
                                 width: isMobile ? 180 : 220,
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
@@ -491,6 +494,7 @@ class _AllChannelsCta extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
@@ -502,7 +506,7 @@ class _AllChannelsCta extends StatelessWidget {
               Container(width: 24, height: 2, color: cs.primary),
               const SizedBox(width: 10),
               Text(
-                'KANALI',
+                l.homeChannelsEyebrow.toUpperCase(),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: cs.onSurface,
                   fontWeight: FontWeight.w600,
@@ -538,14 +542,14 @@ class _AllChannelsCta extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Svi kanali',
+                            l.homeAllChannelsTitle,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Pretraži i pregledaj svih $count kanala',
+                            l.homeAllChannelsSubtitle(count),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -605,7 +609,8 @@ class _HomeHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'Učitavam ${cacheProgress!.$1}/${cacheProgress!.$2} kanala…',
+            AppLocalizations.of(context).homeLoadingChannels(
+                cacheProgress!.$1, cacheProgress!.$2),
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

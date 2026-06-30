@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 /// Boot-phase loading widget za TV.
 ///
 /// Renderira IDENTIČNU sliku kao Android native splash
@@ -25,6 +27,7 @@ class TvBootSplash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Container(
       // Fallback navy u slučaju da slika kasni — boja se poklapa s
@@ -62,7 +65,7 @@ class TvBootSplash extends StatelessWidget {
               ),
               padding: const EdgeInsets.fromLTRB(80, 32, 80, 32),
               alignment: Alignment.bottomCenter,
-              child: _buildProgress(theme),
+              child: _buildProgress(theme, l),
             ),
           ),
         ],
@@ -70,7 +73,7 @@ class TvBootSplash extends StatelessWidget {
     );
   }
 
-  Widget _buildProgress(ThemeData theme) {
+  Widget _buildProgress(ThemeData theme, AppLocalizations l) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: progressDuration,
@@ -84,7 +87,7 @@ class TvBootSplash extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Učitavanje…',
+                  l.commonLoading,
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: Colors.white.withValues(alpha: 0.75),
                     letterSpacing: 1.5,

@@ -1,5 +1,6 @@
 import '../../models/channel_detail.dart';
 import '../../services/channel_cache.dart';
+import '../../services/locale_service.dart';
 
 /// Cross-channel video s denormaliziranim channel kontekstom.
 typedef FeedVideo = ({String channelId, String channelName, ChannelVideo video});
@@ -21,13 +22,13 @@ enum FeaturedReason {
   String get shortLabel {
     switch (this) {
       case FeaturedReason.hiQualityRecent:
-        return 'Najbolji izbor';
+        return appStrings.homeReasonShortHiQualityRecent;
       case FeaturedReason.hiQuality:
-        return 'Visoka Magisterium ocjena';
+        return appStrings.homeReasonShortHiQuality;
       case FeaturedReason.anyMagisterium:
-        return 'AI-obrađeno';
+        return appStrings.homeReasonShortAnyMagisterium;
       case FeaturedReason.newest:
-        return 'Najnovije';
+        return appStrings.homeReasonShortNewest;
     }
   }
 }

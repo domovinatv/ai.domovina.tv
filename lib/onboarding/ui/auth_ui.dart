@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/typography.dart';
 
@@ -122,12 +123,13 @@ class AuthBrandHeader extends StatelessWidget {
 
 /// "ili" separator s hairline linijama s obje strane.
 class LabeledDivider extends StatelessWidget {
-  final String label;
-  const LabeledDivider({super.key, this.label = 'ili'});
+  final String? label;
+  const LabeledDivider({super.key, this.label});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final text = label ?? AppLocalizations.of(context).authOr;
     final line = Expanded(
       child: Divider(
         color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
@@ -140,7 +142,7 @@ class LabeledDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
-            label,
+            text,
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               letterSpacing: 1.2,
@@ -352,7 +354,7 @@ Future<String?> showAuthInputDialog(
   required IconData icon,
   TextInputType keyboardType = TextInputType.text,
   int? maxLength,
-  String confirmLabel = 'Potvrdi',
+  String? confirmLabel,
   Iterable<String>? autofillHints,
 }) {
   return showDialog<String>(
@@ -378,7 +380,7 @@ class _AuthInputDialog extends StatefulWidget {
   final IconData icon;
   final TextInputType keyboardType;
   final int? maxLength;
-  final String confirmLabel;
+  final String? confirmLabel;
   final Iterable<String>? autofillHints;
 
   const _AuthInputDialog({
@@ -411,6 +413,7 @@ class _AuthInputDialogState extends State<_AuthInputDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     final maxLength = widget.maxLength;
     return Dialog(
       backgroundColor: cs.surface,
@@ -475,13 +478,13 @@ class _AuthInputDialogState extends State<_AuthInputDialog> {
             const SizedBox(height: 18),
             FilledButton(
               onPressed: _submit,
-              child: Text(widget.confirmLabel),
+              child: Text(widget.confirmLabel ?? l.commonConfirm),
             ),
             const SizedBox(height: 4),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Odustani',
+                l.commonCancel,
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
             ),

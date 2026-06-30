@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/podcast_outline.dart';
+import '../l10n/app_localizations.dart';
 
 class ChaptersSection extends StatelessWidget {
   final PodcastOutline outline;
@@ -9,6 +10,7 @@ class ChaptersSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -16,7 +18,7 @@ class ChaptersSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Poglavlja',
+            l.sectionChapters,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),

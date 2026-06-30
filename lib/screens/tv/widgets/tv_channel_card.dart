@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_index.dart';
 import '../../../widgets/cached_thumbnail.dart';
 import 'tv_focus.dart';
@@ -23,6 +24,7 @@ class TvChannelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final avatar = channel.avatarSquare;
 
     return TvFocusable(
@@ -72,7 +74,7 @@ class TvChannelCard extends StatelessWidget {
             // `height: 1.2` override — Material3 labelSmall default 1.45
             // sirio bi liniju na ~16dp; TvMetrics rail kalkulira 13.2.
             Text(
-              '${channel.videoCount} epizoda',
+              l.tvEpisodeCountPlural(channel.videoCount),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.2,

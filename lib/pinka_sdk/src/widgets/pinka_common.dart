@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../l10n/app_localizations.dart';
+
 /// Kopiraj-redak (label + monospace vrijednost + copy gumb) za IBAN/adresu/memo.
 class PinkaCopyRow extends StatelessWidget {
   final String label;
@@ -21,6 +23,7 @@ class PinkaCopyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -44,12 +47,12 @@ class PinkaCopyRow extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.copy, size: 16),
-            tooltip: 'Kopiraj',
+            tooltip: l.commonCopy,
             onPressed: () {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('$label kopiran'),
+                  content: Text(l.pinkaCopiedLabel(label)),
                   duration: const Duration(seconds: 1),
                 ),
               );

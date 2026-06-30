@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 import 'home_feed.dart';
 import 'hero_section.dart';
 
@@ -244,9 +245,9 @@ class _RotationBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     return Tooltip(
-      message:
-          'Dnevno biramo $count najboljih epizoda — automatski se izmjenjuju.',
+      message: l.homeHeroRotationTooltip(count),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
@@ -260,7 +261,7 @@ class _RotationBadge extends StatelessWidget {
             Icon(Icons.autorenew, size: 12, color: cs.primary),
             const SizedBox(width: 5),
             Text(
-              'U ROTACIJI',
+              l.homeHeroRotationBadge.toUpperCase(),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,

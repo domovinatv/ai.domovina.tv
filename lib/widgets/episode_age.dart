@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+import '../services/locale_service.dart';
+
 /// Parsiraj datum epizode (YYYY-MM-DD ili ISO). null ako ne ide.
 DateTime? parseEpisodeDate(String? raw) {
   if (raw == null || raw.trim().isEmpty) return null;
@@ -12,21 +15,22 @@ int episodeAgeDays(DateTime date, {DateTime? now}) {
   return d < 0 ? 0 : d;
 }
 
-/// Kratka hrvatska relativna oznaka starosti.
+/// Kratka relativna oznaka starosti (lokalizirana).
 String episodeAgeLabel(int days) {
-  if (days <= 0) return 'danas';
-  if (days == 1) return 'jučer';
-  if (days < 7) return 'prije $days dana';
+  final s = appStrings;
+  if (days <= 0) return s.sectionAgeToday;
+  if (days == 1) return s.sectionAgeYesterday;
+  if (days < 7) return s.sectionAgeDays(days);
   if (days < 31) {
     final w = (days / 7).floor();
-    return w == 1 ? 'prije tjedan' : 'prije $w tj.';
+    return s.sectionAgeWeeks(w);
   }
   if (days < 365) {
     final m = (days / 30).floor();
-    return m == 1 ? 'prije mjesec' : 'prije $m mj.';
+    return s.sectionAgeMonths(m);
   }
   final y = (days / 365).floor();
-  return y == 1 ? 'prije godinu' : 'prije $y god.';
+  return s.sectionAgeYears(y);
 }
 
 /// Boja po starosti: novije = zelena → svijetlozelena → jantar → narančasta →
@@ -59,7 +63,7 @@ class EpisodeAgeChip extends StatelessWidget {
     final exact =
         '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}.';
     return Tooltip(
-      message: 'Objavljeno: $exact',
+      message: AppLocalizations.of(context).sectionPublishedOn(exact),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

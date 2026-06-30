@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/channel_index.dart';
 import '../../services/local_prefs.dart';
+import '../../services/locale_service.dart';
 
 const String _sortKey = 'channel_sort_v1';
 
@@ -30,15 +31,15 @@ enum ChannelSortMode {
   String get label {
     switch (this) {
       case ChannelSortMode.newest:
-        return 'Najnoviji';
+        return appStrings.homeSortNewest;
       case ChannelSortMode.mostEpisodes:
-        return 'Najviše epizoda';
+        return appStrings.homeSortMostEpisodes;
       case ChannelSortMode.magisterium:
-        return 'Magisterium score';
+        return appStrings.homeSortMagisterium;
       case ChannelSortMode.alphabetical:
-        return 'Abecedno';
+        return appStrings.homeSortAlphabetical;
       case ChannelSortMode.custom:
-        return 'Moj redoslijed';
+        return appStrings.homeSortCustom;
     }
   }
 }

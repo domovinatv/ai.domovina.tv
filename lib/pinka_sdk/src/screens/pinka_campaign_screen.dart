@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_public_contribution.dart';
 import '../models/pinka_yield_position.dart';
@@ -140,7 +141,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surfaceContainerLow,
-        title: Text(_campaign?.title ?? widget.fallbackTitle ?? 'Zid podrške'),
+        title: Text(
+            _campaign?.title ?? widget.fallbackTitle ?? appStrings.pinkaWallTitle),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -155,7 +157,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Text(
-          'Ovaj subjekt još nema aktivnu kampanju podrške.',
+          appStrings.pinkaNoCampaign,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -255,12 +257,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                   ?.copyWith(color: theme.colorScheme.onSurface)),
         ],
         const SizedBox(height: 24),
-        Text('Zid podrške',
+        Text(appStrings.pinkaWallTitle,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         if (_wall.isEmpty)
-          Text('Budi prvi koji podržava — tvoja poruka stoji ovdje.',
+          Text(appStrings.pinkaWallEmpty,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
         else
@@ -285,7 +287,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                   ?.copyWith(fontWeight: FontWeight.w700)),
           if (c.hasGoal) ...[
             const SizedBox(height: 4),
-            Text('od cilja ${fmtEur(c.goalCents!)} €',
+            Text(appStrings.pinkaOfGoal(fmtEur(c.goalCents!)),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 12),
@@ -300,13 +302,14 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
             ),
           ] else ...[
             const SizedBox(height: 4),
-            Text('prikupljeno',
+            Text(appStrings.pinkaRaisedLabel,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
           const SizedBox(height: 12),
           Text(
-            '${c.contributorCount} podržavatelja · ${c.contributionCount} uplata',
+            '${appStrings.pinkaSupportersCount(c.contributorCount)}'
+            ' · ${appStrings.pinkaPaymentsCount(c.contributionCount)}',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -327,13 +330,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Provjeri na lancu',
+          Text(appStrings.pinkaVerifyOnchainTitle,
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(
-            'Uplate stižu izravno na Safe kampanje (EURe na Gnosisu). '
-            'Stanje može provjeriti bilo tko — neovisno o nama.',
+            appStrings.pinkaVerifyOnchainBody,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -344,7 +346,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 visualDensity: VisualDensity.compact,
                 alignment: Alignment.centerLeft),
             icon: const Icon(Icons.open_in_new, size: 16),
-            label: const Text('EURe saldo na Gnosisscanu'),
+            label: Text(appStrings.pinkaEureBalanceOnGnosisscan),
             onPressed: () => pinkaLaunch(widget.config.tokenBalanceUrl(dest)),
           ),
           TextButton.icon(
@@ -353,7 +355,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 visualDensity: VisualDensity.compact,
                 alignment: Alignment.centerLeft),
             icon: const Icon(Icons.open_in_new, size: 16),
-            label: const Text('Povijest priljeva (transferi)'),
+            label: Text(appStrings.pinkaInflowHistory),
             onPressed: () => pinkaLaunch(widget.config.tokenTxnsUrl(dest)),
           ),
           const SizedBox(height: 6),
@@ -387,7 +389,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 size: 16, color: theme.colorScheme.tertiary),
             const SizedBox(width: 6),
             Expanded(
-              child: Text('Sredstva trenutno rade na Aave v3 (Gnosis)',
+              child: Text(appStrings.pinkaFundsWorkingAave,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(fontWeight: FontWeight.w600)),
             ),
@@ -395,10 +397,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'U Aaveu: ${fmtEur(inAave)} €'
-          '${y.accruedYieldCents > 0 ? ' · prinos: ${fmtEur(y.accruedYieldCents)} €' : ''}. '
-          'Zato je EURe saldo na samom Safeu nizak — sredstva su deponirana radi '
-          'prinosa i povlače se natrag pri isplati.',
+          '${appStrings.pinkaInAaveLabel(fmtEur(inAave))}'
+          '${y.accruedYieldCents > 0 ? ' · ${appStrings.pinkaAaveYieldLabel(fmtEur(y.accruedYieldCents))}' : ''}. '
+          '${appStrings.pinkaAaveExplainer}',
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -409,7 +410,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 visualDensity: VisualDensity.compact,
                 alignment: Alignment.centerLeft),
             icon: const Icon(Icons.open_in_new, size: 16),
-            label: const Text('aGnoEURe saldo na Gnosisscanu'),
+            label: Text(appStrings.pinkaAgnoEureBalanceOnGnosisscan),
             onPressed: () => pinkaLaunch(
                 widget.config.tokenForAddressUrl(y.atokenAddress!, dest)),
           ),

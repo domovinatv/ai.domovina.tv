@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/cal_booking_service.dart';
+import '../services/locale_service.dart';
 import '../services/open_url.dart';
 import '../theme/app_theme.dart';
 
@@ -23,7 +25,7 @@ class FounderBookingBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         side: AppTheme.brandRim(Theme.of(context).brightness),
       ),
-      tooltip: 'Razgovaraj s osnivačem',
+      tooltip: AppLocalizations.of(context).channelTalkToFounder,
       child: const Icon(Icons.event_available_rounded),
     );
   }
@@ -126,6 +128,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
   // ---- Step 1: pick a time ------------------------------------------------
 
   Widget _buildPickTime(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return FutureBuilder<List<CalSlot>>(
       key: const ValueKey('pickTime'),
       future: _slotsFuture,
@@ -140,16 +143,16 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           return _ErrorRetry(
             message: snap.error is CalException
                 ? '${snap.error}'
-                : 'Ne mogu dohvatiti termine.',
+                : l.channelCannotFetchSlots,
             onRetry: () => setState(() => _slotsFuture = _loadSlots()),
           );
         }
         final slots = snap.data!;
         if (slots.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
             child: Text(
-              'Trenutno nema slobodnih termina u sljedeća tri tjedna.',
+              l.channelNoSlotsThreeWeeks,
               textAlign: TextAlign.center,
             ),
           );
@@ -169,7 +172,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SectionLabel('Odaberi dan'),
+            _SectionLabel(l.channelPickDay),
             const SizedBox(height: 8),
             SizedBox(
               height: 64,
@@ -189,7 +192,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
               ),
             ),
             const SizedBox(height: 18),
-            _SectionLabel('Slobodni termini'),
+            _SectionLabel(l.channelAvailableSlots),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -208,7 +211,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
               onPressed: _selectedSlot == null
                   ? null
                   : () => setState(() => _step = _Step.details),
-              child: const Text('Nastavi'),
+              child: Text(l.commonContinue),
             ),
           ],
         );
@@ -220,6 +223,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
 
   Widget _buildDetails(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final slot = _selectedSlot!;
     return Form(
       key: _formKey,
@@ -236,19 +240,21 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           TextFormField(
             controller: _name,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Ime i prezime'),
+            decoration: InputDecoration(labelText: l.channelFullName),
             validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Upiši svoje ime' : null,
+                (v == null || v.trim().isEmpty) ? l.channelEnterName : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _email,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'E-mail'),
+            decoration: InputDecoration(labelText: l.channelEmail),
             validator: (v) {
               final t = (v ?? '').trim();
-              if (t.isEmpty) return 'Upiši e-mail';
-              if (!t.contains('@') || !t.contains('.')) return 'Neispravan e-mail';
+              if (t.isEmpty) return l.channelEnterEmail;
+              if (!t.contains('@') || !t.contains('.')) {
+                return l.channelInvalidEmail;
+              }
               return null;
             },
           ),
@@ -256,8 +262,8 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           TextFormField(
             controller: _notes,
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Tema razgovora (opcionalno)',
+            decoration: InputDecoration(
+              labelText: l.channelTopicOptional,
             ),
           ),
           if (_error != null) ...[
@@ -276,7 +282,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('Potvrdi termin'),
+                : Text(l.channelConfirmSlot),
           ),
         ],
       ),
@@ -311,7 +317,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Greška u mreži. Pokušaj ponovno.';
+        _error = appStrings.channelNetworkError;
         _submitting = false;
       });
     }
@@ -321,6 +327,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
 
   Widget _buildSuccess(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final slot = _selectedSlot!;
     final meetUrl = _booking?.meetingUrl;
     return Column(
@@ -332,13 +339,13 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
         Icon(Icons.check_circle_rounded, size: 56, color: theme.colorScheme.primary),
         const SizedBox(height: 12),
         Text(
-          'Termin potvrđen!',
+          l.channelSlotConfirmed,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: 6),
         Text(
-          '${_fullDayLabel(slot.dayKey)} u ${slot.label}',
+          l.channelDayAtTime(_fullDayLabel(slot.dayKey), slot.label),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -346,7 +353,7 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Pozivnicu i Google Meet link poslali smo na ${_email.text.trim()}.',
+          l.channelInviteSentTo(_email.text.trim()),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -357,12 +364,12 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           FilledButton.icon(
             onPressed: () => openUrl(meetUrl),
             icon: const Icon(Icons.videocam_rounded, color: Colors.white),
-            label: const Text('Otvori Google Meet'),
+            label: Text(l.channelOpenGoogleMeet),
           ),
         const SizedBox(height: 8),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Gotovo'),
+          child: Text(l.commonDone),
         ),
       ],
     );
@@ -379,6 +386,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Row(
       children: [
         Container(
@@ -396,10 +404,10 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Budi dio DOMOVINA priče', style: theme.textTheme.titleMedium),
+              Text(l.channelFounderCallTitle, style: theme.textTheme.titleMedium),
               const SizedBox(height: 2),
               Text(
-                '15 min Google Meet · osobno s osnivačem · pomogni oblikovati platformu',
+                l.channelFounderCallSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -536,6 +544,7 @@ class _SelectedSlotBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
       decoration: BoxDecoration(
@@ -551,11 +560,11 @@ class _SelectedSlotBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '${_fullDayLabel(slot.dayKey)} u ${slot.label}',
+              l.channelDayAtTime(_fullDayLabel(slot.dayKey), slot.label),
               style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          TextButton(onPressed: onChange, child: const Text('Promijeni')),
+          TextButton(onPressed: onChange, child: Text(l.channelChange)),
         ],
       ),
     );
@@ -570,6 +579,7 @@ class _ErrorRetry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
@@ -577,7 +587,7 @@ class _ErrorRetry extends StatelessWidget {
         children: [
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: onRetry, child: const Text('Pokušaj ponovno')),
+          OutlinedButton(onPressed: onRetry, child: Text(l.commonRetry)),
         ],
       ),
     );

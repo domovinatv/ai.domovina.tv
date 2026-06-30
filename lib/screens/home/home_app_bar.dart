@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../theme/typography.dart';
 import '../../widgets/account_chip.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../../widgets/theme_toggle_button.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Slim sticky app bar za home screen.
 ///
@@ -22,6 +24,7 @@ class HomeAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
 
     return SliverAppBar(
       pinned: true,
@@ -45,7 +48,7 @@ class HomeAppBar extends StatelessWidget {
                 Expanded(
                   child: _SearchTrigger(
                     onTap: onSearchTap,
-                    placeholder: 'Pretraži kanale i epizode',
+                    placeholder: l.homeSearchPlaceholderFull,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -53,11 +56,13 @@ class HomeAppBar extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.search, size: 20),
-                  tooltip: 'Pretraži',
+                  tooltip: l.homeSearchTooltip,
                   onPressed: onSearchTap,
                 ),
                 const SizedBox(width: 4),
               ],
+              const LanguageToggleButton(),
+              const SizedBox(width: 4),
               const ThemeToggleButton(),
               const SizedBox(width: 4),
               const AccountChip(),

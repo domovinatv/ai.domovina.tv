@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_public_contribution.dart';
 import '../pinka_client.dart';
@@ -110,6 +111,7 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
     final c = _campaign;
     if (!_loaded || c == null) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -134,7 +136,7 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
                         color: theme.colorScheme.tertiary, size: 22),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Zid podrške',
+                      child: Text(l.pinkaWallTitle,
                           style: theme.textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700)),
                     ),
@@ -156,16 +158,15 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Prikupljeno ${fmtEur(c.totalRaisedCents)} € '
-                    'od ${fmtEur(c.goalCents!)} € · '
-                    '${c.contributorCount} podržavatelja',
+                    '${l.pinkaRaisedOfGoal(fmtEur(c.totalRaisedCents), fmtEur(c.goalCents!))}'
+                    ' · ${l.pinkaSupportersCount(c.contributorCount)}',
                     style: theme.textTheme.labelMedium
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ] else
                   Text(
-                    'Prikupljeno ${fmtEur(c.totalRaisedCents)} € · '
-                    '${c.contributorCount} podržavatelja',
+                    '${l.pinkaRaised(fmtEur(c.totalRaisedCents))}'
+                    ' · ${l.pinkaSupportersCount(c.contributorCount)}',
                     style: theme.textTheme.labelMedium
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
@@ -198,7 +199,7 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
                       foregroundColor: theme.colorScheme.onTertiary,
                     ),
                     icon: const Icon(Icons.favorite, size: 18),
-                    label: const Text('Podrži'),
+                    label: Text(l.pinkaSupport),
                   ),
                 ),
               ],

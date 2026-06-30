@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../main.dart' show log;
 
@@ -57,26 +58,27 @@ class _InviteScreenState extends State<InviteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Prihvati pozivnicu')),
+      appBar: AppBar(title: Text(l.authInviteTitle)),
       body: Center(
         child: _processing
-            ? const Column(
+            ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Obrada pozivnice...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(l.authInviteProcessing),
                 ],
               )
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Došlo je do greške ili je link istekao.'),
+                  Text(l.authInviteError),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () => context.go('/'),
-                    child: const Text('Idi na naslovnicu'),
+                    child: Text(l.commonGoHome),
                   ),
                 ],
               ),

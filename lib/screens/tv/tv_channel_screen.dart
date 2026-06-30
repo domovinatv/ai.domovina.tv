@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/channel_detail.dart';
 import '../../services/channel_cache.dart';
@@ -65,6 +66,7 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -96,12 +98,12 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
               future: _detailFuture,
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
-                  return _buildLoading(theme);
+                  return _buildLoading(theme, l);
                 }
                 if (snap.hasError) {
-                  return _buildError(theme, snap.error);
+                  return _buildError(theme, l, snap.error);
                 }
-                return _buildContent(theme, snap.data!);
+                return _buildContent(theme, l, snap.data!);
               },
             ),
           ),
@@ -114,11 +116,11 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
   // States
   // ---------------------------------------------------------------------------
 
-  Widget _buildLoading(ThemeData theme) {
+  Widget _buildLoading(ThemeData theme, AppLocalizations l) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildAppBar(theme, name: null, episodeCount: null, avatar: null),
+        _buildAppBar(theme, l, name: null, episodeCount: null, avatar: null),
         const Expanded(
           child: Center(child: CircularProgressIndicator()),
         ),
@@ -126,18 +128,18 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
     );
   }
 
-  Widget _buildError(ThemeData theme, Object? err) {
+  Widget _buildError(ThemeData theme, AppLocalizations l, Object? err) {
     log('TvChannelScreen: load ERROR — $err');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildAppBar(theme, name: null, episodeCount: null, avatar: null),
+        _buildAppBar(theme, l, name: null, episodeCount: null, avatar: null),
         Expanded(
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(48),
               child: Text(
-                'Greška pri učitavanju kanala:\n$err',
+                l.tvChannelLoadError('$err'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge,
               ),
@@ -148,12 +150,14 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
     );
   }
 
-  Widget _buildContent(ThemeData theme, ChannelDetail detail) {
+  Widget _buildContent(
+      ThemeData theme, AppLocalizations l, ChannelDetail detail) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildAppBar(
           theme,
+          l,
           name: detail.name,
           episodeCount: detail.videos.length,
           avatar: detail.avatarSquare,
@@ -162,7 +166,7 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
           child: detail.videos.isEmpty
               ? Center(
                   child: Text(
-                    'Nema epizoda u ovom kanalu.',
+                    l.tvChannelNoEpisodes,
                     style: theme.textTheme.bodyLarge,
                   ),
                 )
@@ -177,7 +181,8 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildAppBar(
-    ThemeData theme, {
+    ThemeData theme,
+    AppLocalizations l, {
     required String? name,
     required int? episodeCount,
     required String? avatar,
@@ -212,7 +217,7 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'NATRAG',
+                    l.commonBack.toUpperCase(),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
@@ -251,7 +256,7 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
                 ),
                 if (episodeCount != null)
                   Text(
-                    '$episodeCount ${_pluralEpisodes(episodeCount)}',
+                    l.tvEpisodeCountPlural(episodeCount),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -262,16 +267,6 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
         ],
       ),
     );
-  }
-
-  String _pluralEpisodes(int n) {
-    final mod10 = n % 10;
-    final mod100 = n % 100;
-    if (mod10 == 1 && mod100 != 11) return 'epizoda';
-    if ((mod10 >= 2 && mod10 <= 4) && (mod100 < 12 || mod100 > 14)) {
-      return 'epizode';
-    }
-    return 'epizoda';
   }
 
   // ---------------------------------------------------------------------------

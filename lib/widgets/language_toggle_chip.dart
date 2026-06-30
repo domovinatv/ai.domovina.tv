@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 import '../services/episode_language.dart';
@@ -25,14 +26,13 @@ class LanguageToggleChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Semantics(
       container: true,
-      label: 'Odabir jezika prikaza',
+      label: l.mediaLanguageSelection,
       child: Tooltip(
-        message: current == EpisodeLanguage.en
-            ? 'Translation provided literally, without AI hallucinations'
-            : 'Prijevod je literarno doslovan, bez AI halucinacija',
+        message: l.mediaTranslationDisclaimer,
         child: Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
@@ -48,7 +48,7 @@ class LanguageToggleChip extends StatelessWidget {
               _Segment(
                 label: 'HR',
                 isSelected: current == EpisodeLanguage.hr,
-                semanticLabel: 'Prebaci na hrvatski',
+                semanticLabel: l.mediaSwitchToCroatian,
                 compact: compact,
                 onTap: () {
                   if (current != EpisodeLanguage.hr) {
@@ -59,7 +59,7 @@ class LanguageToggleChip extends StatelessWidget {
               _Segment(
                 label: 'EN',
                 isSelected: current == EpisodeLanguage.en,
-                semanticLabel: 'Switch to English',
+                semanticLabel: l.mediaSwitchToEnglish,
                 compact: compact,
                 onTap: () {
                   if (current != EpisodeLanguage.en) {

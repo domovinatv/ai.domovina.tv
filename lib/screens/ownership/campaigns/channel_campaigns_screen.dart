@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_claim.dart';
 import '../../../pinka_sdk/pinka_sdk.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/channel_ownership_service.dart';
+import '../../../services/locale_service.dart';
 
 /// Lista Pinka kampanja ankeriranih na verificirani kanal (UC… id). Ulaz iz
 /// "Moji kanali". Faza A: pregled + ulaz u upravljanje (bez in-app kreiranja).
@@ -46,23 +48,23 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_claim?.channelTitle ?? 'Kampanje'),
+        title: Text(_claim?.channelTitle ?? l.ownershipCampaignsTitle),
       ),
       body: AnimatedBuilder(
         animation: AuthService.instance,
         builder: (context, _) {
           if (!AuthService.instance.isSignedIn) {
-            return _info(theme, 'Za upravljanje kampanjama prvo se prijavi.');
+            return _info(theme, l.ownershipSignInToManageCampaigns);
           }
           if (_loading) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!(_claim?.isVerified ?? false)) {
-            return _info(
-                theme, 'Nisi verificirani vlasnik ovog kanala.');
+            return _info(theme, l.ownershipNotVerifiedOwner);
           }
           return RefreshIndicator(
             onRefresh: _load,
@@ -99,7 +101,7 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
         title: Text(c.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
           '${_stateLabel(c.state)} · ${_visLabel(c.visibility)} · '
-          '$raisedStr € · ${c.episodeRefs.length} epizoda',
+          '$raisedStr € · ${appStrings.ownershipEpisodesCount(c.episodeRefs.length)}',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.push(
@@ -116,13 +118,11 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Još nema kampanja za ovaj kanal.',
+            Text(appStrings.ownershipNoCampaignsTitle,
                 style: theme.textTheme.titleSmall),
             const SizedBox(height: 6),
             Text(
-              'Kampanje se kreiraju na pinka.io (gdje se generira i Safe za '
-              'isplatu). Nakon kreiranja, poveži kampanju s kanalom da je možeš '
-              'ovdje administrirati i dodijeliti epizodama.',
+              appStrings.ownershipNoCampaignsBody,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -145,18 +145,18 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
   }
 
   static String _stateLabel(String s) => switch (s) {
-        'draft' => 'Skica',
-        'active' => 'Aktivna',
-        'funded' => 'Financirana',
-        'closed' => 'Zatvorena',
-        'cancelled' => 'Otkazana',
+        'draft' => appStrings.ownershipStateDraft,
+        'active' => appStrings.ownershipStateActive,
+        'funded' => appStrings.ownershipStateFunded,
+        'closed' => appStrings.ownershipStateClosed,
+        'cancelled' => appStrings.ownershipStateCancelled,
         _ => s,
       };
 
   static String _visLabel(String v) => switch (v) {
-        'public' => 'Javna',
-        'unlisted' => 'Neuvrštena',
-        'private' => 'Privatna',
+        'public' => appStrings.ownershipVisPublic,
+        'unlisted' => appStrings.ownershipVisUnlisted,
+        'private' => appStrings.ownershipVisPrivate,
         _ => v,
       };
 }

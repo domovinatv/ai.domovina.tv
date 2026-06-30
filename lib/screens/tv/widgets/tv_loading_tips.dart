@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 /// "Slack-style" tips karousel za TvHomeScreen loading state.
 ///
 /// Dok ChannelCache prefetcha 40 kanala (3-10s ovisno o mrezi), umjesto
@@ -67,6 +69,7 @@ class _TvLoadingTipsState extends State<TvLoadingTips> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final tip = widget.tips[_index];
 
     return Stack(
@@ -96,7 +99,7 @@ class _TvLoadingTipsState extends State<TvLoadingTips> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: _buildProgressBar(theme),
+          child: _buildProgressBar(theme, l),
         ),
       ],
     );
@@ -129,7 +132,7 @@ class _TvLoadingTipsState extends State<TvLoadingTips> {
     );
   }
 
-  Widget _buildProgressBar(ThemeData theme) {
+  Widget _buildProgressBar(ThemeData theme, AppLocalizations l) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: widget.progressDuration,
@@ -144,7 +147,7 @@ class _TvLoadingTipsState extends State<TvLoadingTips> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Pripremam katalog…',
+                    l.tvTipsPreparingCatalog,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.5,

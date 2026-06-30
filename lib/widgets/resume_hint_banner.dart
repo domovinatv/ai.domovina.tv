@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 /// Non-intrusive chip koji epizoda pokaže kratko (~4s) kad player auto-resumea
 /// s zadnje pozicije. Nema gumba — korisnik ako želi rewind, koristi player
 /// kontrole. Inline u widget tree-u screena (ne SnackBar) tako da se uništi
@@ -20,6 +22,7 @@ class ResumeHintBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return IgnorePointer(
       child: Material(
         elevation: 4,
@@ -37,7 +40,7 @@ class ResumeHintBanner extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Nastavljam s $_label',
+                l.mediaResumingFrom(_label),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onInverseSurface,
                 ),

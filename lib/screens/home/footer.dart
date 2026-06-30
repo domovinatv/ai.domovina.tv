@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart' show appVersion;
 import '../../models/channel_index.dart';
 import '../../services/update_notifier.dart';
+import '../../services/locale_service.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../theme/typography.dart';
 
@@ -113,7 +115,7 @@ class HomeFooter extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            title,
+            title.toUpperCase(),
             style: AppTypography.eyebrowStyle(theme.colorScheme).copyWith(
               color: theme.colorScheme.onSurface,
             ),
@@ -127,11 +129,9 @@ class HomeFooter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _columnHeader(theme, 'O PROJEKTU'),
+        _columnHeader(theme, appStrings.homeFooterAbout),
         Text(
-          'DOMOVINA.ai transkribira, sažima i analizira hrvatske katoličke '
-          'podcaste pomoću umjetne inteligencije. Magisterium AI agent '
-          'ocjenjuje usklađenost s katoličkim naukom.',
+          appStrings.homeFooterAboutText,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.6,
@@ -143,21 +143,22 @@ class HomeFooter extends StatelessWidget {
 
   Widget _linksColumn(ThemeData theme) {
     return Builder(builder: (context) {
+      final l = AppLocalizations.of(context);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _columnHeader(theme, 'LINKOVI'),
+          _columnHeader(theme, l.homeFooterLinks),
           _link(
             theme,
-            label: 'Pošalji epizodu',
+            label: l.homeFooterSuggestEpisode,
             onTap: () => _launchMail(
               'stepanic.matija@gmail.com',
-              subject: 'DOMOVINA.ai — prijedlog epizode',
+              subject: l.homeFooterEpisodeSuggestionSubject,
             ),
           ),
           _link(
             theme,
-            label: 'Kontakt',
+            label: l.homeFooterContact,
             onTap: () => _launchMail('stepanic.matija@gmail.com'),
           ),
           _link(
@@ -167,12 +168,12 @@ class HomeFooter extends StatelessWidget {
           ),
           _link(
             theme,
-            label: 'Privatnost',
+            label: l.homeFooterPrivacy,
             onTap: () => context.go('/privacy'),
           ),
           _link(
             theme,
-            label: 'Uvjeti korištenja',
+            label: l.homeFooterTerms,
             onTap: () => context.go('/terms'),
           ),
         ],
@@ -189,15 +190,18 @@ class HomeFooter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _columnHeader(theme, 'STATISTIKE'),
-        _stat(theme, '${channels.length}', 'kanala'),
+        _columnHeader(theme, appStrings.homeFooterStats),
+        _stat(theme, '${channels.length}',
+            appStrings.homeFooterStatChannels(channels.length)),
         const SizedBox(height: 6),
-        _stat(theme, _formatNumber(totalEpisodes), 'epizoda'),
+        _stat(theme, _formatNumber(totalEpisodes),
+            appStrings.homeFooterStatEpisodes(totalEpisodes)),
         const SizedBox(height: 6),
-        _stat(theme, _formatNumber(totalHours), 'sati obrađeno'),
+        _stat(theme, _formatNumber(totalHours),
+            appStrings.homeFooterStatHours(totalHours)),
         if (avgScore != null) ...[
           const SizedBox(height: 6),
-          _stat(theme, '$avgScore', 'prosječni Magisterium score'),
+          _stat(theme, '$avgScore', appStrings.homeFooterStatAvgScore),
         ],
       ],
     );
@@ -262,7 +266,7 @@ class HomeFooter extends StatelessWidget {
                   color: theme.colorScheme.surfaceContainerHighest,
                 ),
                 child: Text(
-                  'Uskoro',
+                  appStrings.homeFooterSoon,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 9,
@@ -279,8 +283,9 @@ class HomeFooter extends StatelessWidget {
   Widget _bottomRow(BuildContext context, ThemeData theme, bool isMobile) {
     final children = [
       _versionPill(theme),
-      _smallText(theme, '(c) ${DateTime.now().year} DOMOVINA.ai'),
-      _smallText(theme, 'Made in Croatia'),
+      _smallText(
+          theme, appStrings.homeFooterCopyright(DateTime.now().year)),
+      _smallText(theme, appStrings.homeFooterMadeIn),
     ];
     if (isMobile) {
       return Wrap(

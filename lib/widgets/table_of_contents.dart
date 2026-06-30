@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/podcast_article.dart';
 import '../services/episode_language.dart';
+import '../l10n/app_localizations.dart';
 
 class TableOfContents extends StatefulWidget {
   final PodcastArticle article;
@@ -89,9 +90,7 @@ class _TableOfContentsState extends State<TableOfContents> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             alignment: Alignment.centerLeft,
             child: Text(
-              EpisodeLanguageScope.of(context) == EpisodeLanguage.en
-                  ? 'Contents'
-                  : 'Sadržaj',
+              AppLocalizations.of(context).sectionContents,
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurfaceVariant,

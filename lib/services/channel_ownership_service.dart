@@ -19,6 +19,7 @@ library;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 import '../models/channel_claim.dart';
+import 'locale_service.dart';
 
 class ChannelOwnershipFailure implements Exception {
   final String message;
@@ -48,8 +49,7 @@ class ChannelOwnershipService {
       final data = (res.data as Map).cast<String, dynamic>();
       final authUrl = data['authUrl'] as String?;
       if (authUrl == null || authUrl.isEmpty) {
-        throw const ChannelOwnershipFailure(
-            'Backend nije vratio URL za autorizaciju.');
+        throw ChannelOwnershipFailure(appStrings.serviceClaimNoAuthUrl);
       }
       return authUrl;
     } on sb.FunctionException catch (e) {
@@ -83,15 +83,11 @@ class ChannelOwnershipService {
               const <String>[];
           final name = owned.isNotEmpty ? owned.first : null;
           if (name == null) {
-            throw const ChannelOwnershipFailure(
-                'Prijavljeni Google račun nije vlasnik ovog kanala. Ovaj račun '
-                'ne upravlja nijednim YouTube kanalom. Prijavi se Google računom '
-                'koji je VLASNIK kanala (ne urednik).');
+            throw ChannelOwnershipFailure(
+                appStrings.serviceClaimMismatchNoChannel);
           }
           throw ChannelOwnershipFailure(
-            'Prijavljeni Google račun nije vlasnik ovog kanala. Ovim računom '
-            'upravljaš kanalom: $name. Prijavi se Google računom koji je VLASNIK '
-            'kanala (ne urednik).',
+            appStrings.serviceClaimMismatchWithChannel(name),
             boldTerm: name,
           );
         }
@@ -136,7 +132,7 @@ class ChannelOwnershipService {
       );
       final data = (res.data as Map).cast<String, dynamic>();
       if (data['ok'] != true) {
-        throw const ChannelOwnershipFailure('Otkvačivanje vlasništva nije uspjelo.');
+        throw ChannelOwnershipFailure(appStrings.serviceClaimRevokeFailed);
       }
     } on sb.FunctionException catch (e) {
       log('youtube-claim/revoke failed: ${e.status} ${e.details}');
@@ -193,12 +189,11 @@ class ChannelOwnershipService {
   }
 
   String _mapReason(String? code) => switch (code) {
-        'channel_mismatch' =>
-          'Prijavljeni YouTube račun nije vlasnik ovog kanala.',
-        'no_channel' => 'Na ovom Google računu nema YouTube kanala.',
-        'invalid_state' => 'Sesija autorizacije je istekla. Pokušaj ponovo.',
-        'already_claimed' => 'Ovaj kanal je već preuzeo drugi korisnik.',
-        'not_signed_in' => 'Za preuzimanje kanala moraš biti prijavljen.',
-        _ => 'Provjera vlasništva nije uspjela. Pokušaj ponovo.',
+        'channel_mismatch' => appStrings.serviceClaimChannelMismatch,
+        'no_channel' => appStrings.serviceClaimNoChannel,
+        'invalid_state' => appStrings.serviceClaimInvalidState,
+        'already_claimed' => appStrings.serviceClaimAlreadyClaimed,
+        'not_signed_in' => appStrings.serviceClaimNotSignedIn,
+        _ => appStrings.serviceClaimVerifyFailed,
       };
 }

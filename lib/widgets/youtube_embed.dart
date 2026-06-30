@@ -12,6 +12,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'youtube_embed_web.dart'
     if (dart.library.io) 'youtube_embed_stub.dart' as platform;
 
@@ -50,6 +51,7 @@ class YouTubeModeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Container(
       color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -59,7 +61,7 @@ class YouTubeModeBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'YouTube player — kvalitetu biraš u ⚙ postavkama playera',
+              l.mediaYouTubeQualityHint,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -69,7 +71,7 @@ class YouTubeModeBar extends StatelessWidget {
           TextButton.icon(
             onPressed: onExit,
             icon: const Icon(Icons.replay, size: 16),
-            label: const Text('DOMOVINA player'),
+            label: Text(l.mediaNativePlayerLabel),
             style: TextButton.styleFrom(
               visualDensity: VisualDensity.compact,
               textStyle: theme.textTheme.labelSmall,

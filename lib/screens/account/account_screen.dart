@@ -13,10 +13,12 @@ library;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
 import '../../services/entitlement_service.dart';
+import '../../services/locale_service.dart';
 import '../../services/passkey_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/plus_badge.dart';
@@ -82,7 +84,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (!mounted) return;
       setState(() {
         _passkeysLoading = false;
-        _passkeysError = 'Dohvat passkeyja nije uspio.';
+        _passkeysError = AppLocalizations.of(context).authPasskeyFetchFailed;
       });
     }
   }
@@ -90,12 +92,13 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final auth = AuthService.instance;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
-        title: const Text('Moj račun'),
+        title: Text(l.authAccountTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -114,6 +117,7 @@ class _AccountScreenState extends State<AccountScreen> {
   // ── anonymous state ──────────────────────────────────────────────────────
 
   Widget _anonymousBody(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 380),
@@ -126,13 +130,13 @@ class _AccountScreenState extends State<AccountScreen> {
                   size: 56, color: theme.colorScheme.primary),
               const SizedBox(height: 16),
               Text(
-                'Nisi prijavljen',
+                l.authAnonTitle,
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Prijavi se da upravljaš svojim računom, passkeyjima i podacima.',
+                l.authAnonSubtitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -141,15 +145,17 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(height: 24),
               FilledButton.icon(
                 icon: const Icon(Icons.login),
-                label: const Text('Prijavi se'),
+                label: Text(l.commonSignIn),
                 onPressed: () => showAuthSheet(context),
               ),
               const SizedBox(height: 8),
               TextButton.icon(
                 icon: const Icon(Icons.workspace_premium_outlined),
-                label: const Text('Saznaj o DOMOVINA Plus'),
+                label: Text(l.authLearnAboutPlus),
                 onPressed: () => openPaywall(context, UpgradeTrigger.generic),
               ),
+              const SizedBox(height: 28),
+              _languageCard(theme),
             ],
           ),
         ),
@@ -160,6 +166,7 @@ class _AccountScreenState extends State<AccountScreen> {
   // ── signed-in state ──────────────────────────────────────────────────────
 
   Widget _signedInBody(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final user = AuthService.instance.currentUser!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -171,21 +178,25 @@ class _AccountScreenState extends State<AccountScreen> {
             children: [
               _profileCard(theme, user),
               const SizedBox(height: 16),
-              _sectionLabel(theme, 'PRETPLATA'),
+              _sectionLabel(theme, l.authSectionSubscription),
               _plusCard(theme),
               const SizedBox(height: 16),
-              _sectionLabel(theme, 'PRIJAVNE METODE'),
+              _sectionLabel(theme, l.authSectionSignInMethods),
               _identitiesCard(theme),
               const SizedBox(height: 16),
-              _sectionLabel(theme, 'PASSKEYJI'),
+              _sectionLabel(theme, l.authSectionPasskeys),
               _passkeysCard(theme),
               const SizedBox(height: 16),
-              _sectionLabel(theme, 'UREĐAJI'),
+              _sectionLabel(theme, l.authSectionDevices),
               _devicesCard(theme),
+              const SizedBox(height: 16),
+              _sectionLabel(theme, l.authSectionLanguage),
+              _languageCard(theme),
               const SizedBox(height: 16),
               _signOutCard(theme),
               const SizedBox(height: 24),
-              _sectionLabel(theme, 'OPASNA ZONA', color: theme.colorScheme.error),
+              _sectionLabel(theme, l.authSectionDangerZone,
+                  color: theme.colorScheme.error),
               _dangerCard(theme),
               const SizedBox(height: 32),
             ],
@@ -199,6 +210,7 @@ class _AccountScreenState extends State<AccountScreen> {
   /// (mobile) manage link; inactive → upgrade CTA opening the paywall.
   Widget _plusCard(ThemeData theme) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     return ValueListenableBuilder<bool>(
       valueListenable: EntitlementService.instance.isPlus,
       builder: (context, isPlus, _) {
@@ -223,7 +235,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           const PlusBadge(),
                         ]),
                         const SizedBox(height: 2),
-                        Text('Hvala na podršci hrvatske arhive.',
+                        Text(l.authPlusThanks,
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(color: cs.onSurfaceVariant)),
                       ],
@@ -231,7 +243,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   TextButton(
                     onPressed: () => openPaywall(context),
-                    child: const Text('Detalji'),
+                    child: Text(l.authDetails),
                   ),
                 ],
               ),
@@ -244,9 +256,9 @@ class _AccountScreenState extends State<AccountScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
             leading: Icon(Icons.workspace_premium_outlined, color: cs.primary),
-            title: const Text('Postani DOMOVINA Plus'),
+            title: Text(l.authBecomePlus),
             subtitle: Text(
-              'Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.',
+              l.authPlusBenefits,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: cs.onSurfaceVariant),
             ),
@@ -285,8 +297,41 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  /// UI jezik (HR/EN). Imena jezika su endonimi ("Hrvatski"/"English") pa ih
+  /// korisnik prepoznaje neovisno o trenutnom jeziku — namjerno NISU prevedeni.
+  /// MaterialApp sluša LocaleController (vidi main.dart), pa se ekran sam
+  /// rebuilda na promjenu — bez ručnog setState.
+  Widget _languageCard(ThemeData theme) {
+    final current = LocaleController.instance.locale.languageCode;
+    return _card(
+      theme,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(Icons.translate, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'hr', label: Text('Hrvatski')),
+                  ButtonSegment(value: 'en', label: Text('English')),
+                ],
+                selected: {current},
+                showSelectedIcon: false,
+                onSelectionChanged: (sel) => LocaleController.instance
+                    .setLocale(Locale(sel.first)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _profileCard(ThemeData theme, AppUser user) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     final initial = (user.displayName ?? user.email ?? '?')
         .replaceAll(RegExp(r'[^A-Za-zČčĆćĐđŠšŽž]'), '')
         .characters
@@ -325,7 +370,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.displayName ?? 'Korisnik',
+                    user.displayName ?? l.authUserFallback,
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
@@ -344,7 +389,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           Icon(Icons.verified, size: 14, color: cs.primary),
                           const SizedBox(width: 4),
                           Text(
-                            'Verificiran identitet (eOsobna)',
+                            l.authVerifiedIdentity,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.primary,
                               fontWeight: FontWeight.w600,
@@ -364,6 +409,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _identitiesCard(ThemeData theme) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     final providers = AuthService.instance.linkedProviders;
     return _card(
       theme,
@@ -373,7 +419,7 @@ class _AccountScreenState extends State<AccountScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Nema povezanih prijavnih metoda.',
+                l.authNoLinkedMethods,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
@@ -398,16 +444,20 @@ class _AccountScreenState extends State<AccountScreen> {
         AuthProvider.certilia => Icons.badge_outlined,
       };
 
-  String _providerSubtitle(AuthProvider p) => switch (p) {
-        AuthProvider.google => 'Google račun',
-        AuthProvider.apple => 'Apple račun',
-        AuthProvider.email => 'Magic link / kod na e-mail',
-        AuthProvider.passkey => 'Passkey',
-        AuthProvider.certilia => 'Hrvatska e-osobna (Certilia / NIAS)',
-      };
+  String _providerSubtitle(AuthProvider p) {
+    final l = AppLocalizations.of(context);
+    return switch (p) {
+      AuthProvider.google => l.authProviderGoogle,
+      AuthProvider.apple => l.authProviderApple,
+      AuthProvider.email => l.authProviderEmail,
+      AuthProvider.passkey => l.authProviderPasskey,
+      AuthProvider.certilia => l.authProviderCertilia,
+    };
+  }
 
   Widget _passkeysCard(ThemeData theme) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     return _card(
       theme,
       child: Column(
@@ -428,8 +478,7 @@ class _AccountScreenState extends State<AccountScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Pregled i uklanjanje passkeyja stiže uskoro. Novi passkey '
-                'možeš dodati već sada.',
+                l.authPasskeysSoon,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
@@ -450,7 +499,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   TextButton(
                     onPressed: _loadPasskeys,
-                    child: const Text('Ponovi'),
+                    child: Text(l.commonRetry),
                   ),
                 ],
               ),
@@ -459,8 +508,7 @@ class _AccountScreenState extends State<AccountScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Nemaš registriranih passkeyja. Passkey je najsigurniji i '
-                'najbrži način prijave — bez lozinke, uz Face ID / otisak.',
+                l.authNoPasskeys,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
@@ -468,12 +516,12 @@ class _AccountScreenState extends State<AccountScreen> {
           else
             ..._passkeys!.map((pk) => ListTile(
                   leading: Icon(Icons.fingerprint, color: cs.primary),
-                  title: Text(pk.deviceName ?? 'Passkey'),
+                  title: Text(pk.deviceName ?? l.authProviderPasskey),
                   subtitle: Text(_passkeyMeta(pk)),
                   dense: true,
                   trailing: IconButton(
                     icon: Icon(Icons.delete_outline, color: cs.error, size: 20),
-                    tooltip: 'Ukloni passkey',
+                    tooltip: l.authRemovePasskey,
                     onPressed: () => _confirmDeletePasskey(pk),
                   ),
                 )),
@@ -482,7 +530,7 @@ class _AccountScreenState extends State<AccountScreen> {
             padding: const EdgeInsets.all(8),
             child: TextButton.icon(
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Dodaj passkey na ovom uređaju'),
+              label: Text(l.authAddPasskeyHere),
               onPressed: _addPasskey,
             ),
           ),
@@ -499,16 +547,13 @@ class _AccountScreenState extends State<AccountScreen> {
   /// postavkama, pa ga copy tamo i upućuje.
   Widget _passkeyProviderHint(ThemeData theme) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     final steps = switch (defaultTargetPlatform) {
-      TargetPlatform.iOS || TargetPlatform.macOS =>
-        'Postavke → Aplikacije → Lozinke → Opcije lozinki → "Automatski '
-            'popunjavaj" — odaberi Lozinke (iCloud).',
-      TargetPlatform.android =>
-        'Postavke → Lozinke i računi → Zadana usluga za pristupne ključeve '
-            '→ odaberi Google Password Manager.',
-      _ =>
-        'U postavkama OS-a odaberi sustavski menadžer pristupnih ključeva '
-            '(Apple Passwords / Google Password Manager).',
+      TargetPlatform.iOS ||
+      TargetPlatform.macOS =>
+        l.authPasskeyStepsApple,
+      TargetPlatform.android => l.authPasskeyStepsAndroid,
+      _ => l.authPasskeyStepsGeneric,
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
@@ -521,7 +566,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   size: 16, color: cs.primary),
               const SizedBox(width: 8),
               Text(
-                'Gdje se sprema passkey?',
+                l.authWherePasskeyStored,
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
@@ -529,12 +574,7 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Preporučujemo Apple Passwords ili Google Password Manager — '
-            'passkey je tada vezan uz Face ID / otisak i sinkroniziran na '
-            'sve tvoje uređaje. Ako koristiš ekstenziju poput LastPass ili '
-            '1Password, isključi ju za domovina.ai (ili ju makni kao zadani '
-            'menadžer ključeva) jer presreće passkey prozor i kvari prijavu.\n\n'
-            '$steps',
+            l.authPasskeyHintBody(steps),
             style: theme.textTheme.bodySmall?.copyWith(
               color: cs.onSurfaceVariant,
               height: 1.45,
@@ -546,30 +586,32 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   String _passkeyMeta(PasskeyInfo pk) {
+    final l = AppLocalizations.of(context);
     final created = pk.createdAt;
     final used = pk.lastUsedAt;
     final parts = <String>[
       if (created != null)
-        'dodan ${created.day}.${created.month}.${created.year}.',
+        l.authPasskeyAdded('${created.day}.${created.month}.${created.year}.'),
       if (used != null)
-        'zadnje korišten ${used.day}.${used.month}.${used.year}.',
+        l.authPasskeyLastUsed('${used.day}.${used.month}.${used.year}.'),
     ];
-    return parts.isEmpty ? 'Passkey' : parts.join(' · ');
+    return parts.isEmpty ? l.authProviderPasskey : parts.join(' · ');
   }
 
   Future<void> _addPasskey() async {
     final result = await AuthService.instance
         .linkIdentity(context, AuthProvider.passkey);
     if (!mounted) return;
+    final l = AppLocalizations.of(context);
     switch (result.status) {
       case AuthFlowStatus.success:
         rootScaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text(result.message ?? 'Passkey je dodan.')),
+          SnackBar(content: Text(result.message ?? l.authPasskeyAddedToast)),
         );
         _loadPasskeys();
       case AuthFlowStatus.failure:
         rootScaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text(result.message ?? 'Passkey nije dodan.')),
+          SnackBar(content: Text(result.message ?? l.authPasskeyAddFailed)),
         );
       case AuthFlowStatus.redirect:
       case AuthFlowStatus.emailSent:
@@ -579,25 +621,25 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _confirmDeletePasskey(PasskeyInfo pk) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ukloniti passkey?'),
+        title: Text(l.authRemovePasskeyTitle),
         content: Text(
-          '„${pk.deviceName ?? 'Passkey'}" više neće moći prijaviti ovaj '
-          'račun. Ova radnja je trajna.',
+          l.authRemovePasskeyBody(pk.deviceName ?? l.authProviderPasskey),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Odustani'),
+            child: Text(l.commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ukloni'),
+            child: Text(l.authRemove),
           ),
         ],
       ),
@@ -607,7 +649,7 @@ class _AccountScreenState extends State<AccountScreen> {
       await PasskeyService.instance.deletePasskey(pk.id);
       if (!mounted) return;
       rootScaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(content: Text('Passkey je uklonjen.')),
+        SnackBar(content: Text(l.authPasskeyRemoved)),
       );
       _loadPasskeys();
     } on PasskeyFailure catch (e) {
@@ -619,13 +661,14 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _devicesCard(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return _card(
       theme,
       child: ListTile(
         leading:
             Icon(Icons.devices_other, color: theme.colorScheme.primary),
-        title: const Text('Prebaci na drugi uređaj'),
-        subtitle: const Text('Generiraj kod i prijavi se na TV-u ili mobitelu'),
+        title: Text(l.authSwitchDevice),
+        subtitle: Text(l.authDevicesSubtitle),
         trailing: const Icon(Icons.arrow_forward_ios, size: 14),
         onTap: () => context.go('/handoff'),
       ),
@@ -633,12 +676,13 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _signOutCard(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return _card(
       theme,
       child: ListTile(
         leading: Icon(Icons.logout, color: theme.colorScheme.onSurfaceVariant),
-        title: const Text('Odjavi se'),
-        subtitle: const Text('Nastavljaš kao gost — podaci ostaju na računu'),
+        title: Text(l.commonSignOut),
+        subtitle: Text(l.authSignOutSubtitle),
         onTap: () => confirmAndSignOut(context),
       ),
     );
@@ -646,6 +690,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _dangerCard(ThemeData theme) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         color: cs.surface,
@@ -654,10 +699,8 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       child: ListTile(
         leading: Icon(Icons.delete_forever_outlined, color: cs.error),
-        title: Text('Izbriši račun', style: TextStyle(color: cs.error)),
-        subtitle: const Text(
-          'Trajno briše račun, favorite, napredak i sve povezane podatke.',
-        ),
+        title: Text(l.authDeleteAccount, style: TextStyle(color: cs.error)),
+        subtitle: Text(l.authDeleteAccountSubtitle),
         trailing: _deleting
             ? const SizedBox(
                 width: 18,
@@ -682,12 +725,13 @@ class _AccountScreenState extends State<AccountScreen> {
     if (!mounted) return;
     setState(() => _deleting = false);
 
+    final l = AppLocalizations.of(context);
     rootScaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text(result.message ??
             (result.status == AuthFlowStatus.success
-                ? 'Račun je izbrisan.'
-                : 'Brisanje nije uspjelo.')),
+                ? l.authAccountDeleted
+                : l.authDeleteFailed)),
         duration: const Duration(seconds: 5),
       ),
     );
@@ -699,22 +743,20 @@ class _AccountScreenState extends State<AccountScreen> {
 
 /// Potvrda odjave — dijeli ju AccountChip menu i Moj račun ekran.
 Future<void> confirmAndSignOut(BuildContext context) async {
+  final l = AppLocalizations.of(context);
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Odjaviti se?'),
-      content: const Text(
-        'Tvoj napredak i favoriti ostaju spremljeni na računu — '
-        'vraćaju se kad se ponovno prijaviš.',
-      ),
+      title: Text(l.authSignOutTitle),
+      content: Text(l.authSignOutBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Odustani'),
+          child: Text(l.commonCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Odjavi se'),
+          child: Text(l.commonSignOut),
         ),
       ],
     ),
@@ -733,7 +775,6 @@ class _DeleteAccountDialog extends StatefulWidget {
 }
 
 class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
-  static const _confirmWord = 'IZBRIŠI';
   final _ctrl = TextEditingController();
   bool _matches = false;
 
@@ -747,26 +788,24 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+    final confirmWord = l.authDeleteConfirmWord;
     return AlertDialog(
-      title: const Text('Trajno izbrisati račun?'),
+      title: Text(l.authDeleteConfirmTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Brišu se račun, favoriti, napredak gledanja, passkeyji i sve '
-            'povezane postavke. Ova radnja je nepovratna.\n\n'
-            'Za potvrdu upiši IZBRIŠI:',
-          ),
+          Text(l.authDeleteConfirmBody(confirmWord)),
           const SizedBox(height: 12),
           TextField(
             controller: _ctrl,
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
-            onChanged: (v) => setState(
-                () => _matches = v.trim().toUpperCase() == _confirmWord),
-            decoration: const InputDecoration(
-              hintText: _confirmWord,
+            onChanged: (v) => setState(() =>
+                _matches = v.trim().toUpperCase() == confirmWord.toUpperCase()),
+            decoration: InputDecoration(
+              hintText: confirmWord,
               isDense: true,
             ),
           ),
@@ -775,12 +814,12 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Odustani'),
+          child: Text(l.commonCancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: cs.error),
           onPressed: _matches ? () => Navigator.pop(context, true) : null,
-          child: const Text('Trajno izbriši'),
+          child: Text(l.authDeletePermanently),
         ),
       ],
     );
