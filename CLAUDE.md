@@ -193,6 +193,52 @@ Logs are visible in browser DevTools console and help trace the exact point of f
 
 **Rule**: When adding new async operations or widget builds that could fail, add `log()` calls at key checkpoints. This is critical because release web builds minify all symbols — without logs, errors show only `Uncaught Error` at an unreadable line number.
 
+## Internationalization (i18n)
+
+> Puna referenca s mermaid dijagramima (UI vs sadržaj, string resolution,
+> locale perzistencija, key-prefiksi, Magisterium uzrok) —
+> `docs/i18n-and-localization.md`.
+
+App UI is fully localized via Flutter `gen-l10n` (ARB). **Hrvatski je izvorni/template
+jezik**, engleski je drugi jezik. Konfiguracija u `l10n.yaml`; ključevi u
+`lib/l10n/app_hr.arb` (template, s `@key` metapodacima + placeholderima) i
+`lib/l10n/app_en.arb` (prijevod). Generirana klasa: `lib/l10n/app_localizations.dart`
+(`flutter gen-l10n` ili automatski preko `generate: true`).
+
+**Razlika UI jezik vs. jezik sadržaja**: ovo je jezik *chrome-a* (gumbi, naslovi,
+poruke) i bira ga `LocaleController` (`services/locale_service.dart`, persist u
+localStorage/SharedPreferences, default HR, prebacivač u `/account`). ODVOJENO od
+per-epizoda jezika *sadržaja* (`services/episode_language.dart` +
+`widgets/language_toggle_chip.dart`), koji bira HR/EN CDN članak/Magisterium preko
+`pickLang(...)`. CDN/model tekst se NIKAD ne lokalizira kroz ARB — samo hardkodirani
+Dart literali.
+
+**Kako lokalizirati novi string:**
+- Dodaj ključ PRVO u `app_hr.arb` (+ `@key` ako ima placeholdere/plural), pa prijevod
+  u `app_en.arb`, pa `flutter gen-l10n`.
+- U widgetu s contextom: `final l = AppLocalizations.of(context); … l.mojKljuc`.
+- Bez contexta (servisi, callbackovi, modeli): `appStrings.mojKljuc` (globalni getter u
+  `services/locale_service.dart` → `lookupAppLocalizations(LocaleController…locale)`).
+- Imenovanje ključeva: `<područje>CamelCase` (npr. `home*`, `episode*`, `magisterium*`,
+  `legal*`, `auth*`, `channel*`, `ownership*`, `tv*`, `pinka*`, `service*`, `common*`).
+  `common*` za stringove dijeljene kroz aplikaciju (Odustani, Zatvori, Pokušaj ponovno…).
+- ICU plural za brojive imenice (hrvatski one/few/other). Imena jezika u prebacivaču su
+  endonimi ("Hrvatski"/"English") — namjerno NISU u ARB-u.
+
+**Rule (registar/ton)**: aplikacija oslovljava korisnika **neformalno „ti"**
+(topli, izravan glas, usklađen s pinka SDK-om). Iznimka: **outreach poruke trećim
+stranama** (npr. `ownershipInviteMessage` vlasniku kanala) i pravni/formalni tekst —
+tu je „Vi" ispravno. Ne miješaj registar unutar istog konteksta.
+
+**Rule (lektor)**: svaki user-facing string mora imati ispravne dijakritike
+(č/ć/š/ž/đ), gramatiku i pravopis (Hrvatski pravopis IHJJ — npr. „sažetci", „pogreške",
+„adresa e-pošte"). Bez ALL-CAPS u ARB vrijednostima; vizualni caps radi se u kodu preko
+`.toUpperCase()` na već lokaliziranom stringu.
+
+**TODO (poznato)**: `widgets/founder_booking.dart` koristi ručne hrvatske nazive
+mjeseci/dana (`_hrWeekdayShort`/`_hrMonthsGen`) — za pravu lokalizaciju datuma treba
+`intl` `DateFormat` s locale podrškom (van opsega string-ekstrakcije).
+
 ## Architecture Notes
 
 ### Routing
