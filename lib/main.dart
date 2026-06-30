@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
 import 'services/entitlement_service.dart';
+import 'services/locale_service.dart';
 import 'services/revenue_cat_service.dart';
 import 'services/theme_mode_service.dart';
 import 'services/tv_mode.dart';
@@ -92,6 +94,8 @@ void main() async {
   await WatchProgressService.instance.init();
   // Ucitaj spremljenu temu (default tamna za nove korisnike).
   await ThemeController.instance.init();
+  // Ucitaj spremljeni UI jezik (default hrvatski).
+  await LocaleController.instance.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {
@@ -127,12 +131,14 @@ class _DominovinaAppState extends State<DominovinaApp> {
   }
 
   void _showUpdateSnackBar() {
+    final ctx = _messengerKey.currentContext;
+    final l = ctx != null ? AppLocalizations.of(ctx) : null;
     _messengerKey.currentState?.showSnackBar(
       SnackBar(
-        content: const Text('Nova verzija je dostupna'),
+        content: Text(l?.updateAvailable ?? 'Dostupna je nova verzija'),
         duration: const Duration(days: 1),
         action: SnackBarAction(
-          label: 'OSVJEZI',
+          label: l?.updateRefresh ?? 'Osvježi',
           onPressed: reloadPage,
         ),
       ),
@@ -153,11 +159,18 @@ class _DominovinaAppState extends State<DominovinaApp> {
         theme: AppTheme.tv(),
         darkTheme: AppTheme.tv(),
         themeMode: ThemeMode.dark,
+        // TV je hrvatsko tržište (10-foot UI) — fiksno hrvatski.
+        locale: const Locale('hr'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: _router,
       );
     }
     return AnimatedBuilder(
-      animation: ThemeController.instance,
+      // Rebuild na promjenu teme ILI UI jezika.
+      animation: Listenable.merge(
+        [ThemeController.instance, LocaleController.instance],
+      ),
       builder: (context, _) => MaterialApp.router(
         scaffoldMessengerKey: _messengerKey,
         title: 'DOMOVINA.ai',
@@ -165,6 +178,9 @@ class _DominovinaAppState extends State<DominovinaApp> {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeController.instance.mode,
+        locale: LocaleController.instance.locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: _router,
       ),
     );

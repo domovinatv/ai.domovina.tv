@@ -30,6 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # i18n (gen-l10n): app_hr.arb je template/izvorni jezik, app_en.arb prijevod.
+  # intl verziju pinna flutter_localizations iz SDK-a; `any` izbjegava sukob.
+  intl: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -88,6 +93,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Generira AppLocalizations iz lib/l10n/*.arb (vidi l10n.yaml).
+  generate: true
 
   assets:
     - assets/icons/domovina_ai_logo.svg

@@ -1,0 +1,2967 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Croatian (`hr`).
+class AppLocalizationsHr extends AppLocalizations {
+  AppLocalizationsHr([String locale = 'hr']) : super(locale);
+
+  @override
+  String get appTitle => 'DOMOVINA.ai';
+
+  @override
+  String get updateAvailable => 'Dostupna je nova verzija';
+
+  @override
+  String get updateRefresh => 'Osvježi';
+
+  @override
+  String get commonCancel => 'Odustani';
+
+  @override
+  String get commonClose => 'Zatvori';
+
+  @override
+  String get commonBack => 'Natrag';
+
+  @override
+  String get commonSave => 'Spremi';
+
+  @override
+  String get commonConfirm => 'Potvrdi';
+
+  @override
+  String get commonDone => 'Gotovo';
+
+  @override
+  String get commonContinue => 'Nastavi';
+
+  @override
+  String get commonRetry => 'Pokušaj ponovno';
+
+  @override
+  String get commonCopy => 'Kopiraj';
+
+  @override
+  String get commonShare => 'Podijeli';
+
+  @override
+  String get commonOk => 'U redu';
+
+  @override
+  String get commonSignIn => 'Prijavi se';
+
+  @override
+  String get commonSignOut => 'Odjavi se';
+
+  @override
+  String get commonMaybeLater => 'Možda kasnije';
+
+  @override
+  String get commonLoading => 'Učitavanje…';
+
+  @override
+  String get commonGoHome => 'Natrag na početnu';
+
+  @override
+  String get commonOpenSource => 'Otvori izvor';
+
+  @override
+  String get commonThanksForSupport => 'Hvala na podršci';
+
+  @override
+  String commonErrorWithDetails(String details) {
+    return 'Greška: $details';
+  }
+
+  @override
+  String get authAccountTitle => 'Moj račun';
+
+  @override
+  String get authAnonTitle => 'Niste prijavljeni';
+
+  @override
+  String get authAnonSubtitle =>
+      'Prijavi se kako bi upravljao svojim računom, pristupnim ključevima i podacima.';
+
+  @override
+  String get authLearnAboutPlus => 'Saznaj više o DOMOVINA Plus';
+
+  @override
+  String get authSectionSubscription => 'Pretplata';
+
+  @override
+  String get authSectionSignInMethods => 'Prijavne metode';
+
+  @override
+  String get authSectionPasskeys => 'Pristupni ključevi';
+
+  @override
+  String get authSectionDevices => 'Uređaji';
+
+  @override
+  String get authSectionDangerZone => 'Opasna zona';
+
+  @override
+  String get authPlusThanks => 'Hvala što podržavaš hrvatsku arhivu.';
+
+  @override
+  String get authDetails => 'Detalji';
+
+  @override
+  String get authBecomePlus => 'Postani DOMOVINA Plus';
+
+  @override
+  String get authPlusBenefits =>
+      'Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.';
+
+  @override
+  String get authUserFallback => 'Korisnik';
+
+  @override
+  String get authVerifiedIdentity => 'Provjereni identitet (eOsobna)';
+
+  @override
+  String get authNoLinkedMethods => 'Nema povezanih prijavnih metoda.';
+
+  @override
+  String get authProviderGoogle => 'Google račun';
+
+  @override
+  String get authProviderApple => 'Apple račun';
+
+  @override
+  String get authProviderEmail => 'Magic link ili kôd na e-mail';
+
+  @override
+  String get authProviderPasskey => 'Pristupni ključ';
+
+  @override
+  String get authProviderCertilia => 'Hrvatska e-osobna (Certilia / NIAS)';
+
+  @override
+  String get authPasskeysSoon =>
+      'Pregled i uklanjanje pristupnih ključeva stiže uskoro. Novi ključ možeš dodati već sada.';
+
+  @override
+  String get authNoPasskeys =>
+      'Nemaš nijedan pristupni ključ. Pristupni ključ je najsigurniji i najbrži način prijave — bez lozinke, uz Face ID ili otisak prsta.';
+
+  @override
+  String get authPasskeyFetchFailed =>
+      'Dohvaćanje pristupnih ključeva nije uspjelo.';
+
+  @override
+  String get authRemovePasskey => 'Ukloni pristupni ključ';
+
+  @override
+  String get authAddPasskeyHere => 'Dodaj pristupni ključ na ovom uređaju';
+
+  @override
+  String get authWherePasskeyStored => 'Gdje se sprema pristupni ključ?';
+
+  @override
+  String authPasskeyHintBody(String steps) {
+    return 'Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za domovina.ai (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n$steps';
+  }
+
+  @override
+  String get authPasskeyStepsApple =>
+      'Postavke → Aplikacije → Lozinke → Opcije lozinki → „Automatski popunjavaj\" — odaberi Lozinke (iCloud).';
+
+  @override
+  String get authPasskeyStepsAndroid =>
+      'Postavke → Lozinke i računi → Zadana usluga za pristupne ključeve → odaberi Google Password Manager.';
+
+  @override
+  String get authPasskeyStepsGeneric =>
+      'U postavkama operativnog sustava odaberi sustavski upravitelj pristupnih ključeva (Apple Passwords ili Google Password Manager).';
+
+  @override
+  String authPasskeyAdded(String date) {
+    return 'dodan $date';
+  }
+
+  @override
+  String authPasskeyLastUsed(String date) {
+    return 'zadnje korišten $date';
+  }
+
+  @override
+  String get authPasskeyAddedToast => 'Pristupni ključ je dodan.';
+
+  @override
+  String get authPasskeyAddFailed => 'Pristupni ključ nije dodan.';
+
+  @override
+  String get authRemovePasskeyTitle => 'Ukloniti pristupni ključ?';
+
+  @override
+  String authRemovePasskeyBody(String name) {
+    return '„$name\" više neće moći prijaviti ovaj račun. Ova je radnja trajna.';
+  }
+
+  @override
+  String get authRemove => 'Ukloni';
+
+  @override
+  String get authPasskeyRemoved => 'Pristupni ključ je uklonjen.';
+
+  @override
+  String get authSwitchDevice => 'Prebaci na drugi uređaj';
+
+  @override
+  String get authDevicesSubtitle =>
+      'Generiraj kôd i prijavi se na TV-u ili mobitelu';
+
+  @override
+  String get authSignOutSubtitle =>
+      'Nastavi kao gost — podaci ostaju spremljeni na računu';
+
+  @override
+  String get authDeleteAccount => 'Izbriši račun';
+
+  @override
+  String get authDeleteAccountSubtitle =>
+      'Trajno briše račun, favorite, napredak i sve povezane podatke.';
+
+  @override
+  String get authAccountDeleted => 'Račun je izbrisan.';
+
+  @override
+  String get authDeleteFailed => 'Brisanje nije uspjelo.';
+
+  @override
+  String get authSignOutTitle => 'Odjaviti se?';
+
+  @override
+  String get authSignOutBody =>
+      'Tvoj napredak i favoriti ostaju spremljeni na računu — vraćaju se kad se ponovno prijaviš.';
+
+  @override
+  String get authDeleteConfirmTitle => 'Trajno izbrisati račun?';
+
+  @override
+  String get authDeleteConfirmWord => 'IZBRIŠI';
+
+  @override
+  String authDeleteConfirmBody(String word) {
+    return 'Brišu se račun, favoriti, napredak gledanja, pristupni ključevi i sve povezane postavke. Ova je radnja nepovratna.\n\nZa potvrdu upiši $word:';
+  }
+
+  @override
+  String get authDeletePermanently => 'Trajno izbriši';
+
+  @override
+  String get authErrLinkExpired =>
+      'Poveznica za prijavu je istekla — zatraži novu.';
+
+  @override
+  String get authErrUserBanned => 'Ovaj je račun privremeno blokiran.';
+
+  @override
+  String get authErrSignupDisabled =>
+      'Registracija novih računa trenutno nije moguća.';
+
+  @override
+  String get authErrAccessDenied => 'Prijava je odbijena ili otkazana.';
+
+  @override
+  String get authErrServerError =>
+      'Greška na poslužitelju — pokušaj ponovo za minutu.';
+
+  @override
+  String get authErrGeneric => 'Prijava nije uspjela. Pokušaj ponovo.';
+
+  @override
+  String get authErrTimeout =>
+      'Prijava traje predugo ili je prekinuta. Pokušaj ponovo.';
+
+  @override
+  String authSignedInAs(String name) {
+    return 'Prijavljen si kao $name.';
+  }
+
+  @override
+  String get authSigningIn => 'Prijava u tijeku…';
+
+  @override
+  String get authInviteTitle => 'Prihvati pozivnicu';
+
+  @override
+  String get authInviteProcessing => 'Obrađujemo pozivnicu…';
+
+  @override
+  String get authInviteError =>
+      'Došlo je do pogreške ili je poveznica istekla.';
+
+  @override
+  String get authM1Toast =>
+      'Tvoj se napredak sprema na ovaj uređaj. Prijavi se da se sinkronizira.';
+
+  @override
+  String get authM3Toast =>
+      'Spremljeno na ovaj uređaj. Sinkronizirati favorite na sve uređaje?';
+
+  @override
+  String get authSync => 'Sinkroniziraj';
+
+  @override
+  String get authTabSend => 'Pošalji';
+
+  @override
+  String get authTabReceive => 'Primi';
+
+  @override
+  String get authHandoffSignInFirst => 'Prvo se prijavi';
+
+  @override
+  String get authHandoffSignInFirstBody =>
+      'Da bi prenio cijeli svoj napredak na drugi uređaj, prvo se prijavi na ovom — tada i drugi uređaj može pristupiti istom računu.';
+
+  @override
+  String get authHandoffSendTitle => 'Pošalji prijavu na drugi uređaj';
+
+  @override
+  String get authHandoffSendSheetSub =>
+      'Za slanje prijave na drugi uređaj prvo se prijavi na ovom.';
+
+  @override
+  String get authHandoffSendBody =>
+      'Otvori DOMOVINA.ai/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.';
+
+  @override
+  String get authGenerateCode => 'Generiraj kôd';
+
+  @override
+  String get authNewCode => 'Novi kôd';
+
+  @override
+  String get authValid5Min => 'Vrijedi 5 minuta';
+
+  @override
+  String get authCodeCopied => 'Kôd je kopiran';
+
+  @override
+  String get authHandoffReceiveTitle => 'Imaš kôd s drugog uređaja?';
+
+  @override
+  String get authHandoffReceiveBody =>
+      'Unesi šesteroznamenkasti kôd s drugog uređaja da ovdje preuzmeš njegov račun.';
+
+  @override
+  String get authReceiveSignIn => 'Preuzmi prijavu';
+
+  @override
+  String get authCode6Digits => 'Kôd mora imati 6 znamenki.';
+
+  @override
+  String get authOpeningSignIn => 'Otvaramo prijavu…';
+
+  @override
+  String get authOpeningSignInBody =>
+      'Ako se otvori preglednik, potvrdi prijavu pa se vrati u aplikaciju.';
+
+  @override
+  String get authSuccess => 'Uspješno!';
+
+  @override
+  String get authSignInWithPasskey => 'Prijavi se pristupnim ključem';
+
+  @override
+  String get authPasskeyTileSub => 'Najbrže — Face ID ili otisak, bez lozinke';
+
+  @override
+  String get authBadgeRecommended => 'Preporučeno';
+
+  @override
+  String get authBadgeLastUsed => 'Zadnji put';
+
+  @override
+  String get authSignInWithEid => 'Prijava eOsobnom';
+
+  @override
+  String get authContinueWithGoogle => 'Nastavi s Googleom';
+
+  @override
+  String get authContinueWithApple => 'Nastavi s Apple računom';
+
+  @override
+  String get authEmailMagicLink => 'E-mail magic link';
+
+  @override
+  String get authEmailTileSub => 'Pošaljemo ti poveznicu i kôd za prijavu';
+
+  @override
+  String get authEmailHint => 'ime@primjer.com';
+
+  @override
+  String get authSendCode => 'Pošalji kôd';
+
+  @override
+  String get authResendCode => 'Pošalji novi kôd';
+
+  @override
+  String authResendCodeIn(int seconds) {
+    return 'Pošalji novi kôd ($seconds s)';
+  }
+
+  @override
+  String get authChangeEmail => 'Promijeni e-mail';
+
+  @override
+  String get authEmailTitle => 'Prijava e-mailom';
+
+  @override
+  String get authCheckEmail => 'Provjeri e-mail';
+
+  @override
+  String get authEmailEntrySub =>
+      'Pošaljemo ti poveznicu i šesteroznamenkasti kôd za prijavu — bez lozinke.';
+
+  @override
+  String authOtpSentTo(String email) {
+    return 'Poslali smo poveznicu i kôd na $email. Upiši kôd — ili otvori poveznicu u e-mailu.';
+  }
+
+  @override
+  String get authHeadlineAccount => 'Prijavi se na DOMOVINA.ai';
+
+  @override
+  String get authHeadlineMoment2 => 'Spremi napredak na sve uređaje';
+
+  @override
+  String get authHeadlineMoment3 => 'Spremi favorite u svoj račun';
+
+  @override
+  String get authHeadlineHandoff => 'Završi prijavu na ovom uređaju';
+
+  @override
+  String get authSubAccount =>
+      'Bez lozinke. Pristupni ključ ili tvoj postojeći Google ili Apple račun.';
+
+  @override
+  String get authSubMoment2 =>
+      'Trenutno tvoja pozicija u reprodukciji ostaje samo na ovom uređaju.';
+
+  @override
+  String get authSubMoment3 =>
+      'Da ti favoriti ostanu dostupni na svim uređajima.';
+
+  @override
+  String get authSubHandoff =>
+      'Kôd je provjeren — odaberi kako želiš nastaviti.';
+
+  @override
+  String get authPasskeyMissingNotice =>
+      'Na ovom uređaju još nema pristupnog ključa za DOMOVINA.ai. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.';
+
+  @override
+  String get authInvalidEmail => 'Unesi ispravnu e-mail adresu.';
+
+  @override
+  String get authSendFailed => 'Slanje nije uspjelo.';
+
+  @override
+  String authNewCodeSentTo(String email) {
+    return 'Novi kôd poslan na $email.';
+  }
+
+  @override
+  String get authCodeInvalid => 'Kôd nije ispravan.';
+
+  @override
+  String get authSignInFailed => 'Prijava nije uspjela.';
+
+  @override
+  String get authYourEmail => 'tvoj e-mail';
+
+  @override
+  String authLinkCodeSent(String email) {
+    return 'Poveznica i kôd poslani su na $email — provjeri sandučić.';
+  }
+
+  @override
+  String get authLegalPrefix => 'Nastavkom prihvaćaš ';
+
+  @override
+  String get authLegalTerms => 'Uvjete korištenja';
+
+  @override
+  String get authLegalAnd => ' i ';
+
+  @override
+  String get authLegalPrivacy => 'Pravila privatnosti';
+
+  @override
+  String get authLegalSuffix => '.';
+
+  @override
+  String get authReassurance =>
+      'Tvoj trenutačni napredak ostaje sačuvan i sigurno se povezuje s računom.';
+
+  @override
+  String get authOr => 'ili';
+
+  @override
+  String get channelClaimOwnership => 'Preuzmi vlasništvo';
+
+  @override
+  String get channelAudioOnly => 'Samo zvuk';
+
+  @override
+  String get channelInProcessing => 'U obradi';
+
+  @override
+  String get channelAllChannels => 'Svi kanali';
+
+  @override
+  String get channelSearchChannelsHint => 'Pretraži kanale…';
+
+  @override
+  String get channelClear => 'Očisti';
+
+  @override
+  String channelChannelsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kanala',
+      few: '$count kanala',
+      one: '$count kanal',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String channelResultsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rezultata',
+      few: '$count rezultata',
+      one: '$count rezultat',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelNoChannels => 'Nema kanala.';
+
+  @override
+  String channelNoChannelsForQuery(String query) {
+    return 'Nema kanala za „$query”.';
+  }
+
+  @override
+  String get channelSortChannels => 'Sortiraj kanale';
+
+  @override
+  String get channelShuffle => 'Promiješaj';
+
+  @override
+  String get channelKeywordSearch => 'Pretraga po riječima';
+
+  @override
+  String get channelKeywordSearchHint =>
+      'Traži po riječima (otporno na pogreške)…';
+
+  @override
+  String channelSearchUnavailable(String url) {
+    return 'Meilisearch nije dostupan na $url. Pokreni Docker kontejner i napuni indeks (repozitorij domovina-rag).';
+  }
+
+  @override
+  String get channelSearching => 'Tražim…';
+
+  @override
+  String channelResultsInMs(int count, int ms) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rezultata u $ms ms · otporno na pogreške',
+      few: '$count rezultata u $ms ms · otporno na pogreške',
+      one: '$count rezultat u $ms ms · otporno na pogreške',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelSearchPrompt => 'Upiši pojam za trenutnu pretragu epizoda.';
+
+  @override
+  String get channelAll => 'Svi';
+
+  @override
+  String get channelSearchStart => 'Pretraga po riječima — počni tipkati.';
+
+  @override
+  String channelNoResultsForQuery(String query) {
+    return 'Nema rezultata za „$query”.';
+  }
+
+  @override
+  String get channelTriggerGenericHeadline => 'Postani DOMOVINA Plus';
+
+  @override
+  String get channelTriggerGenericSubtitle =>
+      'Podrži hrvatsku arhivu i otključaj sve pogodnosti.';
+
+  @override
+  String get channelTriggerSyncHeadline => 'Sinkronizacija na svim uređajima';
+
+  @override
+  String get channelTriggerSyncSubtitle =>
+      'Tvoji favoriti i mjesto na kojem si stao prate te s telefona na web i natrag.';
+
+  @override
+  String get channelTriggerOfflineHeadline => 'Slušaj i bez interneta';
+
+  @override
+  String get channelTriggerOfflineSubtitle =>
+      'Preuzmi epizode i poslušaj ih u avionu, autu ili na putu.';
+
+  @override
+  String get channelTriggerExportHeadline => 'Izvezi transkripte i sažetke';
+
+  @override
+  String get channelTriggerExportSubtitle =>
+      'Spremi transkript, sažetak ili članak kao PDF, Markdown ili DOCX.';
+
+  @override
+  String get channelTriggerSearchHeadline => 'Pretraga bez ograničenja';
+
+  @override
+  String get channelTriggerSearchSubtitle =>
+      'Neograničena semantička pretraga i više rezultata.';
+
+  @override
+  String get channelTriggerEnFirstHeadline => 'Engleski uvijek prvi';
+
+  @override
+  String get channelTriggerEnFirstSubtitle =>
+      'Engleski prijevodi prikazuju se odmah, prije općeg objavljivanja.';
+
+  @override
+  String get channelTriggerMagisteriumHeadline =>
+      'Potpuna Magisterium AI analiza';
+
+  @override
+  String get channelTriggerMagisteriumSubtitle =>
+      'Detaljan Magisterium AI pregled uz uvid u izvore i upite.';
+
+  @override
+  String get channelTriggerBadgeHeadline => 'Postani podupiratelj arhive';
+
+  @override
+  String get channelTriggerBadgeSubtitle =>
+      'Bedž podupiratelja i tvoje ime na zidu zahvale.';
+
+  @override
+  String get channelPlanAnnual => 'Godišnje';
+
+  @override
+  String get channelPlanPerYear => '/ god.';
+
+  @override
+  String get channelPlanSaveBadge => '~33 % povoljnije';
+
+  @override
+  String get channelPlanMonthly => 'Mjesečno';
+
+  @override
+  String get channelPlanPerMonth => '/ mj.';
+
+  @override
+  String get channelPlanLifetime => 'Zauvijek';
+
+  @override
+  String get channelPlanOneTime => 'jednokratno';
+
+  @override
+  String get channelPlanFounderBadge => 'Osnivač';
+
+  @override
+  String get channelBenefitSync =>
+      'Sinkronizacija favorita i napretka na svim uređajima';
+
+  @override
+  String get channelBenefitOffline =>
+      'Preuzimanje epizoda za slušanje bez interneta';
+
+  @override
+  String get channelBenefitExport =>
+      'Izvoz transkripata i sažetaka (PDF, Markdown, DOCX)';
+
+  @override
+  String get channelBenefitSearch => 'Neograničena semantička pretraga';
+
+  @override
+  String get channelBenefitEnglishFirst => 'Engleski prijevodi prikazani prvi';
+
+  @override
+  String get channelBenefitMagisterium =>
+      'Potpuna Magisterium AI analiza s izvorima';
+
+  @override
+  String get channelBenefitBadge => 'Bedž podupiratelja i ime na zidu zahvale';
+
+  @override
+  String get channelSignInToContinue => 'Prijavi se za nastavak';
+
+  @override
+  String get channelSubscriptionTiedToAccount =>
+      'Pretplata se veže uz tvoj račun kako bi radila na svim uređajima.';
+
+  @override
+  String get channelWelcomeToPlus =>
+      'Dobro došao u DOMOVINA Plus! Hvala na podršci.';
+
+  @override
+  String get channelPurchaseUnavailableDevice =>
+      'Kupnja nije dostupna na ovom uređaju.';
+
+  @override
+  String get channelPurchaseFailed => 'Kupnja nije uspjela. Pokušaj ponovno.';
+
+  @override
+  String get channelSubscriptionRestored => 'Pretplata je vraćena.';
+
+  @override
+  String get channelNoPurchaseToRestore => 'Nismo pronašli kupnju za vraćanje.';
+
+  @override
+  String get channelWebBillingSoon =>
+      'Web naplata stiže uskoro. Zasad se pretplati u mobilnoj aplikaciji.';
+
+  @override
+  String get channelSignInFirst => 'Najprije se prijavi';
+
+  @override
+  String get channelRestorePurchases => 'Vrati kupnje';
+
+  @override
+  String get channelManageSubscription => 'Upravljaj pretplatom';
+
+  @override
+  String get channelCheckoutNote =>
+      'Naplatu vodi sigurni RevenueCat / Stripe checkout. Konačna cijena prikazuje se na stranici za naplatu.';
+
+  @override
+  String get channelPricesIndicative =>
+      'Cijene su okvirne; konačna cijena prikazuje se u trgovini.';
+
+  @override
+  String get channelAlreadyPlus => 'Već imaš DOMOVINA Plus';
+
+  @override
+  String get channelThanksSupportingArchive =>
+      'Hvala na podršci hrvatskoj arhivi.';
+
+  @override
+  String get channelLegalAutoRenew =>
+      'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine. Doživotni paket jednokratna je kupnja.';
+
+  @override
+  String get channelTalkToFounder => 'Razgovaraj s osnivačem';
+
+  @override
+  String get channelCannotFetchSlots => 'Ne možemo dohvatiti termine.';
+
+  @override
+  String get channelNoSlotsThreeWeeks =>
+      'Trenutačno nema slobodnih termina u sljedeća tri tjedna.';
+
+  @override
+  String get channelPickDay => 'Odaberi dan';
+
+  @override
+  String get channelAvailableSlots => 'Slobodni termini';
+
+  @override
+  String get channelFullName => 'Ime i prezime';
+
+  @override
+  String get channelEnterName => 'Upiši svoje ime';
+
+  @override
+  String get channelEmail => 'E-mail';
+
+  @override
+  String get channelEnterEmail => 'Upiši e-mail';
+
+  @override
+  String get channelInvalidEmail => 'Neispravan e-mail';
+
+  @override
+  String get channelTopicOptional => 'Tema razgovora (neobavezno)';
+
+  @override
+  String get channelConfirmSlot => 'Potvrdi termin';
+
+  @override
+  String get channelNetworkError => 'Pogreška u mreži. Pokušaj ponovno.';
+
+  @override
+  String get channelSlotConfirmed => 'Termin potvrđen!';
+
+  @override
+  String channelDayAtTime(String day, String time) {
+    return '$day u $time';
+  }
+
+  @override
+  String channelInviteSentTo(String email) {
+    return 'Pozivnicu i Google Meet poveznicu poslali smo na $email.';
+  }
+
+  @override
+  String get channelOpenGoogleMeet => 'Otvori Google Meet';
+
+  @override
+  String get channelFounderCallTitle => 'Budi dio priče DOMOVINA';
+
+  @override
+  String get channelFounderCallSubtitle =>
+      '15 min Google Meeta · osobno s osnivačem · pomozi oblikovati platformu';
+
+  @override
+  String get channelChange => 'Promijeni';
+
+  @override
+  String episodeNotFoundDetailed(String id) {
+    return 'Epizoda „$id” nije pronađena na CDN-u.\n\nProvjerite je li identifikator ispravan i jesu li datoteke postavljene.';
+  }
+
+  @override
+  String episodeNotFound(String id) {
+    return 'Epizoda „$id” nije pronađena.';
+  }
+
+  @override
+  String episodeLoadError(String details) {
+    return 'Greška pri učitavanju:\n$details';
+  }
+
+  @override
+  String get episodeLoading => 'Učitavanje epizode';
+
+  @override
+  String episodeLinkCopied(String label) {
+    return 'Link kopiran ($label)';
+  }
+
+  @override
+  String get episodeWholeEpisode => 'cijela epizoda';
+
+  @override
+  String get episodeOpenOnYouTube => 'Otvori na YouTubeu';
+
+  @override
+  String get episodeCopyMomentLink => 'Kopiraj link na ovaj trenutak';
+
+  @override
+  String get episodeVideo => 'Video';
+
+  @override
+  String get episodeLanguageLabel => 'Jezik:';
+
+  @override
+  String get episodeContents => 'Sadržaj';
+
+  @override
+  String get episodeArticle => 'Članak';
+
+  @override
+  String get episodeAiPendingTitle => 'AI obrada još nije gotova';
+
+  @override
+  String get episodeAiPendingAudio =>
+      'Prikazujemo audio i osnovne podatke. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
+
+  @override
+  String get episodeAiPendingVideo =>
+      'Prikazujemo samo video i osnovne podatke s YouTubea. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
+
+  @override
+  String get episodeAiPendingInfo =>
+      'AI obrada još nije gotova — prikazujemo samo osnovne podatke. Sažetak, poglavlja i članak stižu čim obrada završi.';
+
+  @override
+  String get episodeListen => 'Slušaj epizodu';
+
+  @override
+  String get episodeWatchOnYouTube => 'Gledaj na YouTubeu';
+
+  @override
+  String get episodeMediaUnavailable =>
+      'Medijski zapis nije dostupan za ovu epizodu.';
+
+  @override
+  String get episodeNoChapters => 'Nema poglavlja za ovu epizodu.';
+
+  @override
+  String get episodeKeyTopics => 'Ključne teme';
+
+  @override
+  String get episodeKeyTakeaways => 'Ključne točke';
+
+  @override
+  String get episodeSpeakers => 'Govornici';
+
+  @override
+  String get episodeTabPlayer => 'Reprodukcija';
+
+  @override
+  String get episodeTabChapters => 'Poglavlja';
+
+  @override
+  String get episodeTabInfo => 'Info';
+
+  @override
+  String get episodeMetadata => 'Metapodaci';
+
+  @override
+  String get episodeMetaChannel => 'Kanal';
+
+  @override
+  String get episodeMetaModelSummary => 'Model (sažetak)';
+
+  @override
+  String get episodeMetaModelArticle => 'Model (članak)';
+
+  @override
+  String get episodeMetaModelTheology => 'Model (teologija)';
+
+  @override
+  String get episodeMetaGenerated => 'Generirano';
+
+  @override
+  String get episodeMetaLanguage => 'Jezik';
+
+  @override
+  String get episodeMetaContentType => 'Tip sadržaja';
+
+  @override
+  String get episodeMetaSentiment => 'Sentiment';
+
+  @override
+  String get episodeMetaDate => 'Datum';
+
+  @override
+  String get episodeMetaDuration => 'Trajanje';
+
+  @override
+  String homeChannelCardMeta(int count, String duration) {
+    return 'Kanal · $count ep · $duration';
+  }
+
+  @override
+  String homeChannelMagisteriumTooltip(String label) {
+    return '$label\nProcjena usklađenosti s katoličkim naukom (0–100).';
+  }
+
+  @override
+  String get homeFooterAbout => 'O projektu';
+
+  @override
+  String get homeFooterAboutText =>
+      'DOMOVINA.ai uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.';
+
+  @override
+  String get homeFooterLinks => 'Poveznice';
+
+  @override
+  String get homeFooterSuggestEpisode => 'Predloži epizodu';
+
+  @override
+  String get homeFooterEpisodeSuggestionSubject =>
+      'DOMOVINA.ai — prijedlog epizode';
+
+  @override
+  String get homeFooterContact => 'Kontakt';
+
+  @override
+  String get homeFooterPrivacy => 'Privatnost';
+
+  @override
+  String get homeFooterTerms => 'Uvjeti korištenja';
+
+  @override
+  String get homeFooterStats => 'Statistika';
+
+  @override
+  String homeFooterStatChannels(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'kanala',
+      few: 'kanala',
+      one: 'kanal',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeFooterStatEpisodes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'epizoda',
+      few: 'epizode',
+      one: 'epizoda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeFooterStatHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'sati obrađeno',
+      few: 'sata obrađena',
+      one: 'sat obrađen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get homeFooterStatAvgScore => 'prosječna Magisterium ocjena';
+
+  @override
+  String get homeFooterSoon => 'Uskoro';
+
+  @override
+  String homeFooterCopyright(int year) {
+    return '© $year DOMOVINA.ai';
+  }
+
+  @override
+  String get homeFooterMadeIn => 'Stvoreno u Hrvatskoj';
+
+  @override
+  String get homeSearchPlaceholderFull => 'Pretraži kanale i epizode';
+
+  @override
+  String get homeSearchTooltip => 'Pretraži';
+
+  @override
+  String get homeSortNewest => 'Najnoviji';
+
+  @override
+  String get homeSortMostEpisodes => 'Najviše epizoda';
+
+  @override
+  String get homeSortMagisterium => 'Magisterium ocjena';
+
+  @override
+  String get homeSortAlphabetical => 'Abecedno';
+
+  @override
+  String get homeSortCustom => 'Moj redoslijed';
+
+  @override
+  String get homeReasonShortHiQualityRecent => 'Najbolji izbor';
+
+  @override
+  String get homeReasonShortHiQuality => 'Visoka Magisterium ocjena';
+
+  @override
+  String get homeReasonShortAnyMagisterium => 'AI-obrađeno';
+
+  @override
+  String get homeReasonShortNewest => 'Najnovije';
+
+  @override
+  String homeHeroRotationTooltip(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Svaki dan biramo $count najboljih epizoda — automatski se izmjenjuju.',
+      few:
+          'Svaki dan biramo $count najbolje epizode — automatski se izmjenjuju.',
+      one: 'Svaki dan biramo najbolju epizodu — automatski se izmjenjuju.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get homeHeroRotationBadge => 'U rotaciji';
+
+  @override
+  String get homeHeroEyebrow => 'Istaknuto';
+
+  @override
+  String get homeHeroListen => 'Slušaj';
+
+  @override
+  String get homeHeroWhyButton => 'Zašto?';
+
+  @override
+  String get homeWhyDialogTitle => 'Kriteriji za isticanje';
+
+  @override
+  String get homeWhyAlgorithmHeading => 'Kako algoritam bira';
+
+  @override
+  String get homeWhyDialogExplainer =>
+      'Istaknuta se epizoda mijenja svaki dan u ponoć — algoritam izdvaja pet najboljih kandidata iz aktivnog razreda i bira jednoga prema danu u godini. Tijekom dana izbor ostaje isti (deterministički).';
+
+  @override
+  String get homeWhyGotIt => 'Razumijem';
+
+  @override
+  String get homeReasonHeadlineHiQualityRecent =>
+      'Visoka ocjena, svježa epizoda';
+
+  @override
+  String get homeReasonHeadlineHiQuality => 'Visoka Magisterium ocjena';
+
+  @override
+  String get homeReasonHeadlineAnyMagisterium => 'AI-obrađena epizoda';
+
+  @override
+  String get homeReasonHeadlineNewest => 'Najnovija epizoda';
+
+  @override
+  String get homeWhyFactChannel => 'Kanal';
+
+  @override
+  String get homeWhyFactScore => 'Magisterium ocjena';
+
+  @override
+  String get homeWhyFactPublished => 'Objavljeno';
+
+  @override
+  String get homeWhyFactAiProcessing => 'AI obrada';
+
+  @override
+  String get homeWhyFactAiYes =>
+      'Da (transkript, sažetak i Magisterium analiza)';
+
+  @override
+  String get homeWhyFactAiNo => 'Ne';
+
+  @override
+  String get homeWhyFactWeight => 'Algoritamska težina';
+
+  @override
+  String homeWhyFactWeightValue(String weight) {
+    return '$weight (ocjena × 0,6 + svježina × 0,4)';
+  }
+
+  @override
+  String get homeWhyFactPool => 'Skupina kandidata';
+
+  @override
+  String homeWhyFactPoolValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda u istom razredu',
+      few: '$count epizode u istom razredu',
+      one: '$count epizoda u istom razredu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get homeTier1Title => '1. Najbolji izbor';
+
+  @override
+  String get homeTier1Desc =>
+      'AI obrada + ocjena ≥ 70 + objavljeno u zadnjih 14 dana. Poredano po (ocjena × 0,6 + svježina × 0,4). Pet najboljih ulazi u dnevnu rotaciju.';
+
+  @override
+  String get homeTier2Title => '2. Visoka ocjena';
+
+  @override
+  String get homeTier2Desc =>
+      'AI obrada + ocjena ≥ 70 (bilo koji datum). Poredano po ocjeni.';
+
+  @override
+  String get homeTier3Title => '3. AI-obrađeno';
+
+  @override
+  String get homeTier3Desc =>
+      'Bilo koja epizoda s AI obradom. Poredano po datumu.';
+
+  @override
+  String get homeTier4Title => '4. Najnovije';
+
+  @override
+  String get homeTier4Desc => 'Pričuva — najnovija epizoda bez ikakve obrade.';
+
+  @override
+  String get homeAgoToday => 'danas';
+
+  @override
+  String get homeAgoYesterday => 'jučer';
+
+  @override
+  String homeAgoDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'prije $days dana',
+      few: 'prije $days dana',
+      one: 'prije $days dan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeAgoWeeks(int weeks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      weeks,
+      locale: localeName,
+      other: 'prije $weeks tjedana',
+      few: 'prije $weeks tjedna',
+      one: 'prije $weeks tjedan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeAgoMonths(int months) {
+    String _temp0 = intl.Intl.pluralLogic(
+      months,
+      locale: localeName,
+      other: 'prije $months mjeseci',
+      few: 'prije $months mjeseca',
+      one: 'prije $months mjesec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeAgoYears(int years) {
+    String _temp0 = intl.Intl.pluralLogic(
+      years,
+      locale: localeName,
+      other: 'prije $years godina',
+      few: 'prije $years godine',
+      one: 'prije $years godinu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get homeComingSoonSnack => 'Ova značajka uskoro stiže';
+
+  @override
+  String homeChannelsLoadError(String error) {
+    return 'Pogreška pri učitavanju kanala:\n$error';
+  }
+
+  @override
+  String get homeRailContinue => 'Nastavi slušati';
+
+  @override
+  String get homeRailLatest => 'Najnovije epizode';
+
+  @override
+  String get homeRailFreshlyArrived => 'Upravo stiglo';
+
+  @override
+  String get homeStatusProcessing => 'U obradi';
+
+  @override
+  String get homeChannelsEyebrow => 'Kanali';
+
+  @override
+  String get homeAllChannelsTitle => 'Svi kanali';
+
+  @override
+  String homeAllChannelsSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pretraži i pregledaj svih $count kanala',
+      few: 'Pretraži i pregledaj svih $count kanala',
+      one: 'Pretraži i pregledaj $count kanal',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeLoadingChannels(int loaded, int total) {
+    return 'Učitavam $loaded/$total kanala…';
+  }
+
+  @override
+  String get homeSearchBarrierLabel => 'Zatvori pretragu';
+
+  @override
+  String get homeSearchHint => 'Pretraži kanale, epizode i sadržaj…';
+
+  @override
+  String homeSearchNoResults(String query) {
+    return 'Nema rezultata za „$query”';
+  }
+
+  @override
+  String get homeSearchNoTitleMatches => 'Nema podudaranja\nu naslovima';
+
+  @override
+  String get homeSearchSearching => 'Pretražujem…';
+
+  @override
+  String get homeSearchNoContentMatches => 'Nema podudaranja\nu sadržaju';
+
+  @override
+  String get homeSearchSectionChannels => 'Kanali';
+
+  @override
+  String get homeSearchSectionEpisodes => 'Epizode';
+
+  @override
+  String get homeSearchSectionContent => 'U sadržaju';
+
+  @override
+  String get homeSearchSemanticLoading => 'Pretražujem sadržaj razgovora…';
+
+  @override
+  String get homeSearchEmptyTitle => 'Počni tipkati za pretragu';
+
+  @override
+  String get homeSearchEmptySubtitle =>
+      'Pretražuje kanale, epizode i sam sadržaj razgovora';
+
+  @override
+  String get homeSearchKeyboardHint =>
+      '↑ ↓ kroz popis · ← → između stupaca · ↵ za odabir';
+
+  @override
+  String homeSearchChannelMeta(int count, String duration) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda · $duration',
+      few: '$count epizode · $duration',
+      one: '$count epizoda · $duration',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeSearchRelevanceTooltip(String score) {
+    return 'Relevantnost (semantička sličnost): $score';
+  }
+
+  @override
+  String get homeSearchOpenById => 'Otvori po YouTube ID-u';
+
+  @override
+  String get homeSearchIdHint => 'npr. H-p2Hl6x7I0';
+
+  @override
+  String legalLastUpdated(String date) {
+    return 'Zadnje ažurirano: $date';
+  }
+
+  @override
+  String get legalContactTitle => 'Kontakt';
+
+  @override
+  String get legalPrivacyTitle => 'Politika privatnosti';
+
+  @override
+  String get legalPrivacyIntro =>
+      'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije. Ova je stranica privremeni nacrt potpune politike privatnosti.';
+
+  @override
+  String get legalPrivacyDataTitle => 'Koje podatke prikupljamo';
+
+  @override
+  String get legalPrivacyDataBody =>
+      'Ako se prijavite Google računom, prikupljamo adresu e-pošte i ime koje Google pošalje aplikaciji. Pohranjujemo i napredak slušanja epizoda te oznake favorita kako bismo ih sinkronizirali između uređaja.';
+
+  @override
+  String get legalPrivacyContactBody =>
+      'Za pitanja u vezi s privatnošću obratite se na stepanic.matija@gmail.com.';
+
+  @override
+  String get legalTermsTitle => 'Uvjeti korištenja';
+
+  @override
+  String get legalTermsIntro =>
+      'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove uvjete. Ova je stranica privremeni nacrt potpunih uvjeta korištenja.';
+
+  @override
+  String get legalTermsContentTitle => 'Sadržaj';
+
+  @override
+  String get legalTermsContentBody =>
+      'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima.';
+
+  @override
+  String get legalTermsAiTitle => 'AI analiza';
+
+  @override
+  String get legalTermsAiBody =>
+      'Magisterium AI ocjene i sažetci strojno su generirani i mogu sadržavati pogreške. Ne predstavljaju službeno stajalište Katoličke Crkve.';
+
+  @override
+  String get legalTermsContactBody =>
+      'Za upite nas kontaktirajte na stepanic.matija@gmail.com.';
+
+  @override
+  String get magisteriumScoreActivelyPromotes =>
+      'Aktivno promiče katolički nauk';
+
+  @override
+  String get magisteriumScoreMostlyAligned => 'Uglavnom usklađeno';
+
+  @override
+  String get magisteriumScorePartiallyAligned => 'Djelomično usklađeno';
+
+  @override
+  String get magisteriumScoreDeviates => 'Odstupanje od nauka';
+
+  @override
+  String get magisteriumScoreContradicts => 'Proturječi nauku';
+
+  @override
+  String get magisteriumAlignmentSubtitle =>
+      'Usklađenost s katoličkim naukom i Svetim pismom';
+
+  @override
+  String magisteriumTheologicalConcerns(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count teoloških zabrinutosti',
+      few: '$count teološke zabrinutosti',
+      one: '$count teološka zabrinutost',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get magisteriumArticleHeaderTitle =>
+      'Magisterium AI — Teološka analiza';
+
+  @override
+  String get magisteriumArticleHeaderSubtitle =>
+      'Kronološki pregled usklađenosti s katoličkim naukom';
+
+  @override
+  String magisteriumAnalysisGeneratedBy(String model, String date) {
+    return 'Analiza generirana modelom $model • $date';
+  }
+
+  @override
+  String magisteriumSourcesFromChurchDocs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count izvora iz crkvenih dokumenata',
+      few: '$count izvora iz crkvenih dokumenata',
+      one: '$count izvor iz crkvenih dokumenata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get magisteriumTabEvaluation => 'Evaluacija';
+
+  @override
+  String get magisteriumTabPrompt => 'Prompt';
+
+  @override
+  String get magisteriumFullHeaderTitle =>
+      'Magisterium AI — Teološka evaluacija';
+
+  @override
+  String magisteriumModelCitations(String model, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count citata',
+      few: '$count citata',
+      one: '$count citat',
+    );
+    return '$model  •  $_temp0';
+  }
+
+  @override
+  String get magisteriumSourcesTitle => 'Izvori';
+
+  @override
+  String magisteriumCitationsFromChurchDocs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count citata iz crkvenih dokumenata',
+      few: '$count citata iz crkvenih dokumenata',
+      one: '$count citat iz crkvenih dokumenata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get magisteriumScoreCaption => 'Magisterium ocjena';
+
+  @override
+  String get magisteriumOpenOnMagisterium => 'Otvori na Magisterium.com';
+
+  @override
+  String get mediaYouTubeHigherQuality => 'YouTube player (viša kvaliteta)';
+
+  @override
+  String get mediaSubtitlesOff => 'Isključi titlove (C)';
+
+  @override
+  String get mediaSubtitlesOn => 'Titlovi (C)';
+
+  @override
+  String get mediaBoostVolume => 'Uključi zvuk';
+
+  @override
+  String get mediaPause => 'Pauziraj';
+
+  @override
+  String get mediaPlay => 'Reproduciraj';
+
+  @override
+  String get mediaChapters => 'Poglavlja';
+
+  @override
+  String get mediaYouTubeQualityHint =>
+      'YouTube player — kvalitetu biraš u ⚙ postavkama playera';
+
+  @override
+  String get mediaNativePlayerLabel => 'DOMOVINA player';
+
+  @override
+  String get mediaLanguageSelection => 'Odabir jezika prikaza';
+
+  @override
+  String get mediaTranslationDisclaimer =>
+      'Prijevod je doslovan, bez AI halucinacija.';
+
+  @override
+  String get mediaSwitchToCroatian => 'Prebaci na hrvatski';
+
+  @override
+  String get mediaSwitchToEnglish => 'Prebaci na engleski';
+
+  @override
+  String get mediaRemoveFavorite => 'Ukloni iz favorita';
+
+  @override
+  String get mediaAddFavorite => 'Dodaj u favorite';
+
+  @override
+  String mediaResumingFrom(String time) {
+    return 'Nastavljam od $time';
+  }
+
+  @override
+  String get mediaSwitchToLightTheme => 'Prebaci na svijetlu temu';
+
+  @override
+  String get mediaSwitchToDarkTheme => 'Prebaci na tamnu temu';
+
+  @override
+  String get mediaViewSimple => 'Jednostavno';
+
+  @override
+  String get mediaViewDetailed => 'Detaljno';
+
+  @override
+  String get mediaViewSimpleTooltip =>
+      'Prebaci na jednostavni prikaz — veliki player i poglavlja, bez članka (idealno za slušanje u autu)';
+
+  @override
+  String get mediaViewDetailedTooltip =>
+      'Prebaci na detaljni prikaz — članak, Magisterium ocjena i poglavlja uz video';
+
+  @override
+  String get mediaUserFallback => 'Korisnik';
+
+  @override
+  String mediaViaProvider(String provider) {
+    return 'preko $provider';
+  }
+
+  @override
+  String get mediaVerifiedIdentity => 'Verificiran identitet';
+
+  @override
+  String get mediaMyAccount => 'Moj račun';
+
+  @override
+  String get mediaMyChannels => 'Moji kanali';
+
+  @override
+  String get mediaSwitchDevice => 'Prebaci na drugi uređaj';
+
+  @override
+  String mediaMinAmount(String amount) {
+    return 'Najmanji iznos je $amount €';
+  }
+
+  @override
+  String get mediaPaymentCreateFailed =>
+      'Stvaranje uplate nije uspjelo. Pokušaj ponovno.';
+
+  @override
+  String get mediaSupportEpisode => 'Podrži ovu epizodu';
+
+  @override
+  String get mediaSupportBlurb =>
+      'Doniraj jednim skenom — SEPA, bez naknade. Sredstva idu izravno autoru, transparentno na lancu.';
+
+  @override
+  String mediaRaisedProgress(String raised, String goal, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# podržavatelja',
+      few: '# podržavatelja',
+      one: '# podržavatelj',
+    );
+    return 'Prikupljeno $raised € od $goal € · $_temp0';
+  }
+
+  @override
+  String get mediaPreparing => 'Pripremam…';
+
+  @override
+  String mediaSupportWithAmount(String amount) {
+    return 'Podrži s $amount €';
+  }
+
+  @override
+  String get mediaScanInBankApp => 'Skeniraj u svojoj bankovnoj aplikaciji';
+
+  @override
+  String mediaAmountValue(String amount) {
+    return 'Iznos: $amount €';
+  }
+
+  @override
+  String get mediaRecipient => 'Primatelj';
+
+  @override
+  String get mediaPaymentReference => 'Opis plaćanja';
+
+  @override
+  String get mediaAwaitingPayment => 'Čekam potvrdu plaćanja…';
+
+  @override
+  String get mediaPaymentConfirmedOnChain => 'Plaćanje je potvrđeno na lancu.';
+
+  @override
+  String mediaCopiedLabel(String label) {
+    return 'Kopirano: $label';
+  }
+
+  @override
+  String get mediaOtherAmount => 'Ostalo';
+
+  @override
+  String get ownershipCrumbHome => 'Početna';
+
+  @override
+  String get ownershipCrumbOwnership => 'Vlasništvo';
+
+  @override
+  String get ownershipChannelFallback => 'Kanal';
+
+  @override
+  String get ownershipMyChannels => 'Moji kanali';
+
+  @override
+  String get ownershipLoadChannelFailed => 'Učitavanje kanala nije uspjelo.';
+
+  @override
+  String get ownershipOpenAuthFailed => 'Otvaranje autorizacije nije uspjelo.';
+
+  @override
+  String get ownershipSignInToClaim => 'Za preuzimanje kanala prvo se prijavi.';
+
+  @override
+  String get ownershipNoYoutubeId =>
+      'Ovaj kanal još nema povezan YouTube identifikator pa preuzimanje trenutno nije moguće.';
+
+  @override
+  String get ownershipChannelNotFound => 'Kanal nije pronađen.';
+
+  @override
+  String get ownershipNotOwnerTitle => 'Niste vlasnik kanala?';
+
+  @override
+  String get ownershipNotOwnerBody =>
+      'Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na DOMOVINA.ai.';
+
+  @override
+  String get ownershipInviteOwnerWhatsApp => 'Pozovite vlasnika (WhatsApp)';
+
+  @override
+  String ownershipInviteMessage(String channelTitle, String link) {
+    return 'Pozdrav! Vaš YouTube kanal „$channelTitle” nalazi se na DOMOVINA.ai. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: $link';
+  }
+
+  @override
+  String get ownershipStepConfirmTitle => 'Potvrdi vlasništvo';
+
+  @override
+  String get ownershipReverifySubtitle =>
+      'Vlasništvo je starije od 90 dana — potvrdite ga ponovno.';
+
+  @override
+  String get ownershipOwnershipVerifiedSubtitle =>
+      'Vlasništvo je potvrđeno putem YouTube računa.';
+
+  @override
+  String get ownershipSignInYoutubeSubtitle =>
+      'Prijavi se YouTube računom koji je vlasnik ovog kanala.';
+
+  @override
+  String get ownershipOwnershipNote =>
+      'Vlasništvo može preuzeti samo Google račun koji je vlasnik kanala. Uređivači i menadžeri dodani u YouTube postavkama (Channel permissions) to ne mogu — YouTube ih ne prikazuje kao vlasnike. Ako kanal pripada Brand računu, prijavite se Google računom koji njime upravlja.';
+
+  @override
+  String get ownershipReverifyAction => 'Ponovite potvrdu';
+
+  @override
+  String get ownershipLoginYoutube => 'Prijava putem YouTubea';
+
+  @override
+  String get ownershipStepVerifyIdentityTitle => 'Verificiraj identitet';
+
+  @override
+  String get ownershipIdentityVerifiedSubtitle =>
+      'Identitet je verificiran (eOsobna).';
+
+  @override
+  String get ownershipConnectEosobnaSubtitle =>
+      'Poveži eOsobnu (Certilia) — nužno prije isplate.';
+
+  @override
+  String get ownershipVerifyWithEosobna => 'Verificiraj eOsobnom';
+
+  @override
+  String get ownershipStepConnectWalletTitle => 'Poveži novčanik';
+
+  @override
+  String get ownershipWalletLockedSubtitle =>
+      'Dostupno nakon potvrde vlasništva i verifikacije identiteta.';
+
+  @override
+  String get ownershipWalletSubtitle =>
+      'Registrirajte adresu novčanika za isplatu (odredište).';
+
+  @override
+  String get ownershipManageWallet => 'Upravljajte novčanikom';
+
+  @override
+  String get ownershipCheckingOwnership => 'Provjeravamo vlasništvo…';
+
+  @override
+  String get ownershipMissingAuthData => 'Nedostaju podaci autorizacije.';
+
+  @override
+  String ownershipOwnershipConfirmedWithName(String name) {
+    return 'Vlasništvo je potvrđeno: $name';
+  }
+
+  @override
+  String ownershipRequestReceivedWithStatus(String status) {
+    return 'Zahtjev je zaprimljen (status: $status).';
+  }
+
+  @override
+  String get ownershipCallbackTitle => 'Potvrda vlasništva';
+
+  @override
+  String get ownershipRevokeDialogTitle => 'Otpustiti vlasništvo?';
+
+  @override
+  String ownershipRevokeDialogBody(String name) {
+    return 'Odričeš se vlasništva nad kanalom „$name”. Verifikacija i status isplate poništavaju se, a kanal postaje dostupan za novo preuzimanje. Možeš ga ponovno preuzeti bilo kada.';
+  }
+
+  @override
+  String get ownershipRevokeAction => 'Otpusti';
+
+  @override
+  String get ownershipRevokedSnack => 'Vlasništvo je otpušteno.';
+
+  @override
+  String get ownershipClaimedChannelsTitle => 'Preuzeti kanali';
+
+  @override
+  String get ownershipPayoutWalletsTitle => 'Novčanici za isplatu';
+
+  @override
+  String get ownershipPayoutWalletsDesc =>
+      'Odredište na koje vam se isplaćuju prikupljena sredstva — vaš kripto-novčanik (0x, Gnosis). Kad zatražite isplatu, platforma izvrši prijenos na tu adresu.\n\nOvo NIJE adresa na koju stižu donacije: svaka kampanja ima zaseban Safe na koji uplate dolaze (vidljiv svima na Gnosisscanu); isplatu pokrećete iz upravljanja kampanjom.';
+
+  @override
+  String get ownershipNoClaimsBody =>
+      'Još nemaš nijedan preuzet kanal. Otvori kanal i odaberi „Preuzmi vlasništvo” da pokreneš verifikaciju.';
+
+  @override
+  String get ownershipBrowseChannels => 'Pregledajte kanale';
+
+  @override
+  String get ownershipNeedsReverifyTag => 'treba ponovnu potvrdu';
+
+  @override
+  String get ownershipOptionsTooltip => 'Opcije';
+
+  @override
+  String get ownershipCampaignsMenu => 'Kampanje (Zid podrške)';
+
+  @override
+  String get ownershipRevokeMenu => 'Otpusti vlasništvo';
+
+  @override
+  String get ownershipWalletDestVerified => 'Odredište isplate · potvrđeno';
+
+  @override
+  String get ownershipWalletDest => 'Odredište isplate';
+
+  @override
+  String get ownershipWalletAddressLabel =>
+      'Adresa vašeg novčanika za isplatu (0x…)';
+
+  @override
+  String get ownershipWalletAddressHelper =>
+      'EVM adresa (Gnosis) na koju primate isplate.';
+
+  @override
+  String get ownershipAddWallet => 'Dodajte novčanik';
+
+  @override
+  String get ownershipCampaignFallback => 'Kampanja';
+
+  @override
+  String get ownershipTabEdit => 'Uredi';
+
+  @override
+  String get ownershipTabEpisodes => 'Epizode';
+
+  @override
+  String get ownershipTabStats => 'Statistika';
+
+  @override
+  String get ownershipTabPayout => 'Isplata';
+
+  @override
+  String get ownershipCampaignNotFound => 'Kampanja nije pronađena.';
+
+  @override
+  String get ownershipSaved => 'Spremljeno';
+
+  @override
+  String get ownershipSaveFailed => 'Spremanje nije uspjelo.';
+
+  @override
+  String get ownershipFieldTitle => 'Naslov';
+
+  @override
+  String get ownershipFieldDescription => 'Opis';
+
+  @override
+  String get ownershipFieldGoal => 'Cilj (€)';
+
+  @override
+  String get ownershipFieldGoalHint => 'prazno = bez cilja';
+
+  @override
+  String get ownershipFieldMinAmount => 'Min. iznos (€)';
+
+  @override
+  String get ownershipFieldState => 'Stanje';
+
+  @override
+  String get ownershipFieldVisibility => 'Vidljivost';
+
+  @override
+  String get ownershipEditNote =>
+      'Napomena: SEPA i on-chain podaci (IBAN, Safe adresa) te slug ne mijenjaju se ovdje.';
+
+  @override
+  String get ownershipSaveChanges => 'Spremi promjene';
+
+  @override
+  String get ownershipStateDraft => 'Skica';
+
+  @override
+  String get ownershipStateActive => 'Aktivna';
+
+  @override
+  String get ownershipStateClosed => 'Zatvorena';
+
+  @override
+  String get ownershipStateCancelled => 'Otkazana';
+
+  @override
+  String get ownershipStateFunded => 'Financirana';
+
+  @override
+  String get ownershipVisPublic => 'Javna';
+
+  @override
+  String get ownershipVisUnlisted => 'Neuvrštena';
+
+  @override
+  String get ownershipVisPrivate => 'Privatna';
+
+  @override
+  String ownershipSupportersContributions(int supporters, int contributions) {
+    String _temp0 = intl.Intl.pluralLogic(
+      supporters,
+      locale: localeName,
+      other: '$supporters podržavatelja',
+      few: '$supporters podržavatelja',
+      one: '$supporters podržavatelj',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      contributions,
+      locale: localeName,
+      other: '$contributions uplata',
+      few: '$contributions uplate',
+      one: '$contributions uplata',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get ownershipSupportWall => 'Zid podrške';
+
+  @override
+  String get ownershipNoPublicContributions => 'Još nema javnih doprinosa.';
+
+  @override
+  String get ownershipEnterValidAmount => 'Unesi ispravan iznos.';
+
+  @override
+  String get ownershipAmountExceedsAvailable => 'Iznos premašuje raspoloživo.';
+
+  @override
+  String get ownershipEnterDestination =>
+      'Unesi odredište (0x adresa ili IBAN).';
+
+  @override
+  String get ownershipPayoutRequestSent => 'Zahtjev za isplatu poslan';
+
+  @override
+  String get ownershipRequestFailedRetry =>
+      'Zahtjev nije uspio. Pokušaj ponovno.';
+
+  @override
+  String get ownershipErrKycRequired =>
+      'Prije isplate potrebna je verifikacija eOsobnom (KYC).';
+
+  @override
+  String get ownershipErrInvalidDestination =>
+      'Neispravno odredište (0x adresa ili IBAN).';
+
+  @override
+  String get ownershipErrInvalidAmount => 'Neispravan iznos.';
+
+  @override
+  String get ownershipErrNotAuthorized => 'Nemate ovlasti za ovu kampanju.';
+
+  @override
+  String get ownershipErrRequestFailed => 'Zahtjev nije uspio.';
+
+  @override
+  String get ownershipPayoutNeedsKyc =>
+      'Za isplatu je potrebna verifikacija eOsobnom (KYC). Dovršite je u odjeljku „Moji kanali”.';
+
+  @override
+  String get ownershipRequestPayout => 'Zatražite isplatu';
+
+  @override
+  String get ownershipDestinationLabel => 'Odredište (0x adresa ili IBAN)';
+
+  @override
+  String get ownershipAmountLabel => 'Iznos (€)';
+
+  @override
+  String ownershipAvailableHelper(String amount) {
+    return 'Raspoloživo: $amount €';
+  }
+
+  @override
+  String get ownershipPayoutHistory => 'Povijest isplata';
+
+  @override
+  String get ownershipNoPayouts => 'Još nema isplata.';
+
+  @override
+  String get ownershipChangeFailed => 'Promjena nije uspjela.';
+
+  @override
+  String get ownershipYieldTitle => 'Oplođujte sredstva (Aave v3 · Gnosis)';
+
+  @override
+  String get ownershipYieldSubtitle =>
+      'Dok sredstva čekaju isplatu, nose prinos (~3,5 % APY, promjenjivo). Prinos pripada kampanji. DeFi rizik — glavnica nije zajamčena.';
+
+  @override
+  String get ownershipYieldInPool => 'U oplodnji (Aave)';
+
+  @override
+  String get ownershipYieldAccrued => 'Akumulirani prinos';
+
+  @override
+  String ownershipYieldLastSync(String time) {
+    return 'zadnja sinkronizacija: $time';
+  }
+
+  @override
+  String get ownershipYieldTokenLink => 'aGnoEURe na Gnosisscanu';
+
+  @override
+  String get ownershipSummaryRaised => 'Prikupljeno';
+
+  @override
+  String get ownershipSummaryYield => 'Prinos (Aave)';
+
+  @override
+  String get ownershipSummaryPending => 'U obradi';
+
+  @override
+  String get ownershipSummaryPaid => 'Isplaćeno';
+
+  @override
+  String get ownershipSummaryAvailable => 'Raspoloživo';
+
+  @override
+  String get ownershipPayoutStateRequested => 'Zatraženo';
+
+  @override
+  String get ownershipPayoutStateApproved => 'Odobreno';
+
+  @override
+  String get ownershipPayoutStateFailed => 'Neuspjelo';
+
+  @override
+  String get ownershipCampaignsTitle => 'Kampanje';
+
+  @override
+  String get ownershipSignInToManageCampaigns =>
+      'Za upravljanje kampanjama prvo se prijavite.';
+
+  @override
+  String get ownershipNotVerifiedOwner =>
+      'Niste verificirani vlasnik ovog kanala.';
+
+  @override
+  String ownershipEpisodesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda',
+      few: '$count epizode',
+      one: '$count epizoda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ownershipNoCampaignsTitle => 'Još nema kampanja za ovaj kanal.';
+
+  @override
+  String get ownershipNoCampaignsBody =>
+      'Kampanje se kreiraju na pinka.io (gdje se generira i Safe za isplatu). Nakon kreiranja povežite kampanju s kanalom kako biste je ovdje administrirali i dodijelili epizodama.';
+
+  @override
+  String get ownershipEpisodesSaved => 'Epizode spremljene';
+
+  @override
+  String get ownershipEpisodeTaken =>
+      'Jedna od epizoda već je u drugoj kampanji.';
+
+  @override
+  String get ownershipSaveFailedRetry =>
+      'Spremanje nije uspjelo. Pokušaj ponovno.';
+
+  @override
+  String get ownershipNoEpisodesAvailable =>
+      'Nema dostupnih epizoda za ovaj kanal.';
+
+  @override
+  String ownershipSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda',
+      few: '$count epizode',
+      one: '$count epizoda',
+    );
+    return 'Odabrano: $_temp0';
+  }
+
+  @override
+  String get pinkaWallTitle => 'Zid podrške';
+
+  @override
+  String get pinkaSupport => 'Podrži';
+
+  @override
+  String get pinkaNoCampaign =>
+      'Za ovaj sadržaj još nije pokrenuta kampanja podrške.';
+
+  @override
+  String get pinkaWallEmpty =>
+      'Budi prvi koji podržava — tvoja poruka osvanut će ovdje.';
+
+  @override
+  String get pinkaRaisedLabel => 'prikupljeno';
+
+  @override
+  String pinkaOfGoal(String amount) {
+    return 'od cilja $amount €';
+  }
+
+  @override
+  String pinkaRaised(String amount) {
+    return 'Prikupljeno $amount €';
+  }
+
+  @override
+  String pinkaRaisedOfGoal(String raised, String goal) {
+    return 'Prikupljeno $raised € od $goal €';
+  }
+
+  @override
+  String pinkaSupportersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count podržavatelja',
+      few: '$count podržavatelja',
+      one: '$count podržavatelj',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pinkaPaymentsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count uplata',
+      few: '$count uplate',
+      one: '$count uplata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pinkaVerifyOnchainTitle => 'Provjeri na lancu';
+
+  @override
+  String get pinkaVerifyOnchainBody =>
+      'Uplate stižu izravno na Safe kampanje (EURe na Gnosisu). Stanje može provjeriti bilo tko — neovisno o nama.';
+
+  @override
+  String get pinkaEureBalanceOnGnosisscan => 'EURe saldo na Gnosisscanu';
+
+  @override
+  String get pinkaInflowHistory => 'Povijest priljeva (transferi)';
+
+  @override
+  String get pinkaFundsWorkingAave =>
+      'Sredstva trenutno rade na Aave v3 (Gnosis)';
+
+  @override
+  String pinkaInAaveLabel(String amount) {
+    return 'U Aaveu: $amount €';
+  }
+
+  @override
+  String pinkaAaveYieldLabel(String amount) {
+    return 'prinos: $amount €';
+  }
+
+  @override
+  String get pinkaAaveExplainer =>
+      'Zato je EURe saldo na samom Safeu nizak — sredstva su deponirana radi prinosa i povlače se natrag pri isplati.';
+
+  @override
+  String get pinkaAgnoEureBalanceOnGnosisscan =>
+      'aGnoEURe saldo na Gnosisscanu';
+
+  @override
+  String pinkaMinAmount(String amount) {
+    return 'Najmanji iznos je $amount €';
+  }
+
+  @override
+  String get pinkaPaymentCreateFailed =>
+      'Uplatu nije bilo moguće pripremiti. Pokušaj ponovno.';
+
+  @override
+  String get pinkaPaymentSentPending =>
+      'Uplata je poslana — pojavit će se na zidu čim se potvrdi na lancu.';
+
+  @override
+  String get pinkaWalletSendFailed =>
+      'Slanje iz novčanika nije uspjelo ili je otkazano.';
+
+  @override
+  String get pinkaOnchainBlurb =>
+      'Pošalji EURe (Gnosis) izravno na lanac — transparentno i bez posrednika.';
+
+  @override
+  String get pinkaSepaBlurb =>
+      'Doniraj jednim skenom — SEPA, bez naknade. Sredstva idu izravno autoru.';
+
+  @override
+  String get pinkaCustomAmountHint => 'Ostalo';
+
+  @override
+  String get pinkaNameHint => 'Ime ili nadimak (neobavezno)';
+
+  @override
+  String get pinkaMessageHint => 'Poruka uz podršku (neobavezno)';
+
+  @override
+  String get pinkaAnonymousLabel =>
+      'Doniraj anonimno (ne prikazuj me na zidu podrške)';
+
+  @override
+  String get pinkaPreparing => 'Pripremam…';
+
+  @override
+  String pinkaSupportWithAmount(String amount) {
+    return 'Podrži s $amount €';
+  }
+
+  @override
+  String get pinkaWalletConnecting => 'Povezujem novčanik…';
+
+  @override
+  String get pinkaWalletOpening => 'Otvaram novčanik…';
+
+  @override
+  String get pinkaWalletConfirming => 'Potvrđujem na lancu…';
+
+  @override
+  String pinkaPayFromDomovinaWallet(String amount) {
+    return 'Plati $amount € iz DOMOVINA novčanika';
+  }
+
+  @override
+  String get pinkaOrScanOtherWallet => 'ili skeniraj drugim novčanikom';
+
+  @override
+  String pinkaScanWithWallet(String amount) {
+    return 'Skeniraj novčanikom (MetaMask / Monerium) i pošalji $amount € u EURe.';
+  }
+
+  @override
+  String get pinkaRecipient => 'Primatelj';
+
+  @override
+  String get pinkaToken => 'Token';
+
+  @override
+  String get pinkaOnchainArrivalNote =>
+      'Donacija se pojavi na zidu podrške kad stigne na lanac (~1–2 min).';
+
+  @override
+  String get pinkaScanInBankApp => 'Skeniraj u svojoj bankovnoj aplikaciji';
+
+  @override
+  String pinkaAmountLabel(String amount) {
+    return 'Iznos: $amount €';
+  }
+
+  @override
+  String get pinkaPaymentReference => 'Opis plaćanja';
+
+  @override
+  String get pinkaAwaitingPayment => 'Čekam potvrdu plaćanja…';
+
+  @override
+  String get pinkaThanksForSupportEmoji => 'Hvala na podršci! 🙏';
+
+  @override
+  String get pinkaPaymentConfirmedOnchain => 'Plaćanje je potvrđeno na lancu.';
+
+  @override
+  String pinkaCopiedLabel(String label) {
+    return 'Kopirano: $label';
+  }
+
+  @override
+  String get pinkaLink => 'poveznica';
+
+  @override
+  String get pinkaAnonymous => 'Anoniman';
+
+  @override
+  String get sectionArticle => 'Članak';
+
+  @override
+  String sectionPlayFrom(String timestamp) {
+    return 'Pusti od $timestamp';
+  }
+
+  @override
+  String get sectionCopyLink => 'Kopiraj poveznicu';
+
+  @override
+  String sectionLinkCopied(String timestamp) {
+    return 'Poveznica kopirana: $timestamp';
+  }
+
+  @override
+  String get sectionTheologicalAssessment => 'Teološka procjena';
+
+  @override
+  String sectionSources(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count izvora',
+      few: '$count izvora',
+      one: '$count izvor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sectionSummary => 'Sažetak';
+
+  @override
+  String get sectionKeyTopics => 'Ključne teme';
+
+  @override
+  String get sectionSpeakers => 'Govornici';
+
+  @override
+  String get sectionKeyTakeaways => 'Ključni zaključci';
+
+  @override
+  String get sectionChapters => 'Poglavlja';
+
+  @override
+  String get sectionPeople => 'Osobe';
+
+  @override
+  String get sectionPlaces => 'Mjesta';
+
+  @override
+  String get sectionOrganizations => 'Organizacije';
+
+  @override
+  String get sectionContents => 'Sadržaj';
+
+  @override
+  String get sectionAgeToday => 'danas';
+
+  @override
+  String get sectionAgeYesterday => 'jučer';
+
+  @override
+  String sectionAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'prije $count dana',
+      few: 'prije $count dana',
+      one: 'prije $count dan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sectionAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'prije $count tj.',
+      few: 'prije $count tj.',
+      one: 'prije tjedan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sectionAgeMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'prije $count mj.',
+      few: 'prije $count mj.',
+      one: 'prije mjesec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sectionAgeYears(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'prije $count god.',
+      few: 'prije $count god.',
+      one: 'prije godinu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sectionPublishedOn(String date) {
+    return 'Objavljeno: $date';
+  }
+
+  @override
+  String get sectionTheologicalAnalysisSubtitle =>
+      'Teološka analiza, sekciju po sekciju';
+
+  @override
+  String get sectionNoTheologicalAnalysis =>
+      'Nema teološke analize za ovu sekciju.';
+
+  @override
+  String get sectionAudio => 'Audio';
+
+  @override
+  String get serviceUnavailable =>
+      'Usluga trenutno nije dostupna. Pokušaj ponovo malo poslije.';
+
+  @override
+  String serviceSignedInAs(String name) {
+    return 'Prijavljen si kao $name.';
+  }
+
+  @override
+  String get serviceGenericUser => 'korisnik';
+
+  @override
+  String get serviceContinueSignInBrowser => 'Nastavi prijavu u pregledniku…';
+
+  @override
+  String get serviceUnexpectedSignInError =>
+      'Došlo je do neočekivane pogreške pri prijavi. Pokušaj ponovo.';
+
+  @override
+  String get serviceAuthRateLimited =>
+      'Previše pokušaja — pričekaj minutu pa pokušaj ponovo.';
+
+  @override
+  String get serviceAuthEmailInvalid =>
+      'E-mail adresa ne izgleda ispravno. Provjeri unos.';
+
+  @override
+  String get serviceAuthOtpExpired => 'Kod je istekao — zatraži novi.';
+
+  @override
+  String get serviceAuthOtpDisabled => 'Prijava kodom trenutno nije dostupna.';
+
+  @override
+  String get serviceAuthUserBanned => 'Ovaj je račun privremeno blokiran.';
+
+  @override
+  String get serviceAuthSignupDisabled =>
+      'Otvaranje novih računa trenutno nije moguće.';
+
+  @override
+  String get serviceAuthProviderDisabled =>
+      'Ova metoda prijave trenutno nije dostupna.';
+
+  @override
+  String get serviceAuthEmailNotConfirmed =>
+      'E-mail adresa još nije potvrđena.';
+
+  @override
+  String get serviceAuthNoServerConnection =>
+      'Nema veze s poslužiteljem. Provjeri internet pa pokušaj ponovo.';
+
+  @override
+  String get serviceAuthSignInFailed => 'Prijava nije uspjela. Pokušaj ponovo.';
+
+  @override
+  String get serviceAccountNoEmailPasskey =>
+      'Tvoj račun nema e-mail adresu pa passkey trenutno nije moguć.';
+
+  @override
+  String get servicePasskeyAddedToAccount => 'Passkey je dodan na tvoj račun.';
+
+  @override
+  String get servicePasskeyCreated => 'Passkey je kreiran.';
+
+  @override
+  String get serviceEmailSendFailed =>
+      'Slanje e-maila nije uspjelo. Pokušaj ponovo.';
+
+  @override
+  String get serviceSignInSuccess => 'Prijava je uspješna.';
+
+  @override
+  String get serviceOtpInvalidOrExpired =>
+      'Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.';
+
+  @override
+  String get serviceOtpCheckFailed => 'Provjera koda nije uspjela.';
+
+  @override
+  String get serviceAccountDeleteUnavailable =>
+      'Brisanje računa kroz aplikaciju još nije dostupno. Pošalji zahtjev na privacy@italk.hr pa ćemo ga izbrisati ručno.';
+
+  @override
+  String serviceAccountDeleteFailedWithStatus(String status) {
+    return 'Brisanje računa nije uspjelo ($status). Pokušaj ponovo.';
+  }
+
+  @override
+  String get serviceAccountDeleteFailed =>
+      'Brisanje računa nije uspjelo. Pokušaj ponovo.';
+
+  @override
+  String get serviceAccountDeleted => 'Račun je trajno izbrisan.';
+
+  @override
+  String get serviceSignedOutGuest => 'Odjavljen si — nastavljaš kao gost.';
+
+  @override
+  String get serviceEmailDialogTitle => 'Tvoj e-mail';
+
+  @override
+  String get serviceEmailDialogMessage =>
+      'Poslat ćemo ti link i šesteroznamenkasti kod za prijavu.';
+
+  @override
+  String get serviceEmailDialogHint => 'ime@primjer.com';
+
+  @override
+  String get serviceEmailDialogConfirm => 'Pošalji';
+
+  @override
+  String get servicePasskeyRequestInProgress =>
+      'Passkey zahtjev je već u tijeku — pričekaj da završi ili osvježi stranicu.';
+
+  @override
+  String get servicePasskeyRegisterCancelled =>
+      'Registracija passkeyja je otkazana ili je istekla. Pokušaj ponovo.';
+
+  @override
+  String get servicePasskeyPasswordManagerBlockRegister =>
+      'Upravitelj lozinki (npr. LastPass) blokira passkey. U njegovu prozoru odaberi „Use a different passkey” i izaberi iCloud/Apple Passwords — ili isključi LastPass za ovu stranicu.';
+
+  @override
+  String get servicePasskeyAlreadyExists =>
+      'Na ovom uređaju već postoji passkey za ovaj račun.';
+
+  @override
+  String get servicePasskeyDomainNotAssociated =>
+      'Domena nije povezana s passkeyjem. Pokušaj ponovo malo poslije.';
+
+  @override
+  String get servicePasskeyDeviceUnsupported =>
+      'Ovaj uređaj ne podržava passkey.';
+
+  @override
+  String get servicePasskeyCreateFailed =>
+      'Passkey nije moguće kreirati na ovom uređaju.';
+
+  @override
+  String get servicePasskeyNoneOnDevice =>
+      'Na ovom uređaju nema spremljenog passkeyja.';
+
+  @override
+  String get servicePasskeyLoginCancelled =>
+      'Prijava passkeyjem je otkazana ili je istekla. Pokušaj ponovo.';
+
+  @override
+  String get servicePasskeyPasswordManagerBlockLogin =>
+      'Upravitelj lozinki (npr. LastPass) blokira passkey. U njegovu prozoru odaberi „Use a different passkey” — ili isključi LastPass za ovu stranicu.';
+
+  @override
+  String get servicePasskeyLoginFailed => 'Prijava passkeyjem nije uspjela.';
+
+  @override
+  String get servicePasskeyManageUnavailable =>
+      'Upravljanje passkeyjima još nije dostupno.';
+
+  @override
+  String servicePasskeyFetchFailedWithStatus(String status) {
+    return 'Dohvat passkeyja nije uspio ($status).';
+  }
+
+  @override
+  String get servicePasskeyRemoveUnavailable =>
+      'Uklanjanje passkeyja još nije dostupno.';
+
+  @override
+  String servicePasskeyRemoveFailedWithStatus(String status) {
+    return 'Uklanjanje passkeyja nije uspjelo ($status).';
+  }
+
+  @override
+  String get servicePasskeyFinishFailed =>
+      'Dovršetak prijave passkeyjem nije uspio.';
+
+  @override
+  String get serviceBackendNoSignInData =>
+      'Poslužitelj nije vratio podatke za prijavu.';
+
+  @override
+  String get servicePasskeyEmailRequired =>
+      'Unesi e-mail za otvaranje računa s passkeyjem.';
+
+  @override
+  String servicePasskeyPrepareFailedWithStatus(String status) {
+    return 'Priprema passkeyja nije uspjela ($status).';
+  }
+
+  @override
+  String get servicePasskeyNotVerified =>
+      'Passkey nije verificiran. Pokušaj ponovo.';
+
+  @override
+  String get servicePasskeyUnknownCredential =>
+      'Ovaj passkey nije prepoznat — možda je vezan uz drugi račun.';
+
+  @override
+  String get servicePasskeyAccountExists =>
+      'Račun s tom e-mail adresom već postoji — prijavi se passkeyjem ili Googleom.';
+
+  @override
+  String get serviceSessionExpired => 'Sesija je istekla. Pokušaj ponovo.';
+
+  @override
+  String servicePasskeyFinishFailedWithStatus(String status) {
+    return 'Dovršetak prijave passkeyjem nije uspio ($status).';
+  }
+
+  @override
+  String get serviceCertiliaCancelled => 'Prijava e-Osobnom je otkazana.';
+
+  @override
+  String get serviceCertiliaServerUnavailable =>
+      'Certilia trenutno nije dostupna. Pokušaj ponovo malo poslije.';
+
+  @override
+  String get serviceCertiliaFailed => 'Prijava e-Osobnom nije uspjela.';
+
+  @override
+  String get serviceCertiliaMissingToken =>
+      'Certilia nije vratila token. Pokušaj ponovo.';
+
+  @override
+  String get serviceCertiliaFinishFailed =>
+      'Dovršetak prijave e-Osobnom nije uspio.';
+
+  @override
+  String get serviceCertiliaInvalidToken =>
+      'Certilia token nije valjan. Pokušaj ponovo.';
+
+  @override
+  String get serviceCertiliaNoOib =>
+      'Certilia nije vratila OIB pa prijava nije moguća.';
+
+  @override
+  String serviceCertiliaLinkFailedWithStatus(String status) {
+    return 'Povezivanje s računom nije uspjelo ($status).';
+  }
+
+  @override
+  String get serviceHandoffCodeSixDigits =>
+      'Kod mora imati točno šest znamenki.';
+
+  @override
+  String get serviceHandoffNoSignInLink =>
+      'Poslužitelj nije vratio link za prijavu.';
+
+  @override
+  String get serviceHandoffNoActiveSession =>
+      'Ovaj uređaj nema aktivnu sesiju — osvježi stranicu pa pokušaj ponovo.';
+
+  @override
+  String get serviceHandoffInvalidOrExpiredCode =>
+      'Kod ne postoji ili je istekao.';
+
+  @override
+  String get serviceHandoffRequestError =>
+      'Pogreška u pozivu poslužitelja. Pokušaj ponovo.';
+
+  @override
+  String serviceHandoffTransferFailedWithStatus(String status) {
+    return 'Prijenos nije uspio ($status).';
+  }
+
+  @override
+  String get serviceClaimNoAuthUrl =>
+      'Poslužitelj nije vratio adresu za autorizaciju.';
+
+  @override
+  String get serviceClaimMismatchNoChannel =>
+      'Prijavljeni Google račun nije vlasnik ovog kanala. Ovaj račun ne upravlja nijednim YouTube kanalom. Prijavi se Google računom koji je vlasnik kanala (a ne samo urednik).';
+
+  @override
+  String serviceClaimMismatchWithChannel(String name) {
+    return 'Prijavljeni Google račun nije vlasnik ovog kanala. Ovim računom upravljaš kanalom: $name. Prijavi se Google računom koji je vlasnik kanala (a ne samo urednik).';
+  }
+
+  @override
+  String get serviceClaimRevokeFailed =>
+      'Odustajanje od vlasništva nije uspjelo.';
+
+  @override
+  String get serviceClaimChannelMismatch =>
+      'Prijavljeni YouTube račun nije vlasnik ovog kanala.';
+
+  @override
+  String get serviceClaimNoChannel =>
+      'Na ovom Google računu nema YouTube kanala.';
+
+  @override
+  String get serviceClaimInvalidState =>
+      'Autorizacija je istekla. Pokušaj ponovo.';
+
+  @override
+  String get serviceClaimAlreadyClaimed =>
+      'Ovaj je kanal već preuzeo drugi korisnik.';
+
+  @override
+  String get serviceClaimNotSignedIn =>
+      'Za preuzimanje kanala moraš biti prijavljen.';
+
+  @override
+  String get serviceClaimVerifyFailed =>
+      'Provjera vlasništva nije uspjela. Pokušaj ponovo.';
+
+  @override
+  String get serviceSafeNotEligible =>
+      'Još ne ispunjavaš uvjete za isplatu (vlasništvo, potvrđen identitet i svježina potvrde).';
+
+  @override
+  String get serviceSafeKycRequired =>
+      'Za isplatu najprije potvrdi identitet e-Osobnom (Certilia).';
+
+  @override
+  String get serviceSafeWalletNotRegistered =>
+      'Adresa novčanika nije registrirana na tvom računu.';
+
+  @override
+  String get serviceSafeNoSafe => 'Za ovu epizodu još ne postoji novčanik.';
+
+  @override
+  String get serviceSafeFrozen => 'Novčanik epizode trenutno je zamrznut.';
+
+  @override
+  String get serviceSafeReverifyNeeded =>
+      'Vlasništvo treba ponovo potvrditi prije isplate.';
+
+  @override
+  String get serviceSafeConnectFailed =>
+      'Povezivanje s novčanikom nije uspjelo. Pokušaj ponovo.';
+
+  @override
+  String get serviceWalletInvalidAddress =>
+      'Adresa novčanika nije ispravna (očekuje se 0x i 40 heksadekadskih znamenki).';
+
+  @override
+  String get serviceWalletNotSignedIn =>
+      'Za registraciju novčanika moraš biti prijavljen.';
+
+  @override
+  String get serviceWalletSaveFailed => 'Spremanje novčanika nije uspjelo.';
+
+  @override
+  String get serviceWalletRemoveFailed => 'Brisanje novčanika nije uspjelo.';
+
+  @override
+  String get servicePurchasePackageUnavailable =>
+      'Paket više nije dostupan. Pokušaj ponovo.';
+
+  @override
+  String get servicePurchaseNotActivated => 'Kupnja nije aktivirala pretplatu.';
+
+  @override
+  String get servicePurchaseFailed => 'Kupnja nije uspjela. Pokušaj ponovo.';
+
+  @override
+  String get serviceRestoreNoSubscription =>
+      'Nismo pronašli aktivnu pretplatu za vraćanje.';
+
+  @override
+  String get serviceRestoreFailed =>
+      'Vraćanje kupnji nije uspjelo. Pokušaj ponovo.';
+
+  @override
+  String get servicePurchaseNotAllowed =>
+      'Kupnja nije dopuštena na ovom uređaju.';
+
+  @override
+  String get servicePurchasePending =>
+      'Plaćanje je u obradi — pretplata se aktivira čim bude potvrđeno.';
+
+  @override
+  String get servicePurchaseAlreadyOwned =>
+      'Već imaš ovu pretplatu. Pokušaj „Vrati kupnje”.';
+
+  @override
+  String get servicePurchaseNetworkError =>
+      'Nema veze s trgovinom. Provjeri internet pa pokušaj ponovo.';
+
+  @override
+  String get servicePurchaseStoreProblem =>
+      'Trgovina trenutno ne odgovara. Pokušaj poslije.';
+
+  @override
+  String tvChannelLoadError(String details) {
+    return 'Učitavanje kanala nije uspjelo:\n$details';
+  }
+
+  @override
+  String get tvChannelNoEpisodes => 'U ovom kanalu još nema epizoda.';
+
+  @override
+  String tvEpisodeCountPlural(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda',
+      few: '$count epizode',
+      one: '$count epizoda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tvReaderPreparing => 'Pripremam čitanje…';
+
+  @override
+  String get tvReaderNotAiProcessed =>
+      'Ova epizoda još nije AI-obrađena.\nPrikaz za čitanje zasad nije dostupan.';
+
+  @override
+  String tvLoadError(String details) {
+    return 'Greška pri učitavanju:\n$details';
+  }
+
+  @override
+  String get tvReaderOpenClassic => 'Otvori klasični prikaz';
+
+  @override
+  String tvReaderSectionOf(int current, int total) {
+    return 'Odlomak $current / $total';
+  }
+
+  @override
+  String get tvLive => 'Uživo';
+
+  @override
+  String get tvPaused => 'Pauza';
+
+  @override
+  String get tvReaderNoCommentary => 'Za ovaj odlomak nema teološkog osvrta.';
+
+  @override
+  String get tvReaderChurchTeaching => 'Nauk Crkve za ovaj odlomak';
+
+  @override
+  String get tvReaderOpenFullCommentary => 'OK — otvori cijeli osvrt';
+
+  @override
+  String get tvReaderControlsHint =>
+      'OK = sviraj/pauza   ◀ ▶ = odlomci   ▼ = Magisterium   BACK = video';
+
+  @override
+  String get tvReaderHeadingAssessment => 'Procjena';
+
+  @override
+  String get tvReaderHeadingConcerns => 'Na što paziti';
+
+  @override
+  String get tvReaderHeadingEnrichment => 'Pojašnjenje';
+
+  @override
+  String get tvReaderHeadingCitations => 'Citati iz Magisterija';
+
+  @override
+  String get tvReaderCloseHint => 'BACK ili OK = zatvori';
+
+  @override
+  String get tvRead => 'Čitaj';
+
+  @override
+  String get tvFullscreen => 'Cijeli zaslon';
+
+  @override
+  String get tvExitFullscreen => 'Izađi iz cijelog zaslona';
+
+  @override
+  String get tvLoadingEpisode => 'Učitavam epizodu…';
+
+  @override
+  String tvEpisodeNotFound(String id) {
+    return 'Epizoda „$id” nije pronađena.';
+  }
+
+  @override
+  String get tvBufferStartingEngine => 'Pokrećem media engine…';
+
+  @override
+  String get tvBufferLoadingVideo => 'Učitavam video…';
+
+  @override
+  String get tvBufferFilling => 'Punjenje međuspremnika…';
+
+  @override
+  String get tvPlayerHint => 'OK = sviraj/pauza     ▲ = Čitaj / Cijeli zaslon';
+
+  @override
+  String get tvPlayerHintFullscreen => 'OK = sviraj/pauza     BACK / F = izađi';
+
+  @override
+  String tvChaptersWithCount(int count) {
+    return 'Poglavlja ($count)';
+  }
+
+  @override
+  String get tvSearch => 'Pretraga';
+
+  @override
+  String get tvRailContinueListening => 'Nastavi slušati';
+
+  @override
+  String get tvRailLatestEpisodes => 'Najnovije epizode';
+
+  @override
+  String tvChannelsWithCount(int count) {
+    return 'Kanali ($count)';
+  }
+
+  @override
+  String get tvSortEpisodes => 'Epizode';
+
+  @override
+  String get tvSortAlpha => 'Abeceda';
+
+  @override
+  String get tvSortShuffle => 'Nasumično';
+
+  @override
+  String tvLoadingChannels(int loaded, int total) {
+    return 'Učitavam $loaded/$total kanala…';
+  }
+
+  @override
+  String get tvTipsPreparingCatalog => 'Pripremam katalog…';
+
+  @override
+  String get tvPlay => 'Pokreni';
+
+  @override
+  String get authSectionLanguage => 'Jezik';
+}

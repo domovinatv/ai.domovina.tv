@@ -1,0 +1,4808 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_hr.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('hr'),
+  ];
+
+  /// Naziv aplikacije (brand) — ne prevodi se.
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA.ai'**
+  String get appTitle;
+
+  /// SnackBar poruka kad je dostupan noviji build aplikacije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dostupna je nova verzija'**
+  String get updateAvailable;
+
+  /// Akcijski gumb koji ponovno učitava aplikaciju na novu verziju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osvježi'**
+  String get updateRefresh;
+
+  /// Univerzalni gumb za odustajanje iz dijaloga.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odustani'**
+  String get commonCancel;
+
+  /// Zatvori dijalog ili panel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatvori'**
+  String get commonClose;
+
+  /// Povratak na prethodni ekran.
+  ///
+  /// In hr, this message translates to:
+  /// **'Natrag'**
+  String get commonBack;
+
+  /// Spremi promjene.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi'**
+  String get commonSave;
+
+  /// Potvrdna akcija.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi'**
+  String get commonConfirm;
+
+  /// Završi/zatvori nakon dovršene radnje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gotovo'**
+  String get commonDone;
+
+  /// Nastavi na sljedeći korak.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi'**
+  String get commonContinue;
+
+  /// Ponovi neuspjelu radnju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pokušaj ponovno'**
+  String get commonRetry;
+
+  /// Kopiraj u međuspremnik.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj'**
+  String get commonCopy;
+
+  /// Podijeli sadržaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podijeli'**
+  String get commonShare;
+
+  /// Potvrda obavijesti.
+  ///
+  /// In hr, this message translates to:
+  /// **'U redu'**
+  String get commonOk;
+
+  /// Pokreni prijavu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se'**
+  String get commonSignIn;
+
+  /// Odjava korisnika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjavi se'**
+  String get commonSignOut;
+
+  /// Odgodi neobaveznu radnju (npr. prijavu).
+  ///
+  /// In hr, this message translates to:
+  /// **'Možda kasnije'**
+  String get commonMaybeLater;
+
+  /// Generičko stanje učitavanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavanje…'**
+  String get commonLoading;
+
+  /// Vrati korisnika na početni ekran.
+  ///
+  /// In hr, this message translates to:
+  /// **'Natrag na početnu'**
+  String get commonGoHome;
+
+  /// Otvori izvorni dokument / poveznicu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori izvor'**
+  String get commonOpenSource;
+
+  /// Zahvala nakon donacije/podrške.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hvala na podršci'**
+  String get commonThanksForSupport;
+
+  /// Prikaz greške s detaljem/porukom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Greška: {details}'**
+  String commonErrorWithDetails(String details);
+
+  /// Naslov ekrana za upravljanje računom (/account).
+  ///
+  /// In hr, this message translates to:
+  /// **'Moj račun'**
+  String get authAccountTitle;
+
+  /// Naslov praznog stanja na ekranu računa kad korisnik nije prijavljen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Niste prijavljeni'**
+  String get authAnonTitle;
+
+  /// Podnaslov praznog stanja na ekranu računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se kako bi upravljao svojim računom, pristupnim ključevima i podacima.'**
+  String get authAnonSubtitle;
+
+  /// Gumb koji otvara paywall s informacijama o pretplati.
+  ///
+  /// In hr, this message translates to:
+  /// **'Saznaj više o DOMOVINA Plus'**
+  String get authLearnAboutPlus;
+
+  /// Oznaka sekcije: pretplata.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretplata'**
+  String get authSectionSubscription;
+
+  /// Oznaka sekcije: povezane prijavne metode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavne metode'**
+  String get authSectionSignInMethods;
+
+  /// Oznaka sekcije: pristupni ključevi (passkeyji).
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristupni ključevi'**
+  String get authSectionPasskeys;
+
+  /// Oznaka sekcije: uređaji / prijenos na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uređaji'**
+  String get authSectionDevices;
+
+  /// Oznaka sekcije: nepovratne radnje kao brisanje računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opasna zona'**
+  String get authSectionDangerZone;
+
+  /// Poruka zahvale aktivnom DOMOVINA Plus pretplatniku.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hvala što podržavaš hrvatsku arhivu.'**
+  String get authPlusThanks;
+
+  /// Gumb koji otvara detalje pretplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Detalji'**
+  String get authDetails;
+
+  /// Naslov kartice s pozivom na pretplatu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postani DOMOVINA Plus'**
+  String get authBecomePlus;
+
+  /// Popis pogodnosti DOMOVINA Plus pretplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.'**
+  String get authPlusBenefits;
+
+  /// Rezervno ime kad korisnik nema postavljeno ime ni e-mail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Korisnik'**
+  String get authUserFallback;
+
+  /// Oznaka uz profil kad je identitet potvrđen hrvatskom e-osobnom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjereni identitet (eOsobna)'**
+  String get authVerifiedIdentity;
+
+  /// Prazno stanje liste povezanih prijavnih metoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema povezanih prijavnih metoda.'**
+  String get authNoLinkedMethods;
+
+  /// Podnaslov stavke: prijava Google računom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Google račun'**
+  String get authProviderGoogle;
+
+  /// Podnaslov stavke: prijava Apple računom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Apple račun'**
+  String get authProviderApple;
+
+  /// Podnaslov stavke: prijava putem e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magic link ili kôd na e-mail'**
+  String get authProviderEmail;
+
+  /// Naziv prijavne metode / rezervni naziv pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristupni ključ'**
+  String get authProviderPasskey;
+
+  /// Podnaslov stavke: prijava hrvatskom e-osobnom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hrvatska e-osobna (Certilia / NIAS)'**
+  String get authProviderCertilia;
+
+  /// Poruka kad backend za listanje pristupnih ključeva još nije dostupan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pregled i uklanjanje pristupnih ključeva stiže uskoro. Novi ključ možeš dodati već sada.'**
+  String get authPasskeysSoon;
+
+  /// Prazno stanje liste pristupnih ključeva.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nemaš nijedan pristupni ključ. Pristupni ključ je najsigurniji i najbrži način prijave — bez lozinke, uz Face ID ili otisak prsta.'**
+  String get authNoPasskeys;
+
+  /// Greška pri dohvaćanju liste pristupnih ključeva.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dohvaćanje pristupnih ključeva nije uspjelo.'**
+  String get authPasskeyFetchFailed;
+
+  /// Opis ikone / tooltip za uklanjanje pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni pristupni ključ'**
+  String get authRemovePasskey;
+
+  /// Gumb za dodavanje novog pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj pristupni ključ na ovom uređaju'**
+  String get authAddPasskeyHere;
+
+  /// Naslov upute o pohrani pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gdje se sprema pristupni ključ?'**
+  String get authWherePasskeyStored;
+
+  /// Uputa o tome gdje se sprema pristupni ključ; {steps} su koraci ovisni o platformi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za domovina.ai (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n{steps}'**
+  String authPasskeyHintBody(String steps);
+
+  /// Koraci za odabir upravitelja pristupnih ključeva na iOS-u / macOS-u.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postavke → Aplikacije → Lozinke → Opcije lozinki → „Automatski popunjavaj\" — odaberi Lozinke (iCloud).'**
+  String get authPasskeyStepsApple;
+
+  /// Koraci za odabir upravitelja pristupnih ključeva na Androidu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postavke → Lozinke i računi → Zadana usluga za pristupne ključeve → odaberi Google Password Manager.'**
+  String get authPasskeyStepsAndroid;
+
+  /// Koraci za odabir upravitelja pristupnih ključeva na ostalim platformama.
+  ///
+  /// In hr, this message translates to:
+  /// **'U postavkama operativnog sustava odaberi sustavski upravitelj pristupnih ključeva (Apple Passwords ili Google Password Manager).'**
+  String get authPasskeyStepsGeneric;
+
+  /// Meta podatak uz pristupni ključ: datum dodavanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'dodan {date}'**
+  String authPasskeyAdded(String date);
+
+  /// Meta podatak uz pristupni ključ: datum zadnjeg korištenja.
+  ///
+  /// In hr, this message translates to:
+  /// **'zadnje korišten {date}'**
+  String authPasskeyLastUsed(String date);
+
+  /// Potvrda nakon uspješnog dodavanja pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristupni ključ je dodan.'**
+  String get authPasskeyAddedToast;
+
+  /// Poruka kad dodavanje pristupnog ključa ne uspije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristupni ključ nije dodan.'**
+  String get authPasskeyAddFailed;
+
+  /// Naslov dijaloga za potvrdu uklanjanja pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloniti pristupni ključ?'**
+  String get authRemovePasskeyTitle;
+
+  /// Tekst dijaloga za potvrdu uklanjanja pristupnog ključa; {name} je naziv ključa/uređaja.
+  ///
+  /// In hr, this message translates to:
+  /// **'„{name}\" više neće moći prijaviti ovaj račun. Ova je radnja trajna.'**
+  String authRemovePasskeyBody(String name);
+
+  /// Gumb za potvrdu uklanjanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni'**
+  String get authRemove;
+
+  /// Potvrda nakon uspješnog uklanjanja pristupnog ključa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristupni ključ je uklonjen.'**
+  String get authPasskeyRemoved;
+
+  /// Naslov / stavka za prijenos prijave na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na drugi uređaj'**
+  String get authSwitchDevice;
+
+  /// Podnaslov stavke za prijenos na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Generiraj kôd i prijavi se na TV-u ili mobitelu'**
+  String get authDevicesSubtitle;
+
+  /// Podnaslov stavke za odjavu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi kao gost — podaci ostaju spremljeni na računu'**
+  String get authSignOutSubtitle;
+
+  /// Stavka / gumb za brisanje računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izbriši račun'**
+  String get authDeleteAccount;
+
+  /// Podnaslov stavke za brisanje računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trajno briše račun, favorite, napredak i sve povezane podatke.'**
+  String get authDeleteAccountSubtitle;
+
+  /// Potvrda nakon uspješnog brisanja računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Račun je izbrisan.'**
+  String get authAccountDeleted;
+
+  /// Poruka kad brisanje računa ne uspije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Brisanje nije uspjelo.'**
+  String get authDeleteFailed;
+
+  /// Naslov dijaloga za potvrdu odjave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjaviti se?'**
+  String get authSignOutTitle;
+
+  /// Tekst dijaloga za potvrdu odjave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj napredak i favoriti ostaju spremljeni na računu — vraćaju se kad se ponovno prijaviš.'**
+  String get authSignOutBody;
+
+  /// Naslov dijaloga za upisom potvrđeno brisanje računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trajno izbrisati račun?'**
+  String get authDeleteConfirmTitle;
+
+  /// Riječ koju korisnik mora upisati da potvrdi brisanje računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'IZBRIŠI'**
+  String get authDeleteConfirmWord;
+
+  /// Tekst dijaloga za brisanje računa; {word} je riječ za potvrdu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Brišu se račun, favoriti, napredak gledanja, pristupni ključevi i sve povezane postavke. Ova je radnja nepovratna.\n\nZa potvrdu upiši {word}:'**
+  String authDeleteConfirmBody(String word);
+
+  /// Gumb za konačnu potvrdu brisanja računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trajno izbriši'**
+  String get authDeletePermanently;
+
+  /// Greška kad je magic link istekao.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica za prijavu je istekla — zatraži novu.'**
+  String get authErrLinkExpired;
+
+  /// Greška kad je račun blokiran.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj je račun privremeno blokiran.'**
+  String get authErrUserBanned;
+
+  /// Greška kad je registracija onemogućena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Registracija novih računa trenutno nije moguća.'**
+  String get authErrSignupDisabled;
+
+  /// Greška kad je prijava odbijena/otkazana.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava je odbijena ili otkazana.'**
+  String get authErrAccessDenied;
+
+  /// Greška na poslužitelju tijekom prijave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Greška na poslužitelju — pokušaj ponovo za minutu.'**
+  String get authErrServerError;
+
+  /// Generička greška prijave na callback ekranu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava nije uspjela. Pokušaj ponovo.'**
+  String get authErrGeneric;
+
+  /// Greška kad sesija ne stigne unutar vremenskog ograničenja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava traje predugo ili je prekinuta. Pokušaj ponovo.'**
+  String get authErrTimeout;
+
+  /// Potvrda uspješne prijave; {name} je ime ili e-mail korisnika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavljen si kao {name}.'**
+  String authSignedInAs(String name);
+
+  /// Poruka dok se obrađuje povratak s prijave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava u tijeku…'**
+  String get authSigningIn;
+
+  /// Naslov ekrana za prihvaćanje pozivnice.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prihvati pozivnicu'**
+  String get authInviteTitle;
+
+  /// Poruka dok se obrađuje pozivnica.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obrađujemo pozivnicu…'**
+  String get authInviteProcessing;
+
+  /// Greška pri obradi pozivnice.
+  ///
+  /// In hr, this message translates to:
+  /// **'Došlo je do pogreške ili je poveznica istekla.'**
+  String get authInviteError;
+
+  /// Toast pri prvoj epizodi: napredak se sprema lokalno.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj se napredak sprema na ovaj uređaj. Prijavi se da se sinkronizira.'**
+  String get authM1Toast;
+
+  /// Toast nakon prvog dodavanja favorita.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremljeno na ovaj uređaj. Sinkronizirati favorite na sve uređaje?'**
+  String get authM3Toast;
+
+  /// Akcija u toastu: pokreni sinkronizaciju (otvara prijavu).
+  ///
+  /// In hr, this message translates to:
+  /// **'Sinkroniziraj'**
+  String get authSync;
+
+  /// Kartica: pošalji prijavu na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji'**
+  String get authTabSend;
+
+  /// Kartica: primi prijavu s drugog uređaja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Primi'**
+  String get authTabReceive;
+
+  /// Naslov kad anonimni korisnik pokuša poslati prijavu na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prvo se prijavi'**
+  String get authHandoffSignInFirst;
+
+  /// Objašnjenje zašto je potrebna prijava prije slanja na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Da bi prenio cijeli svoj napredak na drugi uređaj, prvo se prijavi na ovom — tada i drugi uređaj može pristupiti istom računu.'**
+  String get authHandoffSignInFirstBody;
+
+  /// Naslov kartice za slanje prijave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji prijavu na drugi uređaj'**
+  String get authHandoffSendTitle;
+
+  /// Podnaslov prijavnog lista otvorenog iz kartice za slanje prijave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za slanje prijave na drugi uređaj prvo se prijavi na ovom.'**
+  String get authHandoffSendSheetSub;
+
+  /// Upute za slanje prijave na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori DOMOVINA.ai/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.'**
+  String get authHandoffSendBody;
+
+  /// Gumb za generiranje koda za prijenos.
+  ///
+  /// In hr, this message translates to:
+  /// **'Generiraj kôd'**
+  String get authGenerateCode;
+
+  /// Gumb za generiranje novog koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novi kôd'**
+  String get authNewCode;
+
+  /// Napomena o trajanju valjanosti koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijedi 5 minuta'**
+  String get authValid5Min;
+
+  /// Potvrda da je kôd kopiran u međuspremnik.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kôd je kopiran'**
+  String get authCodeCopied;
+
+  /// Naslov kartice za unos koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Imaš kôd s drugog uređaja?'**
+  String get authHandoffReceiveTitle;
+
+  /// Upute za unos koda primljenog s drugog uređaja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi šesteroznamenkasti kôd s drugog uređaja da ovdje preuzmeš njegov račun.'**
+  String get authHandoffReceiveBody;
+
+  /// Gumb za preuzimanje prijave pomoću koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzmi prijavu'**
+  String get authReceiveSignIn;
+
+  /// Validacija unosa koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kôd mora imati 6 znamenki.'**
+  String get authCode6Digits;
+
+  /// Poruka dok se otvara prijava nakon unosa koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvaramo prijavu…'**
+  String get authOpeningSignIn;
+
+  /// Upute korisniku tijekom otvaranja prijave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ako se otvori preglednik, potvrdi prijavu pa se vrati u aplikaciju.'**
+  String get authOpeningSignInBody;
+
+  /// Naslov ekrana nakon uspješnog preuzimanja prijave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uspješno!'**
+  String get authSuccess;
+
+  /// Primarni gumb za prijavu pristupnim ključem.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se pristupnim ključem'**
+  String get authSignInWithPasskey;
+
+  /// Podnaslov stavke za prijavu pristupnim ključem.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najbrže — Face ID ili otisak, bez lozinke'**
+  String get authPasskeyTileSub;
+
+  /// Oznaka (badge) na preporučenoj prijavnoj metodi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preporučeno'**
+  String get authBadgeRecommended;
+
+  /// Oznaka (badge) na zadnje korištenoj prijavnoj metodi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zadnji put'**
+  String get authBadgeLastUsed;
+
+  /// Stavka za prijavu hrvatskom e-osobnom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava eOsobnom'**
+  String get authSignInWithEid;
+
+  /// Stavka za prijavu Google računom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi s Googleom'**
+  String get authContinueWithGoogle;
+
+  /// Stavka za prijavu Apple računom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi s Apple računom'**
+  String get authContinueWithApple;
+
+  /// Stavka za prijavu putem e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-mail magic link'**
+  String get authEmailMagicLink;
+
+  /// Podnaslov stavke za prijavu putem e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošaljemo ti poveznicu i kôd za prijavu'**
+  String get authEmailTileSub;
+
+  /// Rezervni tekst (hint) za polje e-mail adrese.
+  ///
+  /// In hr, this message translates to:
+  /// **'ime@primjer.com'**
+  String get authEmailHint;
+
+  /// Gumb za slanje koda na e-mail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji kôd'**
+  String get authSendCode;
+
+  /// Gumb za ponovno slanje koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji novi kôd'**
+  String get authResendCode;
+
+  /// Gumb za ponovno slanje koda dok traje odbrojavanje; {seconds} su preostale sekunde.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji novi kôd ({seconds} s)'**
+  String authResendCodeIn(int seconds);
+
+  /// Gumb za povratak na unos e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promijeni e-mail'**
+  String get authChangeEmail;
+
+  /// Naslov koraka za unos e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava e-mailom'**
+  String get authEmailTitle;
+
+  /// Naslov koraka za unos koda iz e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjeri e-mail'**
+  String get authCheckEmail;
+
+  /// Podnaslov koraka za unos e-maila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošaljemo ti poveznicu i šesteroznamenkasti kôd za prijavu — bez lozinke.'**
+  String get authEmailEntrySub;
+
+  /// Podnaslov koraka za unos koda; {email} je adresa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslali smo poveznicu i kôd na {email}. Upiši kôd — ili otvori poveznicu u e-mailu.'**
+  String authOtpSentTo(String email);
+
+  /// Naslov prijavnog lista (kontekst: račun).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se na DOMOVINA.ai'**
+  String get authHeadlineAccount;
+
+  /// Naslov prijavnog lista (kontekst: nakon slušanja).
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi napredak na sve uređaje'**
+  String get authHeadlineMoment2;
+
+  /// Naslov prijavnog lista (kontekst: nakon dodavanja favorita).
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi favorite u svoj račun'**
+  String get authHeadlineMoment3;
+
+  /// Naslov prijavnog lista (kontekst: prijenos s drugog uređaja).
+  ///
+  /// In hr, this message translates to:
+  /// **'Završi prijavu na ovom uređaju'**
+  String get authHeadlineHandoff;
+
+  /// Podnaslov prijavnog lista (kontekst: račun).
+  ///
+  /// In hr, this message translates to:
+  /// **'Bez lozinke. Pristupni ključ ili tvoj postojeći Google ili Apple račun.'**
+  String get authSubAccount;
+
+  /// Podnaslov prijavnog lista (kontekst: nakon slušanja).
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutno tvoja pozicija u reprodukciji ostaje samo na ovom uređaju.'**
+  String get authSubMoment2;
+
+  /// Podnaslov prijavnog lista (kontekst: nakon dodavanja favorita).
+  ///
+  /// In hr, this message translates to:
+  /// **'Da ti favoriti ostanu dostupni na svim uređajima.'**
+  String get authSubMoment3;
+
+  /// Podnaslov prijavnog lista (kontekst: prijenos s drugog uređaja).
+  ///
+  /// In hr, this message translates to:
+  /// **'Kôd je provjeren — odaberi kako želiš nastaviti.'**
+  String get authSubHandoff;
+
+  /// Obavijest kad na uređaju nema pristupnog ključa za prijavu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na ovom uređaju još nema pristupnog ključa za DOMOVINA.ai. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.'**
+  String get authPasskeyMissingNotice;
+
+  /// Validacija e-mail adrese.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi ispravnu e-mail adresu.'**
+  String get authInvalidEmail;
+
+  /// Greška kad slanje koda/poveznice ne uspije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slanje nije uspjelo.'**
+  String get authSendFailed;
+
+  /// Obavijest da je novi kôd poslan; {email} je adresa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novi kôd poslan na {email}.'**
+  String authNewCodeSentTo(String email);
+
+  /// Greška kad uneseni kôd nije ispravan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kôd nije ispravan.'**
+  String get authCodeInvalid;
+
+  /// Generička greška prijave u prijavnom listu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava nije uspjela.'**
+  String get authSignInFailed;
+
+  /// Rezervni izraz za adresu kad konkretna nije poznata.
+  ///
+  /// In hr, this message translates to:
+  /// **'tvoj e-mail'**
+  String get authYourEmail;
+
+  /// Potvrda da su poveznica i kôd poslani; {email} je adresa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica i kôd poslani su na {email} — provjeri sandučić.'**
+  String authLinkCodeSent(String email);
+
+  /// Početak pravne rečenice ispod prijavnih metoda (prije poveznica).
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavkom prihvaćaš '**
+  String get authLegalPrefix;
+
+  /// Tekst poveznice na uvjete korištenja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uvjete korištenja'**
+  String get authLegalTerms;
+
+  /// Veznik između dviju pravnih poveznica.
+  ///
+  /// In hr, this message translates to:
+  /// **' i '**
+  String get authLegalAnd;
+
+  /// Tekst poveznice na pravila privatnosti.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pravila privatnosti'**
+  String get authLegalPrivacy;
+
+  /// Završetak pravne rečenice (točka).
+  ///
+  /// In hr, this message translates to:
+  /// **'.'**
+  String get authLegalSuffix;
+
+  /// Umirujuća napomena o čuvanju napretka pri prijavi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj trenutačni napredak ostaje sačuvan i sigurno se povezuje s računom.'**
+  String get authReassurance;
+
+  /// Razdjelnik „ili" između prijavnih metoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'ili'**
+  String get authOr;
+
+  /// Tooltip on the channel screen action that lets a verified owner claim a YouTube channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzmi vlasništvo'**
+  String get channelClaimOwnership;
+
+  /// Placeholder label on episode cards that have no thumbnail because the source is audio-only.
+  ///
+  /// In hr, this message translates to:
+  /// **'Samo zvuk'**
+  String get channelAudioOnly;
+
+  /// Badge shown on a video card when the AI pipeline has not yet produced an article for it.
+  ///
+  /// In hr, this message translates to:
+  /// **'U obradi'**
+  String get channelInProcessing;
+
+  /// Title of the full-page screen listing every channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi kanali'**
+  String get channelAllChannels;
+
+  /// Hint text in the channel-list search field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraži kanale…'**
+  String get channelSearchChannelsHint;
+
+  /// Tooltip on the button that clears the search field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Očisti'**
+  String get channelClear;
+
+  /// Count of channels currently shown in the list.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} kanal} few{{count} kanala} other{{count} kanala}}'**
+  String channelChannelsCount(int count);
+
+  /// Count of search results in the channel list filter.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} rezultat} few{{count} rezultata} other{{count} rezultata}}'**
+  String channelResultsCount(int count);
+
+  /// Empty state when the channel list is empty.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema kanala.'**
+  String get channelNoChannels;
+
+  /// Empty state when a channel search returns nothing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema kanala za „{query}”.'**
+  String channelNoChannelsForQuery(String query);
+
+  /// Tooltip on the channel sort menu button.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sortiraj kanale'**
+  String get channelSortChannels;
+
+  /// Menu item that randomly reorders the channel list.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promiješaj'**
+  String get channelShuffle;
+
+  /// Title of the keyword (Meilisearch) search screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraga po riječima'**
+  String get channelKeywordSearch;
+
+  /// Hint text in the keyword search field; the search tolerates typos.
+  ///
+  /// In hr, this message translates to:
+  /// **'Traži po riječima (otporno na pogreške)…'**
+  String get channelKeywordSearchHint;
+
+  /// Developer-facing banner shown when the local Meilisearch service is unreachable.
+  ///
+  /// In hr, this message translates to:
+  /// **'Meilisearch nije dostupan na {url}. Pokreni Docker kontejner i napuni indeks (repozitorij domovina-rag).'**
+  String channelSearchUnavailable(String url);
+
+  /// Status shown while a search request is in flight.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tražim…'**
+  String get channelSearching;
+
+  /// Search stats line: how many results were found and how long the query took.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} rezultat u {ms} ms · otporno na pogreške} few{{count} rezultata u {ms} ms · otporno na pogreške} other{{count} rezultata u {ms} ms · otporno na pogreške}}'**
+  String channelResultsInMs(int count, int ms);
+
+  /// Prompt shown before the user has typed anything in keyword search.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upiši pojam za trenutnu pretragu epizoda.'**
+  String get channelSearchPrompt;
+
+  /// Channel filter chip that clears the channel filter (shows results from all channels).
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi'**
+  String get channelAll;
+
+  /// Empty state on the keyword search results area before a query is entered.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraga po riječima — počni tipkati.'**
+  String get channelSearchStart;
+
+  /// Empty state when a keyword search returns no episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema rezultata za „{query}”.'**
+  String channelNoResultsForQuery(String query);
+
+  /// Paywall headline for the generic upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postani DOMOVINA Plus'**
+  String get channelTriggerGenericHeadline;
+
+  /// Paywall subtitle for the generic upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podrži hrvatsku arhivu i otključaj sve pogodnosti.'**
+  String get channelTriggerGenericSubtitle;
+
+  /// Paywall headline for the sync upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sinkronizacija na svim uređajima'**
+  String get channelTriggerSyncHeadline;
+
+  /// Paywall subtitle for the sync upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoji favoriti i mjesto na kojem si stao prate te s telefona na web i natrag.'**
+  String get channelTriggerSyncSubtitle;
+
+  /// Paywall headline for the offline upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slušaj i bez interneta'**
+  String get channelTriggerOfflineHeadline;
+
+  /// Paywall subtitle for the offline upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzmi epizode i poslušaj ih u avionu, autu ili na putu.'**
+  String get channelTriggerOfflineSubtitle;
+
+  /// Paywall headline for the export upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izvezi transkripte i sažetke'**
+  String get channelTriggerExportHeadline;
+
+  /// Paywall subtitle for the export upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi transkript, sažetak ili članak kao PDF, Markdown ili DOCX.'**
+  String get channelTriggerExportSubtitle;
+
+  /// Paywall headline for the search upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraga bez ograničenja'**
+  String get channelTriggerSearchHeadline;
+
+  /// Paywall subtitle for the search upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neograničena semantička pretraga i više rezultata.'**
+  String get channelTriggerSearchSubtitle;
+
+  /// Paywall headline for the English-first upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Engleski uvijek prvi'**
+  String get channelTriggerEnFirstHeadline;
+
+  /// Paywall subtitle for the English-first upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Engleski prijevodi prikazuju se odmah, prije općeg objavljivanja.'**
+  String get channelTriggerEnFirstSubtitle;
+
+  /// Paywall headline for the Magisterium upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potpuna Magisterium AI analiza'**
+  String get channelTriggerMagisteriumHeadline;
+
+  /// Paywall subtitle for the Magisterium upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Detaljan Magisterium AI pregled uz uvid u izvore i upite.'**
+  String get channelTriggerMagisteriumSubtitle;
+
+  /// Paywall headline for the supporter-badge upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postani podupiratelj arhive'**
+  String get channelTriggerBadgeHeadline;
+
+  /// Paywall subtitle for the supporter-badge upgrade trigger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Bedž podupiratelja i tvoje ime na zidu zahvale.'**
+  String get channelTriggerBadgeSubtitle;
+
+  /// Name of the annual subscription plan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Godišnje'**
+  String get channelPlanAnnual;
+
+  /// Billing cadence suffix for the annual plan.
+  ///
+  /// In hr, this message translates to:
+  /// **'/ god.'**
+  String get channelPlanPerYear;
+
+  /// Badge on the annual plan highlighting savings versus monthly.
+  ///
+  /// In hr, this message translates to:
+  /// **'~33 % povoljnije'**
+  String get channelPlanSaveBadge;
+
+  /// Name of the monthly subscription plan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesečno'**
+  String get channelPlanMonthly;
+
+  /// Billing cadence suffix for the monthly plan.
+  ///
+  /// In hr, this message translates to:
+  /// **'/ mj.'**
+  String get channelPlanPerMonth;
+
+  /// Name of the one-time lifetime plan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zauvijek'**
+  String get channelPlanLifetime;
+
+  /// Billing cadence label for the lifetime plan (single payment).
+  ///
+  /// In hr, this message translates to:
+  /// **'jednokratno'**
+  String get channelPlanOneTime;
+
+  /// Badge on the lifetime plan marking early supporters.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osnivač'**
+  String get channelPlanFounderBadge;
+
+  /// Plus benefit: cross-device sync.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sinkronizacija favorita i napretka na svim uređajima'**
+  String get channelBenefitSync;
+
+  /// Plus benefit: offline downloads.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzimanje epizoda za slušanje bez interneta'**
+  String get channelBenefitOffline;
+
+  /// Plus benefit: export.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izvoz transkripata i sažetaka (PDF, Markdown, DOCX)'**
+  String get channelBenefitExport;
+
+  /// Plus benefit: unlimited semantic search.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neograničena semantička pretraga'**
+  String get channelBenefitSearch;
+
+  /// Plus benefit: English translations prioritised.
+  ///
+  /// In hr, this message translates to:
+  /// **'Engleski prijevodi prikazani prvi'**
+  String get channelBenefitEnglishFirst;
+
+  /// Plus benefit: full Magisterium AI analysis.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potpuna Magisterium AI analiza s izvorima'**
+  String get channelBenefitMagisterium;
+
+  /// Plus benefit: supporter badge and recognition.
+  ///
+  /// In hr, this message translates to:
+  /// **'Bedž podupiratelja i ime na zidu zahvale'**
+  String get channelBenefitBadge;
+
+  /// Auth sheet headline shown before a purchase so it attaches to an account.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se za nastavak'**
+  String get channelSignInToContinue;
+
+  /// Explains why an account is required before subscribing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretplata se veže uz tvoj račun kako bi radila na svim uređajima.'**
+  String get channelSubscriptionTiedToAccount;
+
+  /// Snackbar confirming a successful purchase.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dobro došao u DOMOVINA Plus! Hvala na podršci.'**
+  String get channelWelcomeToPlus;
+
+  /// Snackbar when in-app purchase is unsupported on the current platform.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kupnja nije dostupna na ovom uređaju.'**
+  String get channelPurchaseUnavailableDevice;
+
+  /// Fallback snackbar when a purchase fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kupnja nije uspjela. Pokušaj ponovno.'**
+  String get channelPurchaseFailed;
+
+  /// Snackbar after a successful restore.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretplata je vraćena.'**
+  String get channelSubscriptionRestored;
+
+  /// Fallback snackbar when restore finds nothing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nismo pronašli kupnju za vraćanje.'**
+  String get channelNoPurchaseToRestore;
+
+  /// Snackbar when web checkout is not yet configured.
+  ///
+  /// In hr, this message translates to:
+  /// **'Web naplata stiže uskoro. Zasad se pretplati u mobilnoj aplikaciji.'**
+  String get channelWebBillingSoon;
+
+  /// Title of the card prompting an anonymous user to sign in before subscribing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najprije se prijavi'**
+  String get channelSignInFirst;
+
+  /// Button that restores previous purchases (store requirement).
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrati kupnje'**
+  String get channelRestorePurchases;
+
+  /// Button/link to the store subscription management page.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravljaj pretplatom'**
+  String get channelManageSubscription;
+
+  /// Note under indicative web pricing explaining where the authoritative price appears.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naplatu vodi sigurni RevenueCat / Stripe checkout. Konačna cijena prikazuje se na stranici za naplatu.'**
+  String get channelCheckoutNote;
+
+  /// Note under indicative pricing on platforms where the store sets the price.
+  ///
+  /// In hr, this message translates to:
+  /// **'Cijene su okvirne; konačna cijena prikazuje se u trgovini.'**
+  String get channelPricesIndicative;
+
+  /// Heading shown to a user who is already subscribed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Već imaš DOMOVINA Plus'**
+  String get channelAlreadyPlus;
+
+  /// Message of thanks shown to existing subscribers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hvala na podršci hrvatskoj arhivi.'**
+  String get channelThanksSupportingArchive;
+
+  /// Legal fine print about auto-renewal and cancellation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine. Doživotni paket jednokratna je kupnja.'**
+  String get channelLegalAutoRenew;
+
+  /// Tooltip on the floating founder-booking button.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razgovaraj s osnivačem'**
+  String get channelTalkToFounder;
+
+  /// Error fallback when fetching booking slots fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ne možemo dohvatiti termine.'**
+  String get channelCannotFetchSlots;
+
+  /// Empty state when no booking slots are available.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutačno nema slobodnih termina u sljedeća tri tjedna.'**
+  String get channelNoSlotsThreeWeeks;
+
+  /// Section label above the day selector in the booking flow.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odaberi dan'**
+  String get channelPickDay;
+
+  /// Section label above the time-slot selector in the booking flow.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slobodni termini'**
+  String get channelAvailableSlots;
+
+  /// Label for the name field in the booking form.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ime i prezime'**
+  String get channelFullName;
+
+  /// Validation message when the name field is empty.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upiši svoje ime'**
+  String get channelEnterName;
+
+  /// Label for the email field in the booking form.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-mail'**
+  String get channelEmail;
+
+  /// Validation message when the email field is empty.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upiši e-mail'**
+  String get channelEnterEmail;
+
+  /// Validation message when the email format is invalid.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neispravan e-mail'**
+  String get channelInvalidEmail;
+
+  /// Label for the optional notes field in the booking form.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tema razgovora (neobavezno)'**
+  String get channelTopicOptional;
+
+  /// Button that submits the booking.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi termin'**
+  String get channelConfirmSlot;
+
+  /// Error when a booking submission fails due to network issues.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pogreška u mreži. Pokušaj ponovno.'**
+  String get channelNetworkError;
+
+  /// Success heading after a booking is confirmed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Termin potvrđen!'**
+  String get channelSlotConfirmed;
+
+  /// Formats a confirmed booking as day and time. NOTE: {day} is rendered by an in-file Croatian date helper (weekday/month names not yet localized).
+  ///
+  /// In hr, this message translates to:
+  /// **'{day} u {time}'**
+  String channelDayAtTime(String day, String time);
+
+  /// Confirmation that the meeting invite was emailed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pozivnicu i Google Meet poveznicu poslali smo na {email}.'**
+  String channelInviteSentTo(String email);
+
+  /// Button that opens the Google Meet link for the booked call.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori Google Meet'**
+  String get channelOpenGoogleMeet;
+
+  /// Header title of the founder-booking sheet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Budi dio priče DOMOVINA'**
+  String get channelFounderCallTitle;
+
+  /// Header subtitle of the founder-booking sheet.
+  ///
+  /// In hr, this message translates to:
+  /// **'15 min Google Meeta · osobno s osnivačem · pomozi oblikovati platformu'**
+  String get channelFounderCallSubtitle;
+
+  /// Button to change the previously selected booking slot.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promijeni'**
+  String get channelChange;
+
+  /// Detailed not-found error on the full episode screen, shows the requested episode ID and a hint to verify the upload.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda „{id}” nije pronađena na CDN-u.\n\nProvjerite je li identifikator ispravan i jesu li datoteke postavljene.'**
+  String episodeNotFoundDetailed(String id);
+
+  /// Short not-found error on the simple episode screen, shows the requested episode ID.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda „{id}” nije pronađena.'**
+  String episodeNotFound(String id);
+
+  /// Generic load error shown when episode data fails to load; details holds the raw error text.
+  ///
+  /// In hr, this message translates to:
+  /// **'Greška pri učitavanju:\n{details}'**
+  String episodeLoadError(String details);
+
+  /// Title shown on the episode loading screen while assets are being fetched.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavanje epizode'**
+  String get episodeLoading;
+
+  /// Snackbar confirming a share link was copied; label is either the timestamp or the whole-episode label.
+  ///
+  /// In hr, this message translates to:
+  /// **'Link kopiran ({label})'**
+  String episodeLinkCopied(String label);
+
+  /// Lowercase label used inside the link-copied snackbar when sharing the episode without a specific timestamp.
+  ///
+  /// In hr, this message translates to:
+  /// **'cijela epizoda'**
+  String get episodeWholeEpisode;
+
+  /// Tooltip for the action that opens the episode's YouTube source.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori na YouTubeu'**
+  String get episodeOpenOnYouTube;
+
+  /// Tooltip for the share action that copies a link to the current playback position.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj link na ovaj trenutak'**
+  String get episodeCopyMomentLink;
+
+  /// Label/tooltip for the action that opens the video player panel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Video'**
+  String get episodeVideo;
+
+  /// Inline label preceding the HR/EN language toggle chip on the episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jezik:'**
+  String get episodeLanguageLabel;
+
+  /// Bottom-bar label that opens the table of contents drawer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sadržaj'**
+  String get episodeContents;
+
+  /// Bottom-bar tab label for the AI-written article view.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članak'**
+  String get episodeArticle;
+
+  /// Title of the banner shown when an episode is published but the AI pipeline hasn't produced enriched content yet.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI obrada još nije gotova'**
+  String get episodeAiPendingTitle;
+
+  /// AI-pending banner body for audio-only episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikazujemo audio i osnovne podatke. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
+  String get episodeAiPendingAudio;
+
+  /// AI-pending banner body for video episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikazujemo samo video i osnovne podatke s YouTubea. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
+  String get episodeAiPendingVideo;
+
+  /// Compact AI-pending banner shown in the Info tab of the simple episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI obrada još nije gotova — prikazujemo samo osnovne podatke. Sažetak, poglavlja i članak stižu čim obrada završi.'**
+  String get episodeAiPendingInfo;
+
+  /// Button that (re)opens the audio player for audio-only episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slušaj epizodu'**
+  String get episodeListen;
+
+  /// Button that opens the episode on YouTube when the video isn't on the CDN yet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gledaj na YouTubeu'**
+  String get episodeWatchOnYouTube;
+
+  /// Placeholder shown in the player area when no playable media exists for the episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Medijski zapis nije dostupan za ovu epizodu.'**
+  String get episodeMediaUnavailable;
+
+  /// Empty-state shown in the Chapters tab when the episode has no chapters.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema poglavlja za ovu epizodu.'**
+  String get episodeNoChapters;
+
+  /// Section title for the list of key topics in the episode Info tab.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ključne teme'**
+  String get episodeKeyTopics;
+
+  /// Section title for the list of key takeaways in the episode Info tab.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ključne točke'**
+  String get episodeKeyTakeaways;
+
+  /// Section title for the list of speakers in the episode Info tab.
+  ///
+  /// In hr, this message translates to:
+  /// **'Govornici'**
+  String get episodeSpeakers;
+
+  /// Navigation tab label for the player view on the simple episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reprodukcija'**
+  String get episodeTabPlayer;
+
+  /// Navigation tab label for the chapters list on the simple episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poglavlja'**
+  String get episodeTabChapters;
+
+  /// Navigation tab label for the episode info view on the simple episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Info'**
+  String get episodeTabInfo;
+
+  /// Heading of the technical metadata footer at the bottom of the full episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Metapodaci'**
+  String get episodeMetadata;
+
+  /// Metadata row label for the channel name.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanal'**
+  String get episodeMetaChannel;
+
+  /// Metadata row label for the AI model used to generate the summary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Model (sažetak)'**
+  String get episodeMetaModelSummary;
+
+  /// Metadata row label for the AI model used to generate the article.
+  ///
+  /// In hr, this message translates to:
+  /// **'Model (članak)'**
+  String get episodeMetaModelArticle;
+
+  /// Metadata row label for the AI model used for the theological analysis.
+  ///
+  /// In hr, this message translates to:
+  /// **'Model (teologija)'**
+  String get episodeMetaModelTheology;
+
+  /// Metadata row label for the date the AI content was generated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Generirano'**
+  String get episodeMetaGenerated;
+
+  /// Metadata row label for the content language.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jezik'**
+  String get episodeMetaLanguage;
+
+  /// Metadata row label for the classified content type.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tip sadržaja'**
+  String get episodeMetaContentType;
+
+  /// Metadata row label for the detected sentiment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sentiment'**
+  String get episodeMetaSentiment;
+
+  /// Metadata row label for the episode publication date in the Info tab.
+  ///
+  /// In hr, this message translates to:
+  /// **'Datum'**
+  String get episodeMetaDate;
+
+  /// Metadata row label for the episode duration in the Info tab.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trajanje'**
+  String get episodeMetaDuration;
+
+  /// Channel card eyebrow meta line (uppercased in UI): label, episode count, total duration.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanal · {count} ep · {duration}'**
+  String homeChannelCardMeta(int count, String duration);
+
+  /// Tooltip on the channel card Magisterium pill; {label} is the score band name.
+  ///
+  /// In hr, this message translates to:
+  /// **'{label}\nProcjena usklađenosti s katoličkim naukom (0–100).'**
+  String homeChannelMagisteriumTooltip(String label);
+
+  /// Footer column header: about the project.
+  ///
+  /// In hr, this message translates to:
+  /// **'O projektu'**
+  String get homeFooterAbout;
+
+  /// Footer about-the-project paragraph.
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA.ai uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.'**
+  String get homeFooterAboutText;
+
+  /// Footer column header: links.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznice'**
+  String get homeFooterLinks;
+
+  /// Footer link that opens an email to suggest an episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Predloži epizodu'**
+  String get homeFooterSuggestEpisode;
+
+  /// Subject line of the suggest-an-episode email.
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA.ai — prijedlog epizode'**
+  String get homeFooterEpisodeSuggestionSubject;
+
+  /// Footer link: contact.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kontakt'**
+  String get homeFooterContact;
+
+  /// Footer link: privacy policy.
+  ///
+  /// In hr, this message translates to:
+  /// **'Privatnost'**
+  String get homeFooterPrivacy;
+
+  /// Footer link: terms of use.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uvjeti korištenja'**
+  String get homeFooterTerms;
+
+  /// Footer column header: aggregate statistics.
+  ///
+  /// In hr, this message translates to:
+  /// **'Statistika'**
+  String get homeFooterStats;
+
+  /// Footer stat label for number of channels (number shown separately).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{kanal} few{kanala} other{kanala}}'**
+  String homeFooterStatChannels(int count);
+
+  /// Footer stat label for number of episodes (number shown separately).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{epizoda} few{epizode} other{epizoda}}'**
+  String homeFooterStatEpisodes(int count);
+
+  /// Footer stat label for hours processed (number shown separately).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{sat obrađen} few{sata obrađena} other{sati obrađeno}}'**
+  String homeFooterStatHours(int count);
+
+  /// Footer stat label for the average Magisterium score.
+  ///
+  /// In hr, this message translates to:
+  /// **'prosječna Magisterium ocjena'**
+  String get homeFooterStatAvgScore;
+
+  /// Small badge on a footer link that is not yet available.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uskoro'**
+  String get homeFooterSoon;
+
+  /// Footer copyright line.
+  ///
+  /// In hr, this message translates to:
+  /// **'© {year} DOMOVINA.ai'**
+  String homeFooterCopyright(int year);
+
+  /// Footer tagline.
+  ///
+  /// In hr, this message translates to:
+  /// **'Stvoreno u Hrvatskoj'**
+  String get homeFooterMadeIn;
+
+  /// Placeholder text inside the app bar search trigger (desktop).
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraži kanale i epizode'**
+  String get homeSearchPlaceholderFull;
+
+  /// Tooltip on the mobile search icon button.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraži'**
+  String get homeSearchTooltip;
+
+  /// Channel sort option: by most recent episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najnoviji'**
+  String get homeSortNewest;
+
+  /// Channel sort option: by episode count.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najviše epizoda'**
+  String get homeSortMostEpisodes;
+
+  /// Channel sort option: by average Magisterium score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magisterium ocjena'**
+  String get homeSortMagisterium;
+
+  /// Channel sort option: alphabetical by name.
+  ///
+  /// In hr, this message translates to:
+  /// **'Abecedno'**
+  String get homeSortAlphabetical;
+
+  /// Channel sort option: the user's saved custom order.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moj redoslijed'**
+  String get homeSortCustom;
+
+  /// Short label for the featured reason: high-quality and recent.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najbolji izbor'**
+  String get homeReasonShortHiQualityRecent;
+
+  /// Short label for the featured reason: high Magisterium score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Visoka Magisterium ocjena'**
+  String get homeReasonShortHiQuality;
+
+  /// Short label for the featured reason: any AI-processed episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI-obrađeno'**
+  String get homeReasonShortAnyMagisterium;
+
+  /// Short label for the featured reason: newest episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najnovije'**
+  String get homeReasonShortNewest;
+
+  /// Tooltip on the hero carousel rotation badge.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Svaki dan biramo najbolju epizodu — automatski se izmjenjuju.} few{Svaki dan biramo {count} najbolje epizode — automatski se izmjenjuju.} other{Svaki dan biramo {count} najboljih epizoda — automatski se izmjenjuju.}}'**
+  String homeHeroRotationTooltip(int count);
+
+  /// Hero carousel badge (uppercased in UI) signalling daily rotation.
+  ///
+  /// In hr, this message translates to:
+  /// **'U rotaciji'**
+  String get homeHeroRotationBadge;
+
+  /// Hero section eyebrow label (uppercased in UI).
+  ///
+  /// In hr, this message translates to:
+  /// **'Istaknuto'**
+  String get homeHeroEyebrow;
+
+  /// Hero play button label.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slušaj'**
+  String get homeHeroListen;
+
+  /// Small hero button (uppercased in UI) opening the featured-criteria dialog.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zašto?'**
+  String get homeHeroWhyButton;
+
+  /// Title (uppercased in UI) of the dialog explaining why an episode is featured.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kriteriji za isticanje'**
+  String get homeWhyDialogTitle;
+
+  /// Heading (uppercased in UI) above the algorithm tier list.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kako algoritam bira'**
+  String get homeWhyAlgorithmHeading;
+
+  /// Closing paragraph of the featured-criteria dialog.
+  ///
+  /// In hr, this message translates to:
+  /// **'Istaknuta se epizoda mijenja svaki dan u ponoć — algoritam izdvaja pet najboljih kandidata iz aktivnog razreda i bira jednoga prema danu u godini. Tijekom dana izbor ostaje isti (deterministički).'**
+  String get homeWhyDialogExplainer;
+
+  /// Dismiss action of the featured-criteria dialog.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razumijem'**
+  String get homeWhyGotIt;
+
+  /// Dialog headline for the featured reason: high-quality and recent.
+  ///
+  /// In hr, this message translates to:
+  /// **'Visoka ocjena, svježa epizoda'**
+  String get homeReasonHeadlineHiQualityRecent;
+
+  /// Dialog headline for the featured reason: high Magisterium score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Visoka Magisterium ocjena'**
+  String get homeReasonHeadlineHiQuality;
+
+  /// Dialog headline for the featured reason: any AI-processed episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI-obrađena epizoda'**
+  String get homeReasonHeadlineAnyMagisterium;
+
+  /// Dialog headline for the featured reason: newest episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najnovija epizoda'**
+  String get homeReasonHeadlineNewest;
+
+  /// Facts table label: channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanal'**
+  String get homeWhyFactChannel;
+
+  /// Facts table label: Magisterium score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magisterium ocjena'**
+  String get homeWhyFactScore;
+
+  /// Facts table label: publication date.
+  ///
+  /// In hr, this message translates to:
+  /// **'Objavljeno'**
+  String get homeWhyFactPublished;
+
+  /// Facts table label: whether the episode has AI processing.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI obrada'**
+  String get homeWhyFactAiProcessing;
+
+  /// Facts table value when the episode is AI-processed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Da (transkript, sažetak i Magisterium analiza)'**
+  String get homeWhyFactAiYes;
+
+  /// Facts table value when the episode is not AI-processed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ne'**
+  String get homeWhyFactAiNo;
+
+  /// Facts table label: the computed algorithm weight.
+  ///
+  /// In hr, this message translates to:
+  /// **'Algoritamska težina'**
+  String get homeWhyFactWeight;
+
+  /// Facts table value showing the weight and its formula.
+  ///
+  /// In hr, this message translates to:
+  /// **'{weight} (ocjena × 0,6 + svježina × 0,4)'**
+  String homeWhyFactWeightValue(String weight);
+
+  /// Facts table label: the candidate pool size.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skupina kandidata'**
+  String get homeWhyFactPool;
+
+  /// Facts table value: number of candidate episodes in the same tier.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} epizoda u istom razredu} few{{count} epizode u istom razredu} other{{count} epizoda u istom razredu}}'**
+  String homeWhyFactPoolValue(int count);
+
+  /// Algorithm tier 1 title.
+  ///
+  /// In hr, this message translates to:
+  /// **'1. Najbolji izbor'**
+  String get homeTier1Title;
+
+  /// Algorithm tier 1 description.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI obrada + ocjena ≥ 70 + objavljeno u zadnjih 14 dana. Poredano po (ocjena × 0,6 + svježina × 0,4). Pet najboljih ulazi u dnevnu rotaciju.'**
+  String get homeTier1Desc;
+
+  /// Algorithm tier 2 title.
+  ///
+  /// In hr, this message translates to:
+  /// **'2. Visoka ocjena'**
+  String get homeTier2Title;
+
+  /// Algorithm tier 2 description.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI obrada + ocjena ≥ 70 (bilo koji datum). Poredano po ocjeni.'**
+  String get homeTier2Desc;
+
+  /// Algorithm tier 3 title.
+  ///
+  /// In hr, this message translates to:
+  /// **'3. AI-obrađeno'**
+  String get homeTier3Title;
+
+  /// Algorithm tier 3 description.
+  ///
+  /// In hr, this message translates to:
+  /// **'Bilo koja epizoda s AI obradom. Poredano po datumu.'**
+  String get homeTier3Desc;
+
+  /// Algorithm tier 4 title.
+  ///
+  /// In hr, this message translates to:
+  /// **'4. Najnovije'**
+  String get homeTier4Title;
+
+  /// Algorithm tier 4 description.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pričuva — najnovija epizoda bez ikakve obrade.'**
+  String get homeTier4Desc;
+
+  /// Relative time: published today.
+  ///
+  /// In hr, this message translates to:
+  /// **'danas'**
+  String get homeAgoToday;
+
+  /// Relative time: published yesterday.
+  ///
+  /// In hr, this message translates to:
+  /// **'jučer'**
+  String get homeAgoYesterday;
+
+  /// Relative time: N days ago.
+  ///
+  /// In hr, this message translates to:
+  /// **'{days, plural, one{prije {days} dan} few{prije {days} dana} other{prije {days} dana}}'**
+  String homeAgoDays(int days);
+
+  /// Relative time: N weeks ago.
+  ///
+  /// In hr, this message translates to:
+  /// **'{weeks, plural, one{prije {weeks} tjedan} few{prije {weeks} tjedna} other{prije {weeks} tjedana}}'**
+  String homeAgoWeeks(int weeks);
+
+  /// Relative time: N months ago.
+  ///
+  /// In hr, this message translates to:
+  /// **'{months, plural, one{prije {months} mjesec} few{prije {months} mjeseca} other{prije {months} mjeseci}}'**
+  String homeAgoMonths(int months);
+
+  /// Relative time: N years ago.
+  ///
+  /// In hr, this message translates to:
+  /// **'{years, plural, one{prije {years} godinu} few{prije {years} godine} other{prije {years} godina}}'**
+  String homeAgoYears(int years);
+
+  /// Snackbar shown when tapping a feature that is not yet available.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ova značajka uskoro stiže'**
+  String get homeComingSoonSnack;
+
+  /// Error message shown when the channel index fails to load.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pogreška pri učitavanju kanala:\n{error}'**
+  String homeChannelsLoadError(String error);
+
+  /// Eyebrow title (uppercased in UI) of the continue-listening rail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi slušati'**
+  String get homeRailContinue;
+
+  /// Eyebrow title (uppercased in UI) of the latest-episodes rail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najnovije epizode'**
+  String get homeRailLatest;
+
+  /// Eyebrow title (uppercased in UI) of the freshly-arrived rail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravo stiglo'**
+  String get homeRailFreshlyArrived;
+
+  /// Badge on freshly-arrived episode cards that are still being processed.
+  ///
+  /// In hr, this message translates to:
+  /// **'U obradi'**
+  String get homeStatusProcessing;
+
+  /// Eyebrow (uppercased in UI) above the all-channels call-to-action.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanali'**
+  String get homeChannelsEyebrow;
+
+  /// Title of the all-channels call-to-action card.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi kanali'**
+  String get homeAllChannelsTitle;
+
+  /// Subtitle of the all-channels call-to-action card.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Pretraži i pregledaj {count} kanal} few{Pretraži i pregledaj svih {count} kanala} other{Pretraži i pregledaj svih {count} kanala}}'**
+  String homeAllChannelsSubtitle(int count);
+
+  /// Progress label shown while channel details are loading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavam {loaded}/{total} kanala…'**
+  String homeLoadingChannels(int loaded, int total);
+
+  /// Accessibility label for the search overlay barrier.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatvori pretragu'**
+  String get homeSearchBarrierLabel;
+
+  /// Hint text in the search overlay input.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraži kanale, epizode i sadržaj…'**
+  String get homeSearchHint;
+
+  /// Shown when a search returns nothing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema rezultata za „{query}”'**
+  String homeSearchNoResults(String query);
+
+  /// Empty state for the title-search column (newline is a layout break).
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema podudaranja\nu naslovima'**
+  String get homeSearchNoTitleMatches;
+
+  /// Loading state shown in the content-search column.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretražujem…'**
+  String get homeSearchSearching;
+
+  /// Empty state for the content-search column (newline is a layout break).
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema podudaranja\nu sadržaju'**
+  String get homeSearchNoContentMatches;
+
+  /// Search results section header (uppercased in UI): channels.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanali'**
+  String get homeSearchSectionChannels;
+
+  /// Search results section header (uppercased in UI): episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode'**
+  String get homeSearchSectionEpisodes;
+
+  /// Search results section header (uppercased in UI): semantic content matches.
+  ///
+  /// In hr, this message translates to:
+  /// **'U sadržaju'**
+  String get homeSearchSectionContent;
+
+  /// Loading row in the semantic search column.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretražujem sadržaj razgovora…'**
+  String get homeSearchSemanticLoading;
+
+  /// Search overlay empty-state title.
+  ///
+  /// In hr, this message translates to:
+  /// **'Počni tipkati za pretragu'**
+  String get homeSearchEmptyTitle;
+
+  /// Search overlay empty-state subtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretražuje kanale, epizode i sam sadržaj razgovora'**
+  String get homeSearchEmptySubtitle;
+
+  /// Keyboard navigation hint in the search overlay empty state.
+  ///
+  /// In hr, this message translates to:
+  /// **'↑ ↓ kroz popis · ← → između stupaca · ↵ za odabir'**
+  String get homeSearchKeyboardHint;
+
+  /// Channel result row meta: episode count and total duration.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} epizoda · {duration}} few{{count} epizode · {duration}} other{{count} epizoda · {duration}}}'**
+  String homeSearchChannelMeta(int count, String duration);
+
+  /// Tooltip on the semantic relevance meter; {score} is a 0–1 value.
+  ///
+  /// In hr, this message translates to:
+  /// **'Relevantnost (semantička sličnost): {score}'**
+  String homeSearchRelevanceTooltip(String score);
+
+  /// Expander label to open an episode by entering its YouTube ID.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori po YouTube ID-u'**
+  String get homeSearchOpenById;
+
+  /// Hint text in the YouTube ID input field.
+  ///
+  /// In hr, this message translates to:
+  /// **'npr. H-p2Hl6x7I0'**
+  String get homeSearchIdHint;
+
+  /// Label preceding the date a legal document was last revised; shown on the privacy and terms pages.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zadnje ažurirano: {date}'**
+  String legalLastUpdated(String date);
+
+  /// Section heading for the contact details on legal pages (privacy and terms).
+  ///
+  /// In hr, this message translates to:
+  /// **'Kontakt'**
+  String get legalContactTitle;
+
+  /// Page title and app bar title for the privacy policy screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Politika privatnosti'**
+  String get legalPrivacyTitle;
+
+  /// Introductory paragraph on the privacy policy screen describing the app and noting the page is a placeholder.
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije. Ova je stranica privremeni nacrt potpune politike privatnosti.'**
+  String get legalPrivacyIntro;
+
+  /// Section heading on the privacy policy screen for the data-collection paragraph.
+  ///
+  /// In hr, this message translates to:
+  /// **'Koje podatke prikupljamo'**
+  String get legalPrivacyDataTitle;
+
+  /// Body paragraph on the privacy policy screen explaining which user data is collected and why.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ako se prijavite Google računom, prikupljamo adresu e-pošte i ime koje Google pošalje aplikaciji. Pohranjujemo i napredak slušanja epizoda te oznake favorita kako bismo ih sinkronizirali između uređaja.'**
+  String get legalPrivacyDataBody;
+
+  /// Contact paragraph on the privacy policy screen with the support email address.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za pitanja u vezi s privatnošću obratite se na stepanic.matija@gmail.com.'**
+  String get legalPrivacyContactBody;
+
+  /// Page title and app bar title for the terms of use screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uvjeti korištenja'**
+  String get legalTermsTitle;
+
+  /// Introductory paragraph on the terms of use screen stating that using the app constitutes acceptance.
+  ///
+  /// In hr, this message translates to:
+  /// **'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove uvjete. Ova je stranica privremeni nacrt potpunih uvjeta korištenja.'**
+  String get legalTermsIntro;
+
+  /// Section heading on the terms of use screen for the content/copyright paragraph.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sadržaj'**
+  String get legalTermsContentTitle;
+
+  /// Body paragraph on the terms of use screen describing the educational use of content and copyright ownership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima.'**
+  String get legalTermsContentBody;
+
+  /// Section heading on the terms of use screen for the AI-generated content disclaimer.
+  ///
+  /// In hr, this message translates to:
+  /// **'AI analiza'**
+  String get legalTermsAiTitle;
+
+  /// Disclaimer paragraph on the terms of use screen noting that AI-generated analysis may contain errors and is not an official Church position.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magisterium AI ocjene i sažetci strojno su generirani i mogu sadržavati pogreške. Ne predstavljaju službeno stajalište Katoličke Crkve.'**
+  String get legalTermsAiBody;
+
+  /// Contact paragraph on the terms of use screen with the support email address.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za upite nas kontaktirajte na stepanic.matija@gmail.com.'**
+  String get legalTermsContactBody;
+
+  /// Magisterium score band label (>=90): the analysed content actively promotes Catholic teaching. Fallback when CDN scoreInterpretation is absent.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivno promiče katolički nauk'**
+  String get magisteriumScoreActivelyPromotes;
+
+  /// Magisterium score band label (>=70): mostly aligned with Catholic teaching. Fallback for CDN scoreInterpretation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uglavnom usklađeno'**
+  String get magisteriumScoreMostlyAligned;
+
+  /// Magisterium score band label (>=50): partially aligned with Catholic teaching. Fallback for CDN scoreInterpretation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Djelomično usklađeno'**
+  String get magisteriumScorePartiallyAligned;
+
+  /// Magisterium score band label (>=30): departs from Catholic teaching. Fallback for CDN scoreInterpretation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odstupanje od nauka'**
+  String get magisteriumScoreDeviates;
+
+  /// Magisterium score band label (lowest band): contradicts Catholic teaching. Fallback for CDN scoreInterpretation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Proturječi nauku'**
+  String get magisteriumScoreContradicts;
+
+  /// Subtitle under the overall Magisterium score card, describing what the score measures.
+  ///
+  /// In hr, this message translates to:
+  /// **'Usklađenost s katoličkim naukom i Svetim pismom'**
+  String get magisteriumAlignmentSubtitle;
+
+  /// Count of theological concerns flagged across the Magisterium analysis.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} teološka zabrinutost} few{{count} teološke zabrinutosti} other{{count} teoloških zabrinutosti}}'**
+  String magisteriumTheologicalConcerns(int count);
+
+  /// Header title of the chronological Magisterium AI article section. 'Magisterium AI' is a brand name kept literal.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magisterium AI — Teološka analiza'**
+  String get magisteriumArticleHeaderTitle;
+
+  /// Header subtitle of the chronological Magisterium AI article section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kronološki pregled usklađenosti s katoličkim naukom'**
+  String get magisteriumArticleHeaderSubtitle;
+
+  /// Footer attribution showing which model generated the analysis and on what date.
+  ///
+  /// In hr, this message translates to:
+  /// **'Analiza generirana modelom {model} • {date}'**
+  String magisteriumAnalysisGeneratedBy(String model, String date);
+
+  /// Toggle/label for the number of Church-document sources (citations) cited in a Magisterium section or full evaluation.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} izvor iz crkvenih dokumenata} few{{count} izvora iz crkvenih dokumenata} other{{count} izvora iz crkvenih dokumenata}}'**
+  String magisteriumSourcesFromChurchDocs(int count);
+
+  /// Tab label for the full Magisterium AI evaluation view.
+  ///
+  /// In hr, this message translates to:
+  /// **'Evaluacija'**
+  String get magisteriumTabEvaluation;
+
+  /// Tab label for the raw Magisterium prompt (developer/transparency view). 'Prompt' is a technical term kept in both languages.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prompt'**
+  String get magisteriumTabPrompt;
+
+  /// Gradient header title of the full Magisterium AI evaluation panel. 'Magisterium AI' is a brand name kept literal.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magisterium AI — Teološka evaluacija'**
+  String get magisteriumFullHeaderTitle;
+
+  /// Subtitle in the full evaluation header: model name followed by the citation count.
+  ///
+  /// In hr, this message translates to:
+  /// **'{model}  •  {count, plural, one{{count} citat} few{{count} citata} other{{count} citata}}'**
+  String magisteriumModelCitations(String model, int count);
+
+  /// Section title above the list of cited sources in the Magisterium v2 view.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izvori'**
+  String get magisteriumSourcesTitle;
+
+  /// Subtitle under the Sources title: number of citations from Church documents (v2 view).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} citat iz crkvenih dokumenata} few{{count} citata iz crkvenih dokumenata} other{{count} citata iz crkvenih dokumenata}}'**
+  String magisteriumCitationsFromChurchDocs(int count);
+
+  /// Small caption above the interpretation text on the Magisterium score badge. 'Magisterium' is a brand name kept literal.
+  ///
+  /// In hr, this message translates to:
+  /// **'Magisterium ocjena'**
+  String get magisteriumScoreCaption;
+
+  /// Button in the citation detail sheet that opens the source on Magisterium.com. 'Magisterium.com' kept literal.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori na Magisterium.com'**
+  String get magisteriumOpenOnMagisterium;
+
+  /// Tooltip na gumbu koji prebacuje s ugrađenog playera na YouTube embed radi veće kvalitete.
+  ///
+  /// In hr, this message translates to:
+  /// **'YouTube player (viša kvaliteta)'**
+  String get mediaYouTubeHigherQuality;
+
+  /// Tooltip na CC gumbu kad su titlovi uključeni; (C) je tipkovnička kratica.
+  ///
+  /// In hr, this message translates to:
+  /// **'Isključi titlove (C)'**
+  String get mediaSubtitlesOff;
+
+  /// Tooltip na CC gumbu kad su titlovi isključeni; (C) je tipkovnička kratica.
+  ///
+  /// In hr, this message translates to:
+  /// **'Titlovi (C)'**
+  String get mediaSubtitlesOn;
+
+  /// CTA preko videa pri muted autoplayu (browser politika) — klik uključuje zvuk.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uključi zvuk'**
+  String get mediaBoostVolume;
+
+  /// Tooltip na središnjem play/pause gumbu kad video svira.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pauziraj'**
+  String get mediaPause;
+
+  /// Tooltip na središnjem play/pause gumbu kad je video pauziran.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reproduciraj'**
+  String get mediaPlay;
+
+  /// Naslov liste poglavlja u video panelu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poglavlja'**
+  String get mediaChapters;
+
+  /// Napomena u traci dok je aktivan YouTube embed mod.
+  ///
+  /// In hr, this message translates to:
+  /// **'YouTube player — kvalitetu biraš u ⚙ postavkama playera'**
+  String get mediaYouTubeQualityHint;
+
+  /// Oznaka gumba za povratak s YouTube embeda na ugrađeni DOMOVINA player (DOMOVINA = brend).
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA player'**
+  String get mediaNativePlayerLabel;
+
+  /// Semantics oznaka za HR/EN prekidač jezika prikaza sadržaja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odabir jezika prikaza'**
+  String get mediaLanguageSelection;
+
+  /// Tooltip uz prekidač jezika koji jamči vjernost prijevoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijevod je doslovan, bez AI halucinacija.'**
+  String get mediaTranslationDisclaimer;
+
+  /// Semantics oznaka HR segmenta u prekidaču jezika prikaza.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na hrvatski'**
+  String get mediaSwitchToCroatian;
+
+  /// Semantics oznaka EN segmenta u prekidaču jezika prikaza.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na engleski'**
+  String get mediaSwitchToEnglish;
+
+  /// Tooltip na gumbu srca kad je epizoda već u favoritima.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni iz favorita'**
+  String get mediaRemoveFavorite;
+
+  /// Tooltip na gumbu srca kad epizoda nije u favoritima.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj u favorite'**
+  String get mediaAddFavorite;
+
+  /// Kratka obavijest kad player automatski nastavi reprodukciju s posljednje pozicije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavljam od {time}'**
+  String mediaResumingFrom(String time);
+
+  /// Tooltip na gumbu za temu kad je trenutno aktivna tamna tema.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na svijetlu temu'**
+  String get mediaSwitchToLightTheme;
+
+  /// Tooltip na gumbu za temu kad je trenutno aktivna svijetla tema.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na tamnu temu'**
+  String get mediaSwitchToDarkTheme;
+
+  /// Oznaka gumba koji vodi na jednostavni prikaz epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jednostavno'**
+  String get mediaViewSimple;
+
+  /// Oznaka gumba koji vodi na detaljni prikaz epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Detaljno'**
+  String get mediaViewDetailed;
+
+  /// Tooltip koji objašnjava jednostavni prikaz epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na jednostavni prikaz — veliki player i poglavlja, bez članka (idealno za slušanje u autu)'**
+  String get mediaViewSimpleTooltip;
+
+  /// Tooltip koji objašnjava detaljni prikaz epizode (Magisterium = brend).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na detaljni prikaz — članak, Magisterium ocjena i poglavlja uz video'**
+  String get mediaViewDetailedTooltip;
+
+  /// Zamjensko ime u izborniku računa kad korisnik nema postavljeno ime.
+  ///
+  /// In hr, this message translates to:
+  /// **'Korisnik'**
+  String get mediaUserFallback;
+
+  /// Pokazuje kojim je pružateljem (Google, Apple…) korisnik prijavljen.
+  ///
+  /// In hr, this message translates to:
+  /// **'preko {provider}'**
+  String mediaViaProvider(String provider);
+
+  /// Oznaka uz korisnika koji je prošao eID/KYC verifikaciju identiteta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Verificiran identitet'**
+  String get mediaVerifiedIdentity;
+
+  /// Stavka izbornika računa koja vodi na ekran računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moj račun'**
+  String get mediaMyAccount;
+
+  /// Stavka izbornika računa koja vodi na korisnikove kanale.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moji kanali'**
+  String get mediaMyChannels;
+
+  /// Stavka izbornika računa za predaju sesije na drugi uređaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na drugi uređaj'**
+  String get mediaSwitchDevice;
+
+  /// Greška pri donaciji kad je upisani iznos manji od minimuma kampanje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najmanji iznos je {amount} €'**
+  String mediaMinAmount(String amount);
+
+  /// Greška kad kreiranje donacije ne uspije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Stvaranje uplate nije uspjelo. Pokušaj ponovno.'**
+  String get mediaPaymentCreateFailed;
+
+  /// Naslov panela za donaciju autoru epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podrži ovu epizodu'**
+  String get mediaSupportEpisode;
+
+  /// Opis ispod naslova panela za donaciju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Doniraj jednim skenom — SEPA, bez naknade. Sredstva idu izravno autoru, transparentno na lancu.'**
+  String get mediaSupportBlurb;
+
+  /// Napredak kampanje: prikupljeni iznos, cilj i broj podržavatelja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikupljeno {raised} € od {goal} € · {count, plural, one{# podržavatelj} few{# podržavatelja} other{# podržavatelja}}'**
+  String mediaRaisedProgress(String raised, String goal, int count);
+
+  /// Oznaka gumba za donaciju dok se uplata priprema.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pripremam…'**
+  String get mediaPreparing;
+
+  /// Oznaka gumba za potvrdu donacije s odabranim iznosom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podrži s {amount} €'**
+  String mediaSupportWithAmount(String amount);
+
+  /// Naslov koraka s EPC QR kodom za SEPA uplatu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skeniraj u svojoj bankovnoj aplikaciji'**
+  String get mediaScanInBankApp;
+
+  /// Prikaz iznosa uplate iznad QR koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iznos: {amount} €'**
+  String mediaAmountValue(String amount);
+
+  /// Oznaka retka s imenom primatelja uplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Primatelj'**
+  String get mediaRecipient;
+
+  /// Oznaka retka s opisom/pozivom na broj uplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis plaćanja'**
+  String get mediaPaymentReference;
+
+  /// Poruka dok sustav čeka potvrdu uplate na lancu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Čekam potvrdu plaćanja…'**
+  String get mediaAwaitingPayment;
+
+  /// Potvrda nakon uspješne donacije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaćanje je potvrđeno na lancu.'**
+  String get mediaPaymentConfirmedOnChain;
+
+  /// SnackBar potvrda nakon kopiranja vrijednosti (IBAN, primatelj, opis).
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopirano: {label}'**
+  String mediaCopiedLabel(String label);
+
+  /// Hint u polju za upis prilagođenog iznosa donacije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ostalo'**
+  String get mediaOtherAmount;
+
+  /// Breadcrumb label for the home screen in the ownership flow.
+  ///
+  /// In hr, this message translates to:
+  /// **'Početna'**
+  String get ownershipCrumbHome;
+
+  /// Breadcrumb label for the channel ownership step (current, non-tappable).
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo'**
+  String get ownershipCrumbOwnership;
+
+  /// Fallback label when a channel name is not yet loaded.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanal'**
+  String get ownershipChannelFallback;
+
+  /// Title/label for the user's list of claimed channels.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moji kanali'**
+  String get ownershipMyChannels;
+
+  /// Error shown when the channel data fails to load.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavanje kanala nije uspjelo.'**
+  String get ownershipLoadChannelFailed;
+
+  /// Error shown when launching the YouTube OAuth URL fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvaranje autorizacije nije uspjelo.'**
+  String get ownershipOpenAuthFailed;
+
+  /// Prompt shown to signed-out users on the claim screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za preuzimanje kanala prvo se prijavi.'**
+  String get ownershipSignInToClaim;
+
+  /// Shown when a channel has no resolvable YouTube channel ID.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj kanal još nema povezan YouTube identifikator pa preuzimanje trenutno nije moguće.'**
+  String get ownershipNoYoutubeId;
+
+  /// Shown when the requested channel can't be found.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanal nije pronađen.'**
+  String get ownershipChannelNotFound;
+
+  /// Title of the card inviting a non-owner to notify the real owner.
+  ///
+  /// In hr, this message translates to:
+  /// **'Niste vlasnik kanala?'**
+  String get ownershipNotOwnerTitle;
+
+  /// Body text encouraging the user to invite the channel owner.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na DOMOVINA.ai.'**
+  String get ownershipNotOwnerBody;
+
+  /// Button that opens WhatsApp with a prefilled invitation message.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pozovite vlasnika (WhatsApp)'**
+  String get ownershipInviteOwnerWhatsApp;
+
+  /// Prefilled WhatsApp message inviting a channel owner to claim their channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pozdrav! Vaš YouTube kanal „{channelTitle}” nalazi se na DOMOVINA.ai. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: {link}'**
+  String ownershipInviteMessage(String channelTitle, String link);
+
+  /// Title of the ownership verification step.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi vlasništvo'**
+  String get ownershipStepConfirmTitle;
+
+  /// Subtitle prompting re-verification of an expired ownership claim.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo je starije od 90 dana — potvrdite ga ponovno.'**
+  String get ownershipReverifySubtitle;
+
+  /// Subtitle shown when ownership is verified.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo je potvrđeno putem YouTube računa.'**
+  String get ownershipOwnershipVerifiedSubtitle;
+
+  /// Subtitle instructing the user to sign in with the owning YouTube account.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se YouTube računom koji je vlasnik ovog kanala.'**
+  String get ownershipSignInYoutubeSubtitle;
+
+  /// Explanatory note about who is eligible to claim ownership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo može preuzeti samo Google račun koji je vlasnik kanala. Uređivači i menadžeri dodani u YouTube postavkama (Channel permissions) to ne mogu — YouTube ih ne prikazuje kao vlasnike. Ako kanal pripada Brand računu, prijavite se Google računom koji njime upravlja.'**
+  String get ownershipOwnershipNote;
+
+  /// Button/menu action to re-verify ownership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ponovite potvrdu'**
+  String get ownershipReverifyAction;
+
+  /// Button to start YouTube OAuth ownership verification.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava putem YouTubea'**
+  String get ownershipLoginYoutube;
+
+  /// Title of the identity (KYC) verification step.
+  ///
+  /// In hr, this message translates to:
+  /// **'Verificiraj identitet'**
+  String get ownershipStepVerifyIdentityTitle;
+
+  /// Subtitle shown when identity is verified.
+  ///
+  /// In hr, this message translates to:
+  /// **'Identitet je verificiran (eOsobna).'**
+  String get ownershipIdentityVerifiedSubtitle;
+
+  /// Subtitle prompting eID identity verification.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveži eOsobnu (Certilia) — nužno prije isplate.'**
+  String get ownershipConnectEosobnaSubtitle;
+
+  /// Button to start eID (Certilia) identity verification.
+  ///
+  /// In hr, this message translates to:
+  /// **'Verificiraj eOsobnom'**
+  String get ownershipVerifyWithEosobna;
+
+  /// Title of the payout wallet step.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveži novčanik'**
+  String get ownershipStepConnectWalletTitle;
+
+  /// Subtitle shown when the wallet step is locked.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dostupno nakon potvrde vlasništva i verifikacije identiteta.'**
+  String get ownershipWalletLockedSubtitle;
+
+  /// Subtitle prompting wallet registration.
+  ///
+  /// In hr, this message translates to:
+  /// **'Registrirajte adresu novčanika za isplatu (odredište).'**
+  String get ownershipWalletSubtitle;
+
+  /// Button to open the wallet management screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravljajte novčanikom'**
+  String get ownershipManageWallet;
+
+  /// Progress message shown while completing the OAuth claim.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjeravamo vlasništvo…'**
+  String get ownershipCheckingOwnership;
+
+  /// Error shown when the OAuth callback is missing code or state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nedostaju podaci autorizacije.'**
+  String get ownershipMissingAuthData;
+
+  /// Success message naming the verified channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo je potvrđeno: {name}'**
+  String ownershipOwnershipConfirmedWithName(String name);
+
+  /// Message shown when a claim is received but not yet verified.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zahtjev je zaprimljen (status: {status}).'**
+  String ownershipRequestReceivedWithStatus(String status);
+
+  /// App bar title of the OAuth callback screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrda vlasništva'**
+  String get ownershipCallbackTitle;
+
+  /// Title of the dialog confirming ownership revocation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otpustiti vlasništvo?'**
+  String get ownershipRevokeDialogTitle;
+
+  /// Body of the ownership revocation confirmation dialog.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odričeš se vlasništva nad kanalom „{name}”. Verifikacija i status isplate poništavaju se, a kanal postaje dostupan za novo preuzimanje. Možeš ga ponovno preuzeti bilo kada.'**
+  String ownershipRevokeDialogBody(String name);
+
+  /// Confirm button to revoke ownership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otpusti'**
+  String get ownershipRevokeAction;
+
+  /// Snackbar confirming ownership was revoked.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo je otpušteno.'**
+  String get ownershipRevokedSnack;
+
+  /// Section title listing channels the user has claimed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzeti kanali'**
+  String get ownershipClaimedChannelsTitle;
+
+  /// Section title for payout wallets.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novčanici za isplatu'**
+  String get ownershipPayoutWalletsTitle;
+
+  /// Explanatory text describing what payout wallets are.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odredište na koje vam se isplaćuju prikupljena sredstva — vaš kripto-novčanik (0x, Gnosis). Kad zatražite isplatu, platforma izvrši prijenos na tu adresu.\n\nOvo NIJE adresa na koju stižu donacije: svaka kampanja ima zaseban Safe na koji uplate dolaze (vidljiv svima na Gnosisscanu); isplatu pokrećete iz upravljanja kampanjom.'**
+  String get ownershipPayoutWalletsDesc;
+
+  /// Empty-state text when the user has no claimed channels.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nemaš nijedan preuzet kanal. Otvori kanal i odaberi „Preuzmi vlasništvo” da pokreneš verifikaciju.'**
+  String get ownershipNoClaimsBody;
+
+  /// Button to browse channels from the empty claims state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pregledajte kanale'**
+  String get ownershipBrowseChannels;
+
+  /// Suffix tag shown on a claim that requires re-verification.
+  ///
+  /// In hr, this message translates to:
+  /// **'treba ponovnu potvrdu'**
+  String get ownershipNeedsReverifyTag;
+
+  /// Tooltip for the per-channel options menu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opcije'**
+  String get ownershipOptionsTooltip;
+
+  /// Menu item opening the channel's Pinka support campaigns.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kampanje (Zid podrške)'**
+  String get ownershipCampaignsMenu;
+
+  /// Menu item to revoke ownership of a channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otpusti vlasništvo'**
+  String get ownershipRevokeMenu;
+
+  /// Subtitle for a verified payout wallet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odredište isplate · potvrđeno'**
+  String get ownershipWalletDestVerified;
+
+  /// Subtitle for a payout wallet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odredište isplate'**
+  String get ownershipWalletDest;
+
+  /// Text field label for entering a payout wallet address.
+  ///
+  /// In hr, this message translates to:
+  /// **'Adresa vašeg novčanika za isplatu (0x…)'**
+  String get ownershipWalletAddressLabel;
+
+  /// Helper text for the payout wallet address field.
+  ///
+  /// In hr, this message translates to:
+  /// **'EVM adresa (Gnosis) na koju primate isplate.'**
+  String get ownershipWalletAddressHelper;
+
+  /// Button to register a new payout wallet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodajte novčanik'**
+  String get ownershipAddWallet;
+
+  /// Fallback app bar title while a campaign loads.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kampanja'**
+  String get ownershipCampaignFallback;
+
+  /// Campaign management tab: edit campaign details.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uredi'**
+  String get ownershipTabEdit;
+
+  /// Campaign management tab: assign episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode'**
+  String get ownershipTabEpisodes;
+
+  /// Campaign management tab: statistics.
+  ///
+  /// In hr, this message translates to:
+  /// **'Statistika'**
+  String get ownershipTabStats;
+
+  /// Campaign management tab: payouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Isplata'**
+  String get ownershipTabPayout;
+
+  /// Shown when a campaign can't be loaded.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kampanja nije pronađena.'**
+  String get ownershipCampaignNotFound;
+
+  /// Snackbar confirming changes were saved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremljeno'**
+  String get ownershipSaved;
+
+  /// Snackbar shown when saving fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremanje nije uspjelo.'**
+  String get ownershipSaveFailed;
+
+  /// Form field label: campaign title.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naslov'**
+  String get ownershipFieldTitle;
+
+  /// Form field label: campaign description.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis'**
+  String get ownershipFieldDescription;
+
+  /// Form field label: funding goal in euros.
+  ///
+  /// In hr, this message translates to:
+  /// **'Cilj (€)'**
+  String get ownershipFieldGoal;
+
+  /// Hint for the funding goal field.
+  ///
+  /// In hr, this message translates to:
+  /// **'prazno = bez cilja'**
+  String get ownershipFieldGoalHint;
+
+  /// Form field label: minimum contribution amount in euros.
+  ///
+  /// In hr, this message translates to:
+  /// **'Min. iznos (€)'**
+  String get ownershipFieldMinAmount;
+
+  /// Dropdown label: campaign state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Stanje'**
+  String get ownershipFieldState;
+
+  /// Dropdown label: campaign visibility.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vidljivost'**
+  String get ownershipFieldVisibility;
+
+  /// Note clarifying which fields aren't editable on this screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napomena: SEPA i on-chain podaci (IBAN, Safe adresa) te slug ne mijenjaju se ovdje.'**
+  String get ownershipEditNote;
+
+  /// Button to save campaign edits.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi promjene'**
+  String get ownershipSaveChanges;
+
+  /// Campaign state label: draft.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skica'**
+  String get ownershipStateDraft;
+
+  /// Campaign state label: active.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivna'**
+  String get ownershipStateActive;
+
+  /// Campaign state label: closed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatvorena'**
+  String get ownershipStateClosed;
+
+  /// Campaign state label: cancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkazana'**
+  String get ownershipStateCancelled;
+
+  /// Campaign state label: funded.
+  ///
+  /// In hr, this message translates to:
+  /// **'Financirana'**
+  String get ownershipStateFunded;
+
+  /// Campaign visibility label: public.
+  ///
+  /// In hr, this message translates to:
+  /// **'Javna'**
+  String get ownershipVisPublic;
+
+  /// Campaign visibility label: unlisted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neuvrštena'**
+  String get ownershipVisUnlisted;
+
+  /// Campaign visibility label: private.
+  ///
+  /// In hr, this message translates to:
+  /// **'Privatna'**
+  String get ownershipVisPrivate;
+
+  /// Summary of campaign supporters and contributions counts.
+  ///
+  /// In hr, this message translates to:
+  /// **'{supporters, plural, one{{supporters} podržavatelj} few{{supporters} podržavatelja} other{{supporters} podržavatelja}} · {contributions, plural, one{{contributions} uplata} few{{contributions} uplate} other{{contributions} uplata}}'**
+  String ownershipSupportersContributions(int supporters, int contributions);
+
+  /// Section title for the public wall of contributions.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zid podrške'**
+  String get ownershipSupportWall;
+
+  /// Empty-state for the support wall.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema javnih doprinosa.'**
+  String get ownershipNoPublicContributions;
+
+  /// Validation error for an invalid payout amount.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi ispravan iznos.'**
+  String get ownershipEnterValidAmount;
+
+  /// Validation error when the requested amount is too high.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iznos premašuje raspoloživo.'**
+  String get ownershipAmountExceedsAvailable;
+
+  /// Validation error when no payout destination is provided.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi odredište (0x adresa ili IBAN).'**
+  String get ownershipEnterDestination;
+
+  /// Snackbar confirming a payout request was submitted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zahtjev za isplatu poslan'**
+  String get ownershipPayoutRequestSent;
+
+  /// Generic error after a failed payout request.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zahtjev nije uspio. Pokušaj ponovno.'**
+  String get ownershipRequestFailedRetry;
+
+  /// Payout error: KYC verification required.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prije isplate potrebna je verifikacija eOsobnom (KYC).'**
+  String get ownershipErrKycRequired;
+
+  /// Payout error: invalid destination.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neispravno odredište (0x adresa ili IBAN).'**
+  String get ownershipErrInvalidDestination;
+
+  /// Payout error: invalid amount.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neispravan iznos.'**
+  String get ownershipErrInvalidAmount;
+
+  /// Payout error: not authorized.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nemate ovlasti za ovu kampanju.'**
+  String get ownershipErrNotAuthorized;
+
+  /// Payout error: generic failure.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zahtjev nije uspio.'**
+  String get ownershipErrRequestFailed;
+
+  /// Card explaining KYC is required to request a payout.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za isplatu je potrebna verifikacija eOsobnom (KYC). Dovršite je u odjeljku „Moji kanali”.'**
+  String get ownershipPayoutNeedsKyc;
+
+  /// Section title and button to request a payout.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatražite isplatu'**
+  String get ownershipRequestPayout;
+
+  /// Text field label for the payout destination.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odredište (0x adresa ili IBAN)'**
+  String get ownershipDestinationLabel;
+
+  /// Text field label for the payout amount.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iznos (€)'**
+  String get ownershipAmountLabel;
+
+  /// Helper text showing the available payout balance.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspoloživo: {amount} €'**
+  String ownershipAvailableHelper(String amount);
+
+  /// Section title for the list of past payouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povijest isplata'**
+  String get ownershipPayoutHistory;
+
+  /// Empty-state for the payout history.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema isplata.'**
+  String get ownershipNoPayouts;
+
+  /// Snackbar shown when toggling yield fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promjena nije uspjela.'**
+  String get ownershipChangeFailed;
+
+  /// Switch title to enable yield on idle funds.
+  ///
+  /// In hr, this message translates to:
+  /// **'Oplođujte sredstva (Aave v3 · Gnosis)'**
+  String get ownershipYieldTitle;
+
+  /// Subtitle explaining the yield feature and its risks.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dok sredstva čekaju isplatu, nose prinos (~3,5 % APY, promjenjivo). Prinos pripada kampanji. DeFi rizik — glavnica nije zajamčena.'**
+  String get ownershipYieldSubtitle;
+
+  /// Key-value label: principal currently deposited in Aave.
+  ///
+  /// In hr, this message translates to:
+  /// **'U oplodnji (Aave)'**
+  String get ownershipYieldInPool;
+
+  /// Key-value label: yield accrued so far.
+  ///
+  /// In hr, this message translates to:
+  /// **'Akumulirani prinos'**
+  String get ownershipYieldAccrued;
+
+  /// Timestamp of the last yield sync.
+  ///
+  /// In hr, this message translates to:
+  /// **'zadnja sinkronizacija: {time}'**
+  String ownershipYieldLastSync(String time);
+
+  /// Link to the yield-bearing token on Gnosisscan.
+  ///
+  /// In hr, this message translates to:
+  /// **'aGnoEURe na Gnosisscanu'**
+  String get ownershipYieldTokenLink;
+
+  /// Payout summary row: total raised.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikupljeno'**
+  String get ownershipSummaryRaised;
+
+  /// Payout summary row: accrued yield.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prinos (Aave)'**
+  String get ownershipSummaryYield;
+
+  /// Payout summary row / payout state: pending.
+  ///
+  /// In hr, this message translates to:
+  /// **'U obradi'**
+  String get ownershipSummaryPending;
+
+  /// Payout summary row / payout state: paid out.
+  ///
+  /// In hr, this message translates to:
+  /// **'Isplaćeno'**
+  String get ownershipSummaryPaid;
+
+  /// Payout summary row: available balance.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspoloživo'**
+  String get ownershipSummaryAvailable;
+
+  /// Payout state label: requested.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatraženo'**
+  String get ownershipPayoutStateRequested;
+
+  /// Payout state label: approved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odobreno'**
+  String get ownershipPayoutStateApproved;
+
+  /// Payout state label: failed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neuspjelo'**
+  String get ownershipPayoutStateFailed;
+
+  /// App bar title fallback for the channel campaigns screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kampanje'**
+  String get ownershipCampaignsTitle;
+
+  /// Prompt shown to signed-out users on the campaigns screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za upravljanje kampanjama prvo se prijavite.'**
+  String get ownershipSignInToManageCampaigns;
+
+  /// Shown when the user isn't a verified owner of the channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Niste verificirani vlasnik ovog kanala.'**
+  String get ownershipNotVerifiedOwner;
+
+  /// Number of episodes assigned to a campaign.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}'**
+  String ownershipEpisodesCount(int count);
+
+  /// Empty-state title when a channel has no campaigns.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema kampanja za ovaj kanal.'**
+  String get ownershipNoCampaignsTitle;
+
+  /// Empty-state body explaining how campaigns are created.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kampanje se kreiraju na pinka.io (gdje se generira i Safe za isplatu). Nakon kreiranja povežite kampanju s kanalom kako biste je ovdje administrirali i dodijelili epizodama.'**
+  String get ownershipNoCampaignsBody;
+
+  /// Snackbar confirming the episode selection was saved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode spremljene'**
+  String get ownershipEpisodesSaved;
+
+  /// Error when an episode is already assigned to a different campaign.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jedna od epizoda već je u drugoj kampanji.'**
+  String get ownershipEpisodeTaken;
+
+  /// Error after a failed episode save, prompting retry.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremanje nije uspjelo. Pokušaj ponovno.'**
+  String get ownershipSaveFailedRetry;
+
+  /// Empty-state when a channel has no episodes to pick.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema dostupnih epizoda za ovaj kanal.'**
+  String get ownershipNoEpisodesAvailable;
+
+  /// Count of currently selected episodes in the picker.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odabrano: {count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}'**
+  String ownershipSelectedCount(int count);
+
+  /// Naslov sekcije/ekrana sa zidom javnih doprinosa (pinka SDK).
+  ///
+  /// In hr, this message translates to:
+  /// **'Zid podrške'**
+  String get pinkaWallTitle;
+
+  /// Gumb/naslov za podršku kampanji (pinka SDK).
+  ///
+  /// In hr, this message translates to:
+  /// **'Podrži'**
+  String get pinkaSupport;
+
+  /// Prazno stanje kad subjekt (kanal/epizoda) nema aktivnu kampanju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za ovaj sadržaj još nije pokrenuta kampanja podrške.'**
+  String get pinkaNoCampaign;
+
+  /// Prazno stanje zida podrške kad još nema doprinosa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Budi prvi koji podržava — tvoja poruka osvanut će ovdje.'**
+  String get pinkaWallEmpty;
+
+  /// Podnaslov ispod ukupnog iznosa kad kampanja nema cilj.
+  ///
+  /// In hr, this message translates to:
+  /// **'prikupljeno'**
+  String get pinkaRaisedLabel;
+
+  /// Iznos cilja kampanje ispod prikupljenog (npr. 'od cilja 500 €').
+  ///
+  /// In hr, this message translates to:
+  /// **'od cilja {amount} €'**
+  String pinkaOfGoal(String amount);
+
+  /// Prikupljeni iznos kampanje bez cilja (kompaktna kartica).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikupljeno {amount} €'**
+  String pinkaRaised(String amount);
+
+  /// Prikupljeni iznos i cilj kampanje (kompaktna kartica).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikupljeno {raised} € od {goal} €'**
+  String pinkaRaisedOfGoal(String raised, String goal);
+
+  /// Broj jedinstvenih podržavatelja kampanje.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} podržavatelj} few{{count} podržavatelja} other{{count} podržavatelja}}'**
+  String pinkaSupportersCount(int count);
+
+  /// Ukupan broj uplata u kampanji.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} uplata} few{{count} uplate} other{{count} uplata}}'**
+  String pinkaPaymentsCount(int count);
+
+  /// Naslov kartice za neovisnu provjeru stanja kampanje na blockchainu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjeri na lancu'**
+  String get pinkaVerifyOnchainTitle;
+
+  /// Objašnjenje transparentnosti uplata na on-chain Safe.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplate stižu izravno na Safe kampanje (EURe na Gnosisu). Stanje može provjeriti bilo tko — neovisno o nama.'**
+  String get pinkaVerifyOnchainBody;
+
+  /// Link na EURe saldo Safea u Gnosisscan exploreru.
+  ///
+  /// In hr, this message translates to:
+  /// **'EURe saldo na Gnosisscanu'**
+  String get pinkaEureBalanceOnGnosisscan;
+
+  /// Link na povijest dolaznih transfera u Gnosisscan exploreru.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povijest priljeva (transferi)'**
+  String get pinkaInflowHistory;
+
+  /// Oznaka da su prikupljena sredstva deponirana na Aave radi prinosa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sredstva trenutno rade na Aave v3 (Gnosis)'**
+  String get pinkaFundsWorkingAave;
+
+  /// Iznos sredstava trenutno deponiran na Aave.
+  ///
+  /// In hr, this message translates to:
+  /// **'U Aaveu: {amount} €'**
+  String pinkaInAaveLabel(String amount);
+
+  /// Akumulirani prinos na deponirana sredstva (nastavak iza separatora).
+  ///
+  /// In hr, this message translates to:
+  /// **'prinos: {amount} €'**
+  String pinkaAaveYieldLabel(String amount);
+
+  /// Objašnjenje zašto je EURe saldo na Safeu nizak dok su sredstva na Aaveu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zato je EURe saldo na samom Safeu nizak — sredstva su deponirana radi prinosa i povlače se natrag pri isplati.'**
+  String get pinkaAaveExplainer;
+
+  /// Link na saldo Aave aGnoEURe tokena u Gnosisscan exploreru.
+  ///
+  /// In hr, this message translates to:
+  /// **'aGnoEURe saldo na Gnosisscanu'**
+  String get pinkaAgnoEureBalanceOnGnosisscan;
+
+  /// Poruka kad je odabrani iznos manji od dopuštenog minimuma.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najmanji iznos je {amount} €'**
+  String pinkaMinAmount(String amount);
+
+  /// Greška pri kreiranju SEPA uplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplatu nije bilo moguće pripremiti. Pokušaj ponovno.'**
+  String get pinkaPaymentCreateFailed;
+
+  /// Obavijest kad je on-chain uplata poslana, ali još nije potvrđena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je poslana — pojavit će se na zidu čim se potvrdi na lancu.'**
+  String get pinkaPaymentSentPending;
+
+  /// Greška pri slanju sredstava iz povezanog novčanika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slanje iz novčanika nije uspjelo ili je otkazano.'**
+  String get pinkaWalletSendFailed;
+
+  /// Opisni tekst za on-chain način doprinosa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji EURe (Gnosis) izravno na lanac — transparentno i bez posrednika.'**
+  String get pinkaOnchainBlurb;
+
+  /// Opisni tekst za SEPA način doprinosa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Doniraj jednim skenom — SEPA, bez naknade. Sredstva idu izravno autoru.'**
+  String get pinkaSepaBlurb;
+
+  /// Hint u polju za unos vlastitog iznosa donacije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ostalo'**
+  String get pinkaCustomAmountHint;
+
+  /// Hint u polju za ime/nadimak donatora.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ime ili nadimak (neobavezno)'**
+  String get pinkaNameHint;
+
+  /// Hint u polju za poruku uz donaciju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poruka uz podršku (neobavezno)'**
+  String get pinkaMessageHint;
+
+  /// Oznaka checkboxa za anonimnu donaciju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Doniraj anonimno (ne prikazuj me na zidu podrške)'**
+  String get pinkaAnonymousLabel;
+
+  /// Stanje gumba dok se uplata priprema.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pripremam…'**
+  String get pinkaPreparing;
+
+  /// Glavni SEPA gumb s odabranim iznosom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podrži s {amount} €'**
+  String pinkaSupportWithAmount(String amount);
+
+  /// Stanje gumba dok se povezuje novčanik.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povezujem novčanik…'**
+  String get pinkaWalletConnecting;
+
+  /// Stanje gumba dok se otvara novčanik za potpis transakcije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvaram novčanik…'**
+  String get pinkaWalletOpening;
+
+  /// Stanje gumba dok se transakcija potvrđuje na lancu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrđujem na lancu…'**
+  String get pinkaWalletConfirming;
+
+  /// Gumb za plaćanje iz ugrađenog DOMOVINA novčanika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plati {amount} € iz DOMOVINA novčanika'**
+  String pinkaPayFromDomovinaWallet(String amount);
+
+  /// Razdjelnik između plaćanja iz DOMOVINA novčanika i QR koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'ili skeniraj drugim novčanikom'**
+  String get pinkaOrScanOtherWallet;
+
+  /// Uputa ispod QR koda za on-chain doprinos.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skeniraj novčanikom (MetaMask / Monerium) i pošalji {amount} € u EURe.'**
+  String pinkaScanWithWallet(String amount);
+
+  /// Oznaka retka s adresom/imenom primatelja uplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Primatelj'**
+  String get pinkaRecipient;
+
+  /// Oznaka retka s tokenom (npr. EURe · Monerium V2 · Gnosis).
+  ///
+  /// In hr, this message translates to:
+  /// **'Token'**
+  String get pinkaToken;
+
+  /// Napomena o vremenu pojavljivanja on-chain donacije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Donacija se pojavi na zidu podrške kad stigne na lanac (~1–2 min).'**
+  String get pinkaOnchainArrivalNote;
+
+  /// Naslov SEPA QR ekrana.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skeniraj u svojoj bankovnoj aplikaciji'**
+  String get pinkaScanInBankApp;
+
+  /// Prikaz iznosa SEPA uplate iznad QR koda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iznos: {amount} €'**
+  String pinkaAmountLabel(String amount);
+
+  /// Oznaka retka s opisom/pozivom na broj SEPA uplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis plaćanja'**
+  String get pinkaPaymentReference;
+
+  /// Status dok se čeka potvrda SEPA uplate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Čekam potvrdu plaćanja…'**
+  String get pinkaAwaitingPayment;
+
+  /// Poruka zahvale nakon uspješne uplate (s emojijem).
+  ///
+  /// In hr, this message translates to:
+  /// **'Hvala na podršci! 🙏'**
+  String get pinkaThanksForSupportEmoji;
+
+  /// Potvrda da je uplata zabilježena na lancu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaćanje je potvrđeno na lancu.'**
+  String get pinkaPaymentConfirmedOnchain;
+
+  /// SnackBar potvrda kopiranja vrijednosti (IBAN/adresa/opis).
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopirano: {label}'**
+  String pinkaCopiedLabel(String label);
+
+  /// Zamjenski naziv izvora kad link preview nema ime stranice.
+  ///
+  /// In hr, this message translates to:
+  /// **'poveznica'**
+  String get pinkaLink;
+
+  /// Prikazano ime za anonimnog donatora na zidu podrške.
+  ///
+  /// In hr, this message translates to:
+  /// **'Anoniman'**
+  String get pinkaAnonymous;
+
+  /// Naslov bloka članka (AI-obrađeni tekst epizode) i naslov lijevog stupca u paralelnom prikazu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članak'**
+  String get sectionArticle;
+
+  /// Tooltip play-gumba uz sekciju članka — reproducira video/audio od navedenog vremena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pusti od {timestamp}'**
+  String sectionPlayFrom(String timestamp);
+
+  /// Tooltip gumba koji kopira dijeljivu poveznicu na sekciju s vremenskom oznakom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj poveznicu'**
+  String get sectionCopyLink;
+
+  /// SnackBar potvrda nakon kopiranja poveznice na sekciju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica kopirana: {timestamp}'**
+  String sectionLinkCopied(String timestamp);
+
+  /// Naslov inline Magisterium bloka ispod pojedine sekcije članka.
+  ///
+  /// In hr, this message translates to:
+  /// **'Teološka procjena'**
+  String get sectionTheologicalAssessment;
+
+  /// Broj citiranih izvora u Magisterium bloku (gumb za otvaranje/zatvaranje citata).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} izvor} few{{count} izvora} other{{count} izvora}}'**
+  String sectionSources(int count);
+
+  /// Naslov sekcije sažetka epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sažetak'**
+  String get sectionSummary;
+
+  /// Naslov sekcije s ključnim temama epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ključne teme'**
+  String get sectionKeyTopics;
+
+  /// Naslov sekcije s popisom govornika epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Govornici'**
+  String get sectionSpeakers;
+
+  /// Naslov sekcije s ključnim zaključcima epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ključni zaključci'**
+  String get sectionKeyTakeaways;
+
+  /// Naslov sekcije s poglavljima (outline) epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poglavlja'**
+  String get sectionChapters;
+
+  /// Naslov grupe spomenutih osoba u sekciji entiteta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osobe'**
+  String get sectionPeople;
+
+  /// Naslov grupe spomenutih mjesta u sekciji entiteta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesta'**
+  String get sectionPlaces;
+
+  /// Naslov grupe spomenutih organizacija u sekciji entiteta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Organizacije'**
+  String get sectionOrganizations;
+
+  /// Naslov bočnog kazala (table of contents) u desktop prikazu članka.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sadržaj'**
+  String get sectionContents;
+
+  /// Relativna oznaka starosti epizode objavljene danas (badge svježine).
+  ///
+  /// In hr, this message translates to:
+  /// **'danas'**
+  String get sectionAgeToday;
+
+  /// Relativna oznaka starosti epizode objavljene jučer (badge svježine).
+  ///
+  /// In hr, this message translates to:
+  /// **'jučer'**
+  String get sectionAgeYesterday;
+
+  /// Relativna starost epizode u danima (badge svježine), za 2–6 dana.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{prije {count} dan} few{prije {count} dana} other{prije {count} dana}}'**
+  String sectionAgeDays(int count);
+
+  /// Relativna starost epizode u tjednima (kratki badge svježine).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{prije tjedan} few{prije {count} tj.} other{prije {count} tj.}}'**
+  String sectionAgeWeeks(int count);
+
+  /// Relativna starost epizode u mjesecima (kratki badge svježine).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{prije mjesec} few{prije {count} mj.} other{prije {count} mj.}}'**
+  String sectionAgeMonths(int count);
+
+  /// Relativna starost epizode u godinama (kratki badge svježine).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{prije godinu} few{prije {count} god.} other{prije {count} god.}}'**
+  String sectionAgeYears(int count);
+
+  /// Tooltip badgea svježine — točan datum objave epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Objavljeno: {date}'**
+  String sectionPublishedOn(String date);
+
+  /// Podnaslov ispod naslova Magisterium stupca u paralelnom desktop prikazu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Teološka analiza, sekciju po sekciju'**
+  String get sectionTheologicalAnalysisSubtitle;
+
+  /// Placeholder u Magisterium stupcu kad sekcija nema teološku analizu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema teološke analize za ovu sekciju.'**
+  String get sectionNoTheologicalAnalysis;
+
+  /// Oznaka na cover-art prikazu za audio-only epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Audio'**
+  String get sectionAudio;
+
+  /// Generic error when the backend/auth service is not configured or reachable.
+  ///
+  /// In hr, this message translates to:
+  /// **'Usluga trenutno nije dostupna. Pokušaj ponovo malo poslije.'**
+  String get serviceUnavailable;
+
+  /// Snackbar confirmation after a successful sign-in.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavljen si kao {name}.'**
+  String serviceSignedInAs(String name);
+
+  /// Fallback noun used in place of a display name or email when neither is known.
+  ///
+  /// In hr, this message translates to:
+  /// **'korisnik'**
+  String get serviceGenericUser;
+
+  /// Snackbar hint shown on native after opening an external OAuth browser.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi prijavu u pregledniku…'**
+  String get serviceContinueSignInBrowser;
+
+  /// Generic fallback when sign-in throws an unexpected error.
+  ///
+  /// In hr, this message translates to:
+  /// **'Došlo je do neočekivane pogreške pri prijavi. Pokušaj ponovo.'**
+  String get serviceUnexpectedSignInError;
+
+  /// Auth error: rate limit on email/request/SMS sending.
+  ///
+  /// In hr, this message translates to:
+  /// **'Previše pokušaja — pričekaj minutu pa pokušaj ponovo.'**
+  String get serviceAuthRateLimited;
+
+  /// Auth error: invalid email address.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-mail adresa ne izgleda ispravno. Provjeri unos.'**
+  String get serviceAuthEmailInvalid;
+
+  /// Auth error: one-time code expired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod je istekao — zatraži novi.'**
+  String get serviceAuthOtpExpired;
+
+  /// Auth error: OTP sign-in disabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava kodom trenutno nije dostupna.'**
+  String get serviceAuthOtpDisabled;
+
+  /// Auth error: user banned.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj je račun privremeno blokiran.'**
+  String get serviceAuthUserBanned;
+
+  /// Auth error: signup disabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvaranje novih računa trenutno nije moguće.'**
+  String get serviceAuthSignupDisabled;
+
+  /// Auth error: provider disabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ova metoda prijave trenutno nije dostupna.'**
+  String get serviceAuthProviderDisabled;
+
+  /// Auth error: email not confirmed.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-mail adresa još nije potvrđena.'**
+  String get serviceAuthEmailNotConfirmed;
+
+  /// Auth error: retryable network/fetch failure.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema veze s poslužiteljem. Provjeri internet pa pokušaj ponovo.'**
+  String get serviceAuthNoServerConnection;
+
+  /// Auth error: generic sign-in failure fallback.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava nije uspjela. Pokušaj ponovo.'**
+  String get serviceAuthSignInFailed;
+
+  /// Shown when a permanent account lacks an email required for passkey registration.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj račun nema e-mail adresu pa passkey trenutno nije moguć.'**
+  String get serviceAccountNoEmailPasskey;
+
+  /// Success message after adding a passkey to an existing account.
+  ///
+  /// In hr, this message translates to:
+  /// **'Passkey je dodan na tvoj račun.'**
+  String get servicePasskeyAddedToAccount;
+
+  /// Success message after creating a new account with a passkey.
+  ///
+  /// In hr, this message translates to:
+  /// **'Passkey je kreiran.'**
+  String get servicePasskeyCreated;
+
+  /// Error when sending the magic-link/OTP email fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slanje e-maila nije uspjelo. Pokušaj ponovo.'**
+  String get serviceEmailSendFailed;
+
+  /// Success message after verifying an email code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava je uspješna.'**
+  String get serviceSignInSuccess;
+
+  /// Error when an entered email code is wrong or expired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.'**
+  String get serviceOtpInvalidOrExpired;
+
+  /// Generic error when code verification fails unexpectedly.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjera koda nije uspjela.'**
+  String get serviceOtpCheckFailed;
+
+  /// Shown when the account-delete backend endpoint isn't deployed (404).
+  ///
+  /// In hr, this message translates to:
+  /// **'Brisanje računa kroz aplikaciju još nije dostupno. Pošalji zahtjev na privacy@italk.hr pa ćemo ga izbrisati ručno.'**
+  String get serviceAccountDeleteUnavailable;
+
+  /// Error deleting account with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Brisanje računa nije uspjelo ({status}). Pokušaj ponovo.'**
+  String serviceAccountDeleteFailedWithStatus(String status);
+
+  /// Generic error deleting account.
+  ///
+  /// In hr, this message translates to:
+  /// **'Brisanje računa nije uspjelo. Pokušaj ponovo.'**
+  String get serviceAccountDeleteFailed;
+
+  /// Confirmation after account deletion.
+  ///
+  /// In hr, this message translates to:
+  /// **'Račun je trajno izbrisan.'**
+  String get serviceAccountDeleted;
+
+  /// Snackbar after signing out (anonymous session continues).
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjavljen si — nastavljaš kao gost.'**
+  String get serviceSignedOutGuest;
+
+  /// Title of the email-input dialog for sign-in.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj e-mail'**
+  String get serviceEmailDialogTitle;
+
+  /// Body text of the email-input dialog for sign-in.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslat ćemo ti link i šesteroznamenkasti kod za prijavu.'**
+  String get serviceEmailDialogMessage;
+
+  /// Placeholder example shown inside the email input field.
+  ///
+  /// In hr, this message translates to:
+  /// **'ime@primjer.com'**
+  String get serviceEmailDialogHint;
+
+  /// Confirm button label on the email-input dialog.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pošalji'**
+  String get serviceEmailDialogConfirm;
+
+  /// Shown when a second passkey ceremony is started while one is running.
+  ///
+  /// In hr, this message translates to:
+  /// **'Passkey zahtjev je već u tijeku — pričekaj da završi ili osvježi stranicu.'**
+  String get servicePasskeyRequestInProgress;
+
+  /// Error when passkey registration is cancelled by the user or times out.
+  ///
+  /// In hr, this message translates to:
+  /// **'Registracija passkeyja je otkazana ili je istekla. Pokušaj ponovo.'**
+  String get servicePasskeyRegisterCancelled;
+
+  /// Error when a password manager intercepts the passkey registration ceremony.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravitelj lozinki (npr. LastPass) blokira passkey. U njegovu prozoru odaberi „Use a different passkey” i izaberi iCloud/Apple Passwords — ili isključi LastPass za ovu stranicu.'**
+  String get servicePasskeyPasswordManagerBlockRegister;
+
+  /// Error when a passkey for the account already exists on the device.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na ovom uređaju već postoji passkey za ovaj račun.'**
+  String get servicePasskeyAlreadyExists;
+
+  /// Error when the app domain isn't associated for WebAuthn (assetlinks/AASA).
+  ///
+  /// In hr, this message translates to:
+  /// **'Domena nije povezana s passkeyjem. Pokušaj ponovo malo poslije.'**
+  String get servicePasskeyDomainNotAssociated;
+
+  /// Error when the device lacks passkey support.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj uređaj ne podržava passkey.'**
+  String get servicePasskeyDeviceUnsupported;
+
+  /// Generic fallback error for passkey registration failures.
+  ///
+  /// In hr, this message translates to:
+  /// **'Passkey nije moguće kreirati na ovom uređaju.'**
+  String get servicePasskeyCreateFailed;
+
+  /// Error when passkey login finds no credential on the device.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na ovom uređaju nema spremljenog passkeyja.'**
+  String get servicePasskeyNoneOnDevice;
+
+  /// Error when passkey login is cancelled by the user or times out.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava passkeyjem je otkazana ili je istekla. Pokušaj ponovo.'**
+  String get servicePasskeyLoginCancelled;
+
+  /// Error when a password manager intercepts the passkey login ceremony.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravitelj lozinki (npr. LastPass) blokira passkey. U njegovu prozoru odaberi „Use a different passkey” — ili isključi LastPass za ovu stranicu.'**
+  String get servicePasskeyPasswordManagerBlockLogin;
+
+  /// Generic fallback error for passkey login failures.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava passkeyjem nije uspjela.'**
+  String get servicePasskeyLoginFailed;
+
+  /// Shown when the passkey-list backend endpoint isn't deployed (404).
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravljanje passkeyjima još nije dostupno.'**
+  String get servicePasskeyManageUnavailable;
+
+  /// Error fetching the passkey list with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dohvat passkeyja nije uspio ({status}).'**
+  String servicePasskeyFetchFailedWithStatus(String status);
+
+  /// Shown when the passkey-delete backend endpoint isn't deployed (404).
+  ///
+  /// In hr, this message translates to:
+  /// **'Uklanjanje passkeyja još nije dostupno.'**
+  String get servicePasskeyRemoveUnavailable;
+
+  /// Error deleting a passkey with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uklanjanje passkeyja nije uspjelo ({status}).'**
+  String servicePasskeyRemoveFailedWithStatus(String status);
+
+  /// Error when finalizing the passkey session bridge fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dovršetak prijave passkeyjem nije uspio.'**
+  String get servicePasskeyFinishFailed;
+
+  /// Error when the backend response is missing the action link / OTP needed to sign in.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslužitelj nije vratio podatke za prijavu.'**
+  String get serviceBackendNoSignInData;
+
+  /// Error when the backend requires an email to start passkey registration.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi e-mail za otvaranje računa s passkeyjem.'**
+  String get servicePasskeyEmailRequired;
+
+  /// Error starting the passkey ceremony with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Priprema passkeyja nije uspjela ({status}).'**
+  String servicePasskeyPrepareFailedWithStatus(String status);
+
+  /// Error when passkey verification fails on the backend.
+  ///
+  /// In hr, this message translates to:
+  /// **'Passkey nije verificiran. Pokušaj ponovo.'**
+  String get servicePasskeyNotVerified;
+
+  /// Error when the presented passkey credential is unknown.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj passkey nije prepoznat — možda je vezan uz drugi račun.'**
+  String get servicePasskeyUnknownCredential;
+
+  /// Error when account creation collides with an existing email.
+  ///
+  /// In hr, this message translates to:
+  /// **'Račun s tom e-mail adresom već postoji — prijavi se passkeyjem ili Googleom.'**
+  String get servicePasskeyAccountExists;
+
+  /// Error when the passkey challenge is missing or expired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sesija je istekla. Pokušaj ponovo.'**
+  String get serviceSessionExpired;
+
+  /// Generic passkey finish error with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dovršetak prijave passkeyjem nije uspio ({status}).'**
+  String servicePasskeyFinishFailedWithStatus(String status);
+
+  /// Error when the Certilia (e-Osobna) authentication is cancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava e-Osobnom je otkazana.'**
+  String get serviceCertiliaCancelled;
+
+  /// Error when the Certilia server can't be reached.
+  ///
+  /// In hr, this message translates to:
+  /// **'Certilia trenutno nije dostupna. Pokušaj ponovo malo poslije.'**
+  String get serviceCertiliaServerUnavailable;
+
+  /// Generic fallback error for Certilia authentication.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava e-Osobnom nije uspjela.'**
+  String get serviceCertiliaFailed;
+
+  /// Error when the Certilia id token is missing after authentication.
+  ///
+  /// In hr, this message translates to:
+  /// **'Certilia nije vratila token. Pokušaj ponovo.'**
+  String get serviceCertiliaMissingToken;
+
+  /// Error when finalizing the Certilia session bridge fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dovršetak prijave e-Osobnom nije uspio.'**
+  String get serviceCertiliaFinishFailed;
+
+  /// Backend error: invalid Certilia token.
+  ///
+  /// In hr, this message translates to:
+  /// **'Certilia token nije valjan. Pokušaj ponovo.'**
+  String get serviceCertiliaInvalidToken;
+
+  /// Backend error: missing OIB claim from Certilia.
+  ///
+  /// In hr, this message translates to:
+  /// **'Certilia nije vratila OIB pa prijava nije moguća.'**
+  String get serviceCertiliaNoOib;
+
+  /// Generic Certilia bridge error with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povezivanje s računom nije uspjelo ({status}).'**
+  String serviceCertiliaLinkFailedWithStatus(String status);
+
+  /// Validation error for the cross-device handoff code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod mora imati točno šest znamenki.'**
+  String get serviceHandoffCodeSixDigits;
+
+  /// Error when the handoff backend response is missing the action link.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslužitelj nije vratio link za prijavu.'**
+  String get serviceHandoffNoSignInLink;
+
+  /// Error when the receiving device isn't authenticated during handoff.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj uređaj nema aktivnu sesiju — osvježi stranicu pa pokušaj ponovo.'**
+  String get serviceHandoffNoActiveSession;
+
+  /// Error when the handoff code is invalid or expired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod ne postoji ili je istekao.'**
+  String get serviceHandoffInvalidOrExpiredCode;
+
+  /// Handoff error for an unexpected request method (HTTP 405).
+  ///
+  /// In hr, this message translates to:
+  /// **'Pogreška u pozivu poslužitelja. Pokušaj ponovo.'**
+  String get serviceHandoffRequestError;
+
+  /// Generic handoff failure with HTTP status code.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijenos nije uspio ({status}).'**
+  String serviceHandoffTransferFailedWithStatus(String status);
+
+  /// Error when the channel-claim backend doesn't return the Google consent URL.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslužitelj nije vratio adresu za autorizaciju.'**
+  String get serviceClaimNoAuthUrl;
+
+  /// Channel-claim mismatch error when the account manages no channels at all.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavljeni Google račun nije vlasnik ovog kanala. Ovaj račun ne upravlja nijednim YouTube kanalom. Prijavi se Google računom koji je vlasnik kanala (a ne samo urednik).'**
+  String get serviceClaimMismatchNoChannel;
+
+  /// Channel-claim mismatch error naming the channel the account actually manages. The name is rendered in bold.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavljeni Google račun nije vlasnik ovog kanala. Ovim računom upravljaš kanalom: {name}. Prijavi se Google računom koji je vlasnik kanala (a ne samo urednik).'**
+  String serviceClaimMismatchWithChannel(String name);
+
+  /// Error when revoking a channel ownership claim fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odustajanje od vlasništva nije uspjelo.'**
+  String get serviceClaimRevokeFailed;
+
+  /// Channel-claim backend reason: channel_mismatch.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavljeni YouTube račun nije vlasnik ovog kanala.'**
+  String get serviceClaimChannelMismatch;
+
+  /// Channel-claim backend reason: no_channel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na ovom Google računu nema YouTube kanala.'**
+  String get serviceClaimNoChannel;
+
+  /// Channel-claim backend reason: invalid_state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Autorizacija je istekla. Pokušaj ponovo.'**
+  String get serviceClaimInvalidState;
+
+  /// Channel-claim backend reason: already_claimed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj je kanal već preuzeo drugi korisnik.'**
+  String get serviceClaimAlreadyClaimed;
+
+  /// Channel-claim backend reason: not_signed_in.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za preuzimanje kanala moraš biti prijavljen.'**
+  String get serviceClaimNotSignedIn;
+
+  /// Channel-claim generic fallback error.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjera vlasništva nije uspjela. Pokušaj ponovo.'**
+  String get serviceClaimVerifyFailed;
+
+  /// Safe payout error: not_eligible.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još ne ispunjavaš uvjete za isplatu (vlasništvo, potvrđen identitet i svježina potvrde).'**
+  String get serviceSafeNotEligible;
+
+  /// Safe payout error: kyc_required.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za isplatu najprije potvrdi identitet e-Osobnom (Certilia).'**
+  String get serviceSafeKycRequired;
+
+  /// Safe payout error: wallet_not_registered.
+  ///
+  /// In hr, this message translates to:
+  /// **'Adresa novčanika nije registrirana na tvom računu.'**
+  String get serviceSafeWalletNotRegistered;
+
+  /// Safe payout error: no_safe.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za ovu epizodu još ne postoji novčanik.'**
+  String get serviceSafeNoSafe;
+
+  /// Safe payout error: safe_frozen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novčanik epizode trenutno je zamrznut.'**
+  String get serviceSafeFrozen;
+
+  /// Safe payout error: reverify_needed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasništvo treba ponovo potvrditi prije isplate.'**
+  String get serviceSafeReverifyNeeded;
+
+  /// Safe payout generic fallback error.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povezivanje s novčanikom nije uspjelo. Pokušaj ponovo.'**
+  String get serviceSafeConnectFailed;
+
+  /// Error when a registered wallet address fails format validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Adresa novčanika nije ispravna (očekuje se 0x i 40 heksadekadskih znamenki).'**
+  String get serviceWalletInvalidAddress;
+
+  /// Error when an anonymous user tries to register a wallet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za registraciju novčanika moraš biti prijavljen.'**
+  String get serviceWalletNotSignedIn;
+
+  /// Error when saving a wallet record fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremanje novčanika nije uspjelo.'**
+  String get serviceWalletSaveFailed;
+
+  /// Error when deleting a wallet record fails.
+  ///
+  /// In hr, this message translates to:
+  /// **'Brisanje novčanika nije uspjelo.'**
+  String get serviceWalletRemoveFailed;
+
+  /// Purchase error when the selected package can't be found in the store.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket više nije dostupan. Pokušaj ponovo.'**
+  String get servicePurchasePackageUnavailable;
+
+  /// Purchase error when the entitlement isn't active after a successful purchase.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kupnja nije aktivirala pretplatu.'**
+  String get servicePurchaseNotActivated;
+
+  /// Generic purchase failure fallback.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kupnja nije uspjela. Pokušaj ponovo.'**
+  String get servicePurchaseFailed;
+
+  /// Restore error when no active entitlement is found.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nismo pronašli aktivnu pretplatu za vraćanje.'**
+  String get serviceRestoreNoSubscription;
+
+  /// Generic restore-purchases failure.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vraćanje kupnji nije uspjelo. Pokušaj ponovo.'**
+  String get serviceRestoreFailed;
+
+  /// Purchase error: purchaseNotAllowedError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kupnja nije dopuštena na ovom uređaju.'**
+  String get servicePurchaseNotAllowed;
+
+  /// Purchase error: paymentPendingError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaćanje je u obradi — pretplata se aktivira čim bude potvrđeno.'**
+  String get servicePurchasePending;
+
+  /// Purchase error: productAlreadyPurchasedError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Već imaš ovu pretplatu. Pokušaj „Vrati kupnje”.'**
+  String get servicePurchaseAlreadyOwned;
+
+  /// Purchase error: networkError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema veze s trgovinom. Provjeri internet pa pokušaj ponovo.'**
+  String get servicePurchaseNetworkError;
+
+  /// Purchase error: storeProblemError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trgovina trenutno ne odgovara. Pokušaj poslije.'**
+  String get servicePurchaseStoreProblem;
+
+  /// TV channel detail/list load error with raw error detail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavanje kanala nije uspjelo:\n{details}'**
+  String tvChannelLoadError(String details);
+
+  /// Empty state shown on a TV channel screen with no episodes.
+  ///
+  /// In hr, this message translates to:
+  /// **'U ovom kanalu još nema epizoda.'**
+  String get tvChannelNoEpisodes;
+
+  /// Episode count label (channel header and channel card).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}'**
+  String tvEpisodeCountPlural(int count);
+
+  /// Loading message on the TV blog-reader screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pripremam čitanje…'**
+  String get tvReaderPreparing;
+
+  /// Error state when an episode lacks the AI article required for the reader.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ova epizoda još nije AI-obrađena.\nPrikaz za čitanje zasad nije dostupan.'**
+  String get tvReaderNotAiProcessed;
+
+  /// Generic TV episode/reader load error with raw error detail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Greška pri učitavanju:\n{details}'**
+  String tvLoadError(String details);
+
+  /// Button that leaves the reader and opens the regular player view.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori klasični prikaz'**
+  String get tvReaderOpenClassic;
+
+  /// Reader progress indicator: current section of total.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odlomak {current} / {total}'**
+  String tvReaderSectionOf(int current, int total);
+
+  /// Reader picture-in-picture tally label when the video is playing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uživo'**
+  String get tvLive;
+
+  /// Reader picture-in-picture tally label when the video is paused.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pauza'**
+  String get tvPaused;
+
+  /// Empty state in the reader's Magisterium side card.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za ovaj odlomak nema teološkog osvrta.'**
+  String get tvReaderNoCommentary;
+
+  /// Subtitle on the reader's Magisterium side card.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nauk Crkve za ovaj odlomak'**
+  String get tvReaderChurchTeaching;
+
+  /// Hint on the Magisterium card to open the full-screen commentary (OK = remote select button).
+  ///
+  /// In hr, this message translates to:
+  /// **'OK — otvori cijeli osvrt'**
+  String get tvReaderOpenFullCommentary;
+
+  /// Footer D-pad controls hint on the TV reader screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'OK = sviraj/pauza   ◀ ▶ = odlomci   ▼ = Magisterium   BACK = video'**
+  String get tvReaderControlsHint;
+
+  /// Magisterium overlay heading for the assessment section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Procjena'**
+  String get tvReaderHeadingAssessment;
+
+  /// Magisterium overlay heading for the concerns section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na što paziti'**
+  String get tvReaderHeadingConcerns;
+
+  /// Magisterium overlay heading for the enrichment/clarification section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pojašnjenje'**
+  String get tvReaderHeadingEnrichment;
+
+  /// Magisterium overlay heading for the citations section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Citati iz Magisterija'**
+  String get tvReaderHeadingCitations;
+
+  /// Hint in the Magisterium overlay describing how to close it (remote buttons).
+  ///
+  /// In hr, this message translates to:
+  /// **'BACK ili OK = zatvori'**
+  String get tvReaderCloseHint;
+
+  /// Toolbar button on the TV episode screen that opens the blog reader.
+  ///
+  /// In hr, this message translates to:
+  /// **'Čitaj'**
+  String get tvRead;
+
+  /// Toolbar button label to enter fullscreen on the TV episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Cijeli zaslon'**
+  String get tvFullscreen;
+
+  /// Toolbar button label to leave fullscreen on the TV episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izađi iz cijelog zaslona'**
+  String get tvExitFullscreen;
+
+  /// Loading message on the TV episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavam epizodu…'**
+  String get tvLoadingEpisode;
+
+  /// Error shown when a TV episode id cannot be found.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda „{id}” nije pronađena.'**
+  String tvEpisodeNotFound(String id);
+
+  /// Buffer-ring hint while the player is being instantiated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pokrećem media engine…'**
+  String get tvBufferStartingEngine;
+
+  /// Buffer-ring hint during initial buffering before the first frame.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavam video…'**
+  String get tvBufferLoadingVideo;
+
+  /// Buffer-ring hint during mid-playback re-buffering.
+  ///
+  /// In hr, this message translates to:
+  /// **'Punjenje međuspremnika…'**
+  String get tvBufferFilling;
+
+  /// Player overlay D-pad hint (windowed mode).
+  ///
+  /// In hr, this message translates to:
+  /// **'OK = sviraj/pauza     ▲ = Čitaj / Cijeli zaslon'**
+  String get tvPlayerHint;
+
+  /// Player overlay D-pad hint (fullscreen mode).
+  ///
+  /// In hr, this message translates to:
+  /// **'OK = sviraj/pauza     BACK / F = izađi'**
+  String get tvPlayerHintFullscreen;
+
+  /// Header of the chapter side-rail on the TV episode screen (rendered uppercase).
+  ///
+  /// In hr, this message translates to:
+  /// **'Poglavlja ({count})'**
+  String tvChaptersWithCount(int count);
+
+  /// App-bar search button label on the TV home screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraga'**
+  String get tvSearch;
+
+  /// TV home rail title for resume-watching items (rendered uppercase).
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi slušati'**
+  String get tvRailContinueListening;
+
+  /// TV home rail title for the newest episodes (rendered uppercase).
+  ///
+  /// In hr, this message translates to:
+  /// **'Najnovije epizode'**
+  String get tvRailLatestEpisodes;
+
+  /// TV home channels section header with channel count (rendered uppercase).
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanali ({count})'**
+  String tvChannelsWithCount(int count);
+
+  /// Sort chip label that orders channels by episode count.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode'**
+  String get tvSortEpisodes;
+
+  /// Sort chip label that orders channels alphabetically.
+  ///
+  /// In hr, this message translates to:
+  /// **'Abeceda'**
+  String get tvSortAlpha;
+
+  /// Sort chip label that shuffles the channel order.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nasumično'**
+  String get tvSortShuffle;
+
+  /// Cache-status line on the TV home screen during channel prefetch.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavam {loaded}/{total} kanala…'**
+  String tvLoadingChannels(int loaded, int total);
+
+  /// Progress label on the TV loading-tips carousel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pripremam katalog…'**
+  String get tvTipsPreparingCatalog;
+
+  /// TV hero PLAY button label (rendered uppercase).
+  ///
+  /// In hr, this message translates to:
+  /// **'Pokreni'**
+  String get tvPlay;
+
+  /// Naslov sekcije za odabir UI jezika na /account ekranu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jezik'**
+  String get authSectionLanguage;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'hr'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'hr':
+      return AppLocalizationsHr();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

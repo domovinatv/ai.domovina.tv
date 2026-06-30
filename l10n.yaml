@@ -1,0 +1,11 @@
+# Flutter gen-l10n konfiguracija.
+# Hrvatski (app_hr.arb) je IZVORNI jezik i template — sve nove stringove dodaj
+# prvo ovdje, pa onda prevedi u app_en.arb. Generirana klasa AppLocalizations
+# ide u lib/l10n/ (synthetic-package: false) i importa se kao
+#   import '<rel>/l10n/app_localizations.dart';
+arb-dir: lib/l10n
+template-arb-file: app_hr.arb
+output-dir: lib/l10n
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
