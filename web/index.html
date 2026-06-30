@@ -162,6 +162,22 @@
     // tab-level audio (radi unutar browsera) ali iOS suspendira tab čim
     // user prijeđe na drugu app-u.
     if ('serviceWorker' in navigator) {
+      // Legacy caching SW (iz starijih offline-first buildova) servira STARU app
+      // iz svog cachea — hard refresh i "disable cache" ga ne zaobilaze. Flutter
+      // 3.41 šalje self-unregistering SW koji ga makne, ali stari SW pušta
+      // kontrolu tek kad se svi tabovi zatvore (restart browsera). Da to NE
+      // zahtijeva restart: kad se controller promijeni (stari SW maknut),
+      // reload-amo JEDNOM. Guard `controller` → radi samo za korisnike koji
+      // stvarno imaju (zastarjeli) SW; čisti/novi korisnici nemaju controller
+      // pa nema suvišnog reloada.
+      if (navigator.serviceWorker.controller) {
+        var _swReloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (_swReloaded) return;
+          _swReloaded = true;
+          window.location.reload();
+        });
+      }
       navigator.serviceWorker.ready.then(function(reg) {
         reg.update();
         reg.addEventListener('updatefound', function() {
