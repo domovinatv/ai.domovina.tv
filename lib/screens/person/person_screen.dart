@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -146,11 +145,34 @@ class _PersonContent extends StatelessWidget {
 
   const _PersonContent({required this.hub});
 
+  /// Iznad ove širine → dvostupčani layout (lijevo fiksni info, desno scroll
+  /// epizode). Ispod → jedan stupac (mobitel).
+  static const double _twoColBreakpoint = 900;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < _twoColBreakpoint) {
+          return _SingleColumn(hub: hub);
+        }
+        return _TwoColumn(hub: hub);
+      },
+    );
+  }
+}
+
+/// Mobitel / usko — sve u jednom scroll stupcu.
+class _SingleColumn extends StatelessWidget {
+  final PersonHub hub;
+
+  const _SingleColumn({required this.hub});
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 820),
+        constraints: const BoxConstraints(maxWidth: 640),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
@@ -167,6 +189,68 @@ class _PersonContent extends StatelessWidget {
               const SizedBox(height: 28),
               _EpisodesSection(episodes: hub.episodes),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Desktop — lijevo fiksni info (header, kanali, timeline) koji ostaje vidljiv,
+/// desno neovisno scrollabilna lista epizoda.
+class _TwoColumn extends StatelessWidget {
+  final PersonHub hub;
+
+  const _TwoColumn({required this.hub});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1180),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Lijevi stupac — glavni podaci; vlastiti scroll ako je visok.
+            SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 16, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Header(hub: hub),
+                    if (hub.channels.isNotEmpty) ...[
+                      const SizedBox(height: 28),
+                      _ChannelsSection(channels: hub.channels),
+                    ],
+                    if (hub.timeline.length > 1) ...[
+                      const SizedBox(height: 28),
+                      _TimelineSection(timeline: hub.timeline),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            // Desni stupac — epizode, neovisan scroll.
+            Expanded(
+              child: hub.episodes.isEmpty
+                  ? const SizedBox.shrink()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 20, 40),
+                      itemCount: hub.episodes.length + 1,
+                      itemBuilder: (context, i) {
+                        if (i == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _SectionTitle(title: l.personEpisodesHeading),
+                          );
+                        }
+                        return _EpisodeCard(episode: hub.episodes[i - 1]);
+                      },
+                    ),
+            ),
           ],
         ),
       ),
@@ -403,56 +487,62 @@ class _TimelineSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
-    final maxCount =
-        timeline.fold<int>(1, (m, e) => e.count > m ? e.count : m);
+    // Popuni praznine (mjesece bez epizoda) da x-os bude LINEARNA po vremenu —
+    // inače se mjeseci s podacima "zbiju" i osi se ne mogu vjerovati.
+    final months = _expandMonths(timeline);
+    if (months.length < 2) return const SizedBox.shrink();
+    final maxCount = months.fold<int>(1, (m, e) => e.count > m ? e.count : m);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionTitle(title: l.personActivityOverTime),
-        const SizedBox(height: 12),
-        // Horizontalni scroll s mouse-drag podrškom (Flutter Web ne omogućuje
-        // drag pointerom po defaultu za horizontalne liste).
-        ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(
-            dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse,
-              PointerDeviceKind.trackpad,
-            },
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (final m in timeline)
-                  Tooltip(
-                    message: '${m.month} · ${m.count}',
-                    child: Container(
-                      width: 9,
-                      height: 8 + (56 * (m.count / maxCount)),
-                      margin: const EdgeInsets.only(right: 3),
-                      decoration: BoxDecoration(
-                        color: AppTheme.croBlue.withValues(alpha: 0.65),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(3),
+        const SizedBox(height: 14),
+        // Stupci popunjavaju punu širinu (svaki Expanded) → rubne oznake
+        // (prvi/zadnji mjesec) se prirodno poravnaju s prvim/zadnjim stupcem.
+        SizedBox(
+          height: 68,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final m in months)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0.8),
+                    child: Tooltip(
+                      message: '${m.month} · ${m.count}',
+                      waitDuration: const Duration(milliseconds: 300),
+                      child: Container(
+                        height: m.count == 0
+                            ? 3
+                            : (7 + 55 * (m.count / maxCount)),
+                        decoration: BoxDecoration(
+                          color: m.count == 0
+                              ? theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.14)
+                              : AppTheme.croBlue.withValues(alpha: 0.72),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(2),
+                          ),
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
+        const SizedBox(height: 4),
+        // Tanka os-linija ispod stupaca.
+        Container(height: 1, color: theme.colorScheme.outlineVariant),
         const SizedBox(height: 6),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(timeline.first.month,
+            Text(months.first.month,
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant)),
-            Text(timeline.last.month,
+            Text(months.last.month,
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant)),
           ],
@@ -460,6 +550,42 @@ class _TimelineSection extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Pretvori rijetku listu mjeseci (samo oni s epizodama, "YYYY-MM") u
+/// KONTINUIRANU listu od prvog do zadnjeg mjeseca, umećući `count: 0` za
+/// praznine. Time timeline postaje istinita vremenska os.
+List<PersonMonthCount> _expandMonths(List<PersonMonthCount> input) {
+  if (input.isEmpty) return input;
+
+  int? keyOf(String m) {
+    final parts = m.split('-');
+    if (parts.length < 2) return null;
+    final y = int.tryParse(parts[0]);
+    final mo = int.tryParse(parts[1]);
+    if (y == null || mo == null) return null;
+    return y * 12 + (mo - 1);
+  }
+
+  final counts = <int, int>{};
+  int? minK, maxK;
+  for (final e in input) {
+    final k = keyOf(e.month);
+    if (k == null) continue;
+    counts[k] = e.count;
+    if (minK == null || k < minK) minK = k;
+    if (maxK == null || k > maxK) maxK = k;
+  }
+  if (minK == null || maxK == null) return input;
+
+  final out = <PersonMonthCount>[];
+  for (int k = minK; k <= maxK; k++) {
+    final y = k ~/ 12;
+    final mo = (k % 12) + 1;
+    final label = '$y-${mo.toString().padLeft(2, '0')}';
+    out.add(PersonMonthCount(month: label, count: counts[k] ?? 0));
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
