@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../models/person_hub.dart';
 import '../models/podcast_summary.dart';
 import '../services/episode_language.dart';
 import '../l10n/app_localizations.dart';
@@ -29,6 +31,10 @@ class EntitiesSection extends StatelessWidget {
             title: l.sectionPeople,
             items: people,
             color: Colors.blue,
+            // Osobe vode na javni profil govornika (/p/:slug). Oni koji su i
+            // govornici dobiju bogat profil; ostali (samo spomenuti) padnu na
+            // uredno prazno stanje. Mjesta/organizacije nisu klikabilni.
+            onItemTap: (name) => context.go('/p/${personSlug(name)}'),
           ),
           const SizedBox(height: 16),
           _EntityGroup(
@@ -56,11 +62,15 @@ class _EntityGroup extends StatelessWidget {
   final List<String> items;
   final Color color;
 
+  /// Ako je zadan, svaki chip postaje klikabilan (npr. osobe → profil).
+  final void Function(String item)? onItemTap;
+
   const _EntityGroup({
     required this.icon,
     required this.title,
     required this.items,
     required this.color,
+    this.onItemTap,
   });
 
   @override
@@ -91,22 +101,28 @@ class _EntityGroup extends StatelessWidget {
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: items
-              .map((item) => Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withAlpha(20),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: color.withAlpha(60)),
-                    ),
-                    child: Text(
-                      item,
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: color.withAlpha(220)),
-                    ),
-                  ))
-              .toList(),
+          children: items.map((item) {
+            final chip = Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withAlpha(20),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: color.withAlpha(60)),
+              ),
+              child: Text(
+                item,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: color.withAlpha(220)),
+              ),
+            );
+            if (onItemTap == null) return chip;
+            return InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => onItemTap!(item),
+              child: chip,
+            );
+          }).toList(),
         ),
       ],
     );

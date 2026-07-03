@@ -103,6 +103,14 @@ class _NotFound extends StatelessWidget {
 
   const _NotFound({required this.slug});
 
+  /// Čitljivo ime iz slug-a (dijakritika je izgubljena u fold-u, ali dovoljno
+  /// informativno da korisnik zna KOJU osobu nismo našli).
+  static String _readable(String slug) => slug
+      .split('-')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -120,6 +128,13 @@ class _NotFound extends StatelessWidget {
               l.personNotFoundTitle,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '»${_readable(slug)}«',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: theme.colorScheme.primary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),

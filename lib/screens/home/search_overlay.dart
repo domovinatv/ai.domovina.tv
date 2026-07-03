@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import '../../models/channel_index.dart';
+import '../../models/person_hub.dart';
 import '../../models/channel_detail.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
@@ -901,18 +903,53 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                         ),
                         const SizedBox(width: 8),
                       ],
+                      // Govornici u rezultatu SU govornici (ne samo spomenuti)
+                      // pa sigurno vode na profil (/p/:slug). Nested tap: ovaj
+                      // GestureDetector hvata tap na imenu, ostatak retka i
+                      // dalje otvara epizodu.
                       Flexible(
-                        child: Text(
-                          r.speakers.isNotEmpty
-                              ? r.speakers.join(', ')
-                              : r.channel,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.7),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: r.speakers.isNotEmpty
+                            ? GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  final router = GoRouter.of(context);
+                                  Navigator.of(context).pop();
+                                  router.go(
+                                      '/p/${personSlug(r.speakers.first)}');
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person,
+                                        size: 11,
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.8)),
+                                    const SizedBox(width: 3),
+                                    Flexible(
+                                      child: Text(
+                                        r.speakers.join(', '),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                          color: theme.colorScheme.primary
+                                              .withValues(alpha: 0.9),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Text(
+                                r.channel,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                       ),
                       const SizedBox(width: 8),
                       EpisodeAgeChip(r.uploadDate),
