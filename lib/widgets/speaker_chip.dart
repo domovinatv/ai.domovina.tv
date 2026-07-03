@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../models/person_hub.dart';
 import '../models/podcast_summary.dart';
 
 /// Kompaktni chip koji prikazuje govornika kao "Ime · Voditelj/Gost".
 /// Ako pipeline nije izvukao pravo ime (suggested_name == role), prikazuje
 /// samo capitalized roleLabel.
+///
+/// Kad govornik ima PRAVO ime (displayName != null), chip je tappable i vodi
+/// na javni profil govornika `/p/:slug`. Role-labeli bez imena ("Voditelj",
+/// "Gost") NISU u bazi pa se ne linkaju.
 class SpeakerChip extends StatelessWidget {
   final SummarySpeaker speaker;
 
@@ -44,7 +50,7 @@ class SpeakerChip extends StatelessWidget {
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           );
 
-    return Chip(
+    final chip = Chip(
       avatar: Icon(
         Icons.person,
         size: 16,
@@ -54,6 +60,15 @@ class SpeakerChip extends StatelessWidget {
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
+    );
+
+    // Samo govornici s pravim imenom vode na profil (/p/:slug). Bez imena
+    // (role-label) → nema linka jer takav slug ne postoji u bazi.
+    if (name == null) return chip;
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () => context.go('/p/${personSlug(name)}'),
+      child: chip,
     );
   }
 }

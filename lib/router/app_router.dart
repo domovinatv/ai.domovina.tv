@@ -4,6 +4,7 @@ import '../onboarding/moments/m4_handoff_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/channels/all_channels_screen.dart';
 import '../screens/channel/channel_screen.dart';
+import '../screens/person/person_screen.dart';
 import '../screens/episode_screen.dart';
 import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
@@ -60,6 +61,21 @@ GoRouter createRouter() {
             child: TvMode.isTv
                 ? TvChannelScreen(channelId: channelId)
                 : ChannelScreen(channelId: channelId),
+          );
+        },
+      ),
+      // Javni profil govornika ("person hub") — /p/:slug. Agregira SVE epizode
+      // u kojima osoba GOVORI, kroz sve kanale. VAŽNO: person slug je primarni
+      // ključ u bazi i prosljeđuje se DOSLOVNO (s crticama) — za razliku od
+      // channel slug-a (/c/:slug) koji radi `-`→`_`. Vidi PersonScreen +
+      // lib/services/person_service.dart.
+      GoRoute(
+        path: '/p/:slug',
+        pageBuilder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          return NoTransitionPage(
+            key: ValueKey('person-$slug'),
+            child: PersonScreen(slug: slug),
           );
         },
       ),

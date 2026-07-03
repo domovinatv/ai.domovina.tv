@@ -2964,4 +2964,32 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get authSectionLanguage => 'Jezik';
+
+  @override
+  String personEpisodesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda',
+      few: '$count epizode',
+      one: '$count epizoda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personAppearsOn => 'Gostuje na';
+
+  @override
+  String get personActivityOverTime => 'Aktivnost kroz vrijeme';
+
+  @override
+  String get personEpisodesHeading => 'Epizode';
+
+  @override
+  String get personNotFoundTitle => 'Osobu nismo pronašli';
+
+  @override
+  String get personNotFoundBody =>
+      'Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.';
 }

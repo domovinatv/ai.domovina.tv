@@ -778,5 +778,11 @@
   "tvLoadingChannels": "Loading {loaded}/{total} channels…",
   "tvTipsPreparingCatalog": "Preparing the catalogue…",
   "tvPlay": "Play",
-  "authSectionLanguage": "Language"
+  "authSectionLanguage": "Language",
+  "personEpisodesCount": "{count, plural, one{{count} episode} other{{count} episodes}}",
+  "personAppearsOn": "Appears on",
+  "personActivityOverTime": "Activity over time",
+  "personEpisodesHeading": "Episodes",
+  "personNotFoundTitle": "Person not found",
+  "personNotFoundBody": "This person isn't in our speaker database yet, or has no processed episodes."
 }

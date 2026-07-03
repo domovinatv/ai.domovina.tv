@@ -2946,4 +2946,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authSectionLanguage => 'Language';
+
+  @override
+  String personEpisodesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count episodes',
+      one: '$count episode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personAppearsOn => 'Appears on';
+
+  @override
+  String get personActivityOverTime => 'Activity over time';
+
+  @override
+  String get personEpisodesHeading => 'Episodes';
+
+  @override
+  String get personNotFoundTitle => 'Person not found';
+
+  @override
+  String get personNotFoundBody =>
+      'This person isn\'t in our speaker database yet, or has no processed episodes.';
 }

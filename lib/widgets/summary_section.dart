@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../models/person_hub.dart';
 import '../models/podcast_summary.dart';
 import '../services/episode_language.dart';
 import '../l10n/app_localizations.dart';
@@ -57,38 +59,47 @@ class SummarySection extends StatelessWidget {
             final name = sp.displayName;
             final roleLabel = isEn ? sp.roleLabelEn() : sp.roleLabel;
             final primary = name ?? roleLabel;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Text(
-                      primary.isNotEmpty ? primary[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
+            final row = Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Text(
+                    primary.isNotEmpty ? primary[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(primary,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w600)),
-                      if (name != null && roleLabel.isNotEmpty)
-                        Text(
-                          roleLabel,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(primary,
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    if (name != null && roleLabel.isNotEmpty)
+                      Text(
+                        roleLabel,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                  ],
+                ),
+              ],
+            );
+            // Govornik s pravim imenom → tap na profil (/p/:slug). Anonimni
+            // role-labeli nisu u bazi pa se ne linkaju.
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: name == null
+                  ? row
+                  : InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => context.go('/p/${personSlug(name)}'),
+                      child: row,
+                    ),
             );
           }),
           const SizedBox(height: 24),

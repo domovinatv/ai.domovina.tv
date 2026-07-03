@@ -3667,5 +3667,32 @@
   "authSectionLanguage": "Jezik",
   "@authSectionLanguage": {
     "description": "Naslov sekcije za odabir UI jezika na /account ekranu."
+  },
+  "personEpisodesCount": "{count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}",
+  "@personEpisodesCount": {
+    "description": "Broj epizoda u kojima osoba govori — statistika na profilu govornika (/p/:slug).",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "personAppearsOn": "Gostuje na",
+  "@personAppearsOn": {
+    "description": "Naslov sekcije s raspodjelom epizoda po kanalima na profilu govornika."
+  },
+  "personActivityOverTime": "Aktivnost kroz vrijeme",
+  "@personActivityOverTime": {
+    "description": "Naslov mjesečnog grafa aktivnosti na profilu govornika."
+  },
+  "personEpisodesHeading": "Epizode",
+  "@personEpisodesHeading": {
+    "description": "Naslov popisa epizoda na profilu govornika."
+  },
+  "personNotFoundTitle": "Osobu nismo pronašli",
+  "@personNotFoundTitle": {
+    "description": "Prazno stanje kad slug govornika ne postoji (404) ili dohvat ne uspije."
+  },
+  "personNotFoundBody": "Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.",
+  "@personNotFoundBody": {
+    "description": "Objašnjenje praznog stanja na profilu govornika."
   }
 }

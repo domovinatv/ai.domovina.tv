@@ -4771,6 +4771,42 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Jezik'**
   String get authSectionLanguage;
+
+  /// Broj epizoda u kojima osoba govori — statistika na profilu govornika (/p/:slug).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}'**
+  String personEpisodesCount(int count);
+
+  /// Naslov sekcije s raspodjelom epizoda po kanalima na profilu govornika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gostuje na'**
+  String get personAppearsOn;
+
+  /// Naslov mjesečnog grafa aktivnosti na profilu govornika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivnost kroz vrijeme'**
+  String get personActivityOverTime;
+
+  /// Naslov popisa epizoda na profilu govornika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode'**
+  String get personEpisodesHeading;
+
+  /// Prazno stanje kad slug govornika ne postoji (404) ili dohvat ne uspije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osobu nismo pronašli'**
+  String get personNotFoundTitle;
+
+  /// Objašnjenje praznog stanja na profilu govornika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.'**
+  String get personNotFoundBody;
 }
 
 class _AppLocalizationsDelegate

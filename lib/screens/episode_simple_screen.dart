@@ -8,6 +8,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/person_hub.dart';
 import '../pinka_sdk/pinka_sdk.dart';
 import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
@@ -1347,45 +1348,55 @@ class _InfoTab extends StatelessWidget {
           const SizedBox(height: 8),
           ...summary.speakers.map((s) {
             final roleLabel = isEn ? s.roleLabelEn() : s.roleLabel;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.person,
-                      size: 18,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
+            final name = s.displayName;
+            final row = Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.person,
+                    size: 18,
+                    color: theme.colorScheme.onPrimaryContainer,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        // Ako pipeline nije izvukao pravo ime (host se ne
+                        // predstavlja), suggested_name je == role — tada
+                        // prikazi samo capitalized roleLabel.
+                        name ?? roleLabel,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (name != null && s.role.isNotEmpty)
                         Text(
-                          // Ako pipeline nije izvukao pravo ime (host se ne
-                          // predstavlja), suggested_name je == role — tada
-                          // prikazi samo capitalized roleLabel.
-                          s.displayName ?? roleLabel,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                          roleLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        if (s.displayName != null && s.role.isNotEmpty)
-                          Text(
-                            roleLabel,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            );
+            // Govornik s pravim imenom → tap na profil (/p/:slug). Anonimni
+            // role-labeli nisu u bazi pa se ne linkaju.
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: name == null
+                  ? row
+                  : InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => context.go('/p/${personSlug(name)}'),
+                      child: row,
+                    ),
             );
           }),
           const SizedBox(height: 16),
