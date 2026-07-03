@@ -4807,6 +4807,24 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.'**
   String get personNotFoundBody;
+
+  /// Tooltip gumba za dijeljenje poveznice na profil govornika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podijeli profil'**
+  String get personShareTooltip;
+
+  /// Potvrda nakon kopiranja poveznice na profil govornika u međuspremnik.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica na profil kopirana'**
+  String get personLinkCopied;
+
+  /// Naslov sekcije s epizodama u kojima se osoba SPOMINJE (a ne govori).
+  ///
+  /// In hr, this message translates to:
+  /// **'Spominje se u'**
+  String get personMentionedIn;
 }
 
 class _AppLocalizationsDelegate

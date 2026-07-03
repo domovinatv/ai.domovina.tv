@@ -3694,5 +3694,17 @@
   "personNotFoundBody": "Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.",
   "@personNotFoundBody": {
     "description": "Objašnjenje praznog stanja na profilu govornika."
+  },
+  "personShareTooltip": "Podijeli profil",
+  "@personShareTooltip": {
+    "description": "Tooltip gumba za dijeljenje poveznice na profil govornika."
+  },
+  "personLinkCopied": "Poveznica na profil kopirana",
+  "@personLinkCopied": {
+    "description": "Potvrda nakon kopiranja poveznice na profil govornika u međuspremnik."
+  },
+  "personMentionedIn": "Spominje se u",
+  "@personMentionedIn": {
+    "description": "Naslov sekcije s epizodama u kojima se osoba SPOMINJE (a ne govori)."
   }
 }

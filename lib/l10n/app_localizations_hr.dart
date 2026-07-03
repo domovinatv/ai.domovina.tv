@@ -2992,4 +2992,13 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get personNotFoundBody =>
       'Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.';
+
+  @override
+  String get personShareTooltip => 'Podijeli profil';
+
+  @override
+  String get personLinkCopied => 'Poveznica na profil kopirana';
+
+  @override
+  String get personMentionedIn => 'Spominje se u';
 }

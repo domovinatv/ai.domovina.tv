@@ -117,6 +117,16 @@ class PersonHub {
   final List<PersonEpisode> episodes;
   final List<PersonMonthCount> timeline;
 
+  /// Epizode u kojima se osoba SPOMINJE (mentioned_people), a NE govori —
+  /// zaseban izvor od [episodes]. Prazno dok backend ne pošalje `mentions`
+  /// (sekcija se tada jednostavno ne prikaže). Mention nema speaking-timestamp
+  /// pa je `first_ts` 0 i `deep_link` je `/v/<id>` bez `/t/`.
+  final List<PersonEpisode> mentions;
+
+  /// Broj epizoda u kojima se osoba spominje (`mention_episode_count` s backenda,
+  /// fallback na duljinu [mentions]).
+  final int mentionCount;
+
   const PersonHub({
     required this.name,
     required this.slug,
@@ -126,12 +136,15 @@ class PersonHub {
     required this.channels,
     required this.episodes,
     required this.timeline,
+    this.mentions = const [],
+    this.mentionCount = 0,
   });
 
   factory PersonHub.fromJson(Map<String, dynamic> json) {
     final rawChannels = json['channels'] as List<dynamic>? ?? const [];
     final rawEpisodes = json['episodes'] as List<dynamic>? ?? const [];
     final rawTimeline = json['timeline'] as List<dynamic>? ?? const [];
+    final rawMentions = json['mentions'] as List<dynamic>? ?? const [];
     return PersonHub(
       name: json['name'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
@@ -147,6 +160,11 @@ class PersonHub {
       timeline: rawTimeline
           .map((e) => PersonMonthCount.fromJson(e as Map<String, dynamic>))
           .toList(),
+      mentions: rawMentions
+          .map((e) => PersonEpisode.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      mentionCount: (json['mention_episode_count'] as num?)?.toInt() ??
+          rawMentions.length,
     );
   }
 }

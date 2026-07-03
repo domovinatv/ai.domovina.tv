@@ -18,6 +18,10 @@
 
 const CDN = 'https://cdn.domovina.ai';
 const SITE = 'https://domovina.ai';
+// Person-hub agregat (domovina-rag) — isti no-auth/CORS JSON wrapper kao /api/search.
+// GET .../api/person/<slug> → { name, slug, avatar_url, channel_count, episode_count, ... }.
+// Vidi lib/services/person_service.dart + lib/models/person_hub.dart.
+const PERSON_API = 'https://mcp.domovina.ai/api/person';
 
 // --- Cal.com booking ("15 min DOMOVINA.ai", stepanic/15min) ---------------
 // eventTypeId je stabilan (dohvaćen iz /v2/event-types). Ključ dolazi SAMO iz
@@ -288,6 +292,23 @@ export default {
         return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl), 'public, max-age=3600, s-maxage=3600');
       }
       // info ne postoji — Flutter će prikazati grešku, servamo plain index
+      return htmlResponse(await (await indexPromise).text(), 'no-store');
+    }
+
+    // Person-hub profil — /p/<slug>. Slug se koristi DOSLOVNO (bez `-`↔`_`
+    // transformacije koju rade kanali) jer je primarni ključ u bazi. Fetchamo
+    // agregat s domovina-rag i injectamo osobno-specifične OG tagove PRIJE nego
+    // crawler (WhatsApp/Facebook/…) dobije odgovor — inače dijeli generički
+    // domovina.ai preview.
+    const pMatch = path.match(/^\/p\/([a-z0-9-]{2,80})$/);
+    if (pMatch) {
+      const slug = pMatch[1];
+      const person = await fetchJson(`${PERSON_API}/${encodeURIComponent(slug)}`);
+      if (person && person.name) {
+        const indexHtml = await (await indexPromise).text();
+        return htmlResponse(injectPersonTags(indexHtml, slug, person), 'public, max-age=3600, s-maxage=3600');
+      }
+      // Slug ne postoji (404) ili API nedostupan — Flutter pokaže prazno stanje.
       return htmlResponse(await (await indexPromise).text(), 'no-store');
     }
 
@@ -562,6 +583,117 @@ ${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channe
   html = html
     .replace(/<title>[^<]*<\/title>/gi, '')
     .replace(/<meta\s[^>]*(?:property|name)=["'](?:og:|twitter:|article:|description)[^"']*["'][^>]*>/gi, '')
+    .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
+  return html.replace('</head>', `${tags}\n</head>`);
+}
+
+/**
+ * Hrvatski broj + imenica po slavenskom plural pravilu:
+ *   1  → one   (1 epizoda, 21 epizoda)
+ *   2–4 → few  (2 epizode, 23 epizode)
+ *   else → many (5 epizoda, 11 epizoda)
+ * Iznimke: 11–14 uvijek "many".
+ */
+function croPlural(n, one, few, many) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
+/**
+ * Injektira OG/JSON-LD tagove za person-hub profil (/p/<slug>).
+ * Cilj: kad se link dijeli na WhatsApp/Facebook, preview pokaže IME osobe i
+ * broj epizoda/kanala — ne generički domovina.ai opis.
+ */
+function injectPersonTags(indexHtml, slug, person) {
+  const name = (person.name || '').trim() || 'Govornik';
+  const epCount = Number(person.episode_count) || (Array.isArray(person.episodes) ? person.episodes.length : 0);
+  const chCount = Number(person.channel_count) || (Array.isArray(person.channels) ? person.channels.length : 0);
+
+  const epWord = croPlural(epCount, 'epizodi', 'epizode', 'epizoda'); // "u N epizodi/epizode/epizoda"
+  const chWord = croPlural(chCount, 'kanalu', 'kanala', 'kanala');   // "na N kanalu/kanala"
+
+  const title = `${name} — podcast profil`;
+  // Gramatika: "gost u 1 epizodi", "gost u 2 epizode", "gost u 6 epizoda";
+  //            "na 1 kanalu", "na 6 kanala".
+  const desc = `Sve epizode u kojima ${name} govori — gost u ${epCount} ${epWord} `
+    + `na ${chCount} ${chWord}. AI sažetci, transkripti i analiza podcasta na DOMOVINA.ai.`;
+
+  const canonical = `${SITE}/p/${slug}`;
+
+  // og:image — avatar osobe ako postoji (kvadratni headshot), inače brend slika.
+  // WhatsApp voli 1200×630; za kvadratni avatar padamo na summary karticu.
+  const hasAvatar = typeof person.avatar_url === 'string' && person.avatar_url.startsWith('http');
+  const image = hasAvatar ? person.avatar_url : `${SITE}/og-image.png`;
+  const twitterCard = hasAvatar ? 'summary' : 'summary_large_image';
+
+  // Split imena za og profile:first_name/last_name (best-effort).
+  const parts = name.split(/\s+/);
+  const firstName = parts[0] || name;
+  const lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    mainEntity: {
+      '@type': 'Person',
+      name,
+      url: canonical,
+      ...(hasAvatar ? { image: person.avatar_url } : {}),
+      subjectOf: {
+        '@type': 'ItemList',
+        numberOfItems: epCount,
+        name: `Epizode u kojima govori ${name}`,
+      },
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'DOMOVINA.ai',
+      logo: { '@type': 'ImageObject', url: `${SITE}/icons/Icon-512.png` },
+    },
+  }, null, 2);
+
+  const tags = `
+  <title>${x(title)} – DOMOVINA.ai</title>
+  <meta name="description" content="${x(desc)}">
+  <link rel="canonical" href="${canonical}">
+
+  <meta property="og:type" content="profile">
+  <meta property="og:locale" content="hr_HR">
+  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:logo" content="${SITE}/og-image-square.png">
+  <meta property="og:title" content="${x(name)}">
+  <meta property="og:description" content="${x(desc)}">
+  <meta property="og:url" content="${canonical}">
+  <meta property="og:image" content="${x(image)}">
+  <meta property="og:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta property="profile:first_name" content="${x(firstName)}">${
+    lastName ? `\n  <meta property="profile:last_name" content="${x(lastName)}">` : ''
+  }
+  <meta property="profile:username" content="${x(slug)}">
+
+  <meta name="twitter:card" content="${twitterCard}">
+  <meta name="twitter:title" content="${x(name)}">
+  <meta name="twitter:description" content="${x(desc)}">
+  <meta name="twitter:image" content="${x(image)}">
+  <meta name="twitter:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta name="twitter:label1" content="Epizode">
+  <meta name="twitter:data1" content="${epCount}">
+  <meta name="twitter:label2" content="Kanali">
+  <meta name="twitter:data2" content="${chCount}">
+
+  <script type="application/ld+json">
+${jsonLd}
+  </script>`;
+
+  // Ukloni default tagove + prethodni JSON-LD; injectaj person-specifične.
+  let html = indexHtml;
+  html = html
+    .replace(/<title>[^<]*<\/title>/gi, '')
+    .replace(/<meta\s[^>]*(?:property|name)=["'](?:og:|twitter:|article:|profile:|description)[^"']*["'][^>]*>/gi, '')
     .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '')
     .replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
   return html.replace('</head>', `${tags}\n</head>`);

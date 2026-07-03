@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -50,6 +51,22 @@ class _PersonScreenState extends State<PersonScreen> {
     }
   }
 
+  /// Kopira javnu poveznicu na profil (`/p/<slug>`). Worker injecta osobno-
+  /// specifične OG tagove na taj path (ime + broj epizoda/kanala) pa WhatsApp/
+  /// Facebook preview pokaže osobu, ne generički domovina.ai — vidi web/_worker.js.
+  void _shareProfile() {
+    final url = 'https://domovina.ai/p/${widget.slug}';
+    Clipboard.setData(ClipboardData(text: url));
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l.personLinkCopied),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -68,6 +85,16 @@ class _PersonScreenState extends State<PersonScreen> {
                     icon: const Icon(Icons.arrow_back),
                     tooltip: l.commonBack,
                     onPressed: _back,
+                  ),
+                  const Spacer(),
+                  FutureBuilder<PersonHub?>(
+                    future: _future,
+                    builder: (context, snap) => IconButton(
+                      icon: const Icon(Icons.ios_share),
+                      tooltip: l.personShareTooltip,
+                      // Aktivan tek kad profil postoji — nema smisla dijeliti 404.
+                      onPressed: snap.data != null ? _shareProfile : null,
+                    ),
                   ),
                 ],
               ),
@@ -185,6 +212,7 @@ class _SingleColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -202,7 +230,17 @@ class _SingleColumn extends StatelessWidget {
             ],
             if (hub.episodes.isNotEmpty) ...[
               const SizedBox(height: 28),
-              _EpisodesSection(episodes: hub.episodes),
+              _EpisodesSection(
+                title: l.personEpisodesHeading,
+                episodes: hub.episodes,
+              ),
+            ],
+            if (hub.mentions.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              _EpisodesSection(
+                title: l.personMentionedIn,
+                episodes: hub.mentions,
+              ),
             ],
           ],
         ),
@@ -221,15 +259,19 @@ class _TwoColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final hasMentions = hub.mentions.isNotEmpty;
+    // Treći stupac („Spominje se u") traži više širine da sve tri kolone dišu.
+    final maxWidth = hasMentions ? 1440.0 : 1180.0;
+
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1180),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Lijevi stupac — glavni podaci; vlastiti scroll ako je visok.
             SizedBox(
-              width: 400,
+              width: 380,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 16, 40),
                 child: Column(
@@ -248,24 +290,27 @@ class _TwoColumn extends StatelessWidget {
                 ),
               ),
             ),
-            // Desni stupac — epizode, neovisan scroll.
-            Expanded(
-              child: hub.episodes.isEmpty
-                  ? const SizedBox.shrink()
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 20, 40),
-                      itemCount: hub.episodes.length + 1,
-                      itemBuilder: (context, i) {
-                        if (i == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _SectionTitle(title: l.personEpisodesHeading),
-                          );
-                        }
-                        return _EpisodeCard(episode: hub.episodes[i - 1]);
-                      },
-                    ),
-            ),
+            // Srednji stupac — „Govori u" (epizode), neovisan scroll.
+            if (hub.episodes.isNotEmpty)
+              Expanded(
+                flex: 3,
+                child: _EpisodeListColumn(
+                  title: l.personEpisodesHeading,
+                  episodes: hub.episodes,
+                ),
+              ),
+            // Desni stupac — „Spominje se u" (spomeni), zaseban scroll. Tanka
+            // vertikalna linija razdvaja ga od „Govori u" radi preglednosti.
+            if (hasMentions) ...[
+              const VerticalDivider(width: 1, thickness: 1),
+              Expanded(
+                flex: 2,
+                child: _EpisodeListColumn(
+                  title: l.personMentionedIn,
+                  episodes: hub.mentions,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -608,20 +653,46 @@ List<PersonMonthCount> _expandMonths(List<PersonMonthCount> input) {
 // ---------------------------------------------------------------------------
 
 class _EpisodesSection extends StatelessWidget {
+  final String title;
   final List<PersonEpisode> episodes;
 
-  const _EpisodesSection({required this.episodes});
+  const _EpisodesSection({required this.title, required this.episodes});
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(title: l.personEpisodesHeading),
+        _SectionTitle(title: title),
         const SizedBox(height: 10),
         for (final e in episodes) _EpisodeCard(episode: e),
       ],
+    );
+  }
+}
+
+/// Desktop stupac: naslov + neovisno scrollabilna lista epizoda (lazy).
+/// Koristi ga i „Govori u" (episodes) i „Spominje se u" (mentions) stupac.
+class _EpisodeListColumn extends StatelessWidget {
+  final String title;
+  final List<PersonEpisode> episodes;
+
+  const _EpisodeListColumn({required this.title, required this.episodes});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+      itemCount: episodes.length + 1,
+      itemBuilder: (context, i) {
+        if (i == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _SectionTitle(title: title),
+          );
+        }
+        return _EpisodeCard(episode: episodes[i - 1]);
+      },
     );
   }
 }

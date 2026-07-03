@@ -2973,4 +2973,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get personNotFoundBody =>
       'This person isn\'t in our speaker database yet, or has no processed episodes.';
+
+  @override
+  String get personShareTooltip => 'Share profile';
+
+  @override
+  String get personLinkCopied => 'Profile link copied';
+
+  @override
+  String get personMentionedIn => 'Mentioned in';
 }

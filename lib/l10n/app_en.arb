@@ -784,5 +784,8 @@
   "personActivityOverTime": "Activity over time",
   "personEpisodesHeading": "Episodes",
   "personNotFoundTitle": "Person not found",
-  "personNotFoundBody": "This person isn't in our speaker database yet, or has no processed episodes."
+  "personNotFoundBody": "This person isn't in our speaker database yet, or has no processed episodes.",
+  "personShareTooltip": "Share profile",
+  "personLinkCopied": "Profile link copied",
+  "personMentionedIn": "Mentioned in"
 }
