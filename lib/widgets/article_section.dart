@@ -9,6 +9,8 @@ import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 import 'magisterium_section.dart';
 import 'citation_helpers.dart';
+import 'clip_share_sheet.dart';
+import '../services/clip_service.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
 
@@ -92,12 +94,21 @@ class _IterationBlock extends StatelessWidget {
         children: [
           ArticleIterationHeader(iteration: iteration),
           const SizedBox(height: 16),
-          ...iteration.sections.map(
+          ...iteration.sections.asMap().entries.map((entry) {
+            final i = entry.key;
+            final sec = entry.value;
+            // Clip window za sekciju: start = ova sekcija, end = iduća sekcija
+            // (ili kraj iteracije za zadnju). Null kad nema videa (audio-only).
+            final endSec = i + 1 < iteration.sections.length
+                ? ClipService.hmsToSeconds(
+                    iteration.sections[i + 1].screenshotTimestamp,
+                  )
+                : ClipService.hmsToSeconds(iteration.endTime);
             // Leading razmak (top:80) je IZVAN KeyedSubtree-a da scroll-to-section
             // (localToGlobal na keyed box) cilja sam sadrzaj sekcije, a ne prazni
             // padding iznad njega — inace naslov sjedne ~80px prenisko (mobile).
             // Isti razlog kao paralelni desktop layout koji padding drzi izvan keya.
-            (sec) => Padding(
+            return Padding(
               padding: const EdgeInsets.only(top: 80),
               child: KeyedSubtree(
                 key: sectionKeys[sec.screenshotTimestamp],
@@ -110,10 +121,11 @@ class _IterationBlock extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.only(bottom: 56),
                   showScreenshot: showScreenshot,
+                  clipEndSec: showScreenshot ? endSec : null,
                 ),
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -196,6 +208,11 @@ class ArticleSectionCard extends StatefulWidget {
   /// screenshote — inače bi se vidio prazan sivi placeholder).
   final bool showScreenshot;
 
+  /// Kraj clip-raspona za ovu sekciju (početak = screenshot_timestamp). Kad je
+  /// non-null i > start, header dobiva gumb za preuzimanje/dijeljenje isječka.
+  /// Null za audio-only ili kad raspon nije poznat (cutter treba `video_h264.mp4`).
+  final int? clipEndSec;
+
   const ArticleSectionCard({
     super.key,
     required this.section,
@@ -205,6 +222,7 @@ class ArticleSectionCard extends StatefulWidget {
     this.showInlineMagisterium = true,
     this.padding = const EdgeInsets.only(bottom: 56, top: 80),
     this.showScreenshot = true,
+    this.clipEndSec,
   });
 
   @override
@@ -319,6 +337,15 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                   ),
                 ),
               ),
+              if (widget.clipEndSec != null &&
+                  widget.clipEndSec! >
+                      _tsToSeconds(section.screenshotTimestamp))
+                ClipShareButton(
+                  videoId: widget.youtubeId,
+                  startSec: _tsToSeconds(section.screenshotTimestamp),
+                  endSec: widget.clipEndSec!,
+                  title: subtitle,
+                ),
               if (mag?.score != null) ...[
                 const SizedBox(width: 4),
                 Container(

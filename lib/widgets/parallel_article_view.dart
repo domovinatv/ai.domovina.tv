@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/magisterium_data.dart';
 import '../models/podcast_article.dart';
+import '../services/clip_service.dart';
 import '../l10n/app_localizations.dart';
 import 'article_section.dart';
 import 'magisterium_article_section.dart';
@@ -66,8 +67,13 @@ class ParallelArticleView extends StatelessWidget {
           child: ArticleIterationHeader(iteration: iter),
         ),
       );
-      for (final sec in iter.sections) {
+      for (var i = 0; i < iter.sections.length; i++) {
+        final sec = iter.sections[i];
         final mag = magisterium.forTimestamp(sec.screenshotTimestamp);
+        // Clip window: start = ova sekcija, end = iduća (ili kraj iteracije).
+        final endSec = i + 1 < iter.sections.length
+            ? ClipService.hmsToSeconds(iter.sections[i + 1].screenshotTimestamp)
+            : ClipService.hmsToSeconds(iter.endTime);
         children.add(
           Padding(
             padding: EdgeInsets.fromLTRB(20, firstSection ? 20 : 44, 20, 0),
@@ -85,6 +91,7 @@ class ParallelArticleView extends StatelessWidget {
                       showInlineMagisterium: false,
                       padding: EdgeInsets.zero,
                       showScreenshot: showScreenshot,
+                      clipEndSec: showScreenshot ? endSec : null,
                     ),
                   ),
                   SizedBox(width: columnGap),
