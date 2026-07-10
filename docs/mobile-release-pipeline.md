@@ -143,5 +143,21 @@ flowchart TD
 | `scripts/build-mobile-release.sh [android\|ios\|all]` | release AAB/IPA s dart-defines iz `.env`; iOS ide kroz `flutter clean` → `--config-only` → `xcodebuild archive`/`-exportArchive` s ASC API key (ne `flutter build ipa`) |
 | `scripts/play-upload.sh [internal\|production]` | upload AAB na Play track (SA auth); release name čita iz pubspec-a |
 | `scripts/testflight-upload.sh` | upload IPA na TestFlight (`altool` + ASC API key) |
+| `scripts/play-promote.sh <vc> [track] [notes-hr]` | promocija VEĆ uploadanog versionCodea na production (bez re-uploada; re-upload istog vc-a pada) |
+
+## Production promocija (programski — radi otkad su console forme jednom ispunjene)
+
+- **Android**: `./scripts/play-promote.sh 96 production "Novosti: …"` — edits.insert →
+  tracks.update(production, postojeći versionCode, releaseNotes `hr`) → commit.
+  Google review krene automatski.
+- **iOS** (ASC REST, sve preko `asc-token.rb` JWT-a):
+  1. `POST /v1/appStoreVersions` (`versionString`, rel. app) → `PREPARE_FOR_SUBMISSION`
+     (lokalizacije se naslijede s prethodne verzije).
+  2. `PATCH /v1/appStoreVersionLocalizations/<locId>` s `whatsNew` (obavezno za update).
+  3. Pričekaj `processingState=VALID` builda, pa
+     `PATCH /v1/appStoreVersions/<id>/relationships/build`.
+  4. `POST /v1/reviewSubmissions` (platform IOS) → `POST /v1/reviewSubmissionItems`
+     (rel. appStoreVersion) → `PATCH reviewSubmissions submitted=true` → `WAITING_FOR_REVIEW`.
+  - `ITSAppUsesNonExemptEncryption=false` u Info.plist → nema export-compliance prompta.
 | `scripts/asc-token.rb` | mint ASC API JWT (ES256) |
 | `scripts/asc-upload-screenshot.rb <locId> <displayType> <png>` | upload iOS screenshota |
