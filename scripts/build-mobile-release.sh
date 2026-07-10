@@ -36,6 +36,49 @@ TARGET="${1:-all}"
 
 flutter pub get
 
+# iOS ide PRIJE Androida kad se builda "all": iOS flow radi `flutter clean`
+# (simulator ostaci → x86_64 u objective_c.framework → altool 409), a clean
+# bi obrisao već izbuildani AAB.
+if [[ "$TARGET" == "all" || "$TARGET" == "ios" ]]; then
+  # `flutter build ipa` pada na export koraku (ITalk cert nije u keychainu,
+  # Apple ID nije u Xcodeu) — vozimo xcodebuild direktno s App Store Connect
+  # API key autentikacijom koja programatski kreira cert + profil.
+  # Vidi docs/mobile-release-pipeline.md.
+  ASC_KEY_ID="${ASC_KEY_ID:-25KYCN22QD}"
+  ASC_ISSUER_ID="${ASC_ISSUER_ID:-69a6de85-f7cc-47e3-e053-5b8c7c11a4d1}"
+  ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8}"
+  if [[ ! -f "$ASC_KEY_PATH" ]]; then
+    echo "GRESKA: nema ASC API key na $ASC_KEY_PATH"; exit 1
+  fi
+  echo "==> iOS: flutter clean + config-only…"
+  flutter clean
+  flutter pub get
+  flutter build ios --config-only --release $DEFINES
+
+  echo "==> iOS: xcodebuild archive (ASC API key signing)…"
+  xcodebuild archive \
+    -workspace ios/Runner.xcworkspace \
+    -scheme Runner \
+    -configuration Release \
+    -destination 'generic/platform=iOS' \
+    -archivePath build/ios/archive/Runner.xcarchive \
+    -allowProvisioningUpdates \
+    -authenticationKeyPath "$ASC_KEY_PATH" \
+    -authenticationKeyID "$ASC_KEY_ID" \
+    -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+  echo "==> iOS: exportArchive → IPA…"
+  xcodebuild -exportArchive \
+    -archivePath build/ios/archive/Runner.xcarchive \
+    -exportPath build/ios/ipa \
+    -exportOptionsPlist ios/ExportOptions.plist \
+    -allowProvisioningUpdates \
+    -authenticationKeyPath "$ASC_KEY_PATH" \
+    -authenticationKeyID "$ASC_KEY_ID" \
+    -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+  echo "IPA: build/ios/ipa/*.ipa  (upload: ./scripts/testflight-upload.sh)"
+fi
+
 if [[ "$TARGET" == "all" || "$TARGET" == "android" ]]; then
   if [[ ! -f android/key.properties ]]; then
     echo "GRESKA: android/key.properties ne postoji — release bi bio debug-potpisan (Play ga odbija)."; exit 1
@@ -43,12 +86,6 @@ if [[ "$TARGET" == "all" || "$TARGET" == "android" ]]; then
   echo "==> Android App Bundle (AAB)…"
   flutter build appbundle --release $DEFINES
   echo "AAB: build/app/outputs/bundle/release/app-release.aab"
-fi
-
-if [[ "$TARGET" == "all" || "$TARGET" == "ios" ]]; then
-  echo "==> iOS IPA…"
-  flutter build ipa --release $DEFINES
-  echo "IPA: build/ios/ipa/*.ipa"
 fi
 
 echo "Gotovo."

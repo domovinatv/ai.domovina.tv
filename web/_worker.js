@@ -109,10 +109,11 @@ async function handleCalProxy(request, env, path) {
 // Oba služe i App Links verifikaciji (Android autoVerify, iOS applinks) i
 // passkey/WebAuthn (Android Credential Manager preko assetlinks; iOS webcredentials).
 //
-// POPUNITI prije deploya:
-//   __ANDROID_SHA256_FINGERPRINT__ — SHA-256 signing cert fingerprint(i), velika
-//      slova, ":"-odvojeni (npr. AB:CD:...). Dodaj debug I release ako trebaju oba.
-//      (Google Play signing definira se naknadno.)
+// Fingerprints (SHA-256, velika slova, ":"-odvojeni):
+//   1. Play App Signing key — potpisuje APK-ove koje Play isporučuje uređajima
+//      (izvor: androidpublisher generatedApks API, certificateSha256Hash).
+//   2. Upload key (android/upload-keystore.jks) — lokalno buildani release
+//      APK-ovi (adb install na EON/test uređaje).
 // Apple Team ID (6SCK58757K) je već upisan.
 const ASSETLINKS_JSON = JSON.stringify([
   {
@@ -123,7 +124,10 @@ const ASSETLINKS_JSON = JSON.stringify([
     target: {
       namespace: 'android_app',
       package_name: 'ai.domovina',
-      sha256_cert_fingerprints: ['__ANDROID_SHA256_FINGERPRINT__'],
+      sha256_cert_fingerprints: [
+        '15:C6:2D:19:7B:A1:37:66:3D:07:43:99:B0:DF:C0:66:FA:9B:18:0E:3E:A7:43:34:CD:C4:7A:77:13:16:80:A8',
+        'F6:2C:30:D2:83:FB:BF:E4:B4:2C:51:AC:A8:08:AD:94:55:FB:1E:78:94:72:D9:30:73:96:AE:05:67:13:A1:3A',
+      ],
     },
   },
 ], null, 2);

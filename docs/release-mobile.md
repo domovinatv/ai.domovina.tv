@@ -1,6 +1,7 @@
 # Mobile release runbook — App Store (TestFlight) + Google Play (Internal)
 
-Status na dan pripreme: kod spreman za store build. Verzija `2.0.53+75`.
+Status: pipeline skriptiran end-to-end (build + upload za obje platforme).
+Aktualna verzija je u `pubspec.yaml`; skripte je čitaju same.
 
 ## Identiteti
 - **Bundle / Application ID**: `ai.domovina`
@@ -33,23 +34,14 @@ pod ITalk teamom + ITalk signing pristup (API key ili Xcode account).
 
 ### Export + upload preko API key (CLI)
 ```bash
-# 1. (re)archive pod ITalk teamom
-flutter build ipa --release \
-  --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... --dart-define=MEILI_URL=... \
-  --export-options-plist ios/ExportOptions.plist
-# Ako automatsko potpisivanje ne nađe profil, export iz arhive ručno:
-xcodebuild -exportArchive \
-  -archivePath build/ios/archive/Runner.xcarchive \
-  -exportPath build/ios/ipa \
-  -exportOptionsPlist ios/ExportOptions.plist \
-  -allowProvisioningUpdates \
-  -authenticationKeyPath <AuthKey_XXXX.p8> \
-  -authenticationKeyID <KEY_ID> \
-  -authenticationKeyIssuerID <ISSUER_ID>
+# 1. build IPA (clean → config-only → xcodebuild archive → exportArchive,
+#    sve s ASC API key; `flutter build ipa` NE radi — pada na exportu)
+./scripts/build-mobile-release.sh ios
 # 2. upload na TestFlight
-xcrun altool --upload-app -f build/ios/ipa/*.ipa --type ios \
-  --apiKey <KEY_ID> --apiIssuer <ISSUER_ID>
+./scripts/testflight-upload.sh
 ```
+Ručne xcodebuild/altool komande (ako treba debug pojedinog koraka) su u
+`scripts/build-mobile-release.sh` i `scripts/testflight-upload.sh`.
 API key se generira u App Store Connect → Users and Access → Integrations →
 App Store Connect API → ključ rola App Manager. `.p8` ide u
 `~/.appstoreconnect/private_keys/` ili se referencira putanjom.

@@ -9,6 +9,8 @@ cd "$(dirname "$0")/.."
 PKG=ai.domovina
 TRACK="${1:-internal}"
 AAB=build/app/outputs/bundle/release/app-release.aab
+# Release name = verzija iz pubspec-a (ranije hardkodirano "2.0.53" → stale)
+APP_VER=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
 KEY="${PLAY_SA_KEY:-$HOME/.config/play-publisher/domovina-play-publisher.json}"
 API=https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG
 UPLOAD=https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PKG
@@ -32,7 +34,7 @@ echo "    versionCode=$VC"
 echo "==> tracks.update ($TRACK, status=completed)"
 curl -s "${auth[@]}" -H "Content-Type: application/json" -X PUT \
   "$API/edits/$EDIT/tracks/$TRACK" \
-  -d '{"track":"'"$TRACK"'","releases":[{"name":"2.0.53 ('"$VC"')","versionCodes":["'"$VC"'"],"status":"completed"}]}' \
+  -d '{"track":"'"$TRACK"'","releases":[{"name":"'"$APP_VER"' ('"$VC"')","versionCodes":["'"$VC"'"],"status":"completed"}]}' \
   | ruby -rjson -e 'd=JSON.parse(STDIN.read); abort("ERR: "+d["error"]["message"]) if d["error"]; puts "    track="+d["track"]'
 
 echo "==> edits.commit"

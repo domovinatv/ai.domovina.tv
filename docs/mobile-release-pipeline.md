@@ -140,7 +140,8 @@ flowchart TD
 
 | Skripta | Što radi |
 |---|---|
-| `scripts/build-mobile-release.sh [android\|ios\|all]` | release AAB/IPA s dart-defines iz `.env` |
-| `scripts/play-upload.sh [internal\|production]` | upload AAB na Play track (SA auth) |
+| `scripts/build-mobile-release.sh [android\|ios\|all]` | release AAB/IPA s dart-defines iz `.env`; iOS ide kroz `flutter clean` → `--config-only` → `xcodebuild archive`/`-exportArchive` s ASC API key (ne `flutter build ipa`) |
+| `scripts/play-upload.sh [internal\|production]` | upload AAB na Play track (SA auth); release name čita iz pubspec-a |
+| `scripts/testflight-upload.sh` | upload IPA na TestFlight (`altool` + ASC API key) |
 | `scripts/asc-token.rb` | mint ASC API JWT (ES256) |
 | `scripts/asc-upload-screenshot.rb <locId> <displayType> <png>` | upload iOS screenshota |
