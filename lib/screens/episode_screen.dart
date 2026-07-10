@@ -1246,7 +1246,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
               SummarySection(summary: summaryForUi),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
-              ChaptersSection(outline: data.outline!),
+              ChaptersSection(
+                outline: data.outline!,
+                videoId: data.isAudioOnly ? null : data.youtubeId,
+              ),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
               ArticleSection(
@@ -1351,7 +1354,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         color: theme.colorScheme.outlineVariant,
                       ),
                       const SizedBox(height: 12),
-                      ChaptersSection(outline: data.outline!),
+                      ChaptersSection(
+                        outline: data.outline!,
+                        videoId: data.isAudioOnly ? null : data.youtubeId,
+                      ),
                       Divider(
                         height: 1,
                         color: theme.colorScheme.outlineVariant,
@@ -2165,12 +2171,18 @@ class _MetadataFooter extends StatelessWidget {
           _MetaRow(l.episodeMetaModelSummary, summary.model),
           _MetaRow(l.episodeMetaModelArticle, article.metadata.model),
           if (data.magisteriumPrimary != null)
-            _MetaRow(l.episodeMetaModelTheology, data.magisteriumPrimary!.model),
+            _MetaRow(
+              l.episodeMetaModelTheology,
+              data.magisteriumPrimary!.model,
+            ),
           _MetaRow(
             l.episodeMetaGenerated,
             summary.generatedAt.toIso8601String().substring(0, 10),
           ),
-          _MetaRow(l.episodeMetaLanguage, summary.summary.language.toUpperCase()),
+          _MetaRow(
+            l.episodeMetaLanguage,
+            summary.summary.language.toUpperCase(),
+          ),
           _MetaRow(l.episodeMetaContentType, summary.summary.contentType),
           _MetaRow(l.episodeMetaSentiment, summary.summary.sentiment),
         ],

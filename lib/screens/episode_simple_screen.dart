@@ -25,6 +25,7 @@ import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
 import '../widgets/audio_poster.dart';
+import '../widgets/clip_share_sheet.dart';
 import '../widgets/episode_video.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/language_toggle_chip.dart';
@@ -498,6 +499,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         chapters: _chapters,
         activeIndex: _activeChapterIndex(),
         onChapterTap: (seconds) => _seekTo(seconds),
+        videoId: widget.data.isAudioOnly ? null : widget.data.youtubeId,
+        episodeDurationSec: widget.data.info.duration,
       ),
       if (magV2 != null)
         SingleChildScrollView(child: MagisteriumV2View(data: magV2)),
@@ -1072,10 +1075,17 @@ class _ChaptersTab extends StatelessWidget {
   final int activeIndex;
   final void Function(int seconds) onChapterTap;
 
+  /// Non-null → each chapter row gets a download/share clip action. Null for
+  /// audio-only episodes (the cutter needs `video_h264.mp4`).
+  final String? videoId;
+  final int episodeDurationSec;
+
   const _ChaptersTab({
     required this.chapters,
     required this.activeIndex,
     required this.onChapterTap,
+    this.videoId,
+    this.episodeDurationSec = 0,
   });
 
   String _formatTime(int totalSeconds) {
@@ -1150,13 +1160,34 @@ class _ChaptersTab extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: Icon(
-            isActive ? Icons.play_arrow : Icons.chevron_right,
-            color: isActive
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurfaceVariant,
-            size: 20,
-          ),
+          trailing: () {
+            // Clip window: this chapter's start → next chapter's start, or the
+            // episode end for the last chapter.
+            final startSec = ch.totalSeconds;
+            final endSec = i + 1 < chapters.length
+                ? chapters[i + 1].totalSeconds
+                : episodeDurationSec;
+            final chevron = Icon(
+              isActive ? Icons.play_arrow : Icons.chevron_right,
+              color: isActive
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 20,
+            );
+            if (videoId == null || endSec <= startSec) return chevron;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipShareButton(
+                  videoId: videoId!,
+                  startSec: startSec,
+                  endSec: endSec,
+                  title: ch.topic,
+                ),
+                chevron,
+              ],
+            );
+          }(),
           onTap: () => onChapterTap(ch.totalSeconds),
         );
       },
@@ -1280,10 +1311,7 @@ class _InfoTab extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionTitle(
-                    icon: Icons.topic,
-                    label: l.episodeKeyTopics,
-                  ),
+                  _SectionTitle(icon: Icons.topic, label: l.episodeKeyTopics),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
@@ -1341,10 +1369,7 @@ class _InfoTab extends StatelessWidget {
 
         // Speakers
         if (summary != null && summary.speakers.isNotEmpty) ...[
-          _SectionTitle(
-            icon: Icons.people,
-            label: l.episodeSpeakers,
-          ),
+          _SectionTitle(icon: Icons.people, label: l.episodeSpeakers),
           const SizedBox(height: 8),
           ...summary.speakers.map((s) {
             final roleLabel = isEn ? s.roleLabelEn() : s.roleLabel;

@@ -63,10 +63,7 @@ class ParallelArticleView extends StatelessWidget {
       children.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-          child: ArticleIterationHeader(
-            iteration: iter,
-            videoId: showScreenshot ? youtubeId : null,
-          ),
+          child: ArticleIterationHeader(iteration: iter),
         ),
       );
       for (final sec in iter.sections) {

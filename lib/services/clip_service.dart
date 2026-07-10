@@ -28,6 +28,24 @@ class ClipService {
   static String downloadUrl(String videoId, int chapter) =>
       '$_base/clip/$videoId/$chapter.mp4?dl=1';
 
+  /// Inline/streamable URL for an arbitrary [startSec, endSec] range — used for
+  /// per-chapter (outline) clips. 302 → CDN once warm.
+  static String rangeInlineUrl(String videoId, int startSec, int endSec) =>
+      '$_base/clip/$videoId/r/$startSec-$endSec.mp4';
+
+  /// Download URL for a range clip. `name` (chapter topic) becomes the
+  /// attachment filename slug (server slugifies it).
+  static String rangeDownloadUrl(
+    String videoId,
+    int startSec,
+    int endSec, {
+    String? name,
+  }) {
+    final base = '$_base/clip/$videoId/r/$startSec-$endSec.mp4?dl=1';
+    if (name == null || name.isEmpty) return base;
+    return '$base&name=${Uri.encodeQueryComponent(name)}';
+  }
+
   /// The source `video_h264.mp4` runs ~27 KB/s (H.264 crf30 @ 360p + AAC 128k).
   /// Stream-copy clips inherit that rate, so duration → size is a good estimate
   /// (measured: 42.5 min → 71 MB, 18.7 min → 28 MB).
