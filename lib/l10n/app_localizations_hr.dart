@@ -857,6 +857,32 @@ class AppLocalizationsHr extends AppLocalizations {
   String get episodeWholeEpisode => 'cijela epizoda';
 
   @override
+  String get clipShareTitle => 'Poglavlje kao isječak';
+
+  @override
+  String get clipTooltip => 'Preuzmi ili podijeli poglavlje';
+
+  @override
+  String get clipDownload => 'Preuzmi poglavlje';
+
+  @override
+  String clipDownloadSubtitle(int size, int minutes) {
+    return 'MP4 · ~$size MB · $minutes min';
+  }
+
+  @override
+  String get clipCopyLink => 'Kopiraj vezu na isječak';
+
+  @override
+  String get clipCopyLinkSubtitle => 'Za slanje u poruci ili chatu';
+
+  @override
+  String get clipLinkCopied => 'Veza na isječak kopirana';
+
+  @override
+  String get clipHint => 'Prvi se put isječak priprema nekoliko sekundi.';
+
+  @override
   String get episodeOpenOnYouTube => 'Otvori na YouTubeu';
 
   @override

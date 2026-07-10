@@ -9,6 +9,7 @@ import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 import 'magisterium_section.dart';
 import 'citation_helpers.dart';
+import 'clip_share_sheet.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
 
@@ -90,7 +91,10 @@ class _IterationBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ArticleIterationHeader(iteration: iteration),
+          ArticleIterationHeader(
+            iteration: iteration,
+            videoId: showScreenshot ? youtubeId : null,
+          ),
           const SizedBox(height: 16),
           ...iteration.sections.map(
             // Leading razmak (top:80) je IZVAN KeyedSubtree-a da scroll-to-section
@@ -126,7 +130,16 @@ class _IterationBlock extends StatelessWidget {
 class ArticleIterationHeader extends StatelessWidget {
   final ArticleIteration iteration;
 
-  const ArticleIterationHeader({super.key, required this.iteration});
+  /// When non-null, a trailing action lets the user download/share this chapter
+  /// as a standalone MP4 clip. Null for episodes without a video source
+  /// (audio-only) — the cutter needs `video_h264.mp4`.
+  final String? videoId;
+
+  const ArticleIterationHeader({
+    super.key,
+    required this.iteration,
+    this.videoId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +185,10 @@ class ArticleIterationHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (videoId != null) ...[
+            const SizedBox(width: 4),
+            ClipShareButton(videoId: videoId!, iteration: iteration),
+          ],
         ],
       ),
     );

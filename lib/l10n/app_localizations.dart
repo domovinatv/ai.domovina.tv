@@ -1550,6 +1550,54 @@ abstract class AppLocalizations {
   /// **'cijela epizoda'**
   String get episodeWholeEpisode;
 
+  /// Overline heading of the chapter-clip share sheet, above the chapter theme.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poglavlje kao isječak'**
+  String get clipShareTitle;
+
+  /// Tooltip/accessibility label for the clip action button on a chapter header.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzmi ili podijeli poglavlje'**
+  String get clipTooltip;
+
+  /// Primary action in the clip sheet: download this chapter as an MP4 file.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzmi poglavlje'**
+  String get clipDownload;
+
+  /// Subtitle under the download action: file format, estimated size in megabytes, and chapter duration in minutes.
+  ///
+  /// In hr, this message translates to:
+  /// **'MP4 · ~{size} MB · {minutes} min'**
+  String clipDownloadSubtitle(int size, int minutes);
+
+  /// Second action in the clip sheet: copy a shareable link to the chapter clip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj vezu na isječak'**
+  String get clipCopyLink;
+
+  /// Subtitle under the copy-link action explaining the link is meant to be pasted into a message or chat.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za slanje u poruci ili chatu'**
+  String get clipCopyLinkSubtitle;
+
+  /// Snackbar confirming the chapter-clip link was copied to the clipboard.
+  ///
+  /// In hr, this message translates to:
+  /// **'Veza na isječak kopirana'**
+  String get clipLinkCopied;
+
+  /// Note at the bottom of the clip sheet warning that the first request cuts the clip on demand and takes a few seconds.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prvi se put isječak priprema nekoliko sekundi.'**
+  String get clipHint;
+
   /// Tooltip for the action that opens the episode's YouTube source.
   ///
   /// In hr, this message translates to:

@@ -856,6 +856,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get episodeWholeEpisode => 'whole episode';
 
   @override
+  String get clipShareTitle => 'Chapter as a clip';
+
+  @override
+  String get clipTooltip => 'Download or share this chapter';
+
+  @override
+  String get clipDownload => 'Download chapter';
+
+  @override
+  String clipDownloadSubtitle(int size, int minutes) {
+    return 'MP4 · ~$size MB · $minutes min';
+  }
+
+  @override
+  String get clipCopyLink => 'Copy clip link';
+
+  @override
+  String get clipCopyLinkSubtitle => 'To send in a message or chat';
+
+  @override
+  String get clipLinkCopied => 'Clip link copied';
+
+  @override
+  String get clipHint =>
+      'The first time, the clip takes a few seconds to prepare.';
+
+  @override
   String get episodeOpenOnYouTube => 'Open on YouTube';
 
   @override

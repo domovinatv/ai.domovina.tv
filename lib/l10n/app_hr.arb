@@ -1089,6 +1089,46 @@
   "@episodeWholeEpisode": {
     "description": "Lowercase label used inside the link-copied snackbar when sharing the episode without a specific timestamp."
   },
+  "clipShareTitle": "Poglavlje kao isječak",
+  "@clipShareTitle": {
+    "description": "Overline heading of the chapter-clip share sheet, above the chapter theme."
+  },
+  "clipTooltip": "Preuzmi ili podijeli poglavlje",
+  "@clipTooltip": {
+    "description": "Tooltip/accessibility label for the clip action button on a chapter header."
+  },
+  "clipDownload": "Preuzmi poglavlje",
+  "@clipDownload": {
+    "description": "Primary action in the clip sheet: download this chapter as an MP4 file."
+  },
+  "clipDownloadSubtitle": "MP4 · ~{size} MB · {minutes} min",
+  "@clipDownloadSubtitle": {
+    "description": "Subtitle under the download action: file format, estimated size in megabytes, and chapter duration in minutes.",
+    "placeholders": {
+      "size": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "clipCopyLink": "Kopiraj vezu na isječak",
+  "@clipCopyLink": {
+    "description": "Second action in the clip sheet: copy a shareable link to the chapter clip."
+  },
+  "clipCopyLinkSubtitle": "Za slanje u poruci ili chatu",
+  "@clipCopyLinkSubtitle": {
+    "description": "Subtitle under the copy-link action explaining the link is meant to be pasted into a message or chat."
+  },
+  "clipLinkCopied": "Veza na isječak kopirana",
+  "@clipLinkCopied": {
+    "description": "Snackbar confirming the chapter-clip link was copied to the clipboard."
+  },
+  "clipHint": "Prvi se put isječak priprema nekoliko sekundi.",
+  "@clipHint": {
+    "description": "Note at the bottom of the clip sheet warning that the first request cuts the clip on demand and takes a few seconds."
+  },
   "episodeOpenOnYouTube": "Otvori na YouTubeu",
   "@episodeOpenOnYouTube": {
     "description": "Tooltip for the action that opens the episode's YouTube source."
