@@ -3754,5 +3754,17 @@
   "personMentionedIn": "Spominje se u",
   "@personMentionedIn": {
     "description": "Naslov sekcije s epizodama u kojima se osoba SPOMINJE (a ne govori)."
+  },
+  "appInstallBannerIos": "DOMOVINA.ai ima i aplikaciju za iPhone.",
+  "@appInstallBannerIos": {
+    "description": "Snackbar na mobilnom webu (iOS) koji nudi preuzimanje native aplikacije iz App Storea."
+  },
+  "appInstallBannerAndroid": "DOMOVINA.ai ima i aplikaciju za Android.",
+  "@appInstallBannerAndroid": {
+    "description": "Snackbar na mobilnom webu (Android) koji nudi preuzimanje native aplikacije s Google Playa."
+  },
+  "appInstallBannerAction": "Preuzmi",
+  "@appInstallBannerAction": {
+    "description": "Akcija na app-install snackbaru — otvara App Store / Google Play."
   }
 }

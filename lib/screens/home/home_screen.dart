@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart' show log;
 import '../../models/channel_index.dart';
+import '../../services/app_install_banner.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/local_prefs.dart';
@@ -99,6 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSimpleMode();
     _loadContinueWatching();
     _initSortMode();
+    // App-install nudge (Android + iOS non-Safari) — nakon prvog framea da
+    // padne preko već iscrtane naslovnice, ne blokira boot. iOS Safari pokriva
+    // Apple Smart App Banner (meta u index.html).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowAppInstallBanner(context);
+    });
   }
 
   Future<void> _initSortMode() async {

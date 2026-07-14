@@ -3015,4 +3015,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personMentionedIn => 'Mentioned in';
+
+  @override
+  String get appInstallBannerIos => 'DOMOVINA.ai also has an iPhone app.';
+
+  @override
+  String get appInstallBannerAndroid => 'DOMOVINA.ai also has an Android app.';
+
+  @override
+  String get appInstallBannerAction => 'Get it';
 }

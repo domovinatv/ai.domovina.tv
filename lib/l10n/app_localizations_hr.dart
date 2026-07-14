@@ -3033,4 +3033,14 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get personMentionedIn => 'Spominje se u';
+
+  @override
+  String get appInstallBannerIos => 'DOMOVINA.ai ima i aplikaciju za iPhone.';
+
+  @override
+  String get appInstallBannerAndroid =>
+      'DOMOVINA.ai ima i aplikaciju za Android.';
+
+  @override
+  String get appInstallBannerAction => 'Preuzmi';
 }

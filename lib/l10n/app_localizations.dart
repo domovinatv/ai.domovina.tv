@@ -4885,6 +4885,24 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Spominje se u'**
   String get personMentionedIn;
+
+  /// Snackbar na mobilnom webu (iOS) koji nudi preuzimanje native aplikacije iz App Storea.
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA.ai ima i aplikaciju za iPhone.'**
+  String get appInstallBannerIos;
+
+  /// Snackbar na mobilnom webu (Android) koji nudi preuzimanje native aplikacije s Google Playa.
+  ///
+  /// In hr, this message translates to:
+  /// **'DOMOVINA.ai ima i aplikaciju za Android.'**
+  String get appInstallBannerAndroid;
+
+  /// Akcija na app-install snackbaru — otvara App Store / Google Play.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzmi'**
+  String get appInstallBannerAction;
 }
 
 class _AppLocalizationsDelegate

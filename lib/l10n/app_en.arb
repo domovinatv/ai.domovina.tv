@@ -797,5 +797,8 @@
   "personNotFoundBody": "This person isn't in our speaker database yet, or has no processed episodes.",
   "personShareTooltip": "Share profile",
   "personLinkCopied": "Profile link copied",
-  "personMentionedIn": "Mentioned in"
+  "personMentionedIn": "Mentioned in",
+  "appInstallBannerIos": "DOMOVINA.ai also has an iPhone app.",
+  "appInstallBannerAndroid": "DOMOVINA.ai also has an Android app.",
+  "appInstallBannerAction": "Get it"
 }
