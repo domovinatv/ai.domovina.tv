@@ -48,6 +48,12 @@ class AppLocalizationsHr extends AppLocalizations {
   String get commonShare => 'Podijeli';
 
   @override
+  String get commonCopyLink => 'Kopiraj poveznicu';
+
+  @override
+  String get commonLinkCopied => 'Poveznica kopirana';
+
+  @override
   String get commonOk => 'U redu';
 
   @override

@@ -5,6 +5,7 @@ import '../../models/channel_index.dart';
 
 import '../../theme/typography.dart';
 import '../../widgets/magisterium_section.dart';
+import '../../widgets/share_context_menu.dart';
 import '../../services/locale_service.dart';
 
 /// Editorial channel kartica s **dva layouta** ovisno o dimenzijama cover-a.
@@ -50,6 +51,12 @@ class ChannelCard extends StatefulWidget {
 class _ChannelCardState extends State<ChannelCard> {
   bool _hovering = false;
 
+  /// Javna poveznica na kanal — `/c/<slug>` (slug koristi `-`, ne `_`).
+  String get _shareUrl {
+    final slug = widget.channel.id.replaceAll('_', '-');
+    return 'https://domovina.ai/c/$slug';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -59,7 +66,9 @@ class _ChannelCardState extends State<ChannelCard> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: AnimatedScale(
+      child: ShareContextMenu(
+        url: _shareUrl,
+        child: AnimatedScale(
         scale: _hovering ? 1.015 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
@@ -95,6 +104,7 @@ class _ChannelCardState extends State<ChannelCard> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

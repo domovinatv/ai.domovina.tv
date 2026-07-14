@@ -48,6 +48,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonShare => 'Share';
 
   @override
+  String get commonCopyLink => 'Copy link';
+
+  @override
+  String get commonLinkCopied => 'Link copied';
+
+  @override
   String get commonOk => 'OK';
 
   @override

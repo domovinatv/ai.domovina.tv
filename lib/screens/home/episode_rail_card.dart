@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/magisterium_section.dart';
+import '../../widgets/share_context_menu.dart';
 
 /// Compact episode card za horizontalne railove ("Najnovije", "Nastavi
 /// slusati"). Vertikalan layout: 16:9 cover gore, tekst dolje.
@@ -22,6 +23,10 @@ class EpisodeRailCard extends StatelessWidget {
   final VoidCallback onTap;
   final double width;
 
+  /// Poveznica za "Kopiraj poveznicu" u context menu-u (desni-klik / long-press).
+  /// Null = bez context menu-a.
+  final String? shareUrl;
+
   const EpisodeRailCard({
     super.key,
     required this.title,
@@ -33,13 +38,14 @@ class EpisodeRailCard extends StatelessWidget {
     this.magisteriumScore,
     this.statusBadge,
     this.progress,
+    this.shareUrl,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SizedBox(
+    final card = SizedBox(
       width: width,
       child: Material(
         color: Colors.transparent,
@@ -117,6 +123,9 @@ class EpisodeRailCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (shareUrl == null) return card;
+    return ShareContextMenu(url: shareUrl!, child: card);
   }
 
   Widget _coverImage(ThemeData theme) {

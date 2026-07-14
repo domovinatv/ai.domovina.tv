@@ -52,6 +52,14 @@
   "@commonShare": {
     "description": "Podijeli sadržaj."
   },
+  "commonCopyLink": "Kopiraj poveznicu",
+  "@commonCopyLink": {
+    "description": "Context menu item (right-click / long-press on a card) to copy that item's public link."
+  },
+  "commonLinkCopied": "Poveznica kopirana",
+  "@commonLinkCopied": {
+    "description": "Snackbar confirmation shown after a link is copied to the clipboard."
+  },
   "commonOk": "U redu",
   "@commonOk": {
     "description": "Potvrda obavijesti."

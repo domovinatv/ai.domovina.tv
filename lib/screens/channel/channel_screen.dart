@@ -6,6 +6,7 @@ import '../../services/locale_service.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
 import '../../widgets/magisterium_section.dart';
+import '../../widgets/share_context_menu.dart';
 
 /// Channel detail screen — prikazuje listu video zapisa za određeni kanal.
 ///
@@ -231,7 +232,9 @@ class _VideoCard extends StatelessWidget {
         ? audioPlaceholder(theme, 120, 68)
         : videoPlaceholder(theme, 120, 68);
 
-    return Card(
+    return ShareContextMenu(
+      url: 'https://domovina.ai/v/${video.id}',
+      child: Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -259,6 +262,7 @@ class _VideoCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -282,7 +286,9 @@ class _VideoGridCard extends StatelessWidget {
     Widget placeholder() =>
         isAudioSource ? audioPlaceholder(theme) : videoPlaceholder(theme);
 
-    return Card(
+    return ShareContextMenu(
+      url: 'https://domovina.ai/v/${video.id}',
+      child: Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -306,6 +312,7 @@ class _VideoGridCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

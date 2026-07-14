@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show BrowserContextMenu;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,7 +24,7 @@ const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '2.0.74';
+const String appVersion = '2.0.76';
 
 /// Console logger s verzijom — koristi za debug u release web buildovima
 /// gdje su stack traceovi minificirani. Vidi CLAUDE.md za detalje.
@@ -35,6 +36,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try { usePathUrlStrategy(); } catch (_) {}
+
+  // Gasi browserov native right-click menu na webu da bi se vidjeli NAŠI custom
+  // context menu-i (npr. "Kopiraj poveznicu" na karticama kanala/epizoda —
+  // ShareContextMenu). Bez ovoga Flutter web pušta browserov menu koji zasjeni
+  // showMenu(). App-wide je (nema per-element API-ja u frameworku).
+  if (kIsWeb) {
+    try { await BrowserContextMenu.disableContextMenu(); } catch (_) {}
+  }
 
   // ensureSemantics ZABRANJENO na webu — crasha release build.
   // Vidi CLAUDE.md "Known Issues".

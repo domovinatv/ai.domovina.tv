@@ -176,6 +176,18 @@ abstract class AppLocalizations {
   /// **'Podijeli'**
   String get commonShare;
 
+  /// Context menu item (right-click / long-press on a card) to copy that item's public link.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj poveznicu'**
+  String get commonCopyLink;
+
+  /// Snackbar confirmation shown after a link is copied to the clipboard.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica kopirana'**
+  String get commonLinkCopied;
+
   /// Potvrda obavijesti.
   ///
   /// In hr, this message translates to:

@@ -13,6 +13,8 @@
   "commonRetry": "Try again",
   "commonCopy": "Copy",
   "commonShare": "Share",
+  "commonCopyLink": "Copy link",
+  "commonLinkCopied": "Link copied",
   "commonOk": "OK",
   "commonSignIn": "Sign in",
   "commonSignOut": "Sign out",

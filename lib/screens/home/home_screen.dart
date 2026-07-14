@@ -403,6 +403,8 @@ class _ChannelGridView extends StatelessWidget {
                                     ? wp.positionSeconds / wp.durationSeconds
                                     : null,
                                 width: isMobile ? 180 : 220,
+                                shareUrl:
+                                    'https://domovina.ai/v/${wp.episodeId}',
                                 onTap: () => onVideoTap(wp.episodeId),
                               ))
                           .toList(),
@@ -427,6 +429,8 @@ class _ChannelGridView extends StatelessWidget {
                                 dateLabel: fv.video.date,
                                 magisteriumScore: fv.video.magisteriumScore,
                                 width: isMobile ? 180 : 220,
+                                shareUrl:
+                                    'https://domovina.ai/v/${fv.video.id}',
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
                           .toList(),
@@ -454,6 +458,8 @@ class _ChannelGridView extends StatelessWidget {
                                 dateLabel: fv.video.date,
                                 statusBadge: l.homeStatusProcessing,
                                 width: isMobile ? 180 : 220,
+                                shareUrl:
+                                    'https://domovina.ai/v/${fv.video.id}',
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
                           .toList(),
