@@ -2814,6 +2814,10 @@
   "@pinkaCustomAmountHint": {
     "description": "Hint u polju za unos vlastitog iznosa donacije."
   },
+  "pinkaCustomAmountPlaceholder": "19,91",
+  "@pinkaCustomAmountPlaceholder": {
+    "description": "Predloženi iznos (placeholder + prefill na fokus) u polju za vlastiti iznos donacije; lokalizirani decimalni separator."
+  },
   "pinkaNameHint": "Ime ili nadimak (neobavezno)",
   "@pinkaNameHint": {
     "description": "Hint u polju za ime/nadimak donatora."

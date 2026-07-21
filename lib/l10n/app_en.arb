@@ -601,6 +601,7 @@
   "pinkaOnchainBlurb": "Send EURe (Gnosis) directly on-chain — transparent and without intermediaries.",
   "pinkaSepaBlurb": "Donate with a single scan — SEPA, no fees. Funds go directly to the author.",
   "pinkaCustomAmountHint": "Other",
+  "pinkaCustomAmountPlaceholder": "19.91",
   "pinkaNameHint": "Name or nickname (optional)",
   "pinkaMessageHint": "A message with your support (optional)",
   "pinkaAnonymousLabel": "Donate anonymously (don't show me on the wall of support)",

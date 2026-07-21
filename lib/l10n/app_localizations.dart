@@ -3704,6 +3704,12 @@ abstract class AppLocalizations {
   /// **'Ostalo'**
   String get pinkaCustomAmountHint;
 
+  /// Predloženi iznos (placeholder + prefill na fokus) u polju za vlastiti iznos donacije; lokalizirani decimalni separator.
+  ///
+  /// In hr, this message translates to:
+  /// **'19,91'**
+  String get pinkaCustomAmountPlaceholder;
+
   /// Hint u polju za ime/nadimak donatora.
   ///
   /// In hr, this message translates to:

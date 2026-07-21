@@ -2262,6 +2262,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaCustomAmountHint => 'Ostalo';
 
   @override
+  String get pinkaCustomAmountPlaceholder => '19,91';
+
+  @override
   String get pinkaNameHint => 'Ime ili nadimak (neobavezno)';
 
   @override

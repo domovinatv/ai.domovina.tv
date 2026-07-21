@@ -1,6 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../services/locale_service.dart';
@@ -40,7 +41,7 @@ enum _Phase { idle, creating, awaiting, paid }
 enum _WalletPhase { idle, connecting, sending, confirming }
 
 class _PinkaContributePanelState extends State<PinkaContributePanel> {
-  static const _presetsCents = [200, 500, 1000, 2000];
+  static const _presetsCents = [100, 200, 500, 1000, 2000];
   static const _nameMax = 60;
   static const _msgMax = 280;
 
@@ -50,6 +51,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   int _amountCents = 500;
   final _customCtrl = TextEditingController();
+  final _customFocus = FocusNode();
   final _nameCtrl = TextEditingController();
   final _msgCtrl = TextEditingController();
   bool _anonymous = false;
@@ -66,10 +68,24 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     if (_c.minContributionCents > _amountCents) {
       _amountCents = _c.minContributionCents;
     }
+    _customFocus.addListener(_onCustomFocus);
+  }
+
+  /// Fokus na prazno "Ostalo" polje predispuni predloženim iznosom (19,91),
+  /// selektiranim u cijelosti da ga tipkanje odmah zamijeni.
+  void _onCustomFocus() {
+    if (!_customFocus.hasFocus || _customCtrl.text.isNotEmpty) return;
+    final suggested = appStrings.pinkaCustomAmountPlaceholder;
+    _customCtrl.value = TextEditingValue(
+      text: suggested,
+      selection: TextSelection(baseOffset: 0, extentOffset: suggested.length),
+    );
+    _setAmountFromCustom(suggested);
   }
 
   @override
   void dispose() {
+    _customFocus.dispose();
     _customCtrl.dispose();
     _nameCtrl.dispose();
     _msgCtrl.dispose();
@@ -269,11 +285,14 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           width: 110,
           child: TextField(
             controller: _customCtrl,
+            focusNode: _customFocus,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [_eurAmountFormatter],
             decoration: InputDecoration(
               isDense: true,
               suffixText: '€',
-              hintText: appStrings.pinkaCustomAmountHint,
+              labelText: appStrings.pinkaCustomAmountHint,
+              hintText: appStrings.pinkaCustomAmountPlaceholder,
             ),
             onChanged: _setAmountFromCustom,
           ),
@@ -506,6 +525,15 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     );
   }
 }
+
+/// Dozvoli samo valjani EUR iznos u tipkanju: znamenke + najviše jedan
+/// decimalni separator (zarez ili točka) + najviše dvije decimale.
+final _eurAmountFormatter = TextInputFormatter.withFunction((oldValue, newValue) {
+  if (newValue.text.isEmpty) return newValue;
+  return RegExp(r'^\d{1,6}([.,]\d{0,2})?$').hasMatch(newValue.text)
+      ? newValue
+      : oldValue;
+});
 
 /// Rail API zna vratiti IBAN s proizvoljnim razmacima (npr. zadnje dvije
 /// znamenke odvojene) — normaliziraj pa grupiraj po 4 za čitljiv prikaz.

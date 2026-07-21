@@ -2239,6 +2239,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinkaCustomAmountHint => 'Other';
 
   @override
+  String get pinkaCustomAmountPlaceholder => '19.91';
+
+  @override
   String get pinkaNameHint => 'Name or nickname (optional)';
 
   @override
