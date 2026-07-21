@@ -13,11 +13,21 @@ class PinkaCopyRow extends StatelessWidget {
   final String value;
   final double labelWidth;
 
+  /// Kad je postavljen, copy gumb kopira OVU vrijednost, a [value] je samo
+  /// prikaz (npr. IBAN grupiran razmacima za čitanje, kompaktan za lijepljenje).
+  final String? copyValue;
+
+  /// Bez elipse — vrijednost se prelama u više redaka (npr. opis plaćanja
+  /// koji korisnik mora vidjeti cijeli da ga prepiše u bankovnu aplikaciju).
+  final bool multiline;
+
   const PinkaCopyRow({
     super.key,
     required this.label,
     required this.value,
     this.labelWidth = 110,
+    this.copyValue,
+    this.multiline = false,
   });
 
   @override
@@ -27,6 +37,8 @@ class PinkaCopyRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
+        crossAxisAlignment:
+            multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: labelWidth,
@@ -41,7 +53,8 @@ class PinkaCopyRow extends StatelessWidget {
               value,
               style:
                   theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-              overflow: TextOverflow.ellipsis,
+              overflow: multiline ? null : TextOverflow.ellipsis,
+              softWrap: multiline,
             ),
           ),
           IconButton(
@@ -49,7 +62,7 @@ class PinkaCopyRow extends StatelessWidget {
             icon: const Icon(Icons.copy, size: 16),
             tooltip: l.commonCopy,
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: value));
+              Clipboard.setData(ClipboardData(text: copyValue ?? value));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(l.pinkaCopiedLabel(label)),

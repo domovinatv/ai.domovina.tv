@@ -26,6 +26,7 @@ class PinkaConfig {
     this.explorerBase = 'https://gnosisscan.io',
     this.walletSdkUrl = 'https://wallet.domovina.ai/sdk.js',
     this.gnosisRpcUrl = 'https://rpc.gnosischain.com',
+    this.shareBaseUrl = 'https://domovina.ai',
   });
 
   /// Postgres schema u domovina-api backendu (dijeljen s pinka.io).
@@ -73,6 +74,10 @@ class PinkaConfig {
   /// Javni Gnosis JSON-RPC za client-side čitanja (npr. live EURe saldo
   /// campaign Safe-a u verify kartici). Read-only, bez ključa.
   final String gnosisRpcUrl;
+
+  /// Baza javnih share linkova na Zid podrške ("Podijeli" gumb) — host app
+  /// domena; rute su `/c/<slug>/support` i `/v/<id>/support`.
+  final String shareBaseUrl;
 
   static const PinkaConfig defaults = PinkaConfig();
 

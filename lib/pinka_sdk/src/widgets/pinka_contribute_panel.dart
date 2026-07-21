@@ -444,11 +444,18 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         const SizedBox(height: 14),
         _qrBox(intent.epcQrData),
         const SizedBox(height: 14),
-        PinkaCopyRow(label: 'IBAN', value: intent.iban),
+        PinkaCopyRow(
+          label: 'IBAN',
+          value: _fmtIban(intent.iban),
+          copyValue: _cleanIban(intent.iban),
+        ),
         PinkaCopyRow(
             label: appStrings.pinkaRecipient, value: intent.beneficiaryName),
         PinkaCopyRow(
-            label: appStrings.pinkaPaymentReference, value: intent.memo),
+          label: appStrings.pinkaPaymentReference,
+          value: intent.memo,
+          multiline: true,
+        ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -498,4 +505,18 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       ),
     );
   }
+}
+
+/// Rail API zna vratiti IBAN s proizvoljnim razmacima (npr. zadnje dvije
+/// znamenke odvojene) — normaliziraj pa grupiraj po 4 za čitljiv prikaz.
+String _cleanIban(String iban) => iban.replaceAll(RegExp(r'\s+'), '');
+
+String _fmtIban(String iban) {
+  final clean = _cleanIban(iban);
+  final sb = StringBuffer();
+  for (var i = 0; i < clean.length; i += 4) {
+    if (i > 0) sb.write(' ');
+    sb.write(clean.substring(i, i + 4 > clean.length ? clean.length : i + 4));
+  }
+  return sb.toString();
 }

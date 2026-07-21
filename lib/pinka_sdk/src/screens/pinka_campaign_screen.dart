@@ -3,6 +3,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
@@ -150,6 +151,26 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
     }
   }
 
+  /// Kanonski javni link na ovaj zid — kanal: `/c/<slug>/support` (interni id
+  /// s podvlakama → slug s crticama), epizoda: `/v/<ytId>/support`.
+  String get _shareUrl {
+    final ref = widget.subjectRefs.first;
+    final path = widget.subjectType == PinkaSubject.channel
+        ? '/c/${ref.replaceAll('_', '-')}/support'
+        : '/v/$ref/support';
+    return '${widget.config.shareBaseUrl}$path';
+  }
+
+  void _copyShareLink() {
+    Clipboard.setData(ClipboardData(text: _shareUrl));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(appStrings.commonLinkCopied),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -157,8 +178,18 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surfaceContainerLow,
-        title: Text(
-            _campaign?.title ?? widget.fallbackTitle ?? appStrings.pinkaWallTitle),
+        // Naslov kampanje živi u tijelu ekrana — AppBar je generički da se
+        // "Podrži …" ne pojavljuje duplo.
+        title: Text(appStrings.pinkaWallTitle),
+        actions: [
+          if (_campaign != null)
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: appStrings.commonCopyLink,
+              onPressed: _copyShareLink,
+            ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
