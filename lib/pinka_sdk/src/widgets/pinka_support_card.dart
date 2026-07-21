@@ -159,14 +159,16 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
                   const SizedBox(height: 8),
                   Text(
                     '${l.pinkaRaisedOfGoal(fmtEur(c.totalRaisedCents), fmtEur(c.goalCents!))}'
-                    ' · ${l.pinkaSupportersCount(c.contributorCount)}',
+                    ' · ${l.pinkaSupportersCount(c.contributorCount)}'
+                    ' · ${l.pinkaPaymentsCount(c.contributionCount)}',
                     style: theme.textTheme.labelMedium
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ] else
                   Text(
                     '${l.pinkaRaised(fmtEur(c.totalRaisedCents))}'
-                    ' · ${l.pinkaSupportersCount(c.contributorCount)}',
+                    ' · ${l.pinkaSupportersCount(c.contributorCount)}'
+                    ' · ${l.pinkaPaymentsCount(c.contributionCount)}',
                     style: theme.textTheme.labelMedium
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
@@ -184,6 +186,21 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
                           label: Text(
                             '${p.displayNameOrAnon} · ${fmtEur(p.amountCents)} €',
                             style: theme.textTheme.labelSmall,
+                          ),
+                        ),
+                      // "+N" — jasno da preview nije cijeli zid; tap otvara pun ekran.
+                      if (c.contributionCount > _preview.length)
+                        Chip(
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          side: BorderSide(color: theme.colorScheme.tertiary),
+                          label: Text(
+                            '+${c.contributionCount - _preview.length}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.tertiary,
+                            ),
                           ),
                         ),
                     ],
