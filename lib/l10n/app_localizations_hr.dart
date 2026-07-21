@@ -2201,6 +2201,11 @@ class AppLocalizationsHr extends AppLocalizations {
       'Uplate stižu izravno na Safe kampanje (EURe na Gnosisu). Stanje može provjeriti bilo tko — neovisno o nama.';
 
   @override
+  String pinkaOnchainBalance(String amount) {
+    return 'Trenutno na Safeu: $amount €';
+  }
+
+  @override
   String get pinkaEureBalanceOnGnosisscan => 'EURe saldo na Gnosisscanu';
 
   @override

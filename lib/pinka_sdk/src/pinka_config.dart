@@ -25,6 +25,7 @@ class PinkaConfig {
     this.gnosisChainId = 100,
     this.explorerBase = 'https://gnosisscan.io',
     this.walletSdkUrl = 'https://wallet.domovina.ai/sdk.js',
+    this.gnosisRpcUrl = 'https://rpc.gnosischain.com',
   });
 
   /// Postgres schema u domovina-api backendu (dijeljen s pinka.io).
@@ -68,6 +69,10 @@ class PinkaConfig {
   /// DOMOVINA wallet iframe SDK (`wallet.domovina.ai/sdk.js`) — in-app EURe
   /// send preko WebAuthn passkeya. Web-only (vidi `wallet/pinka_wallet.dart`).
   final String walletSdkUrl;
+
+  /// Javni Gnosis JSON-RPC za client-side čitanja (npr. live EURe saldo
+  /// campaign Safe-a u verify kartici). Read-only, bez ključa.
+  final String gnosisRpcUrl;
 
   static const PinkaConfig defaults = PinkaConfig();
 

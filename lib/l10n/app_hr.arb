@@ -2733,6 +2733,16 @@
   "@pinkaVerifyOnchainBody": {
     "description": "Objašnjenje transparentnosti uplata na on-chain Safe."
   },
+  "pinkaOnchainBalance": "Trenutno na Safeu: {amount} €",
+  "@pinkaOnchainBalance": {
+    "description": "Živi EURe saldo campaign Safea, pročitan izravno s Gnosis lanca (razlikuje se od kumulativnog 'prikupljeno' jer vlasnik slobodno troši iz Safea).",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "39,74"
+      }
+    }
+  },
   "pinkaEureBalanceOnGnosisscan": "EURe saldo na Gnosisscanu",
   "@pinkaEureBalanceOnGnosisscan": {
     "description": "Link na EURe saldo Safea u Gnosisscan exploreru."

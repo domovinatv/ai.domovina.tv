@@ -586,6 +586,7 @@
   "pinkaPaymentsCount": "{count, plural, one{{count} payment} other{{count} payments}}",
   "pinkaVerifyOnchainTitle": "Verify on-chain",
   "pinkaVerifyOnchainBody": "Contributions go straight to the campaign's Safe (EURe on Gnosis). Anyone can verify the balance — independently of us.",
+  "pinkaOnchainBalance": "Currently on the Safe: {amount} €",
   "pinkaEureBalanceOnGnosisscan": "EURe balance on Gnosisscan",
   "pinkaInflowHistory": "Inflow history (transfers)",
   "pinkaFundsWorkingAave": "Funds are currently working on Aave v3 (Gnosis)",

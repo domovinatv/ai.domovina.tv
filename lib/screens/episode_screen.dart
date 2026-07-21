@@ -609,6 +609,35 @@ class _EpisodeContentState extends State<_EpisodeContent>
     });
   }
 
+  /// Kandidati za kampanju kanala — fallback sticky trake "Zid podrške" kad
+  /// epizoda nema vlastitu kampanju (UC… id iz info.json + naš interni
+  /// channel id, čim se slug razriješi).
+  List<String> get _channelSupportRefs => [
+        ?widget.data.info.youtubeChannelId,
+        ?_channelSlug?.replaceAll('-', '_'),
+      ];
+
+  /// Ruta punog ekrana podrške: epizodna kampanja → `/v/:id/support`,
+  /// kampanja kanala (fallback) → `/c/:slug/support` (match ide po `uc`
+  /// parametru pa radi i prije nego se slug razriješi).
+  String _supportPath({required bool viaChannel}) {
+    final data = widget.data;
+    if (!viaChannel) {
+      return Uri(
+        path: '/v/${data.youtubeId}/support',
+        queryParameters: {'name': data.displayTitle},
+      ).toString();
+    }
+    final uc = data.info.youtubeChannelId;
+    return Uri(
+      path: '/c/${_channelSlug ?? 'kanal'}/support',
+      queryParameters: {
+        'uc': ?uc,
+        'name': data.info.channel,
+      },
+    ).toString();
+  }
+
   Duration _parseDuration(String ts) {
     // "HH:MM:SS" → Duration
     final parts = ts.split(':').map(int.parse).toList();
@@ -1764,8 +1793,20 @@ class _EpisodeContentState extends State<_EpisodeContent>
             ],
           ),
         ),
-        bottomNavigationBar: showMobileBottomBar
-            ? Material(
+        // Dno ekrana: sticky "Zid podrške" (uvijek vidljiv CTA, sam se sakrije
+        // bez aktivne kampanje) + postojeća mobilna navigacija ispod njega.
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PinkaSupportBar.episode(
+              youtubeId: data.youtubeId,
+              channelRefs: _channelSupportRefs,
+              applyBottomSafeArea: !showMobileBottomBar,
+              onOpen: (_, viaChannel) =>
+                  context.push(_supportPath(viaChannel: viaChannel)),
+            ),
+            if (showMobileBottomBar)
+              Material(
                 color: theme.colorScheme.surface,
                 elevation: 3,
                 child: SafeArea(
@@ -1826,8 +1867,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     ),
                   ),
                 ),
-              )
-            : null,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -2099,8 +2141,20 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ],
         ),
       ),
-      bottomNavigationBar: !isWide
-          ? Material(
+      // Sticky "Zid podrške" iznad (opcionalne) mobilne navigacije — vidi
+      // standardni layout gore.
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PinkaSupportBar.episode(
+            youtubeId: data.youtubeId,
+            channelRefs: _channelSupportRefs,
+            applyBottomSafeArea: isWide,
+            onOpen: (_, viaChannel) =>
+                context.push(_supportPath(viaChannel: viaChannel)),
+          ),
+          if (!isWide)
+            Material(
               color: theme.colorScheme.surface,
               elevation: 3,
               child: SafeArea(
@@ -2129,8 +2183,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   ),
                 ),
               ),
-            )
-          : null,
+            ),
+        ],
+      ),
     );
   }
 }

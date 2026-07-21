@@ -11,6 +11,7 @@ import '../models/pinka_yield_position.dart';
 import '../pinka_client.dart';
 import '../pinka_config.dart';
 import '../util/pinka_money.dart';
+import '../util/pinka_onchain.dart';
 import '../widgets/pinka_common.dart';
 import '../widgets/pinka_contribute_panel.dart';
 import '../widgets/pinka_wall_list.dart';
@@ -78,6 +79,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
   bool _loading = true;
   List<PinkaPublicContribution> _wall = const [];
   PinkaYieldPosition? _yield;
+  int? _balanceCents;
   Set<String> _flashIds = {};
   final Set<String> _seen = {};
   bool _firstLoad = true;
@@ -116,12 +118,22 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
     }
     final list = await widget.client.wall(c.id);
     final yield_ = await widget.client.yieldPosition(c.id);
+    // Live on-chain EURe saldo Safe-a (uz kumulativni "prikupljeno") — čita se
+    // direktno s javnog Gnosis RPC-a, null na grešku → red se ne prikaže.
+    final balance = c.supportsOnchain
+        ? await fetchEureBalanceCents(
+            rpcUrl: widget.config.gnosisRpcUrl,
+            eureAddress: widget.config.eureAddress,
+            address: c.destinationAddress!,
+          )
+        : null;
     if (!mounted) return;
     setState(() {
       _campaign = c;
       _loading = false;
       _wall = list;
       _yield = yield_;
+      _balanceCents = balance ?? _balanceCents;
     });
     if (_firstLoad) {
       _seen.addAll(list.map((e) => e.id));
@@ -424,6 +436,16 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
           Text(appStrings.pinkaVerifyOnchainTitle,
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
+          if (_balanceCents != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              appStrings.pinkaOnchainBalance(fmtEur(_balanceCents!)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.tertiary,
+              ),
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             appStrings.pinkaVerifyOnchainBody,

@@ -3614,6 +3614,12 @@ abstract class AppLocalizations {
   /// **'Uplate stižu izravno na Safe kampanje (EURe na Gnosisu). Stanje može provjeriti bilo tko — neovisno o nama.'**
   String get pinkaVerifyOnchainBody;
 
+  /// Živi EURe saldo campaign Safea, pročitan izravno s Gnosis lanca (razlikuje se od kumulativnog 'prikupljeno' jer vlasnik slobodno troši iz Safea).
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutno na Safeu: {amount} €'**
+  String pinkaOnchainBalance(String amount);
+
   /// Link na EURe saldo Safea u Gnosisscan exploreru.
   ///
   /// In hr, this message translates to:

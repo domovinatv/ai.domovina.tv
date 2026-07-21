@@ -42,6 +42,7 @@ export 'src/models/pinka_link_preview.dart';
 export 'src/models/pinka_onchain_confirm.dart';
 export 'src/widgets/pinka_common.dart' show pinkaLaunch, PinkaCopyRow, PinkaLinkify;
 export 'src/widgets/pinka_support_card.dart';
+export 'src/widgets/pinka_support_bar.dart';
 export 'src/widgets/pinka_contribute_panel.dart';
 export 'src/widgets/pinka_wall_list.dart';
 export 'src/screens/pinka_campaign_screen.dart';

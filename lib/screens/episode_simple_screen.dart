@@ -655,6 +655,36 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             ),
           ],
         ),
+        // Sticky "Zid podrške" — uvijek vidljiv CTA na dnu, bez obzira na
+        // scroll; sam se sakrije ako epizoda nema aktivnu kampanju.
+        bottomNavigationBar: PinkaSupportBar.episode(
+          youtubeId: data.youtubeId,
+          // Fallback na kampanju kanala — vidi episode_screen.dart.
+          channelRefs: [
+            ?data.info.youtubeChannelId,
+            ?channelCache.channelIdForName(data.info.channel),
+          ],
+          onOpen: (_, viaChannel) {
+            if (!viaChannel) {
+              context.push(Uri(
+                path: '/v/${data.youtubeId}/support',
+                queryParameters: {'name': data.displayTitle},
+              ).toString());
+              return;
+            }
+            final slug = channelCache
+                .channelIdForName(data.info.channel)
+                ?.replaceAll('_', '-');
+            final uc = data.info.youtubeChannelId;
+            context.push(Uri(
+              path: '/c/${slug ?? 'kanal'}/support',
+              queryParameters: {
+                'uc': ?uc,
+                'name': data.info.channel,
+              },
+            ).toString());
+          },
+        ),
       ),
     );
   }

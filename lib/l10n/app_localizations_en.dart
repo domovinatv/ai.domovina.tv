@@ -2178,6 +2178,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Contributions go straight to the campaign\'s Safe (EURe on Gnosis). Anyone can verify the balance — independently of us.';
 
   @override
+  String pinkaOnchainBalance(String amount) {
+    return 'Currently on the Safe: $amount €';
+  }
+
+  @override
   String get pinkaEureBalanceOnGnosisscan => 'EURe balance on Gnosisscan';
 
   @override
