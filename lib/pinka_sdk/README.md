@@ -40,6 +40,12 @@ rails: `domovina-api/docs/pinka-donation-rails.md`.
 
 - `PinkaSupportCard` — kompaktna kartica (kanal/epizoda); **sama se sakrije** ako
   subjekt nema aktivnu kampanju. Tap → `onOpen` (host navigira).
+- `PinkaSupportBar` — uvijek-vidljiva ("sticky") traka za dno ekrana (~56 px),
+  namijenjena `Scaffold.bottomNavigationBar`-u; isto auto-skrivanje kao kartica.
+  Dodatno podržava **fallback subjekt**: `.episode(youtubeId, channelRefs: […])`
+  pokaže kampanju KANALA ako epizoda nema svoju, a `onOpen(campaign, viaFallback)`
+  javi hostu na koju rutu podrške navigirati. `applyBottomSafeArea: false` kad
+  ispod nje stoji još jedna donja navigacija (inače dupli safe-area razmak).
 - `PinkaCampaignScreen` — pun ekran: cover/opis, stats, contribute panel, živi zid.
 - `PinkaContributePanel` / `PinkaWallList` — composable dijelovi.
 - `PinkaClient` + `PinkaConfig` — backend i konfiguracija (chain konstante,
@@ -53,6 +59,11 @@ YouTube `UC…` id-u (oba se pretražuju).
 
 - Ruta: `/c/:slug/support` → `PinkaCampaignScreen.channel(...)` (`app_router.dart`).
 - Kartica: `PinkaSupportCard.channel(...)` iznad liste videa (`channel_screen.dart`).
+- Ruta: `/v/:videoId/support` → `PinkaCampaignScreen.episode(...)`.
+- Sticky traka: `PinkaSupportBar.episode(...)` u `bottomNavigationBar`-u oba
+  episode ekrana (`episode_screen.dart` standard+basic layout,
+  `episode_simple_screen.dart`) — na mobitelu složena IZNAD postojeće nav trake.
+  Fallback refs = `info.youtubeChannelId` + interni channel id (slug s `_`).
 
 ## Što treba da se "Zid podrške" pojavi
 
