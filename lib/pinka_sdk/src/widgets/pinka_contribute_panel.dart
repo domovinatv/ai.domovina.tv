@@ -254,7 +254,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(14),
@@ -296,7 +296,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _amountPicker(theme),
         if (!onchain) ...[
           const SizedBox(height: 12),
@@ -308,7 +308,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.error)),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         if (onchain) _onchainSection(theme) else _sepaButton(theme, creating),
       ],
     );
@@ -491,7 +491,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
@@ -544,9 +544,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         const SizedBox(height: 4),
         Text(appStrings.pinkaAmountLabel(intent.amountEur),
             style: theme.textTheme.bodyMedium),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         _qrBox(intent.epcQrData),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         PinkaCopyRow(
           label: 'IBAN',
           value: _fmtIban(intent.iban),
@@ -797,8 +797,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _qrBox(String data) {
+    // Kompaktno: 200px + tanka bijela margina — dovoljno za pouzdan sken, a
+    // štedi ~50px visine da desni stupac stane u viewport bez scrolla.
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -806,7 +808,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       child: QrImageView(
         data: data,
         version: QrVersions.auto,
-        size: 240,
+        size: 200,
         errorCorrectionLevel: QrErrorCorrectLevel.M,
       ),
     );
