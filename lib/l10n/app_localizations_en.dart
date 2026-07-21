@@ -2249,6 +2249,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinkaCopySafeAddress => 'Copy the Safe Wallet address';
 
   @override
+  String pinkaStepOf(int current, int total) {
+    return 'Step $current/$total';
+  }
+
+  @override
+  String get pinkaStepPaymentTitle => 'Payment from your bank';
+
+  @override
+  String get pinkaStepPaymentCustodian => 'Custodian: your bank';
+
+  @override
+  String get pinkaStepProcessingTitle => 'Received — processing and checks';
+
+  @override
+  String get pinkaStepProcessingCustodian =>
+      'Custodian: Monerium (regulated e-money issuer)';
+
+  @override
+  String get pinkaStepMintedTitle => 'EURe minted';
+
+  @override
+  String get pinkaStepMintedCustodian => 'On the blockchain (Gnosis)';
+
+  @override
+  String get pinkaStepForwardingTitle => 'Forwarding to the recipient';
+
+  @override
+  String get pinkaStepForwardingCustodian => 'MPT relay';
+
+  @override
+  String get pinkaStepSettledTitle => 'With the recipient';
+
+  @override
+  String get pinkaStepSettledCustodian => 'Custodian: the recipient';
+
+  @override
+  String get pinkaIntentRejected =>
+      'The payment was rejected during processing — funds are returned to the sender.';
+
+  @override
+  String get pinkaIntentExpired =>
+      'The payment window has expired. If you did send the payment, it will appear on the wall once it arrives.';
+
+  @override
   String get pinkaNameHint => 'Name or nickname (optional)';
 
   @override

@@ -2826,6 +2826,35 @@
   "@pinkaCopySafeAddress": {
     "description": "Tooltip copy gumba uz adresu campaign Safe-a u verify kartici."
   },
+  "pinkaStepOf": "Korak {current}/{total}",
+  "@pinkaStepOf": {
+    "description": "Zaglavlje progress timelinea SEPA uplate (M od N koraka).",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "pinkaStepPaymentTitle": "Uplata iz tvoje banke",
+  "@pinkaStepPaymentTitle": {
+    "description": "Korak 1 SEPA timelinea — isti copy kao rail checkout (STEP_COPY); mijenjati u paru."
+  },
+  "pinkaStepPaymentCustodian": "Skrbnik: tvoja banka",
+  "pinkaStepProcessingTitle": "Zaprimljeno — obrada i provjera",
+  "pinkaStepProcessingCustodian": "Skrbnik: Monerium (regulirani izdavatelj e-novca)",
+  "pinkaStepMintedTitle": "EURe iskovan",
+  "pinkaStepMintedCustodian": "Na blockchainu (Gnosis)",
+  "pinkaStepForwardingTitle": "Prosljeđivanje primatelju",
+  "pinkaStepForwardingCustodian": "MPT relay",
+  "pinkaStepSettledTitle": "Kod primatelja",
+  "pinkaStepSettledCustodian": "Skrbnik: primatelj",
+  "pinkaIntentRejected": "Uplata je odbijena pri obradi — sredstva se vraćaju pošiljatelju.",
+  "@pinkaIntentRejected": {
+    "description": "Poruka kad Monerium odbije SEPA uplatu (rail stage=rejected)."
+  },
+  "pinkaIntentExpired": "Vrijeme za uplatu je isteklo. Ako si uplatu ipak poslao, pojavit će se na zidu kad stigne.",
+  "@pinkaIntentExpired": {
+    "description": "Poruka kad SEPA intent istekne bez zaprimljene uplate (rail stage=expired)."
+  },
   "pinkaNameHint": "Ime ili nadimak (neobavezno)",
   "@pinkaNameHint": {
     "description": "Hint u polju za ime/nadimak donatora."

@@ -2272,6 +2272,50 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaCopySafeAddress => 'Kopiraj adresu Safe novčanika';
 
   @override
+  String pinkaStepOf(int current, int total) {
+    return 'Korak $current/$total';
+  }
+
+  @override
+  String get pinkaStepPaymentTitle => 'Uplata iz tvoje banke';
+
+  @override
+  String get pinkaStepPaymentCustodian => 'Skrbnik: tvoja banka';
+
+  @override
+  String get pinkaStepProcessingTitle => 'Zaprimljeno — obrada i provjera';
+
+  @override
+  String get pinkaStepProcessingCustodian =>
+      'Skrbnik: Monerium (regulirani izdavatelj e-novca)';
+
+  @override
+  String get pinkaStepMintedTitle => 'EURe iskovan';
+
+  @override
+  String get pinkaStepMintedCustodian => 'Na blockchainu (Gnosis)';
+
+  @override
+  String get pinkaStepForwardingTitle => 'Prosljeđivanje primatelju';
+
+  @override
+  String get pinkaStepForwardingCustodian => 'MPT relay';
+
+  @override
+  String get pinkaStepSettledTitle => 'Kod primatelja';
+
+  @override
+  String get pinkaStepSettledCustodian => 'Skrbnik: primatelj';
+
+  @override
+  String get pinkaIntentRejected =>
+      'Uplata je odbijena pri obradi — sredstva se vraćaju pošiljatelju.';
+
+  @override
+  String get pinkaIntentExpired =>
+      'Vrijeme za uplatu je isteklo. Ako si uplatu ipak poslao, pojavit će se na zidu kad stigne.';
+
+  @override
   String get pinkaNameHint => 'Ime ili nadimak (neobavezno)';
 
   @override

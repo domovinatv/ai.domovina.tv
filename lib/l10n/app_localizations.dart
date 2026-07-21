@@ -3722,6 +3722,84 @@ abstract class AppLocalizations {
   /// **'Kopiraj adresu Safe novčanika'**
   String get pinkaCopySafeAddress;
 
+  /// Zaglavlje progress timelinea SEPA uplate (M od N koraka).
+  ///
+  /// In hr, this message translates to:
+  /// **'Korak {current}/{total}'**
+  String pinkaStepOf(int current, int total);
+
+  /// Korak 1 SEPA timelinea — isti copy kao rail checkout (STEP_COPY); mijenjati u paru.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata iz tvoje banke'**
+  String get pinkaStepPaymentTitle;
+
+  /// No description provided for @pinkaStepPaymentCustodian.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skrbnik: tvoja banka'**
+  String get pinkaStepPaymentCustodian;
+
+  /// No description provided for @pinkaStepProcessingTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zaprimljeno — obrada i provjera'**
+  String get pinkaStepProcessingTitle;
+
+  /// No description provided for @pinkaStepProcessingCustodian.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skrbnik: Monerium (regulirani izdavatelj e-novca)'**
+  String get pinkaStepProcessingCustodian;
+
+  /// No description provided for @pinkaStepMintedTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'EURe iskovan'**
+  String get pinkaStepMintedTitle;
+
+  /// No description provided for @pinkaStepMintedCustodian.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na blockchainu (Gnosis)'**
+  String get pinkaStepMintedCustodian;
+
+  /// No description provided for @pinkaStepForwardingTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prosljeđivanje primatelju'**
+  String get pinkaStepForwardingTitle;
+
+  /// No description provided for @pinkaStepForwardingCustodian.
+  ///
+  /// In hr, this message translates to:
+  /// **'MPT relay'**
+  String get pinkaStepForwardingCustodian;
+
+  /// No description provided for @pinkaStepSettledTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod primatelja'**
+  String get pinkaStepSettledTitle;
+
+  /// No description provided for @pinkaStepSettledCustodian.
+  ///
+  /// In hr, this message translates to:
+  /// **'Skrbnik: primatelj'**
+  String get pinkaStepSettledCustodian;
+
+  /// Poruka kad Monerium odbije SEPA uplatu (rail stage=rejected).
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je odbijena pri obradi — sredstva se vraćaju pošiljatelju.'**
+  String get pinkaIntentRejected;
+
+  /// Poruka kad SEPA intent istekne bez zaprimljene uplate (rail stage=expired).
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijeme za uplatu je isteklo. Ako si uplatu ipak poslao, pojavit će se na zidu kad stigne.'**
+  String get pinkaIntentExpired;
+
   /// Hint u polju za ime/nadimak donatora.
   ///
   /// In hr, this message translates to:

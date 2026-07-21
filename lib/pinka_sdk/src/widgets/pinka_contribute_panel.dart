@@ -1,5 +1,7 @@
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -9,6 +11,7 @@ import '../models/pinka_campaign.dart';
 import '../models/pinka_contribution_intent.dart';
 import '../pinka_client.dart';
 import '../pinka_config.dart';
+import '../util/pinka_intent_status.dart';
 import '../util/pinka_money.dart';
 import '../wallet/pinka_wallet.dart';
 import 'pinka_common.dart';
@@ -71,6 +74,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   String? _walletNote;
   PinkaContributionIntent? _intent;
 
+  /// Živi rail progress SEPA intenta (stepper "Korak M/N" ispod QR-a).
+  PinkaIntentStatus? _intentStatus;
+  Timer? _statusTimer;
+
   PinkaCampaign get _c => widget.campaign;
 
   @override
@@ -114,6 +121,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   @override
   void dispose() {
+    _statusTimer?.cancel();
     _customFocus.dispose();
     _customCtrl.dispose();
     _nameCtrl.dispose();
@@ -150,8 +158,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         _intent = intent;
         _phase = _Phase.awaiting;
       });
+      _startStatusPolling(intent);
       final paid = await widget.client.waitForPaid(intent.contributionId);
       if (!mounted) return;
+      _statusTimer?.cancel();
       if (paid) {
         setState(() => _phase = _Phase.paid);
         widget.onPaid?.call();
@@ -163,6 +173,27 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         _error = appStrings.pinkaPaymentCreateFailed;
       });
     }
+  }
+
+  /// Polla rail status endpoint (`/api/intents/<sid>`) svake 3 s dok QR čeka
+  /// uplatu — puni stepper "Korak M/N". Ukras uz `waitForPaid` (RPC ostaje
+  /// izvor istine za "plaćeno"); na grešku fetch vrati null i UI zadrži
+  /// zadnje poznato stanje / generički spinner.
+  void _startStatusPolling(PinkaContributionIntent intent) {
+    final url = intent.statusUrl ??
+        (intent.sid.isNotEmpty
+            ? '${widget.config.intentStatusBase}${intent.sid}'
+            : null);
+    if (url == null) return;
+    _statusTimer?.cancel();
+    Future<void> tick() async {
+      final s = await fetchIntentStatus(url);
+      if (!mounted || _phase != _Phase.awaiting) return;
+      if (s != null) setState(() => _intentStatus = s);
+    }
+
+    tick();
+    _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) => tick());
   }
 
   // ── On-chain (in-app DOMOVINA wallet) ────────────────────────────────────
@@ -529,20 +560,137 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           multiline: true,
         ),
         const SizedBox(height: 12),
+        _sepaProgress(theme),
+      ],
+    );
+  }
+
+  /// Živi timeline SEPA uplate ("Korak M/N") iz rail statusa; dok rail još
+  /// nema podataka (ili fetch ne uspije), generički spinner kao prije.
+  Widget _sepaProgress(ThemeData theme) {
+    final s = _intentStatus;
+    if (s == null || s.steps.isEmpty) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 10),
+          Text(appStrings.pinkaAwaitingPayment,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
+      );
+    }
+
+    final total = s.steps.length;
+    var current = s.steps.indexWhere((st) => st.status != 'proven') + 1;
+    if (current == 0) current = total; // sve proven
+    final terminalError = s.isRejected || s.isExpired;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2)),
-            const SizedBox(width: 10),
-            Text(appStrings.pinkaAwaitingPayment,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            if (!terminalError) ...[
+              const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 8),
+            ],
+            Text(appStrings.pinkaStepOf(current, total),
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
           ],
         ),
+        const SizedBox(height: 8),
+        for (var i = 0; i < s.steps.length; i++)
+          _stepRow(theme, s.steps[i], isCurrent: !terminalError && i == current - 1),
+        if (terminalError) ...[
+          const SizedBox(height: 8),
+          Text(
+            s.isRejected
+                ? appStrings.pinkaIntentRejected
+                : appStrings.pinkaIntentExpired,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.error),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _stepRow(ThemeData theme, PinkaIntentStep step,
+      {bool isCurrent = false}) {
+    final cs = theme.colorScheme;
+    final (title, custodian) = switch (step.key) {
+      'payment' => (
+          appStrings.pinkaStepPaymentTitle,
+          appStrings.pinkaStepPaymentCustodian
+        ),
+      'processing' => (
+          appStrings.pinkaStepProcessingTitle,
+          appStrings.pinkaStepProcessingCustodian
+        ),
+      'minted' => (
+          appStrings.pinkaStepMintedTitle,
+          appStrings.pinkaStepMintedCustodian
+        ),
+      'forwarding' => (
+          appStrings.pinkaStepForwardingTitle,
+          appStrings.pinkaStepForwardingCustodian
+        ),
+      _ => (
+          appStrings.pinkaStepSettledTitle,
+          appStrings.pinkaStepSettledCustodian
+        ),
+    };
+    // "Aktivni" korak = rail kaže in_progress ILI je prvi ne-dokazani (rail u
+    // blind windowu drži sve na waiting; iz perspektive donatora korak "tvoja
+    // uplata" je tada u tijeku).
+    final active = step.status == 'in_progress' ||
+        (isCurrent && step.status == 'waiting');
+    final Widget icon = active
+        ? const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2))
+        : switch (step.status) {
+            'proven' => Icon(Icons.check_circle, size: 16, color: cs.tertiary),
+            'failed' => Icon(Icons.error, size: 16, color: cs.error),
+            _ => Icon(Icons.radio_button_unchecked,
+                size: 16, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+          };
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 18, height: 18, child: Center(child: icon)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                      color: step.status == 'waiting' && !active
+                          ? cs.onSurfaceVariant.withValues(alpha: 0.7)
+                          : cs.onSurface,
+                    )),
+                Text(custodian,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

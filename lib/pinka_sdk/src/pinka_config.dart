@@ -27,6 +27,7 @@ class PinkaConfig {
     this.walletSdkUrl = 'https://wallet.domovina.ai/sdk.js',
     this.gnosisRpcUrl = 'https://rpc.gnosischain.com',
     this.shareBaseUrl = 'https://domovina.ai',
+    this.intentStatusBase = 'https://mpt.domovina.ai/api/intents/',
   });
 
   /// Postgres schema u domovina-api backendu (dijeljen s pinka.io).
@@ -78,6 +79,12 @@ class PinkaConfig {
   /// Baza javnih share linkova na Zid podrške ("Podijeli" gumb) — host app
   /// domena; rute su `/c/<slug>/support` i `/v/<id>/support`.
   final String shareBaseUrl;
+
+  /// MPT rail status endpoint (`GET <base><sid>`) — živi per-step progress
+  /// SEPA intenta (awaiting → processing → minted → forwarding → settled).
+  /// Fallback kad `pinka-contribute` ne vrati `status_url`. CORS dopušta
+  /// domovina.ai origin.
+  final String intentStatusBase;
 
   static const PinkaConfig defaults = PinkaConfig();
 
