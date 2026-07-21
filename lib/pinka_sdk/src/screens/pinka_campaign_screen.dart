@@ -261,30 +261,19 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
           );
         }
 
-        // Desktop: sve stane u viewport — stranica NE scrolla. Zid scrolla
-        // interno (Expanded), desni rail scrolla samo ako mu ponestane visine.
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
+        // Desktop: sve stane u viewport — stranica NE scrolla. Tri stupca:
+        // zid (primarni, lijevo; scroll interno do samog donjeg ruba ekrana),
+        // sredina = naslov/opis kampanje + on-chain verifikacija, desno rail
+        // (stats + uplata; scrolla samo ako mu ponestane visine).
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 0, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header red: naslov/opis lijevo, on-chain verifikacija
-                    // gore desno (van desnog raila → rail ne mora scrollati).
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _wideHeader(theme, c)),
-                        if (verify != null) ...[
-                          const SizedBox(width: 20),
-                          SizedBox(width: 340, child: verify),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 18),
                     Text(appStrings.pinkaWallTitle,
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700)),
@@ -302,7 +291,11 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                               controller: _wallScroll,
                               child: SingleChildScrollView(
                                 controller: _wallScroll,
-                                padding: const EdgeInsets.only(right: 8),
+                                // Margine žive UNUTAR scroll sadržaja — viewport
+                                // ide do ruba ekrana pa se kartice ne "režu" na
+                                // vanjskom marginu pri scrollu.
+                                padding:
+                                    const EdgeInsets.only(right: 16, bottom: 24),
                                 child: PinkaWallList(
                                     contributions: _wall,
                                     flashIds: _flashIds),
@@ -312,9 +305,31 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 28),
-              SizedBox(
-                width: 360,
+            ),
+            const SizedBox(width: 20),
+            SizedBox(
+              width: 340,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _wideHeader(theme, c),
+                      if (verify != null) ...[
+                        const SizedBox(height: 16),
+                        verify,
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 20),
+            SizedBox(
+              width: 360,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 16, 24, 20),
                 child: SingleChildScrollView(
                   controller: _railScroll,
                   child: Column(
@@ -327,8 +342,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -341,14 +356,14 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(c.title,
-            maxLines: 2,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.headlineSmall
                 ?.copyWith(fontWeight: FontWeight.w700)),
         if (c.description != null && c.description!.isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(c.description!,
-              maxLines: 3,
+              maxLines: 8,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurface)),
@@ -356,14 +371,14 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       ],
     );
     if (c.coverImageUrl == null) return text;
-    return Row(
+    // Srednji stupac je uzak (340) — cover ide iznad teksta, punom širinom.
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            width: 128,
-            height: 72,
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
             child: Image.network(
               c.coverImageUrl!,
               fit: BoxFit.cover,
@@ -371,8 +386,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
             ),
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(child: text),
+        const SizedBox(height: 12),
+        text,
       ],
     );
   }
