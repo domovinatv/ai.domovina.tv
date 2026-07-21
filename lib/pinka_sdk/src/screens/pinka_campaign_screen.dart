@@ -82,6 +82,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
   final Set<String> _seen = {};
   bool _firstLoad = true;
   Timer? _timer;
+  final ScrollController _wallScroll = ScrollController();
+  final ScrollController _railScroll = ScrollController();
 
   @override
   void initState() {
@@ -94,6 +96,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _wallScroll.dispose();
+    _railScroll.dispose();
     super.dispose();
   }
 
@@ -200,32 +204,112 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
           );
         }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+        // Desktop: sve stane u viewport — stranica NE scrolla. Zid scrolla
+        // interno (Expanded), desni rail scrolla samo ako mu ponestane visine.
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: main),
-              const SizedBox(width: 32),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _wideHeader(theme, c),
+                    const SizedBox(height: 18),
+                    Text(appStrings.pinkaWallTitle,
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: _wall.isEmpty
+                          ? Align(
+                              alignment: Alignment.topLeft,
+                              child: Text(appStrings.pinkaWallEmpty,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant)),
+                            )
+                          : Scrollbar(
+                              controller: _wallScroll,
+                              child: SingleChildScrollView(
+                                controller: _wallScroll,
+                                padding: const EdgeInsets.only(right: 8),
+                                child: PinkaWallList(
+                                    contributions: _wall,
+                                    flashIds: _flashIds),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 28),
               SizedBox(
                 width: 360,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    stats,
-                    const SizedBox(height: 12),
-                    panel,
-                    if (verify != null) ...[
+                child: SingleChildScrollView(
+                  controller: _railScroll,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      stats,
                       const SizedBox(height: 12),
-                      verify,
+                      panel,
+                      if (verify != null) ...[
+                        const SizedBox(height: 12),
+                        verify,
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  /// Kompaktni header za desktop: mala cover sličica uz naslov, opis
+  /// ograničen na 3 retka — da zid i uplata ostanu u viewportu bez scrolla.
+  Widget _wideHeader(ThemeData theme, PinkaCampaign c) {
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(c.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700)),
+        if (c.description != null && c.description!.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(c.description!,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurface)),
+        ],
+      ],
+    );
+    if (c.coverImageUrl == null) return text;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 128,
+            height: 72,
+            child: Image.network(
+              c.coverImageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(child: text),
+      ],
     );
   }
 
