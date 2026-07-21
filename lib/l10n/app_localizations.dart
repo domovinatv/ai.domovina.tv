@@ -3710,6 +3710,18 @@ abstract class AppLocalizations {
   /// **'19,91'**
   String get pinkaCustomAmountPlaceholder;
 
+  /// Snackbar potvrda nakon kopiranja adrese campaign Safe-a iz verify kartice.
+  ///
+  /// In hr, this message translates to:
+  /// **'Adresa Safe novčanika kopirana u međuspremnik.'**
+  String get pinkaSafeAddressCopied;
+
+  /// Tooltip copy gumba uz adresu campaign Safe-a u verify kartici.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj adresu Safe novčanika'**
+  String get pinkaCopySafeAddress;
+
   /// Hint u polju za ime/nadimak donatora.
   ///
   /// In hr, this message translates to:

@@ -2265,6 +2265,13 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaCustomAmountPlaceholder => '19,91';
 
   @override
+  String get pinkaSafeAddressCopied =>
+      'Adresa Safe novčanika kopirana u međuspremnik.';
+
+  @override
+  String get pinkaCopySafeAddress => 'Kopiraj adresu Safe novčanika';
+
+  @override
   String get pinkaNameHint => 'Ime ili nadimak (neobavezno)';
 
   @override

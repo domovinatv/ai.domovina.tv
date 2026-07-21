@@ -2818,6 +2818,14 @@
   "@pinkaCustomAmountPlaceholder": {
     "description": "Predloženi iznos (placeholder + prefill na fokus) u polju za vlastiti iznos donacije; lokalizirani decimalni separator."
   },
+  "pinkaSafeAddressCopied": "Adresa Safe novčanika kopirana u međuspremnik.",
+  "@pinkaSafeAddressCopied": {
+    "description": "Snackbar potvrda nakon kopiranja adrese campaign Safe-a iz verify kartice."
+  },
+  "pinkaCopySafeAddress": "Kopiraj adresu Safe novčanika",
+  "@pinkaCopySafeAddress": {
+    "description": "Tooltip copy gumba uz adresu campaign Safe-a u verify kartici."
+  },
   "pinkaNameHint": "Ime ili nadimak (neobavezno)",
   "@pinkaNameHint": {
     "description": "Hint u polju za ime/nadimak donatora."

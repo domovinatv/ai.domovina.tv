@@ -5,6 +5,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../onboarding/ui/auth_sheet.dart';
+import '../../../../services/auth_service.dart';
 import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_public_contribution.dart';
@@ -223,6 +225,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
           client: widget.client,
           config: widget.config,
           onPaid: _refresh,
+          signedInName: () => AuthService.instance.isSignedIn
+              ? AuthService.instance.currentUser?.displayName
+              : null,
+          onSignInRequested: (ctx) => showAuthSheet(ctx),
         );
         final verify = c.supportsOnchain ? _verifyCard(theme, c) : null;
         final main = _mainColumn(theme, c);
@@ -503,12 +509,39 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
             onPressed: () => pinkaLaunch(widget.config.tokenTxnsUrl(dest)),
           ),
           const SizedBox(height: 6),
-          SelectableText(
-            dest,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontFamily: 'monospace',
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          Row(
+            children: [
+              Expanded(
+                // Cijela adresa u jednom retku bez lomljenja/elipse — skalira
+                // se prema širini kartice.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    dest,
+                    maxLines: 1,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontFamily: 'monospace',
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.copy, size: 16),
+                tooltip: appStrings.pinkaCopySafeAddress,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: dest));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(appStrings.pinkaSafeAddressCopied),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           if (_yield != null && _yield!.isDeployed) _aaveSection(theme, dest),
         ],

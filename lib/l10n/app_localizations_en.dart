@@ -2242,6 +2242,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinkaCustomAmountPlaceholder => '19.91';
 
   @override
+  String get pinkaSafeAddressCopied =>
+      'Safe Wallet address copied to clipboard.';
+
+  @override
+  String get pinkaCopySafeAddress => 'Copy the Safe Wallet address';
+
+  @override
   String get pinkaNameHint => 'Name or nickname (optional)';
 
   @override

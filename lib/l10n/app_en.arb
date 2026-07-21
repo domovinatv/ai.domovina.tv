@@ -602,6 +602,8 @@
   "pinkaSepaBlurb": "Donate with a single scan — SEPA, no fees. Funds go directly to the author.",
   "pinkaCustomAmountHint": "Other",
   "pinkaCustomAmountPlaceholder": "19.91",
+  "pinkaSafeAddressCopied": "Safe Wallet address copied to clipboard.",
+  "pinkaCopySafeAddress": "Copy the Safe Wallet address",
   "pinkaNameHint": "Name or nickname (optional)",
   "pinkaMessageHint": "A message with your support (optional)",
   "pinkaAnonymousLabel": "Donate anonymously (don't show me on the wall of support)",

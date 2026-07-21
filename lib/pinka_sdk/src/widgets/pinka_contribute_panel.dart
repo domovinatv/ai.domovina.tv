@@ -22,12 +22,23 @@ class PinkaContributePanel extends StatefulWidget {
   final PinkaConfig config;
   final VoidCallback? onPaid;
 
+  /// Host hook: display-name prijavljenog korisnika ili `null` (gost/anon).
+  /// Kad je ne-null, ime donatora se predispuni; kad je null, uz polje se
+  /// nudi "Prijavi se" gumb (vidi [onSignInRequested]).
+  final String? Function()? signedInName;
+
+  /// Host hook: otvori auth flow aplikacije (auth sheet). Nakon što se
+  /// vrati, panel ponovno pročita [signedInName] i predispuni ime.
+  final Future<void> Function(BuildContext context)? onSignInRequested;
+
   const PinkaContributePanel({
     super.key,
     required this.campaign,
     required this.client,
     required this.config,
     this.onPaid,
+    this.signedInName,
+    this.onSignInRequested,
   });
 
   @override
@@ -69,6 +80,24 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       _amountCents = _c.minContributionCents;
     }
     _customFocus.addListener(_onCustomFocus);
+    _prefillFromAuth();
+  }
+
+  /// Predispuni ime donatora iz prijavljenog identiteta — samo dok je polje
+  /// prazno (donator uvijek smije obrisati/promijeniti što piše na zidu).
+  void _prefillFromAuth() {
+    final name = widget.signedInName?.call();
+    if (name != null && name.isNotEmpty && _nameCtrl.text.isEmpty) {
+      _nameCtrl.text = name;
+    }
+  }
+
+  Future<void> _signIn() async {
+    final open = widget.onSignInRequested;
+    if (open == null) return;
+    await open(context);
+    if (!mounted) return;
+    setState(_prefillFromAuth); // i sakrij "Prijavi se" ako je prijava uspjela
   }
 
   /// Fokus na prazno "Ostalo" polje predispuni predloženim iznosom (19,91),
@@ -302,18 +331,39 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _identityFields(ThemeData theme) {
+    final signedIn = (widget.signedInName?.call() ?? '').isNotEmpty;
+    final canSignIn = !signedIn && widget.onSignInRequested != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: _nameCtrl,
-          enabled: !_anonymous,
-          maxLength: _nameMax,
-          decoration: InputDecoration(
-            isDense: true,
-            counterText: '',
-            hintText: appStrings.pinkaNameHint,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _nameCtrl,
+                enabled: !_anonymous,
+                maxLength: _nameMax,
+                decoration: InputDecoration(
+                  isDense: true,
+                  counterText: '',
+                  hintText: appStrings.pinkaNameHint,
+                ),
+              ),
+            ),
+            if (canSignIn) ...[
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: _anonymous ? null : _signIn,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.colorScheme.tertiary,
+                ),
+                icon: const Icon(Icons.login, size: 16),
+                label: Text(appStrings.commonSignIn),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         TextField(
@@ -435,9 +485,12 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         ),
         const SizedBox(height: 12),
         PinkaCopyRow(label: appStrings.pinkaRecipient, value: dest),
+        // Copy daje adresu ERC-20 ugovora (to MetaMask traži za custom token),
+        // prikaz ostaje ljudski čitljiv opis.
         PinkaCopyRow(
             label: appStrings.pinkaToken,
-            value: 'EURe · Monerium V2 · Gnosis'),
+            value: 'EURe · Monerium V2 · Gnosis',
+            copyValue: widget.config.eureAddress),
         const SizedBox(height: 8),
         Text(
           appStrings.pinkaOnchainArrivalNote,
