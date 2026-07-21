@@ -34,6 +34,13 @@ class PinkaContributePanel extends StatefulWidget {
   /// vrati, panel ponovno pročita [signedInName] i predispuni ime.
   final Future<void> Function(BuildContext context)? onSignInRequested;
 
+  /// Iznos preselektiran izvana (tap na kvadratić zida — PinkaGridWall).
+  /// Primjenjuje se kad [presetAmountTick] poraste, pa isti iznos smije
+  /// biti postavljen više puta zaredom (npr. korisnik ručno promijeni
+  /// iznos pa ponovno tapne istu zonu).
+  final int? presetAmountCents;
+  final int presetAmountTick;
+
   const PinkaContributePanel({
     super.key,
     required this.campaign,
@@ -42,6 +49,8 @@ class PinkaContributePanel extends StatefulWidget {
     this.onPaid,
     this.signedInName,
     this.onSignInRequested,
+    this.presetAmountCents,
+    this.presetAmountTick = 0,
   });
 
   @override
@@ -88,6 +97,29 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     }
     _customFocus.addListener(_onCustomFocus);
     _prefillFromAuth();
+    if (widget.presetAmountCents != null) {
+      _applyPresetAmount(widget.presetAmountCents!);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PinkaContributePanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.presetAmountTick != oldWidget.presetAmountTick &&
+        widget.presetAmountCents != null) {
+      setState(() => _applyPresetAmount(widget.presetAmountCents!));
+    }
+  }
+
+  /// Iznosi preset čipova biraju čip (custom polje se čisti); ostali iznosi
+  /// (npr. skuplje zone zida) upišu se u "Ostalo" da UI odražava odabir.
+  void _applyPresetAmount(int cents) {
+    _amountCents = cents;
+    if (_presetsCents.contains(cents)) {
+      _customCtrl.clear();
+    } else {
+      _customCtrl.text = fmtEur(cents);
+    }
   }
 
   /// Predispuni ime donatora iz prijavljenog identiteta — samo dok je polje

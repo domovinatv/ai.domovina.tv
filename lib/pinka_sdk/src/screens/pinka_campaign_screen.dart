@@ -18,6 +18,7 @@ import '../util/pinka_money.dart';
 import '../util/pinka_onchain.dart';
 import '../widgets/pinka_common.dart';
 import '../widgets/pinka_contribute_panel.dart';
+import '../widgets/pinka_grid_wall.dart';
 import '../widgets/pinka_wall_list.dart';
 
 /// Pun "Zid podrške" ekran — naslovnica, opis, stats, contribute panel
@@ -90,6 +91,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
   Timer? _timer;
   final ScrollController _wallScroll = ScrollController();
   final ScrollController _railScroll = ScrollController();
+
+  /// Iznos odabran tapom na kvadratić zida (PinkaGridWall) + tick da se isti
+  /// iznos smije primijeniti ponovno; ključ panela za scroll-to-panel.
+  int? _gridAmountCents;
+  int _gridAmountTick = 0;
+  final GlobalKey _panelKey = GlobalKey();
 
   @override
   void initState() {
@@ -168,6 +175,32 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
     return '${widget.config.shareBaseUrl}$path';
   }
 
+  /// Tap na slobodan kvadratić zida: postavi iznos u panel za uplatu, dovuci
+  /// panel u vidno polje (mobile scrolla stranicu, desktop svoj rail) i
+  /// potvrdi snackbarom.
+  void _onGridZoneTap(int amountCents, String zoneName) {
+    setState(() {
+      _gridAmountCents = amountCents;
+      _gridAmountTick++;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _panelKey.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.05,
+      );
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text(appStrings.pinkaGridAmountSet(zoneName, fmtEur(amountCents))),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _copyShareLink() {
     Clipboard.setData(ClipboardData(text: _shareUrl));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -229,6 +262,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
         final wide = constraints.maxWidth >= 840;
         final stats = _statsCard(theme, c);
         final panel = PinkaContributePanel(
+          key: _panelKey,
           campaign: c,
           client: widget.client,
           config: widget.config,
@@ -237,6 +271,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
               ? AuthService.instance.currentUser?.displayName
               : null,
           onSignInRequested: (ctx) => showAuthSheet(ctx),
+          presetAmountCents: _gridAmountCents,
+          presetAmountTick: _gridAmountTick,
+        );
+        final grid = PinkaGridWall(
+          contributions: _wall,
+          onZoneTap: _onGridZoneTap,
         );
         final verify = c.supportsOnchain ? _verifyCard(theme, c) : null;
         final main = _mainColumn(theme, c);
@@ -248,6 +288,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 stats,
+                // Zid kvadratića prije panela — posjetitelj prvo vidi ŠTO
+                // kupuje, pa tek onda gumb za uplatu.
+                const SizedBox(height: 12),
+                grid,
                 const SizedBox(height: 12),
                 panel,
                 if (verify != null) ...[
@@ -315,6 +359,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      grid,
+                      const SizedBox(height: 16),
                       _wideHeader(theme, c),
                       const SizedBox(height: 16),
                       stats,

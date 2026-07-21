@@ -3817,5 +3817,81 @@
   "appInstallBannerAction": "Preuzmi",
   "@appInstallBannerAction": {
     "description": "Akcija na app-install snackbaru — otvara App Store / Google Play."
+  },
+  "pinkaGridIntro": "Svaki kvadratić je jedna podrška — bliže središtu, veći doprinos.",
+  "@pinkaGridIntro": {
+    "description": "One-liner iznad 120×120 zida kvadratića na stranici doniranja."
+  },
+  "pinkaGridTapHint": "Dodirni slobodan kvadratić da odabereš iznos.",
+  "@pinkaGridTapHint": {
+    "description": "Uputa ispod zida kvadratića dok ništa nije pod pokazivačem."
+  },
+  "pinkaGridZoneOuterBelt": "Vanjski pojas",
+  "@pinkaGridZoneOuterBelt": {
+    "description": "Naziv 1. (najjeftinijeg, rubnog) prstena zida kvadratića."
+  },
+  "pinkaGridZoneDefenseRing": "Zaštitni prsten",
+  "@pinkaGridZoneDefenseRing": {
+    "description": "Naziv 2. prstena zida kvadratića."
+  },
+  "pinkaGridZoneMidBelt": "Središnji pojas",
+  "@pinkaGridZoneMidBelt": {
+    "description": "Naziv 3. prstena zida kvadratića."
+  },
+  "pinkaGridZoneHighZone": "Visoka zona",
+  "@pinkaGridZoneHighZone": {
+    "description": "Naziv 4. prstena zida kvadratića."
+  },
+  "pinkaGridZoneGoldenCircle": "Zlatni krug",
+  "@pinkaGridZoneGoldenCircle": {
+    "description": "Naziv 5. prstena zida kvadratića."
+  },
+  "pinkaGridZoneBusiness": "Poslovna zona",
+  "@pinkaGridZoneBusiness": {
+    "description": "Naziv 6. prstena zida kvadratića."
+  },
+  "pinkaGridZoneExecutive": "Direktorska zona",
+  "@pinkaGridZoneExecutive": {
+    "description": "Naziv 7. prstena zida kvadratića."
+  },
+  "pinkaGridZonePrestige": "Prestiž",
+  "@pinkaGridZonePrestige": {
+    "description": "Naziv 8. prstena zida kvadratića."
+  },
+  "pinkaGridZoneElite": "Elita",
+  "@pinkaGridZoneElite": {
+    "description": "Naziv 9. prstena zida kvadratića."
+  },
+  "pinkaGridZoneCore": "Jezgra",
+  "@pinkaGridZoneCore": {
+    "description": "Naziv 10. (središnjeg, najskupljeg) prstena zida kvadratića; u prikazu se verzalizira u kodu."
+  },
+  "pinkaGridZonePriceLabel": "{name} · {price} €",
+  "@pinkaGridZonePriceLabel": {
+    "description": "Labela zone s cijenom kvadratića (hover na desktopu).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pinkaGridAmountSet": "{name} — iznos postavljen na {price} €.",
+  "@pinkaGridAmountSet": {
+    "description": "Potvrda (snackbar) nakon tapa na slobodan kvadratić: iznos u panelu za uplatu preuzet iz zone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pinkaGridTakenTitle": "Ovaj je kvadratić već zauzet",
+  "@pinkaGridTakenTitle": {
+    "description": "Naslov bottom sheeta kad korisnik tapne zauzeti kvadratić (prikazuje se donator)."
   }
 }

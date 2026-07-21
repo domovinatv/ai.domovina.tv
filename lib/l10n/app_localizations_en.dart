@@ -3083,4 +3083,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appInstallBannerAction => 'Get it';
+
+  @override
+  String get pinkaGridIntro =>
+      'Every square is one contribution — the closer to the centre, the bigger the support.';
+
+  @override
+  String get pinkaGridTapHint => 'Tap a free square to pick your amount.';
+
+  @override
+  String get pinkaGridZoneOuterBelt => 'Outer belt';
+
+  @override
+  String get pinkaGridZoneDefenseRing => 'Defense ring';
+
+  @override
+  String get pinkaGridZoneMidBelt => 'Midfield belt';
+
+  @override
+  String get pinkaGridZoneHighZone => 'High ground';
+
+  @override
+  String get pinkaGridZoneGoldenCircle => 'Golden circle';
+
+  @override
+  String get pinkaGridZoneBusiness => 'Business zone';
+
+  @override
+  String get pinkaGridZoneExecutive => 'Executive zone';
+
+  @override
+  String get pinkaGridZonePrestige => 'Prestige';
+
+  @override
+  String get pinkaGridZoneElite => 'Elite';
+
+  @override
+  String get pinkaGridZoneCore => 'Core';
+
+  @override
+  String pinkaGridZonePriceLabel(String name, String price) {
+    return '$name · $price €';
+  }
+
+  @override
+  String pinkaGridAmountSet(String name, String price) {
+    return '$name — amount set to $price €.';
+  }
+
+  @override
+  String get pinkaGridTakenTitle => 'This square is already taken';
 }

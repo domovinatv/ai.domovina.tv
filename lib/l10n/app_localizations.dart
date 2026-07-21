@@ -5005,6 +5005,96 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Preuzmi'**
   String get appInstallBannerAction;
+
+  /// One-liner iznad 120×120 zida kvadratića na stranici doniranja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svaki kvadratić je jedna podrška — bliže središtu, veći doprinos.'**
+  String get pinkaGridIntro;
+
+  /// Uputa ispod zida kvadratića dok ništa nije pod pokazivačem.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodirni slobodan kvadratić da odabereš iznos.'**
+  String get pinkaGridTapHint;
+
+  /// Naziv 1. (najjeftinijeg, rubnog) prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vanjski pojas'**
+  String get pinkaGridZoneOuterBelt;
+
+  /// Naziv 2. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zaštitni prsten'**
+  String get pinkaGridZoneDefenseRing;
+
+  /// Naziv 3. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Središnji pojas'**
+  String get pinkaGridZoneMidBelt;
+
+  /// Naziv 4. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Visoka zona'**
+  String get pinkaGridZoneHighZone;
+
+  /// Naziv 5. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zlatni krug'**
+  String get pinkaGridZoneGoldenCircle;
+
+  /// Naziv 6. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslovna zona'**
+  String get pinkaGridZoneBusiness;
+
+  /// Naziv 7. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Direktorska zona'**
+  String get pinkaGridZoneExecutive;
+
+  /// Naziv 8. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prestiž'**
+  String get pinkaGridZonePrestige;
+
+  /// Naziv 9. prstena zida kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Elita'**
+  String get pinkaGridZoneElite;
+
+  /// Naziv 10. (središnjeg, najskupljeg) prstena zida kvadratića; u prikazu se verzalizira u kodu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jezgra'**
+  String get pinkaGridZoneCore;
+
+  /// Labela zone s cijenom kvadratića (hover na desktopu).
+  ///
+  /// In hr, this message translates to:
+  /// **'{name} · {price} €'**
+  String pinkaGridZonePriceLabel(String name, String price);
+
+  /// Potvrda (snackbar) nakon tapa na slobodan kvadratić: iznos u panelu za uplatu preuzet iz zone.
+  ///
+  /// In hr, this message translates to:
+  /// **'{name} — iznos postavljen na {price} €.'**
+  String pinkaGridAmountSet(String name, String price);
+
+  /// Naslov bottom sheeta kad korisnik tapne zauzeti kvadratić (prikazuje se donator).
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj je kvadratić već zauzet'**
+  String get pinkaGridTakenTitle;
 }
 
 class _AppLocalizationsDelegate

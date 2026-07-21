@@ -3102,4 +3102,55 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get appInstallBannerAction => 'Preuzmi';
+
+  @override
+  String get pinkaGridIntro =>
+      'Svaki kvadratić je jedna podrška — bliže središtu, veći doprinos.';
+
+  @override
+  String get pinkaGridTapHint =>
+      'Dodirni slobodan kvadratić da odabereš iznos.';
+
+  @override
+  String get pinkaGridZoneOuterBelt => 'Vanjski pojas';
+
+  @override
+  String get pinkaGridZoneDefenseRing => 'Zaštitni prsten';
+
+  @override
+  String get pinkaGridZoneMidBelt => 'Središnji pojas';
+
+  @override
+  String get pinkaGridZoneHighZone => 'Visoka zona';
+
+  @override
+  String get pinkaGridZoneGoldenCircle => 'Zlatni krug';
+
+  @override
+  String get pinkaGridZoneBusiness => 'Poslovna zona';
+
+  @override
+  String get pinkaGridZoneExecutive => 'Direktorska zona';
+
+  @override
+  String get pinkaGridZonePrestige => 'Prestiž';
+
+  @override
+  String get pinkaGridZoneElite => 'Elita';
+
+  @override
+  String get pinkaGridZoneCore => 'Jezgra';
+
+  @override
+  String pinkaGridZonePriceLabel(String name, String price) {
+    return '$name · $price €';
+  }
+
+  @override
+  String pinkaGridAmountSet(String name, String price) {
+    return '$name — iznos postavljen na $price €.';
+  }
+
+  @override
+  String get pinkaGridTakenTitle => 'Ovaj je kvadratić već zauzet';
 }

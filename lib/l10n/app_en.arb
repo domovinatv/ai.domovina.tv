@@ -817,5 +817,20 @@
   "personMentionedIn": "Mentioned in",
   "appInstallBannerIos": "DOMOVINA.ai also has an iPhone app.",
   "appInstallBannerAndroid": "DOMOVINA.ai also has an Android app.",
-  "appInstallBannerAction": "Get it"
+  "appInstallBannerAction": "Get it",
+  "pinkaGridIntro": "Every square is one contribution — the closer to the centre, the bigger the support.",
+  "pinkaGridTapHint": "Tap a free square to pick your amount.",
+  "pinkaGridZoneOuterBelt": "Outer belt",
+  "pinkaGridZoneDefenseRing": "Defense ring",
+  "pinkaGridZoneMidBelt": "Midfield belt",
+  "pinkaGridZoneHighZone": "High ground",
+  "pinkaGridZoneGoldenCircle": "Golden circle",
+  "pinkaGridZoneBusiness": "Business zone",
+  "pinkaGridZoneExecutive": "Executive zone",
+  "pinkaGridZonePrestige": "Prestige",
+  "pinkaGridZoneElite": "Elite",
+  "pinkaGridZoneCore": "Core",
+  "pinkaGridZonePriceLabel": "{name} · {price} €",
+  "pinkaGridAmountSet": "{name} — amount set to {price} €.",
+  "pinkaGridTakenTitle": "This square is already taken"
 }
