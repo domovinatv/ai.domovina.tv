@@ -215,7 +215,18 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _wideHeader(theme, c),
+                    // Header red: naslov/opis lijevo, on-chain verifikacija
+                    // gore desno (van desnog raila → rail ne mora scrollati).
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _wideHeader(theme, c)),
+                        if (verify != null) ...[
+                          const SizedBox(width: 20),
+                          SizedBox(width: 340, child: verify),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 18),
                     Text(appStrings.pinkaWallTitle,
                         style: theme.textTheme.titleMedium
@@ -255,10 +266,6 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                       stats,
                       const SizedBox(height: 12),
                       panel,
-                      if (verify != null) ...[
-                        const SizedBox(height: 12),
-                        verify,
-                      ],
                     ],
                   ),
                 ),

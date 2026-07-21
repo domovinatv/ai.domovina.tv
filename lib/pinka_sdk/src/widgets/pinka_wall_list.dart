@@ -8,8 +8,10 @@ import '../models/pinka_public_contribution.dart';
 import '../util/pinka_money.dart';
 import 'pinka_common.dart';
 
-/// "Zid podrške" — lista javnih doprinosa. Novi unosi (u [flashIds]) dobiju
-/// kratku fade/slide "arrive" animaciju. Bez vlastitog scrolla (host scrolla).
+/// "Zid podrške" — javni doprinosi, kronološki (najnoviji prvi), u [Wrap]
+/// layoutu: kartice su široke koliko im sadržaj treba (cap 340px) pa ih više
+/// stane slijeva nadesno. Novi unosi (u [flashIds]) dobiju kratku fade/slide
+/// "arrive" animaciju. Bez vlastitog scrolla (host scrolla).
 class PinkaWallList extends StatelessWidget {
   final List<PinkaPublicContribution> contributions;
   final Set<String> flashIds;
@@ -22,12 +24,13 @@ class PinkaWallList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
       children: [
         for (final c in contributions)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
             child: _WallEntry(contribution: c, flash: flashIds.contains(c.id)),
           ),
       ],
@@ -59,11 +62,13 @@ class _WallEntry extends StatelessWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
+              Flexible(
                 child: Text(
                   c.displayNameOrAnon,
                   style: theme.textTheme.bodyMedium
@@ -71,6 +76,7 @@ class _WallEntry extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 10),
               Text(
                 '${fmtEur(c.amountCents)} €',
                 style: theme.textTheme.bodyMedium?.copyWith(
