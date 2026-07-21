@@ -89,9 +89,10 @@ class PinkaLinkify extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Bez podcrtavanja — u porukama donatora (zid podrške) podcrtani linkovi
+    // vizualno režu tekst; boja (tertiary) je dovoljan signal da je klikabilno.
     final linkStyle = (style ?? theme.textTheme.bodySmall)?.copyWith(
       color: theme.colorScheme.tertiary,
-      decoration: TextDecoration.underline,
     );
     final spans = <InlineSpan>[];
     var last = 0;
