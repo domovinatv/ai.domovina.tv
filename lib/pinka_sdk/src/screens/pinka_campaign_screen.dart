@@ -316,8 +316,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _wideHeader(theme, c),
+                      const SizedBox(height: 16),
+                      stats,
                       if (verify != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         verify,
                       ],
                     ],
@@ -332,14 +334,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 padding: const EdgeInsets.fromLTRB(0, 16, 24, 20),
                 child: SingleChildScrollView(
                   controller: _railScroll,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      stats,
-                      const SizedBox(height: 12),
-                      panel,
-                    ],
-                  ),
+                  child: panel,
                 ),
               ),
             ),

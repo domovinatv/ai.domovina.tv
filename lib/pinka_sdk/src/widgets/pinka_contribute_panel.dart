@@ -585,47 +585,70 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       );
     }
 
+    final cs = theme.colorScheme;
     final total = s.steps.length;
+    final proven = s.steps.where((st) => st.status == 'proven').length;
     var current = s.steps.indexWhere((st) => st.status != 'proven') + 1;
     if (current == 0) current = total; // sve proven
     final terminalError = s.isRejected || s.isExpired;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            if (!terminalError) ...[
+            Text(appStrings.pinkaStepOf(current, total),
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w800)),
+            const Spacer(),
+            if (!terminalError)
               const SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2)),
-              const SizedBox(width: 8),
-            ],
-            Text(appStrings.pinkaStepOf(current, total),
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(fontWeight: FontWeight.w700)),
           ],
         ),
         const SizedBox(height: 8),
+        // Progress bar puni SAMO dokazane korake (bez lažnog napretka).
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(
+            value: proven / total,
+            minHeight: 5,
+            backgroundColor: cs.surfaceContainerHighest,
+            color: terminalError ? cs.error : cs.tertiary,
+          ),
+        ),
+        const SizedBox(height: 12),
         for (var i = 0; i < s.steps.length; i++)
-          _stepRow(theme, s.steps[i], isCurrent: !terminalError && i == current - 1),
+          _stepRow(
+            theme,
+            s.steps[i],
+            number: i + 1,
+            isCurrent: !terminalError && i == current - 1,
+            isLast: i == s.steps.length - 1,
+          ),
         if (terminalError) ...[
           const SizedBox(height: 8),
           Text(
             s.isRejected
                 ? appStrings.pinkaIntentRejected
                 : appStrings.pinkaIntentExpired,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.error),
+            style:
+                theme.textTheme.bodySmall?.copyWith(color: cs.error),
           ),
         ],
       ],
     );
   }
 
-  Widget _stepRow(ThemeData theme, PinkaIntentStep step,
-      {bool isCurrent = false}) {
+  Widget _stepRow(
+    ThemeData theme,
+    PinkaIntentStep step, {
+    required int number,
+    required bool isCurrent,
+    required bool isLast,
+  }) {
     final cs = theme.colorScheme;
     final (title, custodian) = switch (step.key) {
       'payment' => (
@@ -652,41 +675,104 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     // "Aktivni" korak = rail kaže in_progress ILI je prvi ne-dokazani (rail u
     // blind windowu drži sve na waiting; iz perspektive donatora korak "tvoja
     // uplata" je tada u tijeku).
-    final active = step.status == 'in_progress' ||
-        (isCurrent && step.status == 'waiting');
-    final Widget icon = active
-        ? const SizedBox(
-            width: 14,
-            height: 14,
-            child: CircularProgressIndicator(strokeWidth: 2))
-        : switch (step.status) {
-            'proven' => Icon(Icons.check_circle, size: 16, color: cs.tertiary),
-            'failed' => Icon(Icons.error, size: 16, color: cs.error),
-            _ => Icon(Icons.radio_button_unchecked,
-                size: 16, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-          };
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+    final proven = step.status == 'proven';
+    final failed = step.status == 'failed';
+    final active = !proven &&
+        !failed &&
+        (step.status == 'in_progress' || isCurrent);
+
+    // Numerirani krug: dokazano = ispunjen s kvačicom, aktivno = broj sa
+    // spinner-prstenom, čeka = obrub s prigušenim brojem.
+    const double d = 24;
+    final Widget circle;
+    if (proven) {
+      circle = Container(
+        width: d,
+        height: d,
+        decoration: BoxDecoration(color: cs.tertiary, shape: BoxShape.circle),
+        child: Icon(Icons.check, size: 15, color: cs.onTertiary),
+      );
+    } else if (failed) {
+      circle = Container(
+        width: d,
+        height: d,
+        decoration: BoxDecoration(color: cs.error, shape: BoxShape.circle),
+        child: Icon(Icons.priority_high, size: 14, color: cs.onError),
+      );
+    } else if (active) {
+      circle = SizedBox(
+        width: d,
+        height: d,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CircularProgressIndicator(strokeWidth: 2, color: cs.tertiary),
+            Text('$number',
+                style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800, color: cs.tertiary)),
+          ],
+        ),
+      );
+    } else {
+      circle = Container(
+        width: d,
+        height: d,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+              color: cs.onSurfaceVariant.withValues(alpha: 0.4), width: 1.5),
+        ),
+        child: Center(
+          child: Text('$number',
+              style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.7))),
+        ),
+      );
+    }
+
+    return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(width: 18, height: 18, child: Center(child: icon)),
-          const SizedBox(width: 8),
+          Column(
+            children: [
+              circle,
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(1),
+                      color: proven
+                          ? cs.tertiary
+                          : cs.onSurfaceVariant.withValues(alpha: 0.25),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                      color: step.status == 'waiting' && !active
-                          ? cs.onSurfaceVariant.withValues(alpha: 0.7)
-                          : cs.onSurface,
-                    )),
-                Text(custodian,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: cs.onSurfaceVariant)),
-              ],
+            child: Padding(
+              padding: EdgeInsets.only(top: 2, bottom: isLast ? 0 : 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight:
+                            active || proven ? FontWeight.w700 : FontWeight.w500,
+                        color: step.status == 'waiting' && !active
+                            ? cs.onSurfaceVariant.withValues(alpha: 0.7)
+                            : cs.onSurface,
+                      )),
+                  Text(custodian,
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant)),
+                ],
+              ),
             ),
           ),
         ],
