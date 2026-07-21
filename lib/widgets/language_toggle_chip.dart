@@ -4,11 +4,16 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 import '../services/episode_language.dart';
+import '../services/locale_service.dart';
 
 /// Pill toggle HR ↔ EN za per-episode jezik prikaza tekstualnog sadrzaja.
 ///
 /// Audio uvijek ostaje hrvatski. Renderiraj samo kad za epizodu postoji EN
 /// prijevod na CDN-u (caller provjerava `EpisodeData.hasTranslationEn`).
+///
+/// Uz jezik sadržaja prebacuje i UI jezik (LocaleController) — korisnik koji
+/// na epizodi izabere EN očekuje cijelo sučelje na engleskom. Sprega je
+/// jednosmjerna: home/zid UI toggle NE dira per-epizoda jezik sadržaja.
 class LanguageToggleChip extends StatelessWidget {
   final EpisodeLanguage current;
   final ValueChanged<EpisodeLanguage> onChanged;
@@ -53,6 +58,7 @@ class LanguageToggleChip extends StatelessWidget {
                 onTap: () {
                   if (current != EpisodeLanguage.hr) {
                     onChanged(EpisodeLanguage.hr);
+                    LocaleController.instance.setLocale(const Locale('hr'));
                   }
                 },
               ),
@@ -64,6 +70,7 @@ class LanguageToggleChip extends StatelessWidget {
                 onTap: () {
                   if (current != EpisodeLanguage.en) {
                     onChanged(EpisodeLanguage.en);
+                    LocaleController.instance.setLocale(const Locale('en'));
                   }
                 },
               ),

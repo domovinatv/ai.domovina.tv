@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../../../onboarding/ui/auth_sheet.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/locale_service.dart';
+import '../../../../widgets/language_toggle_button.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_public_contribution.dart';
 import '../models/pinka_yield_position.dart';
@@ -157,9 +158,13 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
   /// s podvlakama → slug s crticama), epizoda: `/v/<ytId>/support`.
   String get _shareUrl {
     final ref = widget.subjectRefs.first;
+    // Share link prati aktivni UI jezik: HR dijeli /doniraj, EN /support
+    // (obje rute vode na isti ekran — vidi app_router.dart).
+    final action =
+        LocaleController.instance.isEnglish ? 'support' : 'doniraj';
     final path = widget.subjectType == PinkaSubject.channel
-        ? '/c/${ref.replaceAll('_', '-')}/support'
-        : '/v/$ref/support';
+        ? '/c/${ref.replaceAll('_', '-')}/$action'
+        : '/v/$ref/$action';
     return '${widget.config.shareBaseUrl}$path';
   }
 
@@ -184,12 +189,15 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
         // "Podrži …" ne pojavljuje duplo.
         title: Text(appStrings.pinkaWallTitle),
         actions: [
-          if (_campaign != null)
+          const LanguageToggleButton(),
+          if (_campaign != null) ...[
+            const SizedBox(width: 4),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: appStrings.commonCopyLink,
               onPressed: _copyShareLink,
             ),
+          ],
           const SizedBox(width: 4),
         ],
       ),

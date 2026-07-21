@@ -83,21 +83,23 @@ GoRouter createRouter() {
       // Standalone SDK u lib/pinka_sdk/. Subjekt = podcast_channel; ref se
       // matcha na UC… id ILI interni channel id. Episode varijanta
       // (/v/:id/support) je vizija — vidi PinkaCampaignScreen.episode.
-      GoRoute(
-        path: '/c/:slug/support',
-        pageBuilder: (context, state) {
-          final slug = state.pathParameters['slug']!;
-          final channelId = slug.replaceAll('-', '_');
-          return NoTransitionPage(
-            key: ValueKey('support-$slug'),
-            child: PinkaCampaignScreen.channel(
-              channelId: channelId,
-              youtubeChannelId: state.uri.queryParameters['uc'],
-              channelName: state.uri.queryParameters['name'],
-            ),
-          );
-        },
-      ),
+      // Dvije rute za isti ekran: /support (EN share link) i /doniraj (HR).
+      for (final path in const ['/c/:slug/support', '/c/:slug/doniraj'])
+        GoRoute(
+          path: path,
+          pageBuilder: (context, state) {
+            final slug = state.pathParameters['slug']!;
+            final channelId = slug.replaceAll('-', '_');
+            return NoTransitionPage(
+              key: ValueKey('support-$slug'),
+              child: PinkaCampaignScreen.channel(
+                channelId: channelId,
+                youtubeChannelId: state.uri.queryParameters['uc'],
+                channelName: state.uri.queryParameters['name'],
+              ),
+            );
+          },
+        ),
       // Channel ownership claim flow (vidi docs/channel-ownership-and-safe-payout-plan.md)
       GoRoute(
         path: '/c/:slug/claim',
@@ -191,19 +193,20 @@ GoRouter createRouter() {
       // epizodi. Subjekt = podcast_episode; ref = YouTube video id. SEPA (EPC
       // QR) + on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik. Sam se
       // sakrije/prazni ako epizoda nema aktivnu kampanju. Pandan /c/:slug/support.
-      GoRoute(
-        path: '/v/:videoId/support',
-        pageBuilder: (context, state) {
-          final videoId = state.pathParameters['videoId']!;
-          return NoTransitionPage(
-            key: ValueKey('support-v-$videoId'),
-            child: PinkaCampaignScreen.episode(
-              youtubeId: videoId,
-              episodeTitle: state.uri.queryParameters['name'],
-            ),
-          );
-        },
-      ),
+      for (final path in const ['/v/:videoId/support', '/v/:videoId/doniraj'])
+        GoRoute(
+          path: path,
+          pageBuilder: (context, state) {
+            final videoId = state.pathParameters['videoId']!;
+            return NoTransitionPage(
+              key: ValueKey('support-v-$videoId'),
+              child: PinkaCampaignScreen.episode(
+                youtubeId: videoId,
+                episodeTitle: state.uri.queryParameters['name'],
+              ),
+            );
+          },
+        ),
       // Android TV reader mode — "Čitaj kao blog" prikaz s PiP videom u
       // kutu. Samo TV: na desktopu/mobitelu se redirecta na klasični
       // episode screen (na webu nema D-pad-a, nema smisla).

@@ -40,27 +40,43 @@ class HomeAppBar extends StatelessWidget {
       title: LayoutBuilder(
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 600;
+          if (isMobile) {
+            // Uski mobiteli: sve akcije stanu rijetko kad — red je zato
+            // horizontalno scrollabilan (desni kraj s Prijava gumbom se
+            // doscrolla umjesto da bude odrezan).
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Wordmark(isDark: isDark),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.search, size: 20),
+                    tooltip: l.homeSearchTooltip,
+                    onPressed: onSearchTap,
+                  ),
+                  const SizedBox(width: 4),
+                  const LanguageToggleButton(),
+                  const SizedBox(width: 4),
+                  const ThemeToggleButton(),
+                  const SizedBox(width: 4),
+                  const AccountChip(),
+                ],
+              ),
+            );
+          }
           return Row(
             children: [
               _Wordmark(isDark: isDark),
-              if (!isMobile) ...[
-                const SizedBox(width: 24),
-                Expanded(
-                  child: _SearchTrigger(
-                    onTap: onSearchTap,
-                    placeholder: l.homeSearchPlaceholderFull,
-                  ),
+              const SizedBox(width: 24),
+              Expanded(
+                child: _SearchTrigger(
+                  onTap: onSearchTap,
+                  placeholder: l.homeSearchPlaceholderFull,
                 ),
-                const SizedBox(width: 16),
-              ] else ...[
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.search, size: 20),
-                  tooltip: l.homeSearchTooltip,
-                  onPressed: onSearchTap,
-                ),
-                const SizedBox(width: 4),
-              ],
+              ),
+              const SizedBox(width: 16),
               const LanguageToggleButton(),
               const SizedBox(width: 4),
               const ThemeToggleButton(),
