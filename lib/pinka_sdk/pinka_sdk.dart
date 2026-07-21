@@ -40,6 +40,7 @@ export 'src/models/pinka_contribution_intent.dart';
 export 'src/models/pinka_public_contribution.dart';
 export 'src/models/pinka_link_preview.dart';
 export 'src/models/pinka_onchain_confirm.dart';
+export 'src/models/pinka_slot.dart';
 export 'src/widgets/pinka_common.dart' show pinkaLaunch, PinkaCopyRow, PinkaLinkify;
 export 'src/widgets/pinka_support_card.dart';
 export 'src/widgets/pinka_support_bar.dart';
