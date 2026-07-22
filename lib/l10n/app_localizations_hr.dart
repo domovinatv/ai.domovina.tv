@@ -3211,4 +3211,29 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get pinkaSlotHoldExpired =>
       'Rezervacija je istekla, ali uplata i dalje vrijedi — kad sjedne, dobivaš isti kvadratić ako je slobodan, inače najbliži u istoj ili skupljoj zoni.';
+
+  @override
+  String get pinkaSlotHoldReserved => 'Mjesto ti je rezervirano.';
+
+  @override
+  String get pinkaSlotHoldReassure =>
+      'Ako nalog zastane na provjeri kod tvoje ili primateljeve banke, ne brini — dovoljno je da uplata stigne unutar 24 sata i uredno ćemo je obraditi.';
+
+  @override
+  String get pinkaSlotPickerOpen => 'Povećaj';
+
+  @override
+  String get pinkaSlotPickerTitle => 'Odaberi mjesto';
+
+  @override
+  String get pinkaSlotPickerHint =>
+      'Povlači i približi prstima; kvadratić pod nišanom je tvoj odabir.';
+
+  @override
+  String pinkaSlotPickerConfirm(String price) {
+    return 'Potvrdi mjesto · $price €';
+  }
+
+  @override
+  String get pinkaSlotPickerTaken => 'Mjesto je zauzeto';
 }

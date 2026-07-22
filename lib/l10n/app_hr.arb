@@ -3973,5 +3973,38 @@
   "pinkaSlotHoldExpired": "Rezervacija je istekla, ali uplata i dalje vrijedi — kad sjedne, dobivaš isti kvadratić ako je slobodan, inače najbliži u istoj ili skupljoj zoni.",
   "@pinkaSlotHoldExpired": {
     "description": "Poruka nakon isteka holda: kasna uplata se i dalje kreditira (mark_contribution_paid prihvaća istekli doprinos)."
+  },
+  "pinkaSlotHoldReserved": "Mjesto ti je rezervirano.",
+  "@pinkaSlotHoldReserved": {
+    "description": "Mirna potvrda rezervacije mjesta dok je do isteka holda još puno vremena (ne prikazuje se sat)."
+  },
+  "pinkaSlotHoldReassure": "Ako nalog zastane na provjeri kod tvoje ili primateljeve banke, ne brini — dovoljno je da uplata stigne unutar 24 sata i uredno ćemo je obraditi.",
+  "@pinkaSlotHoldReassure": {
+    "description": "Smirujuća poruka ispod SEPA QR-a: SEPA transakcija smije zastati na provjeri kod banaka; backend obradi uplatu ako stigne unutar 24 h."
+  },
+  "pinkaSlotPickerOpen": "Povećaj",
+  "@pinkaSlotPickerOpen": {
+    "description": "Gumb na zidu koji otvara fullscreen odabir kvadratića sa zoomom."
+  },
+  "pinkaSlotPickerTitle": "Odaberi mjesto",
+  "@pinkaSlotPickerTitle": {
+    "description": "Naslov fullscreen ekrana za odabir kvadratića."
+  },
+  "pinkaSlotPickerHint": "Povlači i približi prstima; kvadratić pod nišanom je tvoj odabir.",
+  "@pinkaSlotPickerHint": {
+    "description": "Uputa na dnu fullscreen pickera: pan + pinch zoom, nišan u sredini bira ćeliju."
+  },
+  "pinkaSlotPickerConfirm": "Potvrdi mjesto · {price} €",
+  "@pinkaSlotPickerConfirm": {
+    "description": "Gumb koji potvrđuje odabrani slobodan kvadratić u fullscreen pickeru.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pinkaSlotPickerTaken": "Mjesto je zauzeto",
+  "@pinkaSlotPickerTaken": {
+    "description": "Onemogućeni gumb u pickeru kad je kvadratić pod nišanom zauzet/rezerviran/izuzet."
   }
 }

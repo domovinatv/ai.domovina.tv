@@ -786,31 +786,66 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     );
   }
 
-  /// "Mjesto ti je rezervirano još MM:SS". Nakon isteka NE prijeti gubitkom
-  /// novca — kasna uplata se i dalje kreditira, pa je poruka smirujuća.
+  /// Stanje rezervacije ispod QR-a. Hold traje 24 h, pa NE prikazujemo veliki
+  /// sat koji tiho odbrojava cijeli dan (samo bi zabrinjavao) — mirna potvrda,
+  /// a živi MM:SS tek u zadnjih sat vremena. Uz to smirujuća poruka: SEPA nalog
+  /// smije zastati na provjeri kod banke pošiljatelja/primatelja — dovoljno je
+  /// da stigne unutar 24 h i backend ga uredno obradi (kasna uplata se i dalje
+  /// kreditira, mjesto se vrati ili premjesti).
   Widget _holdCountdown(ThemeData theme) {
     final until = _holdExpiresAt;
     if (until == null || !_hasSlot) return const SizedBox.shrink();
     final left = until.difference(DateTime.now());
     final cs = theme.colorScheme;
-    final expired = left.isNegative;
-    final text = expired
-        ? appStrings.pinkaSlotHoldExpired
-        : appStrings.pinkaSlotHoldCountdown(_fmtDuration(left));
+
+    if (left.isNegative) {
+      return _holdNote(theme, Icons.info_outline,
+          title: null, body: appStrings.pinkaSlotHoldExpired);
+    }
+    final lastHour = left.inMinutes < 60;
+    return _holdNote(
+      theme,
+      Icons.verified_user_outlined,
+      title: lastHour
+          ? appStrings.pinkaSlotHoldCountdown(_fmtDuration(left))
+          : appStrings.pinkaSlotHoldReserved,
+      body: appStrings.pinkaSlotHoldReassure,
+      titleColor: cs.onSurface,
+    );
+  }
+
+  Widget _holdNote(
+    ThemeData theme,
+    IconData icon, {
+    required String? title,
+    required String body,
+    Color? titleColor,
+  }) {
+    final cs = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
         children: [
-          Icon(expired ? Icons.info_outline : Icons.lock_clock,
-              size: 14, color: cs.onSurfaceVariant),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(text,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: cs.onSurfaceVariant)),
-          ),
+          if (title != null)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 14, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(title,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: titleColor ?? cs.onSurface)),
+                ),
+              ],
+            ),
+          if (title != null) const SizedBox(height: 4),
+          Text(body,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );

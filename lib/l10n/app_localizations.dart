@@ -5185,6 +5185,48 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Rezervacija je istekla, ali uplata i dalje vrijedi — kad sjedne, dobivaš isti kvadratić ako je slobodan, inače najbliži u istoj ili skupljoj zoni.'**
   String get pinkaSlotHoldExpired;
+
+  /// Mirna potvrda rezervacije mjesta dok je do isteka holda još puno vremena (ne prikazuje se sat).
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesto ti je rezervirano.'**
+  String get pinkaSlotHoldReserved;
+
+  /// Smirujuća poruka ispod SEPA QR-a: SEPA transakcija smije zastati na provjeri kod banaka; backend obradi uplatu ako stigne unutar 24 h.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ako nalog zastane na provjeri kod tvoje ili primateljeve banke, ne brini — dovoljno je da uplata stigne unutar 24 sata i uredno ćemo je obraditi.'**
+  String get pinkaSlotHoldReassure;
+
+  /// Gumb na zidu koji otvara fullscreen odabir kvadratića sa zoomom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povećaj'**
+  String get pinkaSlotPickerOpen;
+
+  /// Naslov fullscreen ekrana za odabir kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odaberi mjesto'**
+  String get pinkaSlotPickerTitle;
+
+  /// Uputa na dnu fullscreen pickera: pan + pinch zoom, nišan u sredini bira ćeliju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povlači i približi prstima; kvadratić pod nišanom je tvoj odabir.'**
+  String get pinkaSlotPickerHint;
+
+  /// Gumb koji potvrđuje odabrani slobodan kvadratić u fullscreen pickeru.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi mjesto · {price} €'**
+  String pinkaSlotPickerConfirm(String price);
+
+  /// Onemogućeni gumb u pickeru kad je kvadratić pod nišanom zauzet/rezerviran/izuzet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesto je zauzeto'**
+  String get pinkaSlotPickerTaken;
 }
 
 class _AppLocalizationsDelegate

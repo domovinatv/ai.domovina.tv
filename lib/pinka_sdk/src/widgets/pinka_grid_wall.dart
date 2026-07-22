@@ -122,6 +122,56 @@ int _fnv1a(String s) {
   return h;
 }
 
+/// Zona svake ćelije, row-major (indeks = y*w+x). Server: prstenovi JEDNAKE
+/// debljine `(min(w,h)/2)/zoneCount`, identično `seed_grid_map`-u pa klijent
+/// naplaćuje istu cijenu koju server traži. Legacy: stara `_legacyZones` tablica.
+/// Dijele je zid i fullscreen picker da geometrija ostane jedan izvor istine.
+Uint8List _computeZoneGrid(int w, int h, int zoneCount,
+    {required bool serverMode}) {
+  final out = Uint8List(w * h);
+  final band = zoneCount > 0 ? (math.min(w, h) / 2.0) / zoneCount : 0.0;
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      int zone;
+      if (serverMode && zoneCount > 0) {
+        final layer = math.min(math.min(x, y), math.min(w - 1 - x, h - 1 - y));
+        zone = math.min((layer / band).floor(), zoneCount - 1);
+      } else {
+        zone = _legacyZoneIndexOf(x, y);
+      }
+      out[y * w + x] = zone;
+    }
+  }
+  return out;
+}
+
+/// `label_key` → prevedeni naziv zone. Sirovi ključ se NIKAD ne prikazuje;
+/// nepoznat ključ (nova zona na backendu) pada na redni broj.
+String _zoneNameForKey(AppLocalizations l, String? key, int zone) {
+  return switch (key) {
+    'pinkaSlotZone0' => l.pinkaGridZoneOuterBelt,
+    'pinkaSlotZone1' => l.pinkaGridZoneDefenseRing,
+    'pinkaSlotZone2' => l.pinkaGridZoneMidBelt,
+    'pinkaSlotZone3' => l.pinkaGridZoneHighZone,
+    'pinkaSlotZone4' => l.pinkaGridZoneGoldenCircle,
+    'pinkaSlotZone5' => l.pinkaGridZoneBusiness,
+    'pinkaSlotZone6' => l.pinkaGridZoneExecutive,
+    'pinkaSlotZone7' => l.pinkaGridZonePrestige,
+    'pinkaSlotZone8' => l.pinkaGridZoneElite,
+    // Jezgra se verzalizira u kodu (ARB vrijednosti bez ALL-CAPS-a).
+    'pinkaSlotZone9' => l.pinkaGridZoneCore.toUpperCase(),
+    _ => l.pinkaSlotZoneFallback(zone + 1),
+  };
+}
+
+/// Boje zona: tint brand navy palete (croBlue → svjetlije prema jezgri) — nikad
+/// cs.primary za brand-FILL (M3 dark ga izblijedi). Dijele zid i picker.
+List<Color> _zoneColors(int zoneCount) => List<Color>.generate(
+      math.max(zoneCount, 1),
+      (i) => Color.lerp(AppTheme.croBlue, Colors.white,
+          0.38 * i / math.max(zoneCount - 1, 1))!,
+    );
+
 class _PinkaGridWallState extends State<PinkaGridWall> {
   /// Server mod: ćelija (y*w+x) → mjesto koje NIJE slobodno.
   Map<int, PinkaSlot> _slotByCell = const {};
@@ -170,23 +220,8 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
     if (sig == _geometrySignature && _zoneOf.isNotEmpty) return;
     _geometrySignature = sig;
 
-    final w = _w, h = _h;
-    final out = Uint8List(w * h);
-    final zoneCount = _zones.length;
-    final band = zoneCount > 0 ? (math.min(w, h) / 2.0) / zoneCount : 0.0;
-    for (var y = 0; y < h; y++) {
-      for (var x = 0; x < w; x++) {
-        int zone;
-        if (_serverMode && zoneCount > 0) {
-          final layer = math.min(math.min(x, y), math.min(w - 1 - x, h - 1 - y));
-          zone = math.min((layer / band).floor(), zoneCount - 1);
-        } else {
-          zone = _legacyZoneIndexOf(x, y);
-        }
-        out[y * w + x] = zone;
-      }
-    }
-    _zoneOf = out;
+    final zoneCount = _serverMode ? _zones.length : _legacyZones.length;
+    _zoneOf = _computeZoneGrid(_w, _h, zoneCount, serverMode: _serverMode);
   }
 
   void _rebuildData() {
@@ -275,26 +310,11 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
     return _legacyZones[zone.clamp(0, _legacyZones.length - 1)].priceCents;
   }
 
-  /// `label_key` iz baze → prevedeni naziv. Sirovi ključ se NIKAD ne prikazuje;
-  /// nepoznat ključ (nova zona na backendu) pada na redni broj.
   String _zoneName(AppLocalizations l, int zone) {
     final key = _serverMode && zone < _zones.length
         ? _zones[zone].labelKey
         : 'pinkaSlotZone$zone';
-    return switch (key) {
-      'pinkaSlotZone0' => l.pinkaGridZoneOuterBelt,
-      'pinkaSlotZone1' => l.pinkaGridZoneDefenseRing,
-      'pinkaSlotZone2' => l.pinkaGridZoneMidBelt,
-      'pinkaSlotZone3' => l.pinkaGridZoneHighZone,
-      'pinkaSlotZone4' => l.pinkaGridZoneGoldenCircle,
-      'pinkaSlotZone5' => l.pinkaGridZoneBusiness,
-      'pinkaSlotZone6' => l.pinkaGridZoneExecutive,
-      'pinkaSlotZone7' => l.pinkaGridZonePrestige,
-      'pinkaSlotZone8' => l.pinkaGridZoneElite,
-      // Jezgra se verzalizira u kodu (ARB vrijednosti bez ALL-CAPS-a).
-      'pinkaSlotZone9' => l.pinkaGridZoneCore.toUpperCase(),
-      _ => l.pinkaSlotZoneFallback(zone + 1),
-    };
+    return _zoneNameForKey(l, key, zone);
   }
 
   // ── Hit test / interakcija ───────────────────────────────────────────────
@@ -474,15 +494,9 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
     final l = AppLocalizations.of(context);
 
     final zoneCount = _serverMode ? _zones.length : _legacyZones.length;
-    // Zone gradiraju kroz tint brand navy palete (croBlue → svjetlije prema
-    // jezgri) — nikad cs.primary za brand-FILL (M3 dark ga izblijedi) i bez
-    // random Material boja. Prodano = tertiary (crveni akcent), rezervirano =
-    // polovični tint prema tertiary (očito privremeno stanje).
-    final zoneColors = List<Color>.generate(
-      math.max(zoneCount, 1),
-      (i) => Color.lerp(
-          AppTheme.croBlue, Colors.white, 0.38 * i / math.max(zoneCount - 1, 1))!,
-    );
+    // Prodano = tertiary (crveni akcent), rezervirano = polovični tint prema
+    // tertiary (očito privremeno stanje).
+    final zoneColors = _zoneColors(zoneCount);
     final rim = AppTheme.brandRim(theme.brightness);
 
     return Column(
@@ -551,6 +565,15 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                                 : AppTheme.croBlue,
                           ),
                         ),
+                        // Fullscreen picker: zoom + pan ispod nišana za
+                        // precizan odabir (i razgledavanje zauzetih). Samo
+                        // server mod — legacy nema pravih mjesta za birati.
+                        if (_serverMode)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: _ExpandButton(onTap: _openPicker),
+                          ),
                       ],
                     ),
                   ),
@@ -566,6 +589,27 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
         ),
       ],
     );
+  }
+
+  /// Otvori fullscreen picker; rezultat (slot_key) prolazi istim putem kao tap
+  /// na slobodnu ćeliju — host zaključa iznos na cijenu zone.
+  Future<void> _openPicker() async {
+    if (!_serverMode) return;
+    final chosen = await showPinkaGridPicker(
+      context,
+      map: widget.map!,
+      slots: widget.slots!,
+      initialSlotKey: widget.selectedSlotKey,
+    );
+    if (chosen == null || !mounted) return;
+    final parts = chosen.split(':');
+    if (parts.length != 2) return;
+    final x = int.tryParse(parts[0]);
+    final y = int.tryParse(parts[1]);
+    if (x == null || y == null) return;
+    final zone = _zoneAt(y * _w + x);
+    widget.onSlotTap?.call(
+        chosen, _priceOfZone(zone), _zoneName(AppLocalizations.of(context), zone));
   }
 
   Set<int> _cellsInState(_SlotDraw want) {
@@ -778,4 +822,452 @@ class _OverlayPainter extends CustomPainter {
         oldDelegate.selectedCell != selectedCell ||
         oldDelegate.color != color;
   }
+}
+
+/// Gumb koji otvara fullscreen picker (prekriva gornji-desni kut zida).
+class _ExpandButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ExpandButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Material(
+      color: Colors.black.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(10),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.zoom_out_map, size: 15, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(l.pinkaSlotPickerOpen,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Otvori fullscreen picker; vraća odabrani `slot_key` ili `null` (odustao).
+Future<String?> showPinkaGridPicker(
+  BuildContext context, {
+  required PinkaSlotMap map,
+  required List<PinkaSlot> slots,
+  String? initialSlotKey,
+}) {
+  return Navigator.of(context).push<String>(
+    MaterialPageRoute<String>(
+      fullscreenDialog: true,
+      builder: (_) => _PinkaGridPickerScreen(
+        map: map,
+        slots: slots,
+        initialSlotKey: initialSlotKey,
+      ),
+    ),
+  );
+}
+
+/// Fullscreen odabir kvadratića: grid se pinch-zoomira i povlači (pan) ispod
+/// FIKSNOG nišana na sredini ekrana — ćelija pod nišanom je kandidat, „Potvrdi"
+/// je zaključa. Kao biranje pina na karti: nema sukoba gesti (pan/zoom idu
+/// InteractiveVieweru, nišan stoji), precizno je i usput razgledaš zauzete.
+///
+/// Grid se crta na fiksnih [_kGridPx] logičkih piksela (10 px/ćelija na 120)
+/// pa zoom ostaje čitljiv; InteractiveViewer skalira taj layer.
+class _PinkaGridPickerScreen extends StatefulWidget {
+  final PinkaSlotMap map;
+  final List<PinkaSlot> slots;
+  final String? initialSlotKey;
+
+  const _PinkaGridPickerScreen({
+    required this.map,
+    required this.slots,
+    this.initialSlotKey,
+  });
+
+  @override
+  State<_PinkaGridPickerScreen> createState() => _PinkaGridPickerScreenState();
+}
+
+const double _kGridPx = 1200;
+
+class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
+  final _tc = TransformationController();
+  late final Uint8List _zoneOf;
+  late final Map<int, PinkaSlot> _slotByCell;
+  late final List<Color> _colors;
+
+  int _candidate = 0;
+  double? _side; // strana kvadratnog viewporta (px na ekranu)
+  bool _inited = false;
+
+  int get _w => widget.map.width;
+  int get _h => widget.map.height;
+  List<PinkaSlotZone> get _zones => widget.map.zones;
+
+  @override
+  void initState() {
+    super.initState();
+    _zoneOf = _computeZoneGrid(_w, _h, _zones.length, serverMode: true);
+    final byCell = <int, PinkaSlot>{};
+    for (final s in widget.slots) {
+      if (s.posX < 0 || s.posX >= _w || s.posY < 0 || s.posY >= _h) continue;
+      byCell[s.indexFor(_w)] = s;
+    }
+    _slotByCell = byCell;
+    _colors = _zoneColors(_zones.length);
+    _candidate = _cellForKey(widget.initialSlotKey) ??
+        (_h ~/ 2) * _w + (_w ~/ 2); // default: sredina (jezgra)
+    _tc.addListener(_onTransform);
+  }
+
+  int? _cellForKey(String? key) {
+    if (key == null) return null;
+    final p = key.split(':');
+    if (p.length != 2) return null;
+    final x = int.tryParse(p[0]);
+    final y = int.tryParse(p[1]);
+    if (x == null || y == null || x < 0 || x >= _w || y < 0 || y >= _h) {
+      return null;
+    }
+    return y * _w + x;
+  }
+
+  @override
+  void dispose() {
+    _tc.removeListener(_onTransform);
+    _tc.dispose();
+    super.dispose();
+  }
+
+  /// Ćelija pod nišanom = scena u središtu viewporta → koordinate.
+  void _onTransform() {
+    final side = _side;
+    if (side == null) return;
+    final scene = _tc.toScene(Offset(side / 2, side / 2));
+    final cx = (scene.dx / _kGridPx * _w).floor().clamp(0, _w - 1);
+    final cy = (scene.dy / _kGridPx * _h).floor().clamp(0, _h - 1);
+    final cell = cy * _w + cx;
+    if (cell != _candidate) setState(() => _candidate = cell);
+  }
+
+  /// Afini transform v' = scale·v + (tx,ty), column-major (translacija u
+  /// zadnjem stupcu). Ručno da izbjegnemo deprecirane Matrix4.translate/scale.
+  static Matrix4 _affine(double scale, double tx, double ty) => Matrix4(
+        scale, 0, 0, 0, //
+        0, scale, 0, 0, //
+        0, 0, 1, 0, //
+        tx, ty, 0, 1, //
+      );
+
+  Matrix4 _initialMatrix(double side, double minScale, double maxScale) {
+    // S početnim odabirom: uleti na tu ćeliju; inače prikaži cijeli grid.
+    final focus = _cellForKey(widget.initialSlotKey);
+    if (focus != null) {
+      final scale = (minScale * 4).clamp(minScale, maxScale);
+      final sx = ((focus % _w) + 0.5) / _w * _kGridPx;
+      final sy = ((focus ~/ _w) + 0.5) / _h * _kGridPx;
+      return _affine(scale, side / 2 - scale * sx, side / 2 - scale * sy);
+    }
+    return _affine(minScale, 0, 0); // fit: cijeli grid
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLowest,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surfaceContainerLowest,
+        title: Text(l.pinkaSlotPickerTitle),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final side =
+                    math.min(constraints.maxWidth, constraints.maxHeight);
+                _side = side;
+                final minScale = side / _kGridPx;
+                final maxScale = minScale * 8;
+                if (!_inited) {
+                  _inited = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _tc.value = _initialMatrix(side, minScale, maxScale);
+                    _onTransform();
+                  });
+                }
+                return Center(
+                  child: SizedBox(
+                    width: side,
+                    height: side,
+                    child: ClipRect(
+                      child: Stack(
+                        children: [
+                          InteractiveViewer(
+                            transformationController: _tc,
+                            minScale: minScale,
+                            maxScale: maxScale,
+                            // Dovoljno margine da SVAKA ćelija (i rubna) dođe
+                            // pod središnji nišan.
+                            boundaryMargin: const EdgeInsets.all(_kGridPx),
+                            child: SizedBox(
+                              width: _kGridPx,
+                              height: _kGridPx,
+                              child: Stack(
+                                children: [
+                                  RepaintBoundary(
+                                    child: CustomPaint(
+                                      isComplex: true,
+                                      size: const Size(_kGridPx, _kGridPx),
+                                      painter: _GridPainter(
+                                        width: _w,
+                                        height: _h,
+                                        zoneOf: _zoneOf,
+                                        zoneColors: _colors,
+                                        soldColor: cs.tertiary,
+                                        heldColor:
+                                            cs.tertiary.withValues(alpha: 0.45),
+                                        blockedColor:
+                                            cs.surfaceContainerHighest,
+                                        soldCells: _cells(_SlotDraw.sold),
+                                        heldCells: _cells(_SlotDraw.held),
+                                        blockedCells: _cells(_SlotDraw.blocked),
+                                        signature: 'picker:${_slotByCell.length}',
+                                      ),
+                                    ),
+                                  ),
+                                  CustomPaint(
+                                    size: const Size(_kGridPx, _kGridPx),
+                                    painter: _PickerCandidatePainter(
+                                      width: _w,
+                                      height: _h,
+                                      cell: _candidate,
+                                      color: theme.brightness == Brightness.dark
+                                          ? Colors.white
+                                          : AppTheme.croBlue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Fiksni nišan na sredini — u SCREEN prostoru, ne
+                          // transformira se s gridom.
+                          const IgnorePointer(
+                            child: Center(
+                              child: SizedBox(
+                                  width: 48, height: 48, child: _Reticle()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          _bottomBar(theme, l),
+        ],
+      ),
+    );
+  }
+
+  Set<int> _cells(_SlotDraw want) {
+    final out = <int>{};
+    _slotByCell.forEach((cell, s) {
+      final draw = s.isHeld
+          ? _SlotDraw.held
+          : s.isBlocked
+              ? _SlotDraw.blocked
+              : _SlotDraw.sold;
+      if (draw == want) out.add(cell);
+    });
+    return out;
+  }
+
+  Widget _bottomBar(ThemeData theme, AppLocalizations l) {
+    final cs = theme.colorScheme;
+    final cell = _candidate;
+    final x = cell % _w, y = cell ~/ _w;
+    final zone = cell < _zoneOf.length ? _zoneOf[cell] : 0;
+    final price = zone < _zones.length ? _zones[zone].priceCents : 0;
+    final zoneName = _zoneNameForKey(
+        l, zone < _zones.length ? _zones[zone].labelKey : null, zone);
+    final slot = _slotByCell[cell];
+    final free = slot == null || slot.isFree;
+    final held = slot != null && slot.isHeld;
+    final blocked = slot != null && slot.isBlocked;
+
+    final String status;
+    if (free) {
+      status = l.pinkaGridZonePriceLabel(zoneName, fmtEur(price));
+    } else if (held) {
+      status = l.pinkaSlotStatusHeld;
+    } else if (blocked) {
+      status = l.pinkaSlotStatusBlocked;
+    } else {
+      status =
+          '${slot.displayName ?? l.pinkaAnonymous} · ${fmtEur(slot.priceCents)} €';
+    }
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          border: Border(top: BorderSide(color: cs.outlineVariant)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  free ? Icons.check_circle_outline : Icons.block,
+                  size: 18,
+                  color: free ? cs.tertiary : cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(status,
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                      overflow: TextOverflow.ellipsis),
+                ),
+                Text('· $x:$y',
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(l.pinkaSlotPickerHint,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: cs.onSurfaceVariant)),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed:
+                  free ? () => Navigator.of(context).pop('$x:$y') : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.tertiary,
+                foregroundColor: cs.onTertiary,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+              ),
+              icon: const Icon(Icons.check, size: 18),
+              label: Text(free
+                  ? l.pinkaSlotPickerConfirm(fmtEur(price))
+                  : l.pinkaSlotPickerTaken),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kandidatska ćelija u TRANSFORMIRANOM prostoru grida (pomiče se s pan/zoom).
+/// Debljina ruba proporcionalna ćeliji da bude vidljiva na svakom zoomu.
+class _PickerCandidatePainter extends CustomPainter {
+  final int width;
+  final int height;
+  final int cell;
+  final Color color;
+
+  _PickerCandidatePainter({
+    required this.width,
+    required this.height,
+    required this.cell,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cellW = size.width / width;
+    final cellH = size.height / height;
+    final x = cell % width;
+    final y = cell ~/ width;
+    final rect = Rect.fromLTWH(x * cellW, y * cellH, cellW, cellH);
+    final sw = math.max(cellW * 0.16, 1.5);
+    // Tamni halo pa svijetli rub — čitljivo i na svijetlim i tamnim zonama.
+    canvas.drawRect(
+      rect.inflate(sw * 0.5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw * 1.8
+        ..color = Colors.black.withValues(alpha: 0.55),
+    );
+    canvas.drawRect(
+      rect.inflate(sw * 0.5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PickerCandidatePainter old) =>
+      old.cell != cell || old.color != color;
+}
+
+/// Fiksni nišan na sredini ekrana (crosshair + središnja točka).
+class _Reticle extends StatelessWidget {
+  const _Reticle();
+
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _ReticlePainter());
+}
+
+class _ReticlePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final halo = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..color = Colors.black.withValues(alpha: 0.5)
+      ..strokeCap = StrokeCap.round;
+    final line = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..color = Colors.white
+      ..strokeCap = StrokeCap.round;
+
+    // Četiri kraka s prazninom u sredini + središnja točka.
+    const gap = 7.0;
+    const len = 16.0;
+    void cross(Paint p) {
+      canvas.drawLine(Offset(c.dx, c.dy - gap - len), Offset(c.dx, c.dy - gap), p);
+      canvas.drawLine(Offset(c.dx, c.dy + gap), Offset(c.dx, c.dy + gap + len), p);
+      canvas.drawLine(Offset(c.dx - gap - len, c.dy), Offset(c.dx - gap, c.dy), p);
+      canvas.drawLine(Offset(c.dx + gap, c.dy), Offset(c.dx + gap + len, c.dy), p);
+    }
+
+    cross(halo);
+    cross(line);
+    canvas.drawCircle(c, 2.5, Paint()..color = Colors.black.withValues(alpha: 0.5));
+    canvas.drawCircle(c, 1.5, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(_ReticlePainter oldDelegate) => false;
 }

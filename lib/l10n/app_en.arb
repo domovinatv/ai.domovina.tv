@@ -847,5 +847,12 @@
   "pinkaSlotBelowPrice": "The amount can't be lower than the price of the spot ({price} €).",
   "pinkaSlotTakenError": "Someone was faster — that square has just been taken. Pick another one.",
   "pinkaSlotHoldCountdown": "Your spot is held for another {time}.",
-  "pinkaSlotHoldExpired": "The hold expired, but your payment still counts — once it lands you get the same square if it's free, otherwise the nearest one in the same or a pricier zone."
+  "pinkaSlotHoldExpired": "The hold expired, but your payment still counts — once it lands you get the same square if it's free, otherwise the nearest one in the same or a pricier zone.",
+  "pinkaSlotHoldReserved": "Your spot is held.",
+  "pinkaSlotHoldReassure": "If the transfer stalls at your bank's or the recipient's checks, don't worry — as long as it arrives within 24 hours we'll process it.",
+  "pinkaSlotPickerOpen": "Zoom in",
+  "pinkaSlotPickerTitle": "Pick your spot",
+  "pinkaSlotPickerHint": "Drag and pinch to zoom; the square under the crosshair is your pick.",
+  "pinkaSlotPickerConfirm": "Confirm spot · {price} €",
+  "pinkaSlotPickerTaken": "This spot is taken"
 }

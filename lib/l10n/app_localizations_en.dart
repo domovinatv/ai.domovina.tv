@@ -3191,4 +3191,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pinkaSlotHoldExpired =>
       'The hold expired, but your payment still counts — once it lands you get the same square if it\'s free, otherwise the nearest one in the same or a pricier zone.';
+
+  @override
+  String get pinkaSlotHoldReserved => 'Your spot is held.';
+
+  @override
+  String get pinkaSlotHoldReassure =>
+      'If the transfer stalls at your bank\'s or the recipient\'s checks, don\'t worry — as long as it arrives within 24 hours we\'ll process it.';
+
+  @override
+  String get pinkaSlotPickerOpen => 'Zoom in';
+
+  @override
+  String get pinkaSlotPickerTitle => 'Pick your spot';
+
+  @override
+  String get pinkaSlotPickerHint =>
+      'Drag and pinch to zoom; the square under the crosshair is your pick.';
+
+  @override
+  String pinkaSlotPickerConfirm(String price) {
+    return 'Confirm spot · $price €';
+  }
+
+  @override
+  String get pinkaSlotPickerTaken => 'This spot is taken';
 }
