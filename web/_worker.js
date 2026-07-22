@@ -133,6 +133,19 @@ const ASSETLINKS_JSON = JSON.stringify([
       ],
     },
   },
+  {
+    // airKUNA wallet — App Links za /c/* donacijske rute (path scope je u
+    // appu, assetlinks verificira samo app↔domena vezu). Otisak = EAS-managed
+    // keystore @airkuna/airkuna (Build Credentials 5E0UbnSkow, 2026-07-22).
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: {
+      namespace: 'android_app',
+      package_name: 'com.airkuna.wallet',
+      sha256_cert_fingerprints: [
+        '4F:E5:92:94:62:BE:29:59:57:44:B1:56:56:73:85:13:FA:D2:80:B6:A8:AB:A4:CA:F0:69:49:63:66:33:C9:C7',
+      ],
+    },
+  },
 ], null, 2);
 
 // Auth callback rute su ISKLJUČENE iz universal linkova: OAuth/magic-link
