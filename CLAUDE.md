@@ -66,6 +66,35 @@ overlay klikove (search palette, share sheet) zbog #163576.
 
 **Rule**: Use PNG (`Image.asset`) instead of SVG for in-app images on web.
 
+### Universal/App Links NE smiju hvatati auth callback rute
+
+Web OAuth povratak (`GoTrue → https://domovina.ai/auth/callback`) je
+cross-origin redirect — ako ga native app presretne kao universal/app link,
+web prijava se prekine otvaranjem appa (bug viđen na iOS-u 2026-07-22).
+
+- **iOS** (`web/_worker.js` AASA_JSON): `components` s `exclude: true` za
+  `/auth/*`, `/login-callback`, `/youtube-claim/*` + legacy `NOT` u `paths`.
+  Apple CDN/uređaji cachiraju AASA — propagacija tek nakon reinstalacije
+  appa ili do ~tjedan dana.
+- **Android** (`AndroidManifest.xml`): intent filter nema exclude sintaksu —
+  App Links su ALLOWLIST content putanja (`/v/`, `/m/`, `/c/`, `/p/`,
+  `/handoff`, `/`, `/channels`). Auth rute namjerno izostavljene.
+- Native login flow koristi `ai.domovina://` custom scheme — na njega ovo
+  ne utječe.
+
+**Rule**: nova javna content ruta → dodaj u OBA popisa (AASA components +
+Android intent filter). Nova auth/callback ruta → NE dodavati, i provjeri
+da je pokrivena AASA exclusionom. Deploy skripta ima tripwire koji provjeri
+live AASA exclusion.
+
+### Auth return-to (povratak na izvornu rutu nakon prijave)
+
+Prije OAuth/magic-link full-page redirecta `AuthService` sprema path+query u
+localStorage (`auth_return_to`); `AuthCallbackScreen` vraća korisnika tamo
+umjesto na `/`. Čista logika u `lib/services/auth_return_path.dart`,
+kontrakt čuvaju unit testovi u `test/auth_return_path_test.dart`
+(open-redirect guard + callback-loop guard). Ne zaobilaziti sanitizaciju.
+
 ### Backend placement — Cloudflare Worker vs Supabase Edge Function
 
 **Rule (decide by purpose):** does the backend code read/write our Postgres

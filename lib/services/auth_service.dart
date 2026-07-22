@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log, rootScaffoldMessengerKey;
 import '../onboarding/ui/auth_ui.dart';
+import 'auth_return_path.dart';
 import 'certilia_service.dart';
 import 'favorites_service.dart';
 import 'local_prefs.dart';
@@ -29,12 +30,6 @@ const String _anonPendingMigrationKey = 'auth_anon_pending_migration_id';
 /// (AuthProvider.name). Auth sheet ju ističe "ZADNJI PUT" badgeom da
 /// returning user ne otvori slučajno drugi račun drugom metodom.
 const String lastProviderKey = 'auth_last_provider';
-
-/// localStorage ključ — ruta (path+query) s koje je prijava krenula.
-/// Postavlja se prije full-page OAuth/magic-link redirecta; AuthCallbackScreen
-/// po povratku vraća korisnika na nju umjesto na homepage (npr. natrag na
-/// /c/domovina-tv/doniraj). Briše se postavljanjem na prazan string.
-const String authReturnToKey = 'auth_return_to';
 
 /// Provider info — kakav identitet je linkan. Mapira na sb.OAuthProvider
 /// za Google/Apple; email i passkey su custom flow-ovi.
@@ -624,16 +619,13 @@ class AuthService extends ChangeNotifier {
   /// Zapamti trenutnu rutu prije full-page redirecta (OAuth / magic link)
   /// da AuthCallbackScreen po povratku vrati korisnika gdje je stao, a ne
   /// na homepage. Samo web (native koristi deep link + sheet ostaje živ).
-  /// Auth rute preskačemo da callback ne redirecta sam na sebe.
+  /// Logika u auth_return_path.dart (pure, unit-testirana).
   void _saveReturnPath() {
     if (!kIsWeb) return;
-    final path = Uri.base.path;
-    if (path.startsWith('/auth/') || path.startsWith('/login-callback')) {
-      return;
-    }
-    final query = Uri.base.hasQuery ? '?${Uri.base.query}' : '';
-    setLocalStorageString(authReturnToKey, '$path$query');
-    log('AuthService: saved return path $path$query');
+    final ret = returnPathToSave(Uri.base);
+    if (ret == null) return;
+    setLocalStorageString(authReturnToKey, ret);
+    log('AuthService: saved return path $ret');
   }
 
   sb.SupabaseClient? _client() {

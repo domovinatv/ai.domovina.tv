@@ -52,12 +52,27 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep Links (App Links) -->
+            <!-- Deep Links (App Links) — ALLOWLIST putanja, ne cijeli host.
+                 Android nema "exclude" (za razliku od iOS AASA components),
+                 pa bi filter bez path atributa oteo i OAuth povratak
+                 https://domovina.ai/auth/callback iz Chromea → web prijava
+                 bi se prekinula otvaranjem appa (isti bug kao iOS AASA
+                 paths:["*"], popravljeno 2026-07-22). Auth rute (/auth/*,
+                 /login-callback, /youtube-claim/*, /invite) NAMJERNO nisu
+                 ovdje — moraju ostati u browseru. Novu javnu content rutu
+                 dodaj i ovdje i u iOS AASA (web/_worker.js AASA_JSON). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="domovina.ai" />
+                <data android:path="/" />
+                <data android:path="/channels" />
+                <data android:pathPrefix="/v/" />
+                <data android:pathPrefix="/m/" />
+                <data android:pathPrefix="/c/" />
+                <data android:pathPrefix="/p/" />
+                <data android:pathPrefix="/handoff" />
             </intent-filter>
 
             <!-- Custom URL Scheme za Supabase OAuth / Magic Links -->

@@ -167,6 +167,17 @@ echo "--- Verifikacija ---"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://domovina.ai/)
 echo "https://domovina.ai/ -> HTTP $HTTP_CODE"
 
+# Regresijski tripwire (2026-07-22): AASA MORA excludati /auth/* — inače iOS
+# s instaliranom appom otima OAuth povratak (https://domovina.ai/auth/callback)
+# i otvara native app umjesto da web prijava završi u browseru.
+AASA=$(curl -s https://domovina.ai/.well-known/apple-app-site-association)
+if echo "$AASA" | grep -q '"/auth/\*"' && echo "$AASA" | grep -q '"exclude": true'; then
+  echo "AASA /auth/* exclusion OK"
+else
+  echo "UPOZORENJE: AASA više ne excluda /auth/* — web login na iOS-u s"
+  echo "instaliranom appom će se opet prekidati! Vidi AASA_JSON u web/_worker.js."
+fi
+
 echo ""
 echo "=== Deployed v${APP_VERSION} ==="
 echo "Hard refresh: Cmd+Shift+R / Ctrl+Shift+R"

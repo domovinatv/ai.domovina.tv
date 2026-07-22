@@ -17,6 +17,7 @@ import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../onboarding/ui/auth_ui.dart';
+import '../../services/auth_return_path.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';
 import '../../services/locale_service.dart';
@@ -122,19 +123,11 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
 
   /// Ruta na koju se vraćamo nakon prijave — ona s koje je login krenuo
   /// (spremljena u [authReturnToKey] prije OAuth redirecta), inače '/'.
-  /// Prihvaćamo samo same-origin apsolutni path ('/x…', ne '//host' ni
-  /// auth rute) da localStorage ne može postati open-redirect vektor.
+  /// Validacija (open-redirect guard) u auth_return_path.dart (unit-testirano).
   String _returnDestination() {
     final saved = getLocalStorageString(authReturnToKey);
     setLocalStorageString(authReturnToKey, '');
-    var dest = '/';
-    if (saved != null &&
-        saved.startsWith('/') &&
-        !saved.startsWith('//') &&
-        !saved.startsWith('/auth/') &&
-        !saved.startsWith('/login-callback')) {
-      dest = saved;
-    }
+    final dest = sanitizeReturnPath(saved);
     log('AuthCallback: signed in → redirect $dest');
     return dest;
   }
