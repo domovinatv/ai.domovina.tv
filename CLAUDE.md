@@ -286,6 +286,22 @@ mjeseci/dana (`_hrWeekdayShort`/`_hrMonthsGen`) — za pravu lokalizaciju datuma
 
 ## Architecture Notes
 
+### Scrollabilne liste — rubni padding UNUTAR scrolla
+
+Scrollabilni sadržaj (horizontalni railovi, breadcrumbovi, vertikalne liste)
+mora klizati do fizičkog ruba ekrana; rubni razmak postoji samo u mirovanju.
+Vanjski `Padding` oko scrollabla "reže" sadržaj na uvučenom rubu — izgleda
+odrezano, posebno na mobile.
+
+**Rule**: padding ide kao `padding:` parametar NA listu
+(`ListView`/`SingleChildScrollView`/`SliverPadding`), nikad kao `Padding`
+wrapper oko nje. Scrollabilni sadržaj u `AppBar`/`SliverAppBar` title →
+`titleSpacing: 0` + padding unutar scrollabla (primjer: `home_app_bar.dart`).
+Bottom sheet s horizontalnom listom → sheet padding bez horizontalne
+komponente, sekcije nose svoj h-padding (primjer: `founder_booking.dart`).
+Iznimka: bordered card/panel/dialog gdje je padding chrome kartice.
+Sweep 2026-07-23 poravnao cijeli codebase na ovaj pattern.
+
 ### Routing
 
 `main.dart` uses `onGenerateRoute` with `PageRouteBuilder(transitionDuration: Duration.zero)` for instant navigation. The initial route uses `home: const HomeScreen()` — do NOT replace with `initialRoute` or `onGenerateInitialRoutes` as both crash on web.
