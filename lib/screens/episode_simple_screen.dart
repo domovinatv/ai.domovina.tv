@@ -21,6 +21,7 @@ import '../services/episode_language.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/player_resume.dart';
+import '../services/page_meta.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -71,7 +72,14 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
   Future<void> _load() async {
     try {
       final data = await EpisodeData.load(youtubeId: widget.youtubeId);
-      if (mounted) setState(() => _data = data);
+      if (mounted) {
+        setState(() => _data = data);
+        // Isti format naslova kao worker edge-inject za /v/ i /m/.
+        setPageMeta(
+          title: '${data.displayTitle} – DOMOVINA.ai',
+          description: data.summary?.summary.abstractHr,
+        );
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }

@@ -24,16 +24,23 @@ class PinkaWallList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        for (final c in contributions)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 340),
-            child: _WallEntry(contribution: c, flash: flashIds.contains(c.id)),
-          ),
-      ],
+    // e2e/a11y sidro (flt-semantics-identifier u a11y DOM-u) — popis
+    // podržavatelja; vidi komentar uz pinka-grid-wall u campaign screenu.
+    return Semantics(
+      identifier: 'pinka-wall-list',
+      container: true,
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (final c in contributions)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 340),
+              child:
+                  _WallEntry(contribution: c, flash: flashIds.contains(c.id)),
+            ),
+        ],
+      ),
     );
   }
 }

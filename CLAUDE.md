@@ -38,11 +38,27 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 
 **Rule**: Never use `SharedPreferences` on web. Always check `kIsWeb` and use `localStorage` for browser persistence.
 
-### ensureSemantics crashes on web release builds
+### ensureSemantics na webu — stara zabrana OPOVRGNUTA (2026-07-22)
 
-`SemanticsBinding.instance.ensureSemantics()` creates a DOM overlay that causes `Uncaught Error` during the first frame render in release web builds. Removed from `main.dart`.
+Povijesno pravilo "ensureSemantics crasha release web build" retestirano na
+Flutter 3.41.6: **crash se NE reproducira** ni na skwasm (`--wasm`) ni na
+dart2js putanji, ni s pozivom odmah nakon `ensureInitialized()`. Originalna
+atribucija (2026-03-31) gotovo je sigurno bila kriva — u istom periodu su
+postojali SharedPreferences/flutter_svg crashevi na minificiranom buildu.
 
-**Rule**: Do not call `ensureSemantics()` for web builds.
+Semantics ipak NIJE uključen svima uvijek, zbog poznatih **bihevioralnih**
+web bugova (flutter/flutter#163576 P1 — click-through kroz preklapajuće
+widgete). Trenutni mehanizam u `main.dart`:
+
+- `?a11y=1` query param → `ensureSemantics()` odmah (za Playwright/Cypress
+  e2e i ručnu inspekciju a11y DOM-a).
+- Screen readeri: Flutterov ugrađeni `flt-semantics-placeholder` (pali
+  identično stablo — potvrđeno, 73 čvora na home).
+- `Semantics(identifier: 'pinka-*')` sidra na doniraj ekranu izlaze kao
+  `flt-semantics-identifier` atribut. Vidi `docs/e2e-testing.md`.
+
+**Rule**: prije eventualnog always-on uključivanja ručno protestirati
+overlay klikove (search palette, share sheet) zbog #163576.
 
 ### flutter_svg crashes on web
 

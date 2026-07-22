@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsBinding;
 import 'package:flutter/services.dart' show BrowserContextMenu;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:media_kit/media_kit.dart';
@@ -24,7 +25,7 @@ const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '2.0.100';
+const String appVersion = '2.0.102';
 
 /// Console logger s verzijom — koristi za debug u release web buildovima
 /// gdje su stack traceovi minificirani. Vidi CLAUDE.md za detalje.
@@ -45,8 +46,21 @@ void main() async {
     try { await BrowserContextMenu.disableContextMenu(); } catch (_) {}
   }
 
-  // ensureSemantics ZABRANJENO na webu — crasha release build.
-  // Vidi CLAUDE.md "Known Issues".
+  // Semantics (a11y DOM / ARIA čvorovi) — retestirano na Flutter 3.41.6:
+  // ensureSemantics() NE crasha release web (ni skwasm ni dart2js); stara
+  // zabrana je bila pogrešna atribucija istovremenih SharedPreferences/
+  // flutter_svg crasheva (vidi CLAUDE.md "Known Issues"). Ipak ga ne palimo
+  // svima uvijek zbog poznatih BIHEVIORALNIH semantics bugova na webu
+  // (flutter/flutter#163576 — click-through kroz preklapajuće widgete):
+  //  - e2e alati (Playwright/Cypress) otvaraju app s ?a11y=1 → semantics
+  //    odmah, deterministički;
+  //  - screen readeri i dalje aktiviraju Flutterov ugrađeni
+  //    flt-semantics-placeholder (pali identično stablo, potvrđeno).
+  // Handle se namjerno ne dispose-a — app-lifetime.
+  if (kIsWeb && Uri.base.queryParameters['a11y'] == '1') {
+    SemanticsBinding.instance.ensureSemantics();
+    log('semantics: enabled via ?a11y=1');
+  }
 
   // TV detekcija mora biti prije runApp jer router i theme citaju TvMode.isTv
   // sinkrono. Override: --dart-define=FORCE_TV=true za desktop iteraciju.

@@ -492,18 +492,23 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           ),
         SizedBox(
           width: 110,
-          child: TextField(
-            controller: _customCtrl,
-            focusNode: _customFocus,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [_eurAmountFormatter],
-            decoration: InputDecoration(
-              isDense: true,
-              suffixText: '€',
-              labelText: appStrings.pinkaCustomAmountHint,
-              hintText: appStrings.pinkaCustomAmountPlaceholder,
+          // e2e/a11y sidro za custom iznos (uz preset ChoiceChip-ove).
+          child: Semantics(
+            identifier: 'pinka-amount-input',
+            child: TextField(
+              controller: _customCtrl,
+              focusNode: _customFocus,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [_eurAmountFormatter],
+              decoration: InputDecoration(
+                isDense: true,
+                suffixText: '€',
+                labelText: appStrings.pinkaCustomAmountHint,
+                hintText: appStrings.pinkaCustomAmountPlaceholder,
+              ),
+              onChanged: _setAmountFromCustom,
             ),
-            onChanged: _setAmountFromCustom,
           ),
         ),
       ],
@@ -653,24 +658,28 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _sepaButton(ThemeData theme, bool creating) {
-    return FilledButton.icon(
-      onPressed: creating ? null : _submitSepa,
-      style: FilledButton.styleFrom(
-        backgroundColor: theme.colorScheme.tertiary,
-        foregroundColor: theme.colorScheme.onTertiary,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+    // e2e/a11y sidro — vidi komentar uz pinka-grid-wall u campaign screenu.
+    return Semantics(
+      identifier: 'pinka-sepa-submit',
+      child: FilledButton.icon(
+        onPressed: creating ? null : _submitSepa,
+        style: FilledButton.styleFrom(
+          backgroundColor: theme.colorScheme.tertiary,
+          foregroundColor: theme.colorScheme.onTertiary,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+        icon: creating
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
+              )
+            : const Icon(Icons.favorite, size: 18),
+        label: Text(creating
+            ? appStrings.pinkaPreparing
+            : appStrings.pinkaSupportWithAmount(fmtEur(_amountCents))),
       ),
-      icon: creating
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child:
-                  CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-            )
-          : const Icon(Icons.favorite, size: 18),
-      label: Text(creating
-          ? appStrings.pinkaPreparing
-          : appStrings.pinkaSupportWithAmount(fmtEur(_amountCents))),
     );
   }
 

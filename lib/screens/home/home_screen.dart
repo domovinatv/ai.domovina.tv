@@ -11,6 +11,7 @@ import '../../services/app_install_banner.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/local_prefs.dart';
+import '../../services/page_meta.dart';
 import '../../services/view_mode.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/founder_booking.dart';
@@ -88,6 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Povratak na home vraća default <title>/og meta (episode/channel ekrani
+    // su ih runtime-overridali — vidi services/page_meta.dart).
+    resetPageMeta();
     _indexFuture = _channelCache.loadIndex();
     // Prefetch svih channel detalja čim index stigne — DETERMINISTIČKI, neovisno
     // o build timingu i simpleMode pref-u. (Ranije se zvao iz onChannelsLoaded

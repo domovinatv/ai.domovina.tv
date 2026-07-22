@@ -16,6 +16,7 @@ import '../models/pinka_slot.dart';
 import '../models/pinka_yield_position.dart';
 import '../pinka_client.dart';
 import '../pinka_config.dart';
+import '../../../services/page_meta.dart';
 import '../util/pinka_money.dart';
 import '../util/pinka_onchain.dart';
 import '../widgets/pinka_common.dart';
@@ -166,6 +167,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           )
         : null;
     if (!mounted) return;
+    // Runtime <title>/og meta za živu sesiju (crawleri idu kroz _worker.js
+    // koji isti naslov gradi edge-side iz kampanje).
+    setPageMeta(
+      title: '${c.title} – DOMOVINA.ai',
+      description: c.description,
+    );
     setState(() {
       _campaign = c;
       _loading = false;
@@ -429,13 +436,20 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           onClearSlot: _clearSlot,
           onSlotConflict: _onSlotConflict,
         );
-        final grid = PinkaGridWall(
-          contributions: _wall,
-          map: _slotMap,
-          slots: _slots,
-          selectedSlotKey: _selectedSlotKey,
-          onSlotTap: _onSlotTap,
-          onZoneTap: _onGridZoneTap,
+        // Semantics identifieri (pinka-*) izlaze kao flt-semantics-identifier
+        // atribut u a11y DOM-u → stabilna hvatišta za Playwright/Cypress i
+        // screen readere. Bez aktivnog semantics stabla nemaju runtime trošak.
+        final grid = Semantics(
+          identifier: 'pinka-grid-wall',
+          container: true,
+          child: PinkaGridWall(
+            contributions: _wall,
+            map: _slotMap,
+            slots: _slots,
+            selectedSlotKey: _selectedSlotKey,
+            onSlotTap: _onSlotTap,
+            onZoneTap: _onGridZoneTap,
+          ),
         );
         final verify = c.supportsOnchain ? _verifyCard(theme, c) : null;
         final main = _mainColumn(theme, c);

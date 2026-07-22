@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
 import '../../services/cdn_config.dart';
+import '../../services/page_meta.dart';
 import '../../services/person_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -32,15 +33,24 @@ class _PersonScreenState extends State<PersonScreen> {
   @override
   void initState() {
     super.initState();
-    _future = PersonService.fetch(widget.slug);
+    _future = _fetchWithMeta();
   }
 
   @override
   void didUpdateWidget(PersonScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.slug != widget.slug) {
-      _future = PersonService.fetch(widget.slug);
+      _future = _fetchWithMeta();
     }
+  }
+
+  /// Fetch + runtime <title>/og meta — isti format kao worker inject za /p/.
+  Future<PersonHub?> _fetchWithMeta() async {
+    final hub = await PersonService.fetch(widget.slug);
+    if (hub != null && mounted) {
+      setPageMeta(title: '${hub.name} — podcast profil – DOMOVINA.ai');
+    }
+    return hub;
   }
 
   void _back() {

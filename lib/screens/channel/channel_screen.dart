@@ -5,6 +5,7 @@ import '../../models/channel_detail.dart';
 import '../../services/locale_service.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
+import '../../services/page_meta.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
 
@@ -35,6 +36,14 @@ class _ChannelScreenState extends State<ChannelScreen> {
   void initState() {
     super.initState();
     _detailFuture = channelCache.loadChannel(widget.channelId);
+    // Runtime <title>/og meta — isti format kao worker edge-inject za /c/.
+    _detailFuture.then((d) {
+      if (!mounted) return;
+      setPageMeta(
+        title: '${d.name} — AI obrada podcasta – DOMOVINA.ai',
+        description: d.description,
+      );
+    }).catchError((_) {});
   }
 
   void _back() {
