@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/cdn_config.dart';
-import '../../services/locale_service.dart';
 import '../../l10n/app_localizations.dart';
 
 import '../../theme/typography.dart';
@@ -55,6 +54,7 @@ class HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: outerPadding,
@@ -64,7 +64,8 @@ class HeroSection extends StatelessWidget {
           color: theme.colorScheme.surfaceContainerLowest,
           child: InkWell(
             onTap: onPlay,
-            child: isMobile ? _mobileLayout(theme) : _desktopLayout(theme),
+            child:
+                isMobile ? _mobileLayout(theme, l) : _desktopLayout(theme, l),
           ),
         ),
       ),
@@ -72,7 +73,7 @@ class HeroSection extends StatelessWidget {
   }
 
   /// Desktop split — slika lijevo (constrained 480px), tekst desno.
-  Widget _desktopLayout(ThemeData theme) {
+  Widget _desktopLayout(ThemeData theme, AppLocalizations l) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,7 +101,7 @@ class HeroSection extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
-              child: _content(theme, light: false),
+              child: _content(theme, l, light: false),
             ),
           ),
         ],
@@ -109,7 +110,7 @@ class HeroSection extends StatelessWidget {
   }
 
   /// Mobile stack — slika gore, tekst ispod.
-  Widget _mobileLayout(ThemeData theme) {
+  Widget _mobileLayout(ThemeData theme, AppLocalizations l) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -130,7 +131,7 @@ class HeroSection extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-          child: _content(theme, light: false),
+          child: _content(theme, l, light: false),
         ),
       ],
     );
@@ -160,7 +161,8 @@ class HeroSection extends StatelessWidget {
     );
   }
 
-  Widget _content(ThemeData theme, {required bool light}) {
+  Widget _content(ThemeData theme, AppLocalizations l,
+      {required bool light}) {
     final video = featured.video.video;
     final channelName = featured.video.channelName;
     final textColor = light ? Colors.white : theme.colorScheme.onSurface;
@@ -178,7 +180,7 @@ class HeroSection extends StatelessWidget {
             Container(width: 24, height: 2, color: theme.colorScheme.tertiary),
             const SizedBox(width: 10),
             Text(
-              appStrings.homeHeroEyebrow.toUpperCase(),
+              l.homeHeroEyebrow.toUpperCase(),
               style: AppTypography.eyebrowStyle(theme.colorScheme)
                   .copyWith(color: subColor),
             ),
@@ -214,7 +216,7 @@ class HeroSection extends StatelessWidget {
               ),
             ),
             if (video.date != null)
-              Text('·  ${_formatDate(video.date!)}',
+              Text('·  ${_formatDate(video.date!, l)}',
                   style: theme.textTheme.bodyMedium?.copyWith(color: subColor)),
             if (video.durationDisplay != null)
               Text('·  ${video.durationDisplay}',
@@ -229,7 +231,7 @@ class HeroSection extends StatelessWidget {
             FilledButton.icon(
               onPressed: onPlay,
               icon: const Icon(Icons.play_arrow, size: 20),
-              label: Text(appStrings.homeHeroListen),
+              label: Text(l.homeHeroListen),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.croBlue,
                 foregroundColor: Colors.white,
@@ -245,7 +247,7 @@ class HeroSection extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onSave,
               icon: const Icon(Icons.bookmark_border, size: 18),
-              label: Text(appStrings.commonSave),
+              label: Text(l.commonSave),
               style: OutlinedButton.styleFrom(
                 foregroundColor: textColor,
                 side: BorderSide(
@@ -292,15 +294,15 @@ class HeroSection extends StatelessWidget {
     );
   }
 
-  String _formatDate(String iso) {
+  String _formatDate(String iso, AppLocalizations l) {
     try {
       final d = DateTime.parse(iso);
       final days = DateTime.now().difference(d).inDays;
-      if (days == 0) return appStrings.homeAgoToday;
-      if (days == 1) return appStrings.homeAgoYesterday;
-      if (days < 7) return appStrings.homeAgoDays(days);
-      if (days < 30) return appStrings.homeAgoWeeks((days / 7).floor());
-      if (days < 365) return appStrings.homeAgoMonths((days / 30).floor());
+      if (days == 0) return l.homeAgoToday;
+      if (days == 1) return l.homeAgoYesterday;
+      if (days < 7) return l.homeAgoDays(days);
+      if (days < 30) return l.homeAgoWeeks((days / 7).floor());
+      if (days < 365) return l.homeAgoMonths((days / 30).floor());
       return iso;
     } catch (_) {
       return iso;
@@ -388,11 +390,11 @@ class _WhyDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _reasonHeadline(pick.reason),
+              _reasonHeadline(l, pick.reason),
               style: theme.textTheme.headlineSmall?.copyWith(height: 1.2),
             ),
             const SizedBox(height: 16),
-            _factsTable(theme, pick),
+            _factsTable(theme, l, pick),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(14),
@@ -408,7 +410,7 @@ class _WhyDialog extends StatelessWidget {
                     style: AppTypography.eyebrowStyle(theme.colorScheme),
                   ),
                   const SizedBox(height: 10),
-                  _algorithmTiers(theme, pick.reason),
+                  _algorithmTiers(theme, l, pick.reason),
                 ],
               ),
             ),
@@ -432,27 +434,26 @@ class _WhyDialog extends StatelessWidget {
     );
   }
 
-  String _reasonHeadline(FeaturedReason reason) {
+  String _reasonHeadline(AppLocalizations l, FeaturedReason reason) {
     switch (reason) {
       case FeaturedReason.hiQualityRecent:
-        return appStrings.homeReasonHeadlineHiQualityRecent;
+        return l.homeReasonHeadlineHiQualityRecent;
       case FeaturedReason.hiQuality:
-        return appStrings.homeReasonHeadlineHiQuality;
+        return l.homeReasonHeadlineHiQuality;
       case FeaturedReason.anyMagisterium:
-        return appStrings.homeReasonHeadlineAnyMagisterium;
+        return l.homeReasonHeadlineAnyMagisterium;
       case FeaturedReason.newest:
-        return appStrings.homeReasonHeadlineNewest;
+        return l.homeReasonHeadlineNewest;
     }
   }
 
-  Widget _factsTable(ThemeData theme, FeaturedPick pick) {
-    final l = appStrings;
+  Widget _factsTable(ThemeData theme, AppLocalizations l, FeaturedPick pick) {
     final rows = <(String, String)>[
       (l.homeWhyFactChannel, pick.video.channelName),
       if (pick.magisteriumScore != null)
         (l.homeWhyFactScore, '${pick.magisteriumScore} / 100'),
       if (pick.daysAgo != null)
-        (l.homeWhyFactPublished, _daysAgoLabel(pick.daysAgo!)),
+        (l.homeWhyFactPublished, _daysAgoLabel(l, pick.daysAgo!)),
       (
         l.homeWhyFactAiProcessing,
         (pick.video.video.pipeline?.hasMagisterium ?? false)
@@ -500,8 +501,8 @@ class _WhyDialog extends StatelessWidget {
     );
   }
 
-  Widget _algorithmTiers(ThemeData theme, FeaturedReason activeTier) {
-    final l = appStrings;
+  Widget _algorithmTiers(
+      ThemeData theme, AppLocalizations l, FeaturedReason activeTier) {
     final tiers = [
       (
         FeaturedReason.hiQualityRecent,
@@ -579,12 +580,12 @@ class _WhyDialog extends StatelessWidget {
     );
   }
 
-  String _daysAgoLabel(int days) {
-    if (days == 0) return appStrings.homeAgoToday;
-    if (days == 1) return appStrings.homeAgoYesterday;
-    if (days < 7) return appStrings.homeAgoDays(days);
-    if (days < 30) return appStrings.homeAgoWeeks((days / 7).floor());
-    if (days < 365) return appStrings.homeAgoMonths((days / 30).floor());
-    return appStrings.homeAgoYears((days / 365).floor());
+  String _daysAgoLabel(AppLocalizations l, int days) {
+    if (days == 0) return l.homeAgoToday;
+    if (days == 1) return l.homeAgoYesterday;
+    if (days < 7) return l.homeAgoDays(days);
+    if (days < 30) return l.homeAgoWeeks((days / 7).floor());
+    if (days < 365) return l.homeAgoMonths((days / 30).floor());
+    return l.homeAgoYears((days / 365).floor());
   }
 }

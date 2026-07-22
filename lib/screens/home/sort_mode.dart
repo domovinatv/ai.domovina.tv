@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/channel_index.dart';
 import '../../services/local_prefs.dart';
-import '../../services/locale_service.dart';
 
 const String _sortKey = 'channel_sort_v1';
 
@@ -28,18 +28,18 @@ enum ChannelSortMode {
   /// rezultat ili buduci drag-and-drop reorder.
   custom;
 
-  String get label {
+  String label(AppLocalizations l) {
     switch (this) {
       case ChannelSortMode.newest:
-        return appStrings.homeSortNewest;
+        return l.homeSortNewest;
       case ChannelSortMode.mostEpisodes:
-        return appStrings.homeSortMostEpisodes;
+        return l.homeSortMostEpisodes;
       case ChannelSortMode.magisterium:
-        return appStrings.homeSortMagisterium;
+        return l.homeSortMagisterium;
       case ChannelSortMode.alphabetical:
-        return appStrings.homeSortAlphabetical;
+        return l.homeSortAlphabetical;
       case ChannelSortMode.custom:
-        return appStrings.homeSortCustom;
+        return l.homeSortCustom;
     }
   }
 }

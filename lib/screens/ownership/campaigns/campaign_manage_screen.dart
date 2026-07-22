@@ -234,7 +234,7 @@ class _EditTabState extends State<_EditTab> {
           decoration: InputDecoration(labelText: l.ownershipFieldState),
           items: [
             for (final s in _states)
-              DropdownMenuItem(value: s, child: Text(_stateLabel(s))),
+              DropdownMenuItem(value: s, child: Text(_stateLabel(l, s))),
           ],
           onChanged: (v) => setState(() => _state = v ?? _state),
         ),
@@ -244,7 +244,7 @@ class _EditTabState extends State<_EditTab> {
           decoration: InputDecoration(labelText: l.ownershipFieldVisibility),
           items: [
             for (final v in _vis)
-              DropdownMenuItem(value: v, child: Text(_visLabel(v))),
+              DropdownMenuItem(value: v, child: Text(_visLabel(l, v))),
           ],
           onChanged: (v) => setState(() => _visibility = v ?? _visibility),
         ),
@@ -269,17 +269,17 @@ class _EditTabState extends State<_EditTab> {
     );
   }
 
-  static String _stateLabel(String s) => switch (s) {
-        'draft' => appStrings.ownershipStateDraft,
-        'active' => appStrings.ownershipStateActive,
-        'closed' => appStrings.ownershipStateClosed,
-        'cancelled' => appStrings.ownershipStateCancelled,
+  static String _stateLabel(AppLocalizations l, String s) => switch (s) {
+        'draft' => l.ownershipStateDraft,
+        'active' => l.ownershipStateActive,
+        'closed' => l.ownershipStateClosed,
+        'cancelled' => l.ownershipStateCancelled,
         _ => s,
       };
-  static String _visLabel(String v) => switch (v) {
-        'public' => appStrings.ownershipVisPublic,
-        'unlisted' => appStrings.ownershipVisUnlisted,
-        'private' => appStrings.ownershipVisPrivate,
+  static String _visLabel(AppLocalizations l, String v) => switch (v) {
+        'public' => l.ownershipVisPublic,
+        'unlisted' => l.ownershipVisUnlisted,
+        'private' => l.ownershipVisPrivate,
         _ => v,
       };
 }
@@ -488,9 +488,9 @@ class _PayoutTabState extends State<_PayoutTab> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _summaryCard(theme, summary),
+        _summaryCard(l, theme, summary),
         const SizedBox(height: 16),
-        _yieldCard(theme),
+        _yieldCard(l, theme),
         const SizedBox(height: 16),
         if (!kyc)
           Card(
@@ -564,7 +564,7 @@ class _PayoutTabState extends State<_PayoutTab> {
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
         else
-          ..._payouts.map((p) => _payoutTile(theme, p)),
+          ..._payouts.map((p) => _payoutTile(l, theme, p)),
       ],
     );
   }
@@ -587,7 +587,7 @@ class _PayoutTabState extends State<_PayoutTab> {
     }
   }
 
-  Widget _yieldCard(ThemeData theme) {
+  Widget _yieldCard(AppLocalizations l, ThemeData theme) {
     final c = widget.campaign;
     return Container(
       padding: const EdgeInsets.all(4),
@@ -603,9 +603,9 @@ class _PayoutTabState extends State<_PayoutTab> {
             onChanged: _yieldBusy ? null : _toggleYield,
             secondary: Icon(Icons.savings_outlined,
                 color: theme.colorScheme.tertiary),
-            title: Text(appStrings.ownershipYieldTitle),
+            title: Text(l.ownershipYieldTitle),
             subtitle: Text(
-              appStrings.ownershipYieldSubtitle,
+              l.ownershipYieldSubtitle,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -617,13 +617,13 @@ class _PayoutTabState extends State<_PayoutTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _kv(theme, appStrings.ownershipYieldInPool,
+                  _kv(theme, l.ownershipYieldInPool,
                       '${_eur(c.principalCents)} €'),
-                  _kv(theme, appStrings.ownershipYieldAccrued,
+                  _kv(theme, l.ownershipYieldAccrued,
                       '${_eur(c.accruedYieldCents)} €'),
                   if (c.yieldLastSyncedAt != null)
                     Text(
-                        appStrings.ownershipYieldLastSync(
+                        l.ownershipYieldLastSync(
                             '${c.yieldLastSyncedAt}'),
                         style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant)),
@@ -637,7 +637,7 @@ class _PayoutTabState extends State<_PayoutTab> {
                             visualDensity: VisualDensity.compact,
                             alignment: Alignment.centerLeft),
                         icon: const Icon(Icons.open_in_new, size: 16),
-                        label: Text(appStrings.ownershipYieldTokenLink),
+                        label: Text(l.ownershipYieldTokenLink),
                         onPressed: () => pinkaLaunch(
                           widget.admin.config.tokenForAddressUrl(
                             c.yieldAtokenAddress!,
@@ -665,7 +665,7 @@ class _PayoutTabState extends State<_PayoutTab> {
         ),
       );
 
-  Widget _summaryCard(ThemeData theme, PinkaPayoutSummary s) {
+  Widget _summaryCard(AppLocalizations l, ThemeData theme, PinkaPayoutSummary s) {
     Widget row(String label, int cents, {bool bold = false}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
@@ -687,20 +687,20 @@ class _PayoutTabState extends State<_PayoutTab> {
       ),
       child: Column(
         children: [
-          row(appStrings.ownershipSummaryRaised, s.raisedCents),
+          row(l.ownershipSummaryRaised, s.raisedCents),
           if (s.accruedYieldCents > 0)
-            row(appStrings.ownershipSummaryYield, s.accruedYieldCents),
-          row(appStrings.ownershipSummaryPending, s.pendingCents),
-          row(appStrings.ownershipSummaryPaid, s.paidCents),
+            row(l.ownershipSummaryYield, s.accruedYieldCents),
+          row(l.ownershipSummaryPending, s.pendingCents),
+          row(l.ownershipSummaryPaid, s.paidCents),
           const Divider(),
-          row(appStrings.ownershipSummaryAvailable, s.availableCents,
+          row(l.ownershipSummaryAvailable, s.availableCents,
               bold: true),
         ],
       ),
     );
   }
 
-  Widget _payoutTile(ThemeData theme, PinkaPayout p) {
+  Widget _payoutTile(AppLocalizations l, ThemeData theme, PinkaPayout p) {
     return Card(
       child: ListTile(
         dense: true,
@@ -708,7 +708,7 @@ class _PayoutTabState extends State<_PayoutTab> {
             ? Icons.account_balance_wallet_outlined
             : Icons.account_balance_outlined),
         title: Text('${_eur(p.amountCents)} € → ${_short(p.destination)}'),
-        subtitle: Text(_stateLabel(p.state)),
+        subtitle: Text(_stateLabel(l, p.state)),
         trailing: p.txHash != null
             ? const Icon(Icons.open_in_new, size: 16)
             : null,
@@ -730,12 +730,12 @@ class _PayoutTabState extends State<_PayoutTab> {
       ? '${a.substring(0, 6)}…${a.substring(a.length - 4)}'
       : a;
 
-  static String _stateLabel(String s) => switch (s) {
-        'requested' => appStrings.ownershipPayoutStateRequested,
-        'approved' => appStrings.ownershipPayoutStateApproved,
-        'submitted' => appStrings.ownershipSummaryPending,
-        'confirmed' => appStrings.ownershipSummaryPaid,
-        'failed' => appStrings.ownershipPayoutStateFailed,
+  static String _stateLabel(AppLocalizations l, String s) => switch (s) {
+        'requested' => l.ownershipPayoutStateRequested,
+        'approved' => l.ownershipPayoutStateApproved,
+        'submitted' => l.ownershipSummaryPending,
+        'confirmed' => l.ownershipSummaryPaid,
+        'failed' => l.ownershipPayoutStateFailed,
         _ => s,
       };
 }

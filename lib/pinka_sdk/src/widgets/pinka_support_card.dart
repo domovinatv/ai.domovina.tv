@@ -184,7 +184,7 @@ class _PinkaSupportCardState extends State<PinkaSupportCard> {
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
                           label: Text(
-                            '${p.displayNameOrAnon} · ${fmtEur(p.amountCents)} €',
+                            '${p.displayNameOrAnon(l)} · ${fmtEur(p.amountCents)} €',
                             style: theme.textTheme.labelSmall,
                           ),
                         ),

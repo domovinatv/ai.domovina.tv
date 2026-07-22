@@ -13,7 +13,8 @@ import '../services/locale_service.dart';
 ///
 /// Uz jezik sadržaja prebacuje i UI jezik (LocaleController) — korisnik koji
 /// na epizodi izabere EN očekuje cijelo sučelje na engleskom. Sprega je
-/// jednosmjerna: home/zid UI toggle NE dira per-epizoda jezik sadržaja.
+/// dvosmjerna: i UI toggle (home/zid/account) sprema preferirani jezik
+/// sadržaja — vidi language_toggle_button.dart i account_screen.dart.
 class LanguageToggleChip extends StatelessWidget {
   final EpisodeLanguage current;
   final ValueChanged<EpisodeLanguage> onChanged;

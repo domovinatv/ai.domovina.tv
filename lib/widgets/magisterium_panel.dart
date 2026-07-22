@@ -57,7 +57,7 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
   TabController? _tabController;
   int _selectedIndex = 0;
 
-  List<_TabEntry> _buildTabs() {
+  List<_TabEntry> _buildTabs(AppLocalizations l) {
     final tabs = <_TabEntry>[];
 
     // When Evaluacija (full) exists, it replaces old per-section/per-block tabs.
@@ -66,7 +66,7 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
       final full = widget.magisteriumFull!;
       final color = MagisteriumSection.scoreColor(full.overallScore);
       tabs.add(_TabEntry(
-        label: appStrings.magisteriumTabEvaluation,
+        label: l.magisteriumTabEvaluation,
         icon: Icons.auto_awesome,
         badgeColor: color,
         badgeText: '${full.overallScore}',
@@ -92,7 +92,7 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
     // Magisterium Full prompt (raw markdown)
     if (widget.magisteriumFullPrompt != null) {
       tabs.add(_TabEntry(
-        label: appStrings.magisteriumTabPrompt,
+        label: l.magisteriumTabPrompt,
         icon: Icons.code,
         builder: (_, _, _, _) =>
             _MarkdownContent(markdown: widget.magisteriumFullPrompt!),
@@ -109,7 +109,9 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
   }
 
   void _initTabController() {
-    final count = _buildTabs().length;
+    // initState nema Localizations scope — treba nam samo broj tabova,
+    // pa je globalni appStrings ovdje siguran (labeli se ne renderiraju).
+    final count = _buildTabs(appStrings).length;
     if (count > 1) {
       _tabController = TabController(length: count, vsync: this)
         ..addListener(() {
@@ -144,7 +146,7 @@ class _MagisteriumPanelState extends State<MagisteriumPanel>
 
   @override
   Widget build(BuildContext context) {
-    final tabs = _buildTabs();
+    final tabs = _buildTabs(AppLocalizations.of(context));
     if (tabs.isEmpty) return const SizedBox.shrink();
 
     if (tabs.length == 1) {
@@ -444,6 +446,7 @@ class _MagisteriumFullContentState extends State<_MagisteriumFullContent> {
 
   Widget _buildCitationsSection(
       ThemeData theme, MagisteriumFullData data, Color color) {
+    final l = AppLocalizations.of(context);
     final count = data.citations.length;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -463,7 +466,7 @@ class _MagisteriumFullContentState extends State<_MagisteriumFullContent> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      appStrings.magisteriumSourcesFromChurchDocs(count),
+                      l.magisteriumSourcesFromChurchDocs(count),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: color,

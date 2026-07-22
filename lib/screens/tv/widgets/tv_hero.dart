@@ -121,7 +121,9 @@ class TvHero extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          featured.reason.shortLabel.toUpperCase(),
+                          featured.reason
+                              .shortLabel(AppLocalizations.of(context))
+                              .toUpperCase(),
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.tertiary,
                             letterSpacing: 2,

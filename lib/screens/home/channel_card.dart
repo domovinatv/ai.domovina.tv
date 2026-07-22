@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/channel_index.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../theme/typography.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
-import '../../services/locale_service.dart';
 
 /// Editorial channel kartica s **dva layouta** ovisno o dimenzijama cover-a.
 ///
@@ -60,6 +60,7 @@ class _ChannelCardState extends State<ChannelCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final c = widget.channel;
 
     return MouseRegion(
@@ -99,8 +100,8 @@ class _ChannelCardState extends State<ChannelCard> {
             child: InkWell(
               onTap: widget.onTap,
               child: c.hasBannerCover
-                  ? _bannerLayout(theme)
-                  : _squareLayout(theme),
+                  ? _bannerLayout(theme, l)
+                  : _squareLayout(theme, l),
             ),
           ),
         ),
@@ -110,7 +111,7 @@ class _ChannelCardState extends State<ChannelCard> {
   }
 
   /// BANNER layout — cover at native AR na vrhu, avatar + tekst ispod.
-  Widget _bannerLayout(ThemeData theme) {
+  Widget _bannerLayout(ThemeData theme, AppLocalizations l) {
     final c = widget.channel;
     final dim = c.avatarCoverDimensions!;
     return Column(
@@ -132,7 +133,7 @@ class _ChannelCardState extends State<ChannelCard> {
             children: [
               _squareAvatar(theme, size: 56, radius: 10),
               const SizedBox(width: 12),
-              Expanded(child: _info(theme, includeAvatar: false)),
+              Expanded(child: _info(theme, l, includeAvatar: false)),
             ],
           ),
         ),
@@ -141,7 +142,7 @@ class _ChannelCardState extends State<ChannelCard> {
   }
 
   /// SQUARE layout — veliki avatar lijevo (152px), tekst desno.
-  Widget _squareLayout(ThemeData theme) {
+  Widget _squareLayout(ThemeData theme, AppLocalizations l) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -149,7 +150,7 @@ class _ChannelCardState extends State<ChannelCard> {
         children: [
           _squareAvatar(theme, size: 132, radius: 12),
           const SizedBox(width: 14),
-          Expanded(child: _info(theme, includeAvatar: false)),
+          Expanded(child: _info(theme, l, includeAvatar: false)),
         ],
       ),
     );
@@ -206,15 +207,14 @@ class _ChannelCardState extends State<ChannelCard> {
     );
   }
 
-  Widget _info(ThemeData theme, {bool includeAvatar = false}) {
+  Widget _info(ThemeData theme, AppLocalizations l,
+      {bool includeAvatar = false}) {
     final c = widget.channel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          appStrings
-              .homeChannelCardMeta(c.videoCount, c.durationDisplay)
-              .toUpperCase(),
+          l.homeChannelCardMeta(c.videoCount, c.durationDisplay).toUpperCase(),
           style: AppTypography.eyebrowStyle(theme.colorScheme),
         ),
         const SizedBox(height: 6),
@@ -230,17 +230,17 @@ class _ChannelCardState extends State<ChannelCard> {
         ),
         if (c.avgMagisteriumScore != null) ...[
           const SizedBox(height: 10),
-          _magisteriumPill(theme, c.avgMagisteriumScore!),
+          _magisteriumPill(theme, l, c.avgMagisteriumScore!),
         ],
       ],
     );
   }
 
-  Widget _magisteriumPill(ThemeData theme, int score) {
+  Widget _magisteriumPill(ThemeData theme, AppLocalizations l, int score) {
     final color = MagisteriumSection.scoreColor(score);
-    final label = MagisteriumSection.scoreLabel(score);
+    final label = MagisteriumSection.scoreLabel(score, l);
     return Tooltip(
-      message: appStrings.homeChannelMagisteriumTooltip(label),
+      message: l.homeChannelMagisteriumTooltip(label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(

@@ -6,7 +6,6 @@ import '../../../models/channel_claim.dart';
 import '../../../pinka_sdk/pinka_sdk.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/channel_ownership_service.dart';
-import '../../../services/locale_service.dart';
 
 /// Lista Pinka kampanja ankeriranih na verificirani kanal (UC… id). Ulaz iz
 /// "Moji kanali". Faza A: pregled + ulaz u upravljanje (bez in-app kreiranja).
@@ -72,9 +71,9 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 if (_campaigns.isEmpty)
-                  _empty(theme)
+                  _empty(l, theme)
                 else
-                  ..._campaigns.map((c) => _campaignTile(theme, c)),
+                  ..._campaigns.map((c) => _campaignTile(l, theme, c)),
               ],
             ),
           );
@@ -83,7 +82,7 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
     );
   }
 
-  Widget _campaignTile(ThemeData theme, PinkaOwnerCampaign c) {
+  Widget _campaignTile(AppLocalizations l, ThemeData theme, PinkaOwnerCampaign c) {
     final raised = (c.totalRaisedCents / 100);
     final raisedStr = raised == raised.truncateToDouble()
         ? raised.toStringAsFixed(0)
@@ -100,8 +99,8 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
         ),
         title: Text(c.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
-          '${_stateLabel(c.state)} · ${_visLabel(c.visibility)} · '
-          '$raisedStr € · ${appStrings.ownershipEpisodesCount(c.episodeRefs.length)}',
+          '${_stateLabel(l, c.state)} · ${_visLabel(l, c.visibility)} · '
+          '$raisedStr € · ${l.ownershipEpisodesCount(c.episodeRefs.length)}',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.push(
@@ -111,18 +110,18 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
     );
   }
 
-  Widget _empty(ThemeData theme) {
+  Widget _empty(AppLocalizations l, ThemeData theme) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(appStrings.ownershipNoCampaignsTitle,
+            Text(l.ownershipNoCampaignsTitle,
                 style: theme.textTheme.titleSmall),
             const SizedBox(height: 6),
             Text(
-              appStrings.ownershipNoCampaignsBody,
+              l.ownershipNoCampaignsBody,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -144,19 +143,19 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
     );
   }
 
-  static String _stateLabel(String s) => switch (s) {
-        'draft' => appStrings.ownershipStateDraft,
-        'active' => appStrings.ownershipStateActive,
-        'funded' => appStrings.ownershipStateFunded,
-        'closed' => appStrings.ownershipStateClosed,
-        'cancelled' => appStrings.ownershipStateCancelled,
+  static String _stateLabel(AppLocalizations l, String s) => switch (s) {
+        'draft' => l.ownershipStateDraft,
+        'active' => l.ownershipStateActive,
+        'funded' => l.ownershipStateFunded,
+        'closed' => l.ownershipStateClosed,
+        'cancelled' => l.ownershipStateCancelled,
         _ => s,
       };
 
-  static String _visLabel(String v) => switch (v) {
-        'public' => appStrings.ownershipVisPublic,
-        'unlisted' => appStrings.ownershipVisUnlisted,
-        'private' => appStrings.ownershipVisPrivate,
+  static String _visLabel(AppLocalizations l, String v) => switch (v) {
+        'public' => l.ownershipVisPublic,
+        'unlisted' => l.ownershipVisUnlisted,
+        'private' => l.ownershipVisPrivate,
         _ => v,
       };
 }

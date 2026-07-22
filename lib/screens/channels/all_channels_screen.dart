@@ -346,7 +346,7 @@ class ChannelSortDropdown extends StatelessWidget {
                           .withValues(alpha: 0.3),
                 ),
                 const SizedBox(width: 10),
-                Text(m.label, style: theme.textTheme.bodyMedium),
+                Text(m.label(l), style: theme.textTheme.bodyMedium),
               ],
             ),
           ),
@@ -374,7 +374,7 @@ class ChannelSortDropdown extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              mode.label,
+              mode.label(l),
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
               ),

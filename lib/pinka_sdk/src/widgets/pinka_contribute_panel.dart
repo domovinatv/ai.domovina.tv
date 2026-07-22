@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_contribution_intent.dart';
@@ -415,6 +416,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _buildForm(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final creating = _phase == _Phase.creating;
     final onchain = _mode == _Mode.onchain;
     return Column(
@@ -426,7 +428,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 color: theme.colorScheme.tertiary, size: 22),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(appStrings.pinkaSupport,
+              child: Text(l.pinkaSupport,
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700)),
             ),
@@ -438,7 +440,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         ],
         const SizedBox(height: 6),
         Text(
-          onchain ? appStrings.pinkaOnchainBlurb : appStrings.pinkaSepaBlurb,
+          onchain ? l.pinkaOnchainBlurb : l.pinkaSepaBlurb,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -473,6 +475,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _amountPicker(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     // Odabrano mjesto ima FIKSNU cijenu — preset čipovi bi lagali da je iznos
     // slobodan izbor. Nadoplata gore ostaje moguća kroz "Ostalo".
     if (_hasSlot) return _slotAmountLock(theme);
@@ -504,8 +507,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               decoration: InputDecoration(
                 isDense: true,
                 suffixText: '€',
-                labelText: appStrings.pinkaCustomAmountHint,
-                hintText: appStrings.pinkaCustomAmountPlaceholder,
+                labelText: l.pinkaCustomAmountHint,
+                hintText: l.pinkaCustomAmountPlaceholder,
               ),
               onChanged: _setAmountFromCustom,
             ),
@@ -518,6 +521,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// Zaključan iznos uz odabrano mjesto: što je odabrano, koliko stoji, kako
   /// odustati — i polje za nadoplatu (iznad cijene je uvijek dopušteno).
   Widget _slotAmountLock(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final cs = theme.colorScheme;
     final price = widget.selectedSlotPriceCents ?? _minCents;
     return Container(
@@ -549,19 +553,19 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  child: Text(appStrings.pinkaSlotClear),
+                  child: Text(l.pinkaSlotClear),
                 ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            appStrings.pinkaSlotPriceLocked(fmtEur(price)),
+            l.pinkaSlotPriceLocked(fmtEur(price)),
             style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w800, color: cs.tertiary),
           ),
           const SizedBox(height: 2),
           Text(
-            appStrings.pinkaSlotTopUpHint,
+            l.pinkaSlotTopUpHint,
             style:
                 theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
           ),
@@ -576,7 +580,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               decoration: InputDecoration(
                 isDense: true,
                 suffixText: '€',
-                labelText: appStrings.pinkaSlotTopUpLabel,
+                labelText: l.pinkaSlotTopUpLabel,
               ),
               onChanged: _setAmountFromCustom,
             ),
@@ -587,6 +591,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _identityFields(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final signedIn = (widget.signedInName?.call() ?? '').isNotEmpty;
     final canSignIn = !signedIn && widget.onSignInRequested != null;
     return Column(
@@ -603,7 +608,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 decoration: InputDecoration(
                   isDense: true,
                   counterText: '',
-                  hintText: appStrings.pinkaNameHint,
+                  hintText: l.pinkaNameHint,
                 ),
               ),
             ),
@@ -616,7 +621,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                   foregroundColor: theme.colorScheme.tertiary,
                 ),
                 icon: const Icon(Icons.login, size: 16),
-                label: Text(appStrings.commonSignIn),
+                label: Text(l.commonSignIn),
               ),
             ],
           ],
@@ -630,7 +635,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           minLines: 1,
           decoration: InputDecoration(
             isDense: true,
-            hintText: appStrings.pinkaMessageHint,
+            hintText: l.pinkaMessageHint,
           ),
         ),
         const SizedBox(height: 4),
@@ -645,7 +650,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               ),
               Expanded(
                 child: Text(
-                  appStrings.pinkaAnonymousLabel,
+                  l.pinkaAnonymousLabel,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -658,6 +663,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _sepaButton(ThemeData theme, bool creating) {
+    final l = AppLocalizations.of(context);
     // e2e/a11y sidro — vidi komentar uz pinka-grid-wall u campaign screenu.
     return Semantics(
       identifier: 'pinka-sepa-submit',
@@ -677,13 +683,14 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               )
             : const Icon(Icons.favorite, size: 18),
         label: Text(creating
-            ? appStrings.pinkaPreparing
-            : appStrings.pinkaSupportWithAmount(fmtEur(_amountCents))),
+            ? l.pinkaPreparing
+            : l.pinkaSupportWithAmount(fmtEur(_amountCents))),
       ),
     );
   }
 
   Widget _onchainSection(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final dest = _c.destinationAddress ?? '';
     final busy = _walletPhase != _WalletPhase.idle;
     return Column(
@@ -706,11 +713,11 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                   )
                 : const Icon(Icons.account_balance_wallet, size: 18),
             label: Text(switch (_walletPhase) {
-              _WalletPhase.connecting => appStrings.pinkaWalletConnecting,
-              _WalletPhase.sending => appStrings.pinkaWalletOpening,
-              _WalletPhase.confirming => appStrings.pinkaWalletConfirming,
+              _WalletPhase.connecting => l.pinkaWalletConnecting,
+              _WalletPhase.sending => l.pinkaWalletOpening,
+              _WalletPhase.confirming => l.pinkaWalletConfirming,
               _WalletPhase.idle =>
-                appStrings.pinkaPayFromDomovinaWallet(fmtEur(_amountCents)),
+                l.pinkaPayFromDomovinaWallet(fmtEur(_amountCents)),
             }),
           ),
           if (_walletNote != null) ...[
@@ -726,7 +733,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(appStrings.pinkaOrScanOtherWallet,
+                child: Text(l.pinkaOrScanOtherWallet,
                     style: theme.textTheme.labelSmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ),
@@ -738,22 +745,22 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         Center(child: _qrBox(widget.config.eip681(dest, _amountCents))),
         const SizedBox(height: 12),
         Text(
-          appStrings.pinkaScanWithWallet(fmtEur(_amountCents)),
+          l.pinkaScanWithWallet(fmtEur(_amountCents)),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 12),
-        PinkaCopyRow(label: appStrings.pinkaRecipient, value: dest),
+        PinkaCopyRow(label: l.pinkaRecipient, value: dest),
         // Copy daje adresu ERC-20 ugovora (to MetaMask traži za custom token),
         // prikaz ostaje ljudski čitljiv opis.
         PinkaCopyRow(
-            label: appStrings.pinkaToken,
+            label: l.pinkaToken,
             value: 'EURe · Monerium V2 · Gnosis',
             copyValue: widget.config.eureAddress),
         const SizedBox(height: 8),
         Text(
-          appStrings.pinkaOnchainArrivalNote,
+          l.pinkaOnchainArrivalNote,
           textAlign: TextAlign.center,
           style: theme.textTheme.labelSmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -763,15 +770,16 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _buildSepaQr(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final intent = _intent!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(appStrings.pinkaScanInBankApp,
+        Text(l.pinkaScanInBankApp,
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(appStrings.pinkaAmountLabel(intent.amountEur),
+        Text(l.pinkaAmountLabel(intent.amountEur),
             style: theme.textTheme.bodyMedium),
         const SizedBox(height: 10),
         _qrBox(intent.epcQrData),
@@ -782,9 +790,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           copyValue: _cleanIban(intent.iban),
         ),
         PinkaCopyRow(
-            label: appStrings.pinkaRecipient, value: intent.beneficiaryName),
+            label: l.pinkaRecipient, value: intent.beneficiaryName),
         PinkaCopyRow(
-          label: appStrings.pinkaPaymentReference,
+          label: l.pinkaPaymentReference,
           value: intent.memo,
           multiline: true,
         ),
@@ -802,6 +810,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// da stigne unutar 24 h i backend ga uredno obradi (kasna uplata se i dalje
   /// kreditira, mjesto se vrati ili premjesti).
   Widget _holdCountdown(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final until = _holdExpiresAt;
     if (until == null || !_hasSlot) return const SizedBox.shrink();
     final left = until.difference(DateTime.now());
@@ -809,16 +818,16 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
     if (left.isNegative) {
       return _holdNote(theme, Icons.info_outline,
-          title: null, body: appStrings.pinkaSlotHoldExpired);
+          title: null, body: l.pinkaSlotHoldExpired);
     }
     final lastHour = left.inMinutes < 60;
     return _holdNote(
       theme,
       Icons.verified_user_outlined,
       title: lastHour
-          ? appStrings.pinkaSlotHoldCountdown(_fmtDuration(left))
-          : appStrings.pinkaSlotHoldReserved,
-      body: appStrings.pinkaSlotHoldReassure,
+          ? l.pinkaSlotHoldCountdown(_fmtDuration(left))
+          : l.pinkaSlotHoldReserved,
+      body: l.pinkaSlotHoldReassure,
       titleColor: cs.onSurface,
     );
   }
@@ -863,6 +872,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// Živi timeline SEPA uplate ("Korak M/N") iz rail statusa; dok rail još
   /// nema podataka (ili fetch ne uspije), generički spinner kao prije.
   Widget _sepaProgress(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final s = _intentStatus;
     if (s == null || s.steps.isEmpty) {
       return Row(
@@ -873,7 +883,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 10),
-          Text(appStrings.pinkaAwaitingPayment,
+          Text(l.pinkaAwaitingPayment,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ],
@@ -892,7 +902,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       children: [
         Row(
           children: [
-            Text(appStrings.pinkaStepOf(current, total),
+            Text(l.pinkaStepOf(current, total),
                 style: theme.textTheme.labelLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const Spacer(),
@@ -927,8 +937,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           const SizedBox(height: 8),
           Text(
             s.isRejected
-                ? appStrings.pinkaIntentRejected
-                : appStrings.pinkaIntentExpired,
+                ? l.pinkaIntentRejected
+                : l.pinkaIntentExpired,
             style:
                 theme.textTheme.bodySmall?.copyWith(color: cs.error),
           ),
@@ -944,27 +954,28 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     required bool isCurrent,
     required bool isLast,
   }) {
+    final l = AppLocalizations.of(context);
     final cs = theme.colorScheme;
     final (title, custodian) = switch (step.key) {
       'payment' => (
-          appStrings.pinkaStepPaymentTitle,
-          appStrings.pinkaStepPaymentCustodian
+          l.pinkaStepPaymentTitle,
+          l.pinkaStepPaymentCustodian
         ),
       'processing' => (
-          appStrings.pinkaStepProcessingTitle,
-          appStrings.pinkaStepProcessingCustodian
+          l.pinkaStepProcessingTitle,
+          l.pinkaStepProcessingCustodian
         ),
       'minted' => (
-          appStrings.pinkaStepMintedTitle,
-          appStrings.pinkaStepMintedCustodian
+          l.pinkaStepMintedTitle,
+          l.pinkaStepMintedCustodian
         ),
       'forwarding' => (
-          appStrings.pinkaStepForwardingTitle,
-          appStrings.pinkaStepForwardingCustodian
+          l.pinkaStepForwardingTitle,
+          l.pinkaStepForwardingCustodian
         ),
       _ => (
-          appStrings.pinkaStepSettledTitle,
-          appStrings.pinkaStepSettledCustodian
+          l.pinkaStepSettledTitle,
+          l.pinkaStepSettledCustodian
         ),
     };
     // "Aktivni" korak = rail kaže in_progress ILI je prvi ne-dokazani (rail u
@@ -1076,22 +1087,23 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _buildPaid(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Column(
       children: [
         Icon(Icons.check_circle, color: theme.colorScheme.tertiary, size: 40),
         const SizedBox(height: 10),
-        Text(appStrings.pinkaThanksForSupportEmoji,
+        Text(l.pinkaThanksForSupportEmoji,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(appStrings.pinkaPaymentConfirmedOnchain,
+        Text(l.pinkaPaymentConfirmedOnchain,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 14),
         FilledButton.tonalIcon(
           onPressed: _resetForAnother,
           icon: const Icon(Icons.replay, size: 18),
-          label: Text(appStrings.pinkaDonateAgain),
+          label: Text(l.pinkaDonateAgain),
         ),
       ],
     );

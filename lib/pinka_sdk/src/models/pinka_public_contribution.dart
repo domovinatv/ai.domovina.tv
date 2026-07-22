@@ -1,6 +1,6 @@
 library;
 
-import '../../../../services/locale_service.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'pinka_link_preview.dart';
 
 /// Jedan unos na "Zidu podrške" — red iz `pinka_finance.public_contributions`
@@ -25,9 +25,9 @@ class PinkaPublicContribution {
     required this.linkPreview,
   });
 
-  String get displayNameOrAnon {
+  String displayNameOrAnon(AppLocalizations l) {
     final n = displayName?.trim();
-    return (n != null && n.isNotEmpty) ? n : appStrings.pinkaAnonymous;
+    return (n != null && n.isNotEmpty) ? n : l.pinkaAnonymous;
   }
 
   factory PinkaPublicContribution.fromJson(Map<String, dynamic> json) {

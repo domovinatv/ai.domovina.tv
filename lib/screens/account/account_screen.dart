@@ -18,6 +18,7 @@ import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
 import '../../services/entitlement_service.dart';
+import '../../services/episode_language.dart';
 import '../../services/locale_service.dart';
 import '../../services/passkey_service.dart';
 import '../../theme/app_theme.dart';
@@ -319,8 +320,15 @@ class _AccountScreenState extends State<AccountScreen> {
                 ],
                 selected: {current},
                 showSelectedIcon: false,
-                onSelectionChanged: (sel) => LocaleController.instance
-                    .setLocale(Locale(sel.first)),
+                // Dvosmjerna sprega: uz UI jezik spremi i preferirani jezik
+                // sadržaja (sticky pref za buduće epizode) — vidi
+                // language_toggle_button.dart / language_toggle_chip.dart.
+                onSelectionChanged: (sel) {
+                  LocaleController.instance.setLocale(Locale(sel.first));
+                  savePreferredLanguage(sel.first == 'en'
+                      ? EpisodeLanguage.en
+                      : EpisodeLanguage.hr);
+                },
               ),
             ),
           ],

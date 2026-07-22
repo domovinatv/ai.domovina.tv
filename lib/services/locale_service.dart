@@ -18,9 +18,14 @@ import 'local_prefs.dart';
 
 const String _localeKey = 'app_locale';
 
-/// Pristup prijevodima IZVAN build contexta (servisi, callbackovi, modeli).
-/// U widgetima UVIJEK koristi `AppLocalizations.of(context)` jer prati
-/// Localizations scope; ovo je fallback za kod koji nema BuildContext.
+/// Pristup prijevodima IZVAN build contexta (servisi, event handleri).
+/// PRAVILO: sve što se PERZISTENTNO renderira u widget stablu MORA ići kroz
+/// `AppLocalizations.of(context)` — taj poziv registrira dependency na
+/// Localizations scope pa se widget rebuilda pri promjeni UI jezika.
+/// `appStrings` NE registrira dependency: tekst renderiran preko njega ostaje
+/// na starom jeziku do sljedećeg nevezanog rebuilda (bug popravljen sweepom
+/// 2026-07-23). Dozvoljeno samo za jednokratni event-time resolve: SnackBar,
+/// poruka greške u catch bloku, outreach tekst, servisi bez BuildContexta.
 AppLocalizations get appStrings =>
     lookupAppLocalizations(LocaleController.instance.locale);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:domovina_ai/l10n/app_localizations.dart';
 import 'package:domovina_ai/utils/text_search.dart';
 import 'package:domovina_ai/widgets/episode_age.dart';
 
@@ -59,12 +60,13 @@ void main() {
 
   group('episode age', () {
     test('label gradacija', () {
-      expect(episodeAgeLabel(0), 'danas');
-      expect(episodeAgeLabel(1), 'jučer');
-      expect(episodeAgeLabel(3), 'prije 3 dana');
-      expect(episodeAgeLabel(10), 'prije tjedan');
-      expect(episodeAgeLabel(90), 'prije 3 mj.');
-      expect(episodeAgeLabel(800), 'prije 2 god.');
+      final l = lookupAppLocalizations(const Locale('hr'));
+      expect(episodeAgeLabel(0, l), 'danas');
+      expect(episodeAgeLabel(1, l), 'jučer');
+      expect(episodeAgeLabel(3, l), 'prije 3 dana');
+      expect(episodeAgeLabel(10, l), 'prije tjedan');
+      expect(episodeAgeLabel(90, l), 'prije 3 mj.');
+      expect(episodeAgeLabel(800, l), 'prije 2 god.');
     });
 
     test('boja: novije zelena, staro crvena', () {

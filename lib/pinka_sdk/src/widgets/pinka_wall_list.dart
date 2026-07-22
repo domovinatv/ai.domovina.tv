@@ -53,6 +53,7 @@ class _WallEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final c = contribution;
     final card = Container(
@@ -77,7 +78,7 @@ class _WallEntry extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  c.displayNameOrAnon,
+                  c.displayNameOrAnon(l),
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.w600),
                   overflow: TextOverflow.ellipsis,

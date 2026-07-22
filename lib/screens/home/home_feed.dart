@@ -1,6 +1,6 @@
+import '../../l10n/app_localizations.dart';
 import '../../models/channel_detail.dart';
 import '../../services/channel_cache.dart';
-import '../../services/locale_service.dart';
 
 /// Cross-channel video s denormaliziranim channel kontekstom.
 typedef FeedVideo = ({String channelId, String channelName, ChannelVideo video});
@@ -19,16 +19,16 @@ enum FeaturedReason {
   /// Tier 4: najnovija epizoda bez ikakve obrade.
   newest;
 
-  String get shortLabel {
+  String shortLabel(AppLocalizations l) {
     switch (this) {
       case FeaturedReason.hiQualityRecent:
-        return appStrings.homeReasonShortHiQualityRecent;
+        return l.homeReasonShortHiQualityRecent;
       case FeaturedReason.hiQuality:
-        return appStrings.homeReasonShortHiQuality;
+        return l.homeReasonShortHiQuality;
       case FeaturedReason.anyMagisterium:
-        return appStrings.homeReasonShortAnyMagisterium;
+        return l.homeReasonShortAnyMagisterium;
       case FeaturedReason.newest:
-        return appStrings.homeReasonShortNewest;
+        return l.homeReasonShortNewest;
     }
   }
 }

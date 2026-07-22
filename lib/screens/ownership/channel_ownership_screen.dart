@@ -493,7 +493,9 @@ class YoutubeClaimCallbackScreen extends StatefulWidget {
 
 class _YoutubeClaimCallbackScreenState
     extends State<YoutubeClaimCallbackScreen> {
-  String _message = appStrings.ownershipCheckingOwnership;
+  // Null dok traje provjera — build tada prikaže lokalizirani
+  // "Provjeravamo vlasništvo…" preko contexta (reagira na promjenu jezika).
+  String? _message;
   String? _boldTerm;
   bool _done = false;
   bool _ok = false;
@@ -541,22 +543,24 @@ class _YoutubeClaimCallbackScreenState
 
   // Poruka s opcionalno boldanim pojmom (npr. naziv kanala).
   Widget _messageWidget(BuildContext context) {
+    final message =
+        _message ?? AppLocalizations.of(context).ownershipCheckingOwnership;
     final term = _boldTerm;
     final base = Theme.of(context).textTheme.bodyMedium;
-    if (term == null || !_message.contains(term)) {
-      return Text(_message, textAlign: TextAlign.center, style: base);
+    if (term == null || !message.contains(term)) {
+      return Text(message, textAlign: TextAlign.center, style: base);
     }
-    final i = _message.indexOf(term);
+    final i = message.indexOf(term);
     return Text.rich(
       TextSpan(
         style: base,
         children: [
-          TextSpan(text: _message.substring(0, i)),
+          TextSpan(text: message.substring(0, i)),
           TextSpan(
             text: term,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          TextSpan(text: _message.substring(i + term.length)),
+          TextSpan(text: message.substring(i + term.length)),
         ],
       ),
       textAlign: TextAlign.center,
@@ -738,7 +742,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
                   if (_claims.isEmpty)
                     _emptyClaims(context)
                   else
-                    ..._claims.map(_claimTile),
+                    ..._claims.map((c) => _claimTile(context, c)),
                   const SizedBox(height: 24),
                   Text(
                     l.ownershipPayoutWalletsTitle,
@@ -752,7 +756,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  ..._wallets.map(_walletTile),
+                  ..._wallets.map((w) => _walletTile(context, w)),
                   const SizedBox(height: 12),
                   _addWalletForm(context),
                 ],
@@ -777,7 +781,8 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
     );
   }
 
-  Widget _claimTile(ChannelClaim c) {
+  Widget _claimTile(BuildContext context, ChannelClaim c) {
+    final l = AppLocalizations.of(context);
     final needsReverify = c.needsReverify(DateTime.now());
     return Card(
       child: ListTile(
@@ -788,10 +793,10 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
         title: Text(c.channelTitle ?? c.youtubeChannelId),
         subtitle: Text(
           '${c.status.name} · ${c.role.name}'
-          '${needsReverify ? ' · ${appStrings.ownershipNeedsReverifyTag}' : ''}',
+          '${needsReverify ? ' · ${l.ownershipNeedsReverifyTag}' : ''}',
         ),
         trailing: PopupMenuButton<String>(
-          tooltip: appStrings.ownershipOptionsTooltip,
+          tooltip: l.ownershipOptionsTooltip,
           onSelected: (v) {
             if (v == 'campaigns') {
               context.push('/account/channels/${c.youtubeChannelId}/campaigns');
@@ -804,16 +809,16 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
             if (c.isVerified)
               PopupMenuItem(
                 value: 'campaigns',
-                child: Text(appStrings.ownershipCampaignsMenu),
+                child: Text(l.ownershipCampaignsMenu),
               ),
             if (needsReverify)
               PopupMenuItem(
                 value: 'reverify',
-                child: Text(appStrings.ownershipReverifyAction),
+                child: Text(l.ownershipReverifyAction),
               ),
             PopupMenuItem(
               value: 'revoke',
-              child: Text(appStrings.ownershipRevokeMenu),
+              child: Text(l.ownershipRevokeMenu),
             ),
           ],
         ),
@@ -823,15 +828,16 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
     );
   }
 
-  Widget _walletTile(OwnerWallet w) {
+  Widget _walletTile(BuildContext context, OwnerWallet w) {
+    final l = AppLocalizations.of(context);
     return Card(
       child: ListTile(
         leading: const Icon(Icons.account_balance_wallet_outlined),
         title: Text(_shortAddr(w.address)),
         subtitle: Text(
           w.isVerified
-              ? appStrings.ownershipWalletDestVerified
-              : appStrings.ownershipWalletDest,
+              ? l.ownershipWalletDestVerified
+              : l.ownershipWalletDest,
         ),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),

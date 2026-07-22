@@ -264,6 +264,19 @@ Dart literali.
 - U widgetu s contextom: `final l = AppLocalizations.of(context); … l.mojKljuc`.
 - Bez contexta (servisi, callbackovi, modeli): `appStrings.mojKljuc` (globalni getter u
   `services/locale_service.dart` → `lookupAppLocalizations(LocaleController…locale)`).
+- **Rule (live language switch)**: `appStrings` NE registrira dependency na
+  Localizations scope — tekst renderiran preko njega u buildu ostaje na starom
+  jeziku nakon promjene UI jezika (stale dok se widget ne rebuilda iz drugog
+  razloga). Zato: sve što se perzistentno renderira → `AppLocalizations.of(context)`
+  (ili proslijeđen `AppLocalizations l` parametar); `appStrings` SAMO za
+  jednokratni event-time resolve (SnackBar, `_error` u catch bloku, outreach
+  poruke, servisi). Enum/model copy getteri primaju `AppLocalizations l`
+  parametar (primjeri: `ChannelSortMode.label(l)`, `UpgradeTriggerCopy.headline(l)`,
+  `MagisteriumSection.scoreLabel(score, l)`). Sweep 2026-07-23 poravnao codebase.
+- **Rule (dvosmjerna sprega jezika)**: svaki prebacivač UI jezika
+  (`LanguageToggleButton`, account SegmentedButton) sprema i preferirani jezik
+  sadržaja (`savePreferredLanguage`), a `LanguageToggleChip` (jezik sadržaja na
+  epizodi) postavlja i UI locale — sadržaj i sučelje se uvijek prebacuju zajedno.
 - Imenovanje ključeva: `<područje>CamelCase` (npr. `home*`, `episode*`, `magisterium*`,
   `legal*`, `auth*`, `channel*`, `ownership*`, `tv*`, `pinka*`, `service*`, `common*`).
   `common*` za stringove dijeljene kroz aplikaciju (Odustani, Zatvori, Pokušaj ponovno…).

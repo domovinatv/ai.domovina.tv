@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:domovina_ai/l10n/app_localizations.dart';
 import 'package:domovina_ai/services/revenue_cat/rc_models.dart';
 import 'package:domovina_ai/screens/subscribe/upgrade_trigger.dart';
 
@@ -61,10 +63,13 @@ void main() {
       expect(UpgradeTriggerCopy.fromSlug(null), UpgradeTrigger.generic);
     });
 
-    test('every trigger has non-empty headline + subtitle', () {
-      for (final t in UpgradeTrigger.values) {
-        expect(t.headline, isNotEmpty);
-        expect(t.subtitle, isNotEmpty);
+    test('every trigger has non-empty headline + subtitle (HR + EN)', () {
+      for (final locale in const [Locale('hr'), Locale('en')]) {
+        final l = lookupAppLocalizations(locale);
+        for (final t in UpgradeTrigger.values) {
+          expect(t.headline(l), isNotEmpty);
+          expect(t.subtitle(l), isNotEmpty);
+        }
       }
     });
   });

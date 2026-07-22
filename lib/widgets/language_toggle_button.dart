@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../services/episode_language.dart';
 import '../services/locale_service.dart';
 import '../theme/app_theme.dart';
 
@@ -12,6 +13,11 @@ import '../theme/app_theme.dart';
 /// Pill toggle (ne dropdown) — dropdown ima smisla tek s ≥3 jezika; dok su
 /// samo HR/EN, jedan tap je brži. Vizualno prati LanguageToggleChip
 /// (per-epizoda jezik SADRŽAJA), ali ovo je jezik chrome-a — odvojen koncept.
+///
+/// Sprega je dvosmjerna: uz UI jezik sprema se i preferirani jezik SADRŽAJA
+/// (sticky pref za buduće epizode) — korisnik koji prebaci sučelje na EN
+/// očekuje i engleske članke gdje prijevod postoji, i obratno. Isto radi
+/// LanguageToggleChip u suprotnom smjeru (sadržaj → UI).
 class LanguageToggleButton extends StatelessWidget {
   const LanguageToggleButton({super.key});
 
@@ -42,15 +48,19 @@ class LanguageToggleButton extends StatelessWidget {
                   label: 'HR',
                   isSelected: !isEnglish,
                   semanticLabel: 'Hrvatski',
-                  onTap: () => LocaleController.instance
-                      .setLocale(const Locale('hr')),
+                  onTap: () {
+                    LocaleController.instance.setLocale(const Locale('hr'));
+                    savePreferredLanguage(EpisodeLanguage.hr);
+                  },
                 ),
                 _Segment(
                   label: 'EN',
                   isSelected: isEnglish,
                   semanticLabel: 'English',
-                  onTap: () => LocaleController.instance
-                      .setLocale(const Locale('en')),
+                  onTap: () {
+                    LocaleController.instance.setLocale(const Locale('en'));
+                    savePreferredLanguage(EpisodeLanguage.en);
+                  },
                 ),
               ],
             ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/channel_detail.dart';
-import '../../services/locale_service.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
 import '../../services/page_meta.dart';
@@ -235,10 +234,11 @@ class _VideoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final hasArticle = video.pipeline?.hasArticle ?? false;
     // Audio-only kanali: nedostatak thumbnaila = audio epizoda → "Audio Only".
     Widget placeholder() => isAudioSource
-        ? audioPlaceholder(theme, 120, 68)
+        ? audioPlaceholder(theme, l, 120, 68)
         : videoPlaceholder(theme, 120, 68);
 
     return ShareContextMenu(
@@ -266,7 +266,7 @@ class _VideoCard extends StatelessWidget {
                     : placeholder(),
               ),
               const SizedBox(width: 12),
-              Expanded(child: videoMeta(theme, video, hasArticle)),
+              Expanded(child: videoMeta(theme, l, video, hasArticle)),
             ],
           ),
         ),
@@ -290,10 +290,11 @@ class _VideoGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final hasArticle = video.pipeline?.hasArticle ?? false;
     // Audio-only kanali: nedostatak thumbnaila = audio epizoda → "Audio Only".
     Widget placeholder() =>
-        isAudioSource ? audioPlaceholder(theme) : videoPlaceholder(theme);
+        isAudioSource ? audioPlaceholder(theme, l) : videoPlaceholder(theme);
 
     return ShareContextMenu(
       url: 'https://domovina.ai/v/${video.id}',
@@ -317,7 +318,7 @@ class _VideoGridCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(10),
-              child: videoMeta(theme, video, hasArticle),
+              child: videoMeta(theme, l, video, hasArticle),
             ),
           ],
         ),
@@ -347,7 +348,8 @@ Widget videoPlaceholder(ThemeData theme, [double? w, double? h]) => Container(
 /// "Audio Only" placeholder za epizode bez thumbnaila na audio-only kanalima
 /// (vidi [ChannelDetail.isAudioSource]). Mali list-card ([h] ~68) prikazuje
 /// samo ikonu; veći (grid 16:9) i tekst.
-Widget audioPlaceholder(ThemeData theme, [double? w, double? h]) {
+Widget audioPlaceholder(ThemeData theme, AppLocalizations l,
+    [double? w, double? h]) {
   final compact = h != null && h < 90;
   return Container(
     width: w,
@@ -361,7 +363,7 @@ Widget audioPlaceholder(ThemeData theme, [double? w, double? h]) {
           if (!compact) ...[
             const SizedBox(height: 6),
             Text(
-              appStrings.channelAudioOnly,
+              l.channelAudioOnly,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -377,6 +379,7 @@ Widget audioPlaceholder(ThemeData theme, [double? w, double? h]) {
 
 Widget videoMeta(
   ThemeData theme,
+  AppLocalizations l,
   ChannelVideo video,
   bool hasArticle,
 ) => Column(
@@ -458,7 +461,7 @@ Widget videoMeta(
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              appStrings.channelInProcessing,
+              l.channelInProcessing,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

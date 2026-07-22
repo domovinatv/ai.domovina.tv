@@ -3,7 +3,7 @@
 /// is contextual rather than generic. Gates pass the trigger via `/subscribe`.
 library;
 
-import '../../services/locale_service.dart';
+import '../../l10n/app_localizations.dart';
 
 enum UpgradeTrigger {
   generic,
@@ -27,27 +27,25 @@ extension UpgradeTriggerCopy on UpgradeTrigger {
     return UpgradeTrigger.generic;
   }
 
-  String get headline => switch (this) {
-        UpgradeTrigger.generic => appStrings.channelTriggerGenericHeadline,
-        UpgradeTrigger.sync => appStrings.channelTriggerSyncHeadline,
-        UpgradeTrigger.offline => appStrings.channelTriggerOfflineHeadline,
-        UpgradeTrigger.export => appStrings.channelTriggerExportHeadline,
-        UpgradeTrigger.search => appStrings.channelTriggerSearchHeadline,
-        UpgradeTrigger.enFirst => appStrings.channelTriggerEnFirstHeadline,
-        UpgradeTrigger.magisterium =>
-          appStrings.channelTriggerMagisteriumHeadline,
-        UpgradeTrigger.badge => appStrings.channelTriggerBadgeHeadline,
+  String headline(AppLocalizations l) => switch (this) {
+        UpgradeTrigger.generic => l.channelTriggerGenericHeadline,
+        UpgradeTrigger.sync => l.channelTriggerSyncHeadline,
+        UpgradeTrigger.offline => l.channelTriggerOfflineHeadline,
+        UpgradeTrigger.export => l.channelTriggerExportHeadline,
+        UpgradeTrigger.search => l.channelTriggerSearchHeadline,
+        UpgradeTrigger.enFirst => l.channelTriggerEnFirstHeadline,
+        UpgradeTrigger.magisterium => l.channelTriggerMagisteriumHeadline,
+        UpgradeTrigger.badge => l.channelTriggerBadgeHeadline,
       };
 
-  String get subtitle => switch (this) {
-        UpgradeTrigger.generic => appStrings.channelTriggerGenericSubtitle,
-        UpgradeTrigger.sync => appStrings.channelTriggerSyncSubtitle,
-        UpgradeTrigger.offline => appStrings.channelTriggerOfflineSubtitle,
-        UpgradeTrigger.export => appStrings.channelTriggerExportSubtitle,
-        UpgradeTrigger.search => appStrings.channelTriggerSearchSubtitle,
-        UpgradeTrigger.enFirst => appStrings.channelTriggerEnFirstSubtitle,
-        UpgradeTrigger.magisterium =>
-          appStrings.channelTriggerMagisteriumSubtitle,
-        UpgradeTrigger.badge => appStrings.channelTriggerBadgeSubtitle,
+  String subtitle(AppLocalizations l) => switch (this) {
+        UpgradeTrigger.generic => l.channelTriggerGenericSubtitle,
+        UpgradeTrigger.sync => l.channelTriggerSyncSubtitle,
+        UpgradeTrigger.offline => l.channelTriggerOfflineSubtitle,
+        UpgradeTrigger.export => l.channelTriggerExportSubtitle,
+        UpgradeTrigger.search => l.channelTriggerSearchSubtitle,
+        UpgradeTrigger.enFirst => l.channelTriggerEnFirstSubtitle,
+        UpgradeTrigger.magisterium => l.channelTriggerMagisteriumSubtitle,
+        UpgradeTrigger.badge => l.channelTriggerBadgeSubtitle,
       };
 }

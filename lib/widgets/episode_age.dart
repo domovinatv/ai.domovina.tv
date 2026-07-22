@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../services/locale_service.dart';
 
 /// Parsiraj datum epizode (YYYY-MM-DD ili ISO). null ako ne ide.
 DateTime? parseEpisodeDate(String? raw) {
@@ -16,8 +15,7 @@ int episodeAgeDays(DateTime date, {DateTime? now}) {
 }
 
 /// Kratka relativna oznaka starosti (lokalizirana).
-String episodeAgeLabel(int days) {
-  final s = appStrings;
+String episodeAgeLabel(int days, AppLocalizations s) {
   if (days <= 0) return s.sectionAgeToday;
   if (days == 1) return s.sectionAgeYesterday;
   if (days < 7) return s.sectionAgeDays(days);
@@ -59,11 +57,12 @@ class EpisodeAgeChip extends StatelessWidget {
     final days = episodeAgeDays(d);
     final color = episodeAgeColor(days);
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final base = style ?? theme.textTheme.labelSmall ?? const TextStyle();
     final exact =
         '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}.';
     return Tooltip(
-      message: AppLocalizations.of(context).sectionPublishedOn(exact),
+      message: l.sectionPublishedOn(exact),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -74,7 +73,7 @@ class EpisodeAgeChip extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            episodeAgeLabel(days),
+            episodeAgeLabel(days, l),
             style: base.copyWith(color: color, fontWeight: FontWeight.w600),
           ),
         ],

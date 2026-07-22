@@ -412,9 +412,10 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
   }
 
   void _showOwnerSheet(PinkaPublicContribution c) {
+    final l = AppLocalizations.of(context);
     _sheet(
-      title: AppLocalizations.of(context).pinkaGridTakenTitle,
-      name: c.displayNameOrAnon,
+      title: l.pinkaGridTakenTitle,
+      name: c.displayNameOrAnon(l),
       amountCents: c.amountCents,
       message: c.message,
     );
@@ -685,7 +686,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
       final owner = _cellOwners[cell];
       if (owner != null) {
         return Text(
-          '${owner.displayNameOrAnon} · ${fmtEur(owner.amountCents)} €',
+          '${owner.displayNameOrAnon(l)} · ${fmtEur(owner.amountCents)} €',
           style: style?.copyWith(
               color: theme.colorScheme.tertiary, fontWeight: FontWeight.w600),
           overflow: TextOverflow.ellipsis,

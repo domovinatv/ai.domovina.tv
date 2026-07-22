@@ -13,7 +13,6 @@ import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
 import '../services/episode_language.dart';
-import '../services/locale_service.dart';
 import '../services/media_session.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
@@ -1108,18 +1107,19 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// AppBar akcija za otvaranje izvora epizode: YouTube za standardne, izvorna
   /// podcast stranica (webpage_url) za audio-only. Null kad nema URL-a.
   Widget? _sourceAction(EpisodeData data) {
+    final l = AppLocalizations.of(context);
     final url = data.info.sourceUrl;
     if (url == null) return null;
     if (data.isAudioOnly) {
       return IconButton(
         icon: const Icon(Icons.open_in_new),
-        tooltip: appStrings.commonOpenSource,
+        tooltip: l.commonOpenSource,
         onPressed: () => openUrl(url),
       );
     }
     return IconButton(
       icon: const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
-      tooltip: appStrings.episodeOpenOnYouTube,
+      tooltip: l.episodeOpenOnYouTube,
       onPressed: () => openUrl(url),
     );
   }

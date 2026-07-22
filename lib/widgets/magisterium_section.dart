@@ -4,7 +4,6 @@ import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../models/magisterium_data.dart';
 import '../services/episode_language.dart';
-import '../services/locale_service.dart';
 
 /// Overall Magisterium score card with iteration breakdown.
 class MagisteriumSection extends StatelessWidget {
@@ -21,13 +20,15 @@ class MagisteriumSection extends StatelessWidget {
     return const Color(0xFFC62828); // red
   }
 
-  static String scoreLabel(int? score) {
+  /// [l] proslijedi iz builda — context-aware lookup garantira rebuild na
+  /// promjenu UI jezika (globalni appStrings NE registrira dependency).
+  static String scoreLabel(int? score, AppLocalizations l) {
     if (score == null) return 'N/A';
-    if (score >= 90) return appStrings.magisteriumScoreActivelyPromotes;
-    if (score >= 70) return appStrings.magisteriumScoreMostlyAligned;
-    if (score >= 50) return appStrings.magisteriumScorePartiallyAligned;
-    if (score >= 30) return appStrings.magisteriumScoreDeviates;
-    return appStrings.magisteriumScoreContradicts;
+    if (score >= 90) return l.magisteriumScoreActivelyPromotes;
+    if (score >= 70) return l.magisteriumScoreMostlyAligned;
+    if (score >= 50) return l.magisteriumScorePartiallyAligned;
+    if (score >= 30) return l.magisteriumScoreDeviates;
+    return l.magisteriumScoreContradicts;
   }
 
   @override
@@ -39,7 +40,7 @@ class MagisteriumSection extends StatelessWidget {
     final lang = EpisodeLanguageScope.of(context);
     final interpretation = pickLang(
       lang,
-      magisterium.scoreInterpretation ?? scoreLabel(score),
+      magisterium.scoreInterpretation ?? scoreLabel(score, l),
       magisterium.scoreInterpretationEn,
     );
     final subtitleText = l.magisteriumAlignmentSubtitle;

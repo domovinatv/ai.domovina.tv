@@ -240,7 +240,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _hero(ColorScheme cs) => Column(
+  Widget _hero(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
@@ -258,19 +260,20 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     letterSpacing: 2)),
           ),
           const SizedBox(height: 16),
-          Text(widget.trigger.headline,
+          Text(widget.trigger.headline(l),
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w800, color: cs.primary)),
           const SizedBox(height: 8),
-          Text(widget.trigger.subtitle,
+          Text(widget.trigger.subtitle(l),
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge
                   ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       );
+  }
 
   Widget _benefits(ColorScheme cs) => Column(
         children: [

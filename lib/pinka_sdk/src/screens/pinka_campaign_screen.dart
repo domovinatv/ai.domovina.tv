@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../onboarding/ui/auth_sheet.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/locale_service.dart';
@@ -368,6 +369,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
@@ -375,7 +377,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         backgroundColor: theme.colorScheme.surfaceContainerLow,
         // Naslov kampanje živi u tijelu ekrana — AppBar je generički da se
         // "Podrži …" ne pojavljuje duplo.
-        title: Text(appStrings.pinkaWallTitle),
+        title: Text(l.pinkaWallTitle),
         // Iste akcije kao home app bar (jezik/tema/profil) + share kampanje —
         // korisnik se s doniraj ekrana prijavljuje i mijenja temu bez odlaska
         // na home. AccountChip pokazuje "Prijava" (gost) ili avatar menu.
@@ -387,7 +389,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
             const SizedBox(width: 4),
             IconButton(
               icon: const Icon(Icons.share_outlined),
-              tooltip: appStrings.commonCopyLink,
+              tooltip: l.commonCopyLink,
               onPressed: _copyShareLink,
             ),
           ],
@@ -405,11 +407,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   }
 
   Widget _empty(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Text(
-          appStrings.pinkaNoCampaign,
+          l.pinkaNoCampaign,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -420,6 +423,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   }
 
   Widget _content(ThemeData theme, PinkaCampaign c) {
+    final l = AppLocalizations.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 840;
@@ -502,7 +506,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      appStrings.pinkaWallTitle,
+                      l.pinkaWallTitle,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -515,7 +519,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
                             ? Align(
                                 alignment: Alignment.topLeft,
                                 child: Text(
-                                  appStrings.pinkaWallEmpty,
+                                  l.pinkaWallEmpty,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -629,6 +633,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   }
 
   Widget _mainColumn(ThemeData theme, PinkaCampaign c) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -663,7 +668,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         ],
         const SizedBox(height: 24),
         Text(
-          appStrings.pinkaWallTitle,
+          l.pinkaWallTitle,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -671,7 +676,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         const SizedBox(height: 12),
         if (_wall.isEmpty)
           Text(
-            appStrings.pinkaWallEmpty,
+            l.pinkaWallEmpty,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -686,6 +691,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   }
 
   Widget _statsCard(ThemeData theme, PinkaCampaign c) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -705,7 +711,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           if (c.hasGoal) ...[
             const SizedBox(height: 4),
             Text(
-              appStrings.pinkaOfGoal(fmtEur(c.goalCents!)),
+              l.pinkaOfGoal(fmtEur(c.goalCents!)),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -723,7 +729,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           ] else ...[
             const SizedBox(height: 4),
             Text(
-              appStrings.pinkaRaisedLabel,
+              l.pinkaRaisedLabel,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -731,8 +737,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           ],
           const SizedBox(height: 12),
           Text(
-            '${appStrings.pinkaSupportersCount(c.contributorCount)}'
-            ' · ${appStrings.pinkaPaymentsCount(c.contributionCount)}',
+            '${l.pinkaSupportersCount(c.contributorCount)}'
+            ' · ${l.pinkaPaymentsCount(c.contributionCount)}',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -743,6 +749,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   }
 
   Widget _verifyCard(ThemeData theme, PinkaCampaign c) {
+    final l = AppLocalizations.of(context);
     final dest = c.destinationAddress!;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -755,7 +762,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            appStrings.pinkaVerifyOnchainTitle,
+            l.pinkaVerifyOnchainTitle,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -763,7 +770,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           if (_balanceCents != null) ...[
             const SizedBox(height: 6),
             Text(
-              appStrings.pinkaOnchainBalance(fmtEur(_balanceCents!)),
+              l.pinkaOnchainBalance(fmtEur(_balanceCents!)),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: theme.colorScheme.tertiary,
@@ -772,7 +779,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           ],
           const SizedBox(height: 4),
           Text(
-            appStrings.pinkaVerifyOnchainBody,
+            l.pinkaVerifyOnchainBody,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -785,7 +792,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
               alignment: Alignment.centerLeft,
             ),
             icon: const Icon(Icons.open_in_new, size: 16),
-            label: Text(appStrings.pinkaEureBalanceOnGnosisscan),
+            label: Text(l.pinkaEureBalanceOnGnosisscan),
             onPressed: () => pinkaLaunch(widget.config.tokenBalanceUrl(dest)),
           ),
           TextButton.icon(
@@ -795,7 +802,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
               alignment: Alignment.centerLeft,
             ),
             icon: const Icon(Icons.open_in_new, size: 16),
-            label: Text(appStrings.pinkaInflowHistory),
+            label: Text(l.pinkaInflowHistory),
             onPressed: () => pinkaLaunch(widget.config.tokenTxnsUrl(dest)),
           ),
           const SizedBox(height: 6),
@@ -820,7 +827,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.copy, size: 16),
-                tooltip: appStrings.pinkaCopySafeAddress,
+                tooltip: l.pinkaCopySafeAddress,
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: dest));
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -842,6 +849,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   /// Kad su sredstva parkirana na Aaveu, EURe saldo na Safeu je nizak (drže se
   /// kao aGnoEURe) — pokaži poziciju da donori vide da novac "radi", ne da je nestao.
   Widget _aaveSection(ThemeData theme, String dest) {
+    final l = AppLocalizations.of(context);
     final y = _yield!;
     final inAave = y.lastBalanceCents > 0
         ? y.lastBalanceCents
@@ -862,7 +870,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                appStrings.pinkaFundsWorkingAave,
+                l.pinkaFundsWorkingAave,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -872,9 +880,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         ),
         const SizedBox(height: 4),
         Text(
-          '${appStrings.pinkaInAaveLabel(fmtEur(inAave))}'
-          '${y.accruedYieldCents > 0 ? ' · ${appStrings.pinkaAaveYieldLabel(fmtEur(y.accruedYieldCents))}' : ''}. '
-          '${appStrings.pinkaAaveExplainer}',
+          '${l.pinkaInAaveLabel(fmtEur(inAave))}'
+          '${y.accruedYieldCents > 0 ? ' · ${l.pinkaAaveYieldLabel(fmtEur(y.accruedYieldCents))}' : ''}. '
+          '${l.pinkaAaveExplainer}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -887,7 +895,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
               alignment: Alignment.centerLeft,
             ),
             icon: const Icon(Icons.open_in_new, size: 16),
-            label: Text(appStrings.pinkaAgnoEureBalanceOnGnosisscan),
+            label: Text(l.pinkaAgnoEureBalanceOnGnosisscan),
             onPressed: () => pinkaLaunch(
               widget.config.tokenForAddressUrl(y.atokenAddress!, dest),
             ),
@@ -910,6 +918,7 @@ class _FlyingDonationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Material(
@@ -936,7 +945,7 @@ class _FlyingDonationChip extends StatelessWidget {
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 140),
               child: Text(
-                displayName ?? appStrings.pinkaAnonymous,
+                displayName ?? l.pinkaAnonymous,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,

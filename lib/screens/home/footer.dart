@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart' show appVersion;
 import '../../models/channel_index.dart';
 import '../../services/update_notifier.dart';
-import '../../services/locale_service.dart';
 import '../../l10n/app_localizations.dart';
 
 import '../../theme/typography.dart';
@@ -28,6 +27,7 @@ class HomeFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final isMobile = MediaQuery.of(context).size.width < 700;
 
     final totalEpisodes =
@@ -66,11 +66,11 @@ class HomeFooter extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _aboutColumn(theme),
+                      _aboutColumn(theme, l),
                       const SizedBox(height: 28),
                       _linksColumn(theme),
                       const SizedBox(height: 28),
-                      _statsColumn(theme,
+                      _statsColumn(theme, l,
                           totalEpisodes: totalEpisodes,
                           totalHours: totalHours,
                           avgScore: avgScore),
@@ -79,12 +79,12 @@ class HomeFooter extends StatelessWidget {
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _aboutColumn(theme)),
+                      Expanded(child: _aboutColumn(theme, l)),
                       const SizedBox(width: 32),
                       Expanded(child: _linksColumn(theme)),
                       const SizedBox(width: 32),
                       Expanded(
-                          child: _statsColumn(theme,
+                          child: _statsColumn(theme, l,
                               totalEpisodes: totalEpisodes,
                               totalHours: totalHours,
                               avgScore: avgScore)),
@@ -125,13 +125,13 @@ class HomeFooter extends StatelessWidget {
     );
   }
 
-  Widget _aboutColumn(ThemeData theme) {
+  Widget _aboutColumn(ThemeData theme, AppLocalizations l) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _columnHeader(theme, appStrings.homeFooterAbout),
+        _columnHeader(theme, l.homeFooterAbout),
         Text(
-          appStrings.homeFooterAboutText,
+          l.homeFooterAboutText,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.6,
@@ -150,6 +150,7 @@ class HomeFooter extends StatelessWidget {
           _columnHeader(theme, l.homeFooterLinks),
           _link(
             theme,
+            l,
             label: l.homeFooterSuggestEpisode,
             onTap: () => _launchMail(
               'stepanic.matija@gmail.com',
@@ -158,21 +159,25 @@ class HomeFooter extends StatelessWidget {
           ),
           _link(
             theme,
+            l,
             label: l.homeFooterContact,
             onTap: () => _launchMail('stepanic.matija@gmail.com'),
           ),
           _link(
             theme,
+            l,
             label: 'GitHub',
             onTap: () => _launchUrl('https://github.com/domovinatv'),
           ),
           _link(
             theme,
+            l,
             label: l.homeFooterPrivacy,
             onTap: () => context.go('/privacy'),
           ),
           _link(
             theme,
+            l,
             label: l.homeFooterTerms,
             onTap: () => context.go('/terms'),
           ),
@@ -182,7 +187,8 @@ class HomeFooter extends StatelessWidget {
   }
 
   Widget _statsColumn(
-    ThemeData theme, {
+    ThemeData theme,
+    AppLocalizations l, {
     required int totalEpisodes,
     required int totalHours,
     required int? avgScore,
@@ -190,18 +196,18 @@ class HomeFooter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _columnHeader(theme, appStrings.homeFooterStats),
+        _columnHeader(theme, l.homeFooterStats),
         _stat(theme, '${channels.length}',
-            appStrings.homeFooterStatChannels(channels.length)),
+            l.homeFooterStatChannels(channels.length)),
         const SizedBox(height: 6),
         _stat(theme, _formatNumber(totalEpisodes),
-            appStrings.homeFooterStatEpisodes(totalEpisodes)),
+            l.homeFooterStatEpisodes(totalEpisodes)),
         const SizedBox(height: 6),
         _stat(theme, _formatNumber(totalHours),
-            appStrings.homeFooterStatHours(totalHours)),
+            l.homeFooterStatHours(totalHours)),
         if (avgScore != null) ...[
           const SizedBox(height: 6),
-          _stat(theme, '$avgScore', appStrings.homeFooterStatAvgScore),
+          _stat(theme, '$avgScore', l.homeFooterStatAvgScore),
         ],
       ],
     );
@@ -230,7 +236,8 @@ class HomeFooter extends StatelessWidget {
   }
 
   Widget _link(
-    ThemeData theme, {
+    ThemeData theme,
+    AppLocalizations l, {
     required String label,
     VoidCallback? onTap,
     bool comingSoon = false,
@@ -266,7 +273,7 @@ class HomeFooter extends StatelessWidget {
                   color: theme.colorScheme.surfaceContainerHighest,
                 ),
                 child: Text(
-                  appStrings.homeFooterSoon,
+                  l.homeFooterSoon,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 9,
@@ -281,11 +288,12 @@ class HomeFooter extends StatelessWidget {
   }
 
   Widget _bottomRow(BuildContext context, ThemeData theme, bool isMobile) {
+    final l = AppLocalizations.of(context);
     final children = [
       _versionPill(theme),
       _smallText(
-          theme, appStrings.homeFooterCopyright(DateTime.now().year)),
-      _smallText(theme, appStrings.homeFooterMadeIn),
+          theme, l.homeFooterCopyright(DateTime.now().year)),
+      _smallText(theme, l.homeFooterMadeIn),
     ];
     if (isMobile) {
       return Wrap(
