@@ -36,7 +36,10 @@ class HomeAppBar extends StatelessWidget {
       scrolledUnderElevation: 0.5,
       elevation: 0,
       automaticallyImplyLeading: false,
-      titleSpacing: 16,
+      // titleSpacing mora biti 0: rubni razmak živi kao content padding
+      // UNUTAR scrollabilnog reda, inače se scroll sadržaj reže 16px od
+      // ruba ekrana umjesto da klizi do njega.
+      titleSpacing: 0,
       title: LayoutBuilder(
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 600;
@@ -46,6 +49,7 @@ class HomeAppBar extends StatelessWidget {
             // doscrolla umjesto da bude odrezan).
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -66,23 +70,28 @@ class HomeAppBar extends StatelessWidget {
               ),
             );
           }
-          return Row(
-            children: [
-              _Wordmark(isDark: isDark),
-              const SizedBox(width: 24),
-              Expanded(
-                child: _SearchTrigger(
-                  onTap: onSearchTap,
-                  placeholder: l.homeSearchPlaceholderFull,
+          return Padding(
+            // Desktop red nije scrollabilan pa je vanjski padding ovdje OK —
+            // vizualno identično starom titleSpacing: 16.
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _Wordmark(isDark: isDark),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: _SearchTrigger(
+                    onTap: onSearchTap,
+                    placeholder: l.homeSearchPlaceholderFull,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              const LanguageToggleButton(),
-              const SizedBox(width: 4),
-              const ThemeToggleButton(),
-              const SizedBox(width: 4),
-              const AccountChip(),
-            ],
+                const SizedBox(width: 16),
+                const LanguageToggleButton(),
+                const SizedBox(width: 4),
+                const ThemeToggleButton(),
+                const SizedBox(width: 4),
+                const AccountChip(),
+              ],
+            ),
           );
         },
       ),
@@ -99,7 +108,9 @@ class _Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = isDark ? Colors.white : Theme.of(context).colorScheme.primary;
+    final baseColor = isDark
+        ? Colors.white
+        : Theme.of(context).colorScheme.primary;
 
     return Text.rich(
       TextSpan(
@@ -111,7 +122,9 @@ class _Wordmark extends StatelessWidget {
           TextSpan(
             text: '.ai',
             style: AppTypography.wordmarkStyle(
-                color: Theme.of(context).colorScheme.tertiary, fontSize: 22),
+              color: Theme.of(context).colorScheme.tertiary,
+              fontSize: 22,
+            ),
           ),
         ],
       ),
@@ -147,17 +160,21 @@ class _SearchTrigger extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(Icons.search,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.7)),
+              Icon(
+                Icons.search,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.7,
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   placeholder,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.7),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.7,
+                    ),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -174,8 +191,9 @@ class _SearchTrigger extends StatelessWidget {
                 child: Text(
                   '⌘K',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.6),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.6,
+                    ),
                     letterSpacing: 0.5,
                   ),
                 ),

@@ -127,8 +127,9 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   }
 
   Future<void> _loadContinueWatching() async {
-    final list =
-        await WatchProgressService.instance.continueWatching(limit: 12);
+    final list = await WatchProgressService.instance.continueWatching(
+      limit: 12,
+    );
     if (mounted) setState(() => _continueWatching = list);
   }
 
@@ -156,11 +157,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     if (!_loggedDimensions) {
       _loggedDimensions = true;
       final mq = MediaQuery.of(context);
-      log('TvHome: screen ${mq.size.width.toStringAsFixed(0)}×'
-          '${mq.size.height.toStringAsFixed(0)} dp, '
-          'dpr=${mq.devicePixelRatio.toStringAsFixed(2)}, '
-          'textScale=${mq.textScaler.scale(1.0).toStringAsFixed(2)}, '
-          'tvMetrics.scale=${metrics.scale.toStringAsFixed(2)}');
+      log(
+        'TvHome: screen ${mq.size.width.toStringAsFixed(0)}×'
+        '${mq.size.height.toStringAsFixed(0)} dp, '
+        'dpr=${mq.devicePixelRatio.toStringAsFixed(2)}, '
+        'textScale=${mq.textScaler.scale(1.0).toStringAsFixed(2)}, '
+        'tvMetrics.scale=${metrics.scale.toStringAsFixed(2)}',
+      );
     }
 
     return Scaffold(
@@ -172,48 +175,46 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       // TV typography je vec kalibrirana za 3m couch viewing — system
       // override se ne honor-a, jednako kao sto rade Netflix/YouTube TV.
       body: MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.noScaling,
-        ),
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
         child: SafeArea(
-        // Flutter web ne mapira arrow keys na DirectionalFocusIntent po
-        // defaultu (native Android TV salje DPAD_* keyeve koji Flutter okvir
-        // sam hendla, ali u Chrome buildu samo Tab radi). Eksplicitno
-        // bindamo arrow keys ovdje da TV layout radi i u Chrome/Mac dev
-        // okruzenju. WidgetsApp.defaultShortcuts ne pokriva ovo na webu.
-        child: Shortcuts(
-          shortcuts: const {
-            SingleActivator(LogicalKeyboardKey.arrowUp):
-                DirectionalFocusIntent(TraversalDirection.up),
-            SingleActivator(LogicalKeyboardKey.arrowDown):
-                DirectionalFocusIntent(TraversalDirection.down),
-            SingleActivator(LogicalKeyboardKey.arrowLeft):
-                DirectionalFocusIntent(TraversalDirection.left),
-            SingleActivator(LogicalKeyboardKey.arrowRight):
-                DirectionalFocusIntent(TraversalDirection.right),
-          },
-          child: FutureBuilder<ChannelIndex>(
-            future: _indexFuture,
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return _buildLoading(theme, metrics);
-              }
-              if (snap.hasError) {
-                return _buildError(theme, l, snap.error);
-              }
-              // Index ucitan — kick off per-channel prefetch.
-              final channels = snap.data!.channels;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _channelCache.prefetchAll(channels);
-                _maybeBootstrapFeatured();
-              });
-              // Tips karousel ostaje vidljiv sve dok featured nije picked
-              // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
-              if (!_bootReady) return _buildLoading(theme, metrics);
-              return _buildContent(theme, l, metrics, channels);
+          // Flutter web ne mapira arrow keys na DirectionalFocusIntent po
+          // defaultu (native Android TV salje DPAD_* keyeve koji Flutter okvir
+          // sam hendla, ali u Chrome buildu samo Tab radi). Eksplicitno
+          // bindamo arrow keys ovdje da TV layout radi i u Chrome/Mac dev
+          // okruzenju. WidgetsApp.defaultShortcuts ne pokriva ovo na webu.
+          child: Shortcuts(
+            shortcuts: const {
+              SingleActivator(LogicalKeyboardKey.arrowUp):
+                  DirectionalFocusIntent(TraversalDirection.up),
+              SingleActivator(LogicalKeyboardKey.arrowDown):
+                  DirectionalFocusIntent(TraversalDirection.down),
+              SingleActivator(LogicalKeyboardKey.arrowLeft):
+                  DirectionalFocusIntent(TraversalDirection.left),
+              SingleActivator(LogicalKeyboardKey.arrowRight):
+                  DirectionalFocusIntent(TraversalDirection.right),
             },
+            child: FutureBuilder<ChannelIndex>(
+              future: _indexFuture,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return _buildLoading(theme, metrics);
+                }
+                if (snap.hasError) {
+                  return _buildError(theme, l, snap.error);
+                }
+                // Index ucitan — kick off per-channel prefetch.
+                final channels = snap.data!.channels;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _channelCache.prefetchAll(channels);
+                  _maybeBootstrapFeatured();
+                });
+                // Tips karousel ostaje vidljiv sve dok featured nije picked
+                // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
+                if (!_bootReady) return _buildLoading(theme, metrics);
+                return _buildContent(theme, l, metrics, channels);
+              },
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -229,9 +230,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     // s Android native splash-om — identicna slika (Mt 10,26-28) + diskretni
     // "Učitavanje…" progress na dnu. Korisnik samo nastavi citati isti
     // citat sa native -> Flutter handoff-a bez frame promjene.
-    return const TvBootSplash(
-      progressDuration: Duration(seconds: 10),
-    );
+    return const TvBootSplash(progressDuration: Duration(seconds: 10));
   }
 
   Widget _buildError(ThemeData theme, AppLocalizations l, Object? err) {
@@ -263,8 +262,11 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     final cacheReady = _channelCache.done;
     final featured = cacheReady ? HomeFeed.pickFeatured(allVids) : null;
     final latest = featured != null
-        ? HomeFeed.latestEpisodes(allVids,
-            limit: 12, excludeFeatured: featured.video)
+        ? HomeFeed.latestEpisodes(
+            allVids,
+            limit: 12,
+            excludeFeatured: featured.video,
+          )
         : <FeedVideo>[];
 
     return SingleChildScrollView(
@@ -293,8 +295,9 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               eyebrow: l.tvRailContinueListening,
               height: metrics.episodeRailHeight,
               cardSpacing: metrics.cardSpacing,
-              horizontalPadding:
-                  EdgeInsets.symmetric(horizontal: metrics.pagePadH),
+              horizontalPadding: EdgeInsets.symmetric(
+                horizontal: metrics.pagePadH,
+              ),
               cards: [
                 for (final wp in _continueWatching)
                   TvEpisodeCard(
@@ -316,8 +319,9 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               eyebrow: l.tvRailLatestEpisodes,
               height: metrics.episodeRailHeight,
               cardSpacing: metrics.cardSpacing,
-              horizontalPadding:
-                  EdgeInsets.symmetric(horizontal: metrics.pagePadH),
+              horizontalPadding: EdgeInsets.symmetric(
+                horizontal: metrics.pagePadH,
+              ),
               cards: [
                 for (final fv in latest)
                   TvEpisodeCard(
@@ -365,8 +369,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface,
-              fontSize: (theme.textTheme.titleLarge?.fontSize ?? 22) *
-                  metrics.scale,
+              fontSize:
+                  (theme.textTheme.titleLarge?.fontSize ?? 22) * metrics.scale,
             ),
           ),
           const Spacer(),
@@ -396,10 +400,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                     color: theme.colorScheme.onSurface,
                   ),
                   SizedBox(width: 8 * metrics.scale),
-                  Text(
-                    l.tvSearch,
-                    style: theme.textTheme.titleSmall,
-                  ),
+                  Text(l.tvSearch, style: theme.textTheme.titleSmall),
                 ],
               ),
             ),
@@ -468,7 +469,10 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                             _SkeletonBar(width: 140, height: 14, color: block),
                             SizedBox(height: compact ? 14 : 18),
                             _SkeletonBar(
-                                width: double.infinity, height: 22, color: block),
+                              width: double.infinity,
+                              height: 22,
+                              color: block,
+                            ),
                             const SizedBox(height: 10),
                             _SkeletonBar(width: 260, height: 22, color: block),
                             SizedBox(height: compact ? 14 : 18),
@@ -490,13 +494,18 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   }
 
   Widget _buildRailSkeleton(
-      ThemeData theme, TvMetrics metrics, String eyebrow) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    ThemeData theme,
+    TvMetrics metrics,
+    String eyebrow,
+  ) {
+    // Kao u TvRail: lista je edge-to-edge, pagePadH je content padding
+    // UNUTAR liste, ne vanjska margina koja bi rezala scroll.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
+          child: Row(
             children: [
               Container(
                 width: 28 * metrics.scale,
@@ -513,25 +522,25 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               ),
             ],
           ),
-          SizedBox(height: 12 * metrics.scale),
-          SizedBox(
-            height: metrics.episodeRailHeight - 18,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 4,
-              separatorBuilder: (_, _) =>
-                  SizedBox(width: metrics.cardSpacing),
-              itemBuilder: (context, i) => Container(
-                width: metrics.episodeCardWidth,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
-                ),
+        ),
+        SizedBox(height: 12 * metrics.scale),
+        SizedBox(
+          height: metrics.episodeRailHeight - 18,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),
+            itemCount: 4,
+            separatorBuilder: (_, _) => SizedBox(width: metrics.cardSpacing),
+            itemBuilder: (context, i) => Container(
+              width: metrics.episodeCardWidth,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -545,11 +554,12 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
         // Shuffle se cache-a (`_shuffledOrder`) da redoslijed bude STABILAN
         // izmedju setState rebuilda. Re-shuffle se dogadja samo kad user
         // tapne Shuffle button (vidi `_setSort`).
-        return _shuffledOrder ??=
-            List<ChannelSummary>.from(input)..shuffle(_shuffleRandom);
+        return _shuffledOrder ??= List<ChannelSummary>.from(input)
+          ..shuffle(_shuffleRandom);
       case _ChannelSort.alpha:
-        return List<ChannelSummary>.from(input)
-          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        return List<ChannelSummary>.from(
+          input,
+        )..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       case _ChannelSort.countDesc:
         return List<ChannelSummary>.from(input)
           ..sort((a, b) => b.videoCount.compareTo(a.videoCount));
@@ -717,7 +727,10 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   }
 
   Widget _buildCacheStatus(
-      ThemeData theme, AppLocalizations l, TvMetrics metrics) {
+    ThemeData theme,
+    AppLocalizations l,
+    TvMetrics metrics,
+  ) {
     if (_channelCache.done) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: metrics.pagePadH),

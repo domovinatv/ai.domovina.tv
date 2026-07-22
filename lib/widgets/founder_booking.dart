@@ -102,13 +102,19 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
       padding: EdgeInsets.only(bottom: viewInsets),
       child: SafeArea(
         top: false,
+        // Horizontalnih 20px NEMA na vanjskom Paddingu: day-picker lista mora
+        // scrollati od ruba do ruba sheeta, pa svaka sekcija nosi svoj
+        // horizontalni padding (lista kao content padding UNUTAR scrolla).
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          padding: const EdgeInsets.fromLTRB(0, 4, 0, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _Header(),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: _Header(),
+              ),
               const SizedBox(height: 16),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
@@ -140,17 +146,20 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           );
         }
         if (snap.hasError || snap.data == null) {
-          return _ErrorRetry(
-            message: snap.error is CalException
-                ? '${snap.error}'
-                : l.channelCannotFetchSlots,
-            onRetry: () => setState(() => _slotsFuture = _loadSlots()),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _ErrorRetry(
+              message: snap.error is CalException
+                  ? '${snap.error}'
+                  : l.channelCannotFetchSlots,
+              onRetry: () => setState(() => _slotsFuture = _loadSlots()),
+            ),
           );
         }
         final slots = snap.data!;
         if (slots.isEmpty) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
             child: Text(
               l.channelNoSlotsThreeWeeks,
               textAlign: TextAlign.center,
@@ -162,7 +171,8 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           (byDay[s.dayKey] ??= []).add(s);
         }
         final days = byDay.keys.toList()..sort();
-        final activeDay = (_selectedDay != null && byDay.containsKey(_selectedDay))
+        final activeDay =
+            (_selectedDay != null && byDay.containsKey(_selectedDay))
             ? _selectedDay!
             : days.first;
         final daySlots = byDay[activeDay]!;
@@ -172,12 +182,16 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SectionLabel(l.channelPickDay),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _SectionLabel(l.channelPickDay),
+            ),
             const SizedBox(height: 8),
             SizedBox(
               height: 64,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: days.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) => _DayChip(
@@ -192,26 +206,35 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
               ),
             ),
             const SizedBox(height: 18),
-            _SectionLabel(l.channelAvailableSlots),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final s in daySlots)
-                  _TimeChip(
-                    label: s.label,
-                    selected: identical(s, _selectedSlot),
-                    onTap: () => setState(() => _selectedSlot = s),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _SectionLabel(l.channelAvailableSlots),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final s in daySlots)
+                        _TimeChip(
+                          label: s.label,
+                          selected: identical(s, _selectedSlot),
+                          onTap: () => setState(() => _selectedSlot = s),
+                        ),
+                    ],
                   ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: _selectedSlot == null
-                  ? null
-                  : () => setState(() => _step = _Step.details),
-              child: Text(l.commonContinue),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: _selectedSlot == null
+                        ? null
+                        : () => setState(() => _step = _Step.details),
+                    child: Text(l.commonContinue),
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -225,66 +248,72 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final slot = _selectedSlot!;
-    return Form(
-      key: _formKey,
-      child: Column(
-        key: const ValueKey('details'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _SelectedSlotBanner(
-            slot: slot,
-            onChange: () => setState(() => _step = _Step.pickTime),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _name,
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(labelText: l.channelFullName),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? l.channelEnterName : null,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(labelText: l.channelEmail),
-            validator: (v) {
-              final t = (v ?? '').trim();
-              if (t.isEmpty) return l.channelEnterEmail;
-              if (!t.contains('@') || !t.contains('.')) {
-                return l.channelInvalidEmail;
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _notes,
-            maxLines: 2,
-            decoration: InputDecoration(
-              labelText: l.channelTopicOptional,
+    return Padding(
+      key: const ValueKey('details'),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _SelectedSlotBanner(
+              slot: slot,
+              onChange: () => setState(() => _step = _Step.pickTime),
             ),
-          ),
-          if (_error != null) ...[
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _name,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(labelText: l.channelFullName),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? l.channelEnterName : null,
+            ),
             const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(labelText: l.channelEmail),
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return l.channelEnterEmail;
+                if (!t.contains('@') || !t.contains('.')) {
+                  return l.channelInvalidEmail;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _notes,
+              maxLines: 2,
+              decoration: InputDecoration(labelText: l.channelTopicOptional),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: _submitting ? null : _submit,
+              child: _submitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(l.channelConfirmSlot),
             ),
           ],
-          const SizedBox(height: 18),
-          FilledButton(
-            onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : Text(l.channelConfirmSlot),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -330,48 +359,55 @@ class _FounderBookingSheetState extends State<_FounderBookingSheet> {
     final l = AppLocalizations.of(context);
     final slot = _selectedSlot!;
     final meetUrl = _booking?.meetingUrl;
-    return Column(
+    return Padding(
       key: const ValueKey('success'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: 8),
-        Icon(Icons.check_circle_rounded, size: 56, color: theme.colorScheme.primary),
-        const SizedBox(height: 12),
-        Text(
-          l.channelSlotConfirmed,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleLarge,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          l.channelDayAtTime(_fullDayLabel(slot.dayKey), slot.label),
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Icon(
+            Icons.check_circle_rounded,
+            size: 56,
+            color: theme.colorScheme.primary,
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          l.channelInviteSentTo(_email.text.trim()),
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(height: 12),
+          Text(
+            l.channelSlotConfirmed,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge,
           ),
-        ),
-        const SizedBox(height: 20),
-        if (meetUrl != null && meetUrl.startsWith('http'))
-          FilledButton.icon(
-            onPressed: () => openUrl(meetUrl),
-            icon: const Icon(Icons.videocam_rounded, color: Colors.white),
-            label: Text(l.channelOpenGoogleMeet),
+          const SizedBox(height: 6),
+          Text(
+            l.channelDayAtTime(_fullDayLabel(slot.dayKey), slot.label),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.commonDone),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            l.channelInviteSentTo(_email.text.trim()),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (meetUrl != null && meetUrl.startsWith('http'))
+            FilledButton.icon(
+              onPressed: () => openUrl(meetUrl),
+              icon: const Icon(Icons.videocam_rounded, color: Colors.white),
+              label: Text(l.channelOpenGoogleMeet),
+            ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l.commonDone),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -397,14 +433,21 @@ class _Header extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
           ),
-          child: const Icon(Icons.waving_hand_rounded, color: Colors.white, size: 22),
+          child: const Icon(
+            Icons.waving_hand_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l.channelFounderCallTitle, style: theme.textTheme.titleMedium),
+              Text(
+                l.channelFounderCallTitle,
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 2),
               Text(
                 l.channelFounderCallSubtitle,
@@ -454,7 +497,9 @@ class _DayChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final d = DateTime.parse(dayKey);
-    final bg = selected ? AppTheme.croBlue : theme.colorScheme.surfaceContainerLow;
+    final bg = selected
+        ? AppTheme.croBlue
+        : theme.colorScheme.surfaceContainerLow;
     final fg = selected ? Colors.white : theme.colorScheme.onSurface;
     return InkWell(
       onTap: onTap,
@@ -515,7 +560,9 @@ class _TimeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.croBlue : theme.colorScheme.surfaceContainerLow,
+          color: selected
+              ? AppTheme.croBlue
+              : theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected
@@ -556,12 +603,18 @@ class _SelectedSlotBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.schedule_rounded, size: 20, color: theme.colorScheme.primary),
+          Icon(
+            Icons.schedule_rounded,
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               l.channelDayAtTime(_fullDayLabel(slot.dayKey), slot.label),
-              style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           TextButton(onPressed: onChange, child: Text(l.channelChange)),
@@ -600,11 +653,27 @@ class _ErrorRetry extends StatelessWidget {
 
 const _hrWeekdayShort = ['pon', 'uto', 'sri', 'čet', 'pet', 'sub', 'ned'];
 const _hrWeekdayLong = [
-  'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota', 'nedjelja',
+  'ponedjeljak',
+  'utorak',
+  'srijeda',
+  'četvrtak',
+  'petak',
+  'subota',
+  'nedjelja',
 ];
 const _hrMonthsGen = [
-  'siječnja', 'veljače', 'ožujka', 'travnja', 'svibnja', 'lipnja',
-  'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca',
+  'siječnja',
+  'veljače',
+  'ožujka',
+  'travnja',
+  'svibnja',
+  'lipnja',
+  'srpnja',
+  'kolovoza',
+  'rujna',
+  'listopada',
+  'studenoga',
+  'prosinca',
 ];
 
 String _fullDayLabel(String dayKey) {

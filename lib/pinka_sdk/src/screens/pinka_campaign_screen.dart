@@ -56,13 +56,13 @@ class PinkaCampaignScreen extends StatefulWidget {
     PinkaClient? client,
     PinkaConfig config = PinkaConfig.defaults,
   }) : this(
-          key: key,
-          subjectType: PinkaSubject.channel,
-          subjectRefs: [channelId, ?youtubeChannelId],
-          fallbackTitle: channelName,
-          client: client,
-          config: config,
-        );
+         key: key,
+         subjectType: PinkaSubject.channel,
+         subjectRefs: [channelId, ?youtubeChannelId],
+         fallbackTitle: channelName,
+         client: client,
+         config: config,
+       );
 
   /// Epizoda (vizija): subject_ref = YouTube video id.
   PinkaCampaignScreen.episode({
@@ -72,13 +72,13 @@ class PinkaCampaignScreen extends StatefulWidget {
     PinkaClient? client,
     PinkaConfig config = PinkaConfig.defaults,
   }) : this(
-          key: key,
-          subjectType: PinkaSubject.episode,
-          subjectRefs: [youtubeId],
-          fallbackTitle: episodeTitle,
-          client: client,
-          config: config,
-        );
+         key: key,
+         subjectType: PinkaSubject.episode,
+         subjectRefs: [youtubeId],
+         fallbackTitle: episodeTitle,
+         client: client,
+         config: config,
+       );
 
   @override
   State<PinkaCampaignScreen> createState() => _PinkaCampaignScreenState();
@@ -125,8 +125,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   void initState() {
     super.initState();
     _refresh();
-    _timer =
-        Timer.periodic(const Duration(seconds: 12), (_) => _refresh());
+    _timer = Timer.periodic(const Duration(seconds: 12), (_) => _refresh());
   }
 
   @override
@@ -171,10 +170,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     if (!mounted) return;
     // Runtime <title>/og meta za živu sesiju (crawleri idu kroz _worker.js
     // koji isti naslov gradi edge-side iz kampanje).
-    setPageMeta(
-      title: '${c.title} – DOMOVINA.ai',
-      description: c.description,
-    );
+    setPageMeta(title: '${c.title} – DOMOVINA.ai', description: c.description);
     setState(() {
       _campaign = c;
       _loading = false;
@@ -189,7 +185,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
       _firstLoad = false;
       return;
     }
-    final fresh = list.where((e) => !_seen.contains(e.id)).map((e) => e.id).toSet();
+    final fresh = list
+        .where((e) => !_seen.contains(e.id))
+        .map((e) => e.id)
+        .toSet();
     if (fresh.isNotEmpty) {
       _seen.addAll(fresh);
       setState(() => _flashIds = fresh);
@@ -205,8 +204,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     final ref = widget.subjectRefs.first;
     // Share link prati aktivni UI jezik: HR dijeli /doniraj, EN /support
     // (obje rute vode na isti ekran — vidi app_router.dart).
-    final action =
-        LocaleController.instance.isEnglish ? 'support' : 'doniraj';
+    final action = LocaleController.instance.isEnglish ? 'support' : 'doniraj';
     final path = widget.subjectType == PinkaSubject.channel
         ? '/c/${ref.replaceAll('_', '-')}/$action'
         : '/v/$ref/$action';
@@ -267,18 +265,14 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
 
   void _toast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 
   /// "Poleti" mini karticu doprinosa iz panela (gdje je donator upravo gledao
   /// progress 5/5) prema vrhu zida — vizualni dolazak donacije u listu.
   void _flyDonationToWall(int amountCents, String? displayName) {
-    final panelBox =
-        _panelKey.currentContext?.findRenderObject() as RenderBox?;
+    final panelBox = _panelKey.currentContext?.findRenderObject() as RenderBox?;
     final overlayState = Overlay.maybeOf(context, rootOverlay: true);
     if (panelBox == null || !panelBox.attached || overlayState == null) return;
     final overlayBox = overlayState.context.findRenderObject() as RenderBox?;
@@ -286,7 +280,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     final screen = overlayBox.size;
 
     // Start: sredina panela, gdje je stajao stepper/potvrda.
-    final start = panelBox.localToGlobal(panelBox.size.center(Offset.zero)) -
+    final start =
+        panelBox.localToGlobal(panelBox.size.center(Offset.zero)) -
         const Offset(80, 20);
 
     // Cilj: vrh zida — najnoviji unos ide na početak liste. Kad je zid izvan
@@ -302,12 +297,18 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     );
 
     final controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1000));
-    final curve =
-        CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    final curve = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeInOutCubic,
+    );
     // Kvadratni bézier s kontrolnom točkom iznad spojnice — blagi luk.
-    final control =
-        Offset((start.dx + end.dx) / 2, math.min(start.dy, end.dy) - 100);
+    final control = Offset(
+      (start.dx + end.dx) / 2,
+      math.min(start.dy, end.dy) - 100,
+    );
 
     late final OverlayEntry entry;
     entry = OverlayEntry(
@@ -329,7 +330,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
                   scale: 1 - 0.2 * t,
                   alignment: Alignment.topLeft,
                   child: _FlyingDonationChip(
-                      amountCents: amountCents, displayName: displayName),
+                    amountCents: amountCents,
+                    displayName: displayName,
+                  ),
                 ),
               ),
             ),
@@ -396,8 +399,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _campaign == null
-              ? _empty(theme)
-              : _content(theme, _campaign!),
+          ? _empty(theme)
+          : _content(theme, _campaign!),
     );
   }
 
@@ -408,8 +411,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         child: Text(
           appStrings.pinkaNoCampaign,
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -476,10 +480,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
                 grid,
                 const SizedBox(height: 12),
                 panel,
-                if (verify != null) ...[
-                  const SizedBox(height: 12),
-                  verify,
-                ],
+                if (verify != null) ...[const SizedBox(height: 12), verify],
                 const SizedBox(height: 24),
                 main,
               ],
@@ -500,35 +501,43 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(appStrings.pinkaWallTitle,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(
+                      appStrings.pinkaWallTitle,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Expanded(
                       child: KeyedSubtree(
                         key: _wallKey,
                         child: _wall.isEmpty
-                          ? Align(
-                              alignment: Alignment.topLeft,
-                              child: Text(appStrings.pinkaWallEmpty,
+                            ? Align(
+                                alignment: Alignment.topLeft,
+                                child: Text(
+                                  appStrings.pinkaWallEmpty,
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                          theme.colorScheme.onSurfaceVariant)),
-                            )
-                          : Scrollbar(
-                              controller: _wallScroll,
-                              child: SingleChildScrollView(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              )
+                            : Scrollbar(
                                 controller: _wallScroll,
-                                // Margine žive UNUTAR scroll sadržaja — viewport
-                                // ide do ruba ekrana pa se kartice ne "režu" na
-                                // vanjskom marginu pri scrollu.
-                                padding:
-                                    const EdgeInsets.only(right: 16, bottom: 24),
-                                child: PinkaWallList(
+                                child: SingleChildScrollView(
+                                  controller: _wallScroll,
+                                  // Margine žive UNUTAR scroll sadržaja — viewport
+                                  // ide do ruba ekrana pa se kartice ne "režu" na
+                                  // vanjskom marginu pri scrollu.
+                                  padding: const EdgeInsets.only(
+                                    right: 16,
+                                    bottom: 24,
+                                  ),
+                                  child: PinkaWallList(
                                     contributions: _wall,
-                                    flashIds: _flashIds),
+                                    flashIds: _flashIds,
+                                  ),
+                                ),
                               ),
-                            ),
                       ),
                     ),
                   ],
@@ -538,35 +547,30 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
             const SizedBox(width: 20),
             SizedBox(
               width: 340,
-              child: Padding(
+              // Vertikalne margine su content padding UNUTAR scrolla (kao kod
+              // zida lijevo) — viewport ide do ruba pa se sadržaj ne "reže".
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(0, 16, 0, 20),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      grid,
-                      const SizedBox(height: 16),
-                      _wideHeader(theme, c),
-                      const SizedBox(height: 16),
-                      stats,
-                      if (verify != null) ...[
-                        const SizedBox(height: 12),
-                        verify,
-                      ],
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    grid,
+                    const SizedBox(height: 16),
+                    _wideHeader(theme, c),
+                    const SizedBox(height: 16),
+                    stats,
+                    if (verify != null) ...[const SizedBox(height: 12), verify],
+                  ],
                 ),
               ),
             ),
             const SizedBox(width: 20),
             SizedBox(
               width: 360,
-              child: Padding(
+              child: SingleChildScrollView(
+                controller: _railScroll,
                 padding: const EdgeInsets.fromLTRB(0, 16, 24, 20),
-                child: SingleChildScrollView(
-                  controller: _railScroll,
-                  child: panel,
-                ),
+                child: panel,
               ),
             ),
           ],
@@ -581,18 +585,24 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     final text = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(c.title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          c.title,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         if (c.description != null && c.description!.isNotEmpty) ...[
           const SizedBox(height: 6),
-          Text(c.description!,
-              maxLines: 8,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurface)),
+          Text(
+            c.description!,
+            maxLines: 8,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
         ],
       ],
     );
@@ -636,24 +646,36 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           ),
           const SizedBox(height: 16),
         ],
-        Text(c.title,
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          c.title,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         if (c.description != null && c.description!.isNotEmpty) ...[
           const SizedBox(height: 10),
-          Text(c.description!,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurface)),
+          Text(
+            c.description!,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
         ],
         const SizedBox(height: 24),
-        Text(appStrings.pinkaWallTitle,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          appStrings.pinkaWallTitle,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: 12),
         if (_wall.isEmpty)
-          Text(appStrings.pinkaWallEmpty,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+          Text(
+            appStrings.pinkaWallEmpty,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          )
         else
           KeyedSubtree(
             key: _wallKey,
@@ -674,14 +696,20 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${fmtEur(c.totalRaisedCents)} €',
-              style: theme.textTheme.headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            '${fmtEur(c.totalRaisedCents)} €',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           if (c.hasGoal) ...[
             const SizedBox(height: 4),
-            Text(appStrings.pinkaOfGoal(fmtEur(c.goalCents!)),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              appStrings.pinkaOfGoal(fmtEur(c.goalCents!)),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -694,16 +722,20 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
             ),
           ] else ...[
             const SizedBox(height: 4),
-            Text(appStrings.pinkaRaisedLabel,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              appStrings.pinkaRaisedLabel,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
           const SizedBox(height: 12),
           Text(
             '${appStrings.pinkaSupportersCount(c.contributorCount)}'
             ' · ${appStrings.pinkaPaymentsCount(c.contributionCount)}',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -722,9 +754,12 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(appStrings.pinkaVerifyOnchainTitle,
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            appStrings.pinkaVerifyOnchainTitle,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           if (_balanceCents != null) ...[
             const SizedBox(height: 6),
             Text(
@@ -738,24 +773,27 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           const SizedBox(height: 4),
           Text(
             appStrings.pinkaVerifyOnchainBody,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 10),
           TextButton.icon(
             style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                alignment: Alignment.centerLeft),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              alignment: Alignment.centerLeft,
+            ),
             icon: const Icon(Icons.open_in_new, size: 16),
             label: Text(appStrings.pinkaEureBalanceOnGnosisscan),
             onPressed: () => pinkaLaunch(widget.config.tokenBalanceUrl(dest)),
           ),
           TextButton.icon(
             style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                alignment: Alignment.centerLeft),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              alignment: Alignment.centerLeft,
+            ),
             icon: const Icon(Icons.open_in_new, size: 16),
             label: Text(appStrings.pinkaInflowHistory),
             onPressed: () => pinkaLaunch(widget.config.tokenTxnsUrl(dest)),
@@ -805,7 +843,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   /// kao aGnoEURe) — pokaži poziciju da donori vide da novac "radi", ne da je nestao.
   Widget _aaveSection(ThemeData theme, String dest) {
     final y = _yield!;
-    final inAave = y.lastBalanceCents > 0 ? y.lastBalanceCents : y.principalCents;
+    final inAave = y.lastBalanceCents > 0
+        ? y.lastBalanceCents
+        : y.principalCents;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -814,13 +854,19 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         const SizedBox(height: 10),
         Row(
           children: [
-            Icon(Icons.savings_outlined,
-                size: 16, color: theme.colorScheme.tertiary),
+            Icon(
+              Icons.savings_outlined,
+              size: 16,
+              color: theme.colorScheme.tertiary,
+            ),
             const SizedBox(width: 6),
             Expanded(
-              child: Text(appStrings.pinkaFundsWorkingAave,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600)),
+              child: Text(
+                appStrings.pinkaFundsWorkingAave,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -829,19 +875,22 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           '${appStrings.pinkaInAaveLabel(fmtEur(inAave))}'
           '${y.accruedYieldCents > 0 ? ' · ${appStrings.pinkaAaveYieldLabel(fmtEur(y.accruedYieldCents))}' : ''}. '
           '${appStrings.pinkaAaveExplainer}',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         if (y.atokenAddress != null)
           TextButton.icon(
             style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                alignment: Alignment.centerLeft),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              alignment: Alignment.centerLeft,
+            ),
             icon: const Icon(Icons.open_in_new, size: 16),
             label: Text(appStrings.pinkaAgnoEureBalanceOnGnosisscan),
             onPressed: () => pinkaLaunch(
-                widget.config.tokenForAddressUrl(y.atokenAddress!, dest)),
+              widget.config.tokenForAddressUrl(y.atokenAddress!, dest),
+            ),
           ),
       ],
     );
@@ -854,8 +903,10 @@ class _FlyingDonationChip extends StatelessWidget {
   final int amountCents;
   final String? displayName;
 
-  const _FlyingDonationChip(
-      {required this.amountCents, required this.displayName});
+  const _FlyingDonationChip({
+    required this.amountCents,
+    required this.displayName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -888,15 +939,18 @@ class _FlyingDonationChip extends StatelessWidget {
                 displayName ?? appStrings.pinkaAnonymous,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: cs.onTertiaryContainer),
+                  fontWeight: FontWeight.w600,
+                  color: cs.onTertiaryContainer,
+                ),
               ),
             ),
             const SizedBox(width: 10),
             Text(
               '${fmtEur(amountCents)} €',
               style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700, color: cs.tertiary),
+                fontWeight: FontWeight.w700,
+                color: cs.tertiary,
+              ),
             ),
           ],
         ),

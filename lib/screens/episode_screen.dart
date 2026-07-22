@@ -354,13 +354,20 @@ class _Breadcrumb extends StatelessWidget {
       ],
     );
 
+    // Rubnih 12px živi OVDJE (content padding unutar scrolla / Padding oko
+    // statičnog reda), a _episodeAppBar ima titleSpacing: 0 — inače bi se
+    // scrollabilni breadcrumb rezao 12px od ruba ekrana.
     if (scrollable) {
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: row,
       );
     }
-    return row;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: row,
+    );
   }
 }
 
@@ -622,9 +629,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// epizoda nema vlastitu kampanju (UC… id iz info.json + naš interni
   /// channel id, čim se slug razriješi).
   List<String> get _channelSupportRefs => [
-        ?widget.data.info.youtubeChannelId,
-        ?_channelSlug?.replaceAll('-', '_'),
-      ];
+    ?widget.data.info.youtubeChannelId,
+    ?_channelSlug?.replaceAll('-', '_'),
+  ];
 
   /// Ruta punog ekrana podrške: epizodna kampanja → `/v/:id/support`,
   /// kampanja kanala (fallback) → `/c/:slug/support` (match ide po `uc`
@@ -640,10 +647,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final uc = data.info.youtubeChannelId;
     return Uri(
       path: '/c/${_channelSlug ?? 'kanal'}/support',
-      queryParameters: {
-        'uc': ?uc,
-        'name': data.info.channel,
-      },
+      queryParameters: {'uc': ?uc, 'name': data.info.channel},
     ).toString();
   }
 
@@ -2358,7 +2362,9 @@ SliverAppBar _episodeAppBar({
   return SliverAppBar(
     pinned: true,
     automaticallyImplyLeading: false,
-    titleSpacing: 12,
+    // 0 jer _Breadcrumb nosi vlastiti rubni padding (na mobitelu kao content
+    // padding UNUTAR horizontalnog scrolla — vidi komentar u _Breadcrumb).
+    titleSpacing: 0,
     title: title,
     actions: twoRow ? null : actions,
     bottom: twoRow

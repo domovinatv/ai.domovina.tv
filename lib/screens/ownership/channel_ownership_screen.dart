@@ -51,20 +51,28 @@ class _Crumbs extends StatelessWidget {
           color: current ? theme.colorScheme.onSurface : muted,
         ),
       );
-      row.add(onTap == null
-          ? text
-          : InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(6),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: text,
+      row.add(
+        onTap == null
+            ? text
+            : InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  child: text,
+                ),
               ),
-            ));
+      );
       if (!current) row.add(Icon(Icons.chevron_right, size: 18, color: muted));
     }
+    // Rubnih 16px je content padding UNUTAR scrolla (uz titleSpacing: 0 na
+    // AppBaru) — inače se scrollabilni breadcrumb reže 16px od ruba ekrana.
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(mainAxisSize: MainAxisSize.min, children: row),
     );
   }
@@ -76,9 +84,14 @@ class ChannelOwnershipScreen extends StatefulWidget {
   /// (UC…), bez učitavanja channel.json — naziv se uzme iz claima.
   final String? channelId;
   final String? youtubeChannelId;
-  const ChannelOwnershipScreen({super.key, this.channelId, this.youtubeChannelId})
-      : assert(channelId != null || youtubeChannelId != null,
-            'Treba channelId (slug) ili youtubeChannelId (UC…)');
+  const ChannelOwnershipScreen({
+    super.key,
+    this.channelId,
+    this.youtubeChannelId,
+  }) : assert(
+         channelId != null || youtubeChannelId != null,
+         'Treba channelId (slug) ili youtubeChannelId (UC…)',
+       );
 
   @override
   State<ChannelOwnershipScreen> createState() => _ChannelOwnershipScreenState();
@@ -141,8 +154,9 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       // Native: vanjski browser → ai.domovina:// deep link natrag.
       await launchUrl(
         uri,
-        mode:
-            kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+        mode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
         webOnlyWindowName: kIsWeb ? '_self' : null,
       );
     } on ChannelOwnershipFailure catch (e) {
@@ -162,12 +176,13 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: _Crumbs([
           (l.ownershipCrumbHome, () => context.go('/')),
           if (widget.channelId != null)
             (
               _channel?.name ?? l.ownershipChannelFallback,
-              () => context.go('/c/${widget.channelId!.replaceAll('_', '-')}')
+              () => context.go('/c/${widget.channelId!.replaceAll('_', '-')}'),
             )
           else
             (l.ownershipMyChannels, () => context.go('/account/channels')),
@@ -196,18 +211,17 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     final title = _channel?.name ?? _claim?.channelTitle ?? ucId;
 
     if (!auth.isSignedIn) {
-      return [
-        _infoCard(context, l.ownershipSignInToClaim),
-      ];
+      return [_infoCard(context, l.ownershipSignInToClaim)];
     }
     if (ucId == null) {
       return [
         _infoCard(
-            context,
-            _error ??
-                (widget.channelId != null
-                    ? l.ownershipNoYoutubeId
-                    : l.ownershipChannelNotFound)),
+          context,
+          _error ??
+              (widget.channelId != null
+                  ? l.ownershipNoYoutubeId
+                  : l.ownershipChannelNotFound),
+        ),
       ];
     }
 
@@ -250,8 +264,10 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.ownershipNotOwnerTitle,
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              l.ownershipNotOwnerTitle,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Text(l.ownershipNotOwnerBody),
             const SizedBox(height: 12),
@@ -267,14 +283,18 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   }
 
   Future<void> _inviteOwnerWhatsApp(
-      String channelTitle, String slugDashed) async {
+    String channelTitle,
+    String slugDashed,
+  ) async {
     final link = 'https://domovina.ai/c/$slugDashed';
     final msg = appStrings.ownershipInviteMessage(channelTitle, link);
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
-    await launchUrl(uri,
-        mode: kIsWeb
-            ? LaunchMode.platformDefault
-            : LaunchMode.externalApplication);
+    await launchUrl(
+      uri,
+      mode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication,
+    );
   }
 
   // Step 1 — vlasništvo (YouTube OAuth).
@@ -291,17 +311,17 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       subtitle: reverify
           ? l.ownershipReverifySubtitle
           : claim?.isVerified == true
-              ? l.ownershipOwnershipVerifiedSubtitle
-              : l.ownershipSignInYoutubeSubtitle,
+          ? l.ownershipOwnershipVerifiedSubtitle
+          : l.ownershipSignInYoutubeSubtitle,
       note: done ? null : l.ownershipOwnershipNote,
       action: done
           ? null
           : FilledButton.icon(
               onPressed: _busy ? null : _startClaim,
               icon: const Icon(Icons.smart_display_outlined),
-              label: Text(reverify
-                  ? l.ownershipReverifyAction
-                  : l.ownershipLoginYoutube),
+              label: Text(
+                reverify ? l.ownershipReverifyAction : l.ownershipLoginYoutube,
+              ),
             ),
     );
   }
@@ -347,8 +367,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       action: locked
           ? null
           : FilledButton.icon(
-              onPressed:
-                  _busy ? null : () => context.push('/account/channels'),
+              onPressed: _busy ? null : () => context.push('/account/channels'),
               icon: const Icon(Icons.account_balance_wallet_outlined),
               label: Text(l.ownershipManageWallet),
             ),
@@ -387,8 +406,8 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     final Color circleColor = done
         ? Colors.green
         : locked
-            ? scheme.outlineVariant
-            : scheme.primary;
+        ? scheme.outlineVariant
+        : scheme.primary;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -400,8 +419,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
               backgroundColor: circleColor,
               child: done
                   ? const Icon(Icons.check, size: 18, color: Colors.white)
-                  : Text('$index',
-                      style: const TextStyle(color: Colors.white)),
+                  : Text('$index', style: const TextStyle(color: Colors.white)),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -410,32 +428,29 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
                 children: [
                   Text(title, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
                   if (note != null) ...[
                     const SizedBox(height: 10),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline,
-                            size: 16, color: scheme.onSurfaceVariant),
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: scheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             note,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: scheme.onSurfaceVariant),
                           ),
                         ),
                       ],
                     ),
                   ],
-                  if (action != null) ...[
-                    const SizedBox(height: 12),
-                    action,
-                  ],
+                  if (action != null) ...[const SizedBox(height: 12), action],
                 ],
               ),
             ),
@@ -446,22 +461,20 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
   }
 
   Widget _infoCard(BuildContext context, String text) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(text),
-        ),
-      );
+    child: Padding(padding: const EdgeInsets.all(16), child: Text(text)),
+  );
 
   Widget _errorBanner(BuildContext context, String text) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(text,
-            style: TextStyle(
-                color: Theme.of(context).colorScheme.onErrorContainer)),
-      );
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.errorContainer,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+    ),
+  );
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -502,14 +515,17 @@ class _YoutubeClaimCallbackScreenState
       return;
     }
     try {
-      final claim = await ChannelOwnershipService.instance
-          .completeClaim(code: code, state: state);
+      final claim = await ChannelOwnershipService.instance.completeClaim(
+        code: code,
+        state: state,
+      );
       if (!mounted) return;
       setState(() {
         _ok = claim.isVerified;
         _message = claim.isVerified
             ? appStrings.ownershipOwnershipConfirmedWithName(
-                claim.channelTitle ?? claim.youtubeChannelId)
+                claim.channelTitle ?? claim.youtubeChannelId,
+              )
             : appStrings.ownershipRequestReceivedWithStatus(claim.status.name);
         _done = true;
       });
@@ -537,8 +553,9 @@ class _YoutubeClaimCallbackScreenState
         children: [
           TextSpan(text: _message.substring(0, i)),
           TextSpan(
-              text: term,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+            text: term,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           TextSpan(text: _message.substring(i + term.length)),
         ],
       ),
@@ -560,11 +577,13 @@ class _YoutubeClaimCallbackScreenState
               if (!_done)
                 const CircularProgressIndicator()
               else
-                Icon(_ok ? Icons.verified : Icons.error_outline,
-                    size: 48,
-                    color: _ok
-                        ? Colors.green
-                        : Theme.of(context).colorScheme.error),
+                Icon(
+                  _ok ? Icons.verified : Icons.error_outline,
+                  size: 48,
+                  color: _ok
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.error,
+                ),
               const SizedBox(height: 16),
               _messageWidget(context),
               if (_done) ...[
@@ -648,8 +667,9 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
       await _load();
     } on ChannelOwnershipFailure catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -668,7 +688,8 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(ctx).colorScheme.error),
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l.ownershipRevokeAction),
           ),
@@ -680,13 +701,14 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
       await ChannelOwnershipService.instance.revokeClaim(c.id);
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.ownershipRevokedSnack)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.ownershipRevokedSnack)));
     } on ChannelOwnershipFailure catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -695,6 +717,7 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
     final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: _Crumbs([
           (l.ownershipCrumbHome, () => context.go('/')),
           (l.ownershipMyChannels, null),
@@ -707,23 +730,26 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Text(l.ownershipClaimedChannelsTitle,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l.ownershipClaimedChannelsTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   if (_claims.isEmpty)
                     _emptyClaims(context)
                   else
                     ..._claims.map(_claimTile),
                   const SizedBox(height: 24),
-                  Text(l.ownershipPayoutWalletsTitle,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l.ownershipPayoutWalletsTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     l.ownershipPayoutWalletsDesc,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   ..._wallets.map(_walletTile),
@@ -777,12 +803,14 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
             // Pinka "Zid podrške" kampanje — samo za verificirane kanale.
             if (c.isVerified)
               PopupMenuItem(
-                  value: 'campaigns',
-                  child: Text(appStrings.ownershipCampaignsMenu)),
+                value: 'campaigns',
+                child: Text(appStrings.ownershipCampaignsMenu),
+              ),
             if (needsReverify)
               PopupMenuItem(
-                  value: 'reverify',
-                  child: Text(appStrings.ownershipReverifyAction)),
+                value: 'reverify',
+                child: Text(appStrings.ownershipReverifyAction),
+              ),
             PopupMenuItem(
               value: 'revoke',
               child: Text(appStrings.ownershipRevokeMenu),
@@ -800,9 +828,11 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
       child: ListTile(
         leading: const Icon(Icons.account_balance_wallet_outlined),
         title: Text(_shortAddr(w.address)),
-        subtitle: Text(w.isVerified
-            ? appStrings.ownershipWalletDestVerified
-            : appStrings.ownershipWalletDest),
+        subtitle: Text(
+          w.isVerified
+              ? appStrings.ownershipWalletDestVerified
+              : appStrings.ownershipWalletDest,
+        ),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {
