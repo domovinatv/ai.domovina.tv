@@ -9,7 +9,9 @@ import 'package:flutter/services.dart';
 import '../../../../onboarding/ui/auth_sheet.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/locale_service.dart';
+import '../../../../widgets/account_chip.dart';
 import '../../../../widgets/language_toggle_button.dart';
+import '../../../../widgets/theme_toggle_button.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_public_contribution.dart';
 import '../models/pinka_slot.dart';
@@ -371,8 +373,13 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         // Naslov kampanje živi u tijelu ekrana — AppBar je generički da se
         // "Podrži …" ne pojavljuje duplo.
         title: Text(appStrings.pinkaWallTitle),
+        // Iste akcije kao home app bar (jezik/tema/profil) + share kampanje —
+        // korisnik se s doniraj ekrana prijavljuje i mijenja temu bez odlaska
+        // na home. AccountChip pokazuje "Prijava" (gost) ili avatar menu.
         actions: [
           const LanguageToggleButton(),
+          const SizedBox(width: 4),
+          const ThemeToggleButton(),
           if (_campaign != null) ...[
             const SizedBox(width: 4),
             IconButton(
@@ -382,6 +389,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
             ),
           ],
           const SizedBox(width: 4),
+          const AccountChip(),
+          const SizedBox(width: 8),
         ],
       ),
       body: _loading

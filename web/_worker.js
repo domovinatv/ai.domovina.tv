@@ -135,11 +135,27 @@ const ASSETLINKS_JSON = JSON.stringify([
   },
 ], null, 2);
 
+// Auth callback rute su ISKLJUČENE iz universal linkova: OAuth/magic-link
+// povratak (GoTrue → https://domovina.ai/auth/callback#…) je cross-origin
+// redirect pa bi ga iOS inače oteo i otvorio native app umjesto da web
+// prijava završi u Safariju. Native app ima vlastiti flow (ai.domovina://).
+// NB: Apple CDN + uređaji cachiraju AASA — promjena se propagira tek nakon
+// reinstalacije appa ili refresha (do ~tjedan dana).
 const AASA_JSON = JSON.stringify({
   applinks: {
     apps: [],
     details: [
-      { appID: '6SCK58757K.ai.domovina', paths: ['*'] },
+      {
+        appID: '6SCK58757K.ai.domovina',
+        components: [
+          { '/': '/auth/*', exclude: true, comment: 'web OAuth/magic-link callback ostaje u browseru' },
+          { '/': '/login-callback', exclude: true, comment: 'isti AuthCallbackScreen (legacy ruta)' },
+          { '/': '/youtube-claim/*', exclude: true, comment: 'Google OAuth callback za channel claim — web-only' },
+          { '/': '*' },
+        ],
+        // Legacy fallback za iOS < 13 (noviji iOS čita components).
+        paths: ['NOT /auth/*', 'NOT /login-callback', 'NOT /youtube-claim/*', '*'],
+      },
     ],
   },
   webcredentials: {

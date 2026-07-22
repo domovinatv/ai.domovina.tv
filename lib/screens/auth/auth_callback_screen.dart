@@ -106,7 +106,6 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
     if (AuthService.instance.isSignedIn) {
       _navigated = true;
       _timeoutTimer?.cancel();
-      log('AuthCallback: signed in → redirect /');
       final user = AuthService.instance.currentUser;
       if (user?.provider != null) {
         setLocalStorageString(lastProviderKey, user!.provider!.name);
@@ -117,8 +116,27 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
               user?.displayName ?? user?.email ?? appStrings.authUserFallback)),
         ),
       );
-      context.go('/');
+      context.go(_returnDestination());
     }
+  }
+
+  /// Ruta na koju se vraćamo nakon prijave — ona s koje je login krenuo
+  /// (spremljena u [authReturnToKey] prije OAuth redirecta), inače '/'.
+  /// Prihvaćamo samo same-origin apsolutni path ('/x…', ne '//host' ni
+  /// auth rute) da localStorage ne može postati open-redirect vektor.
+  String _returnDestination() {
+    final saved = getLocalStorageString(authReturnToKey);
+    setLocalStorageString(authReturnToKey, '');
+    var dest = '/';
+    if (saved != null &&
+        saved.startsWith('/') &&
+        !saved.startsWith('//') &&
+        !saved.startsWith('/auth/') &&
+        !saved.startsWith('/login-callback')) {
+      dest = saved;
+    }
+    log('AuthCallback: signed in → redirect $dest');
+    return dest;
   }
 
   void _retry() {
