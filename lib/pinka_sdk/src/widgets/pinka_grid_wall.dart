@@ -164,13 +164,32 @@ String _zoneNameForKey(AppLocalizations l, String? key, int zone) {
   };
 }
 
-/// Boje zona: tint brand navy palete (croBlue → svjetlije prema jezgri) — nikad
-/// cs.primary za brand-FILL (M3 dark ga izblijedi). Dijele zid i picker.
-List<Color> _zoneColors(int zoneCount) => List<Color>.generate(
-      math.max(zoneCount, 1),
-      (i) => Color.lerp(AppTheme.croBlue, Colors.white,
-          0.38 * i / math.max(zoneCount - 1, 1))!,
-    );
+/// Boje zona — premium dvobojna paleta, izmjena po PAR/NEPAR prstenu.
+///
+/// Dvije nijanse (brand navy = „uplata" + prigušeno zlato) se izmjenjuju svaki
+/// prsten pa je granica OŠTRA i kad je svjetlina slična (kritično na zoomu, gdje
+/// je isti-ton-plave bilo nečitljivo). Svaka se i produbljuje prema središtu
+/// (unutra = vrjednije). Samo dvije boje → premium, ne šareno. Zauzeto/held/
+/// odabrano imaju svoje boje (crvena / prigušena crvena / bijeli obrub s halom).
+/// Dijele je zid i fullscreen picker (jedan izvor istine).
+List<Color> _zoneColors(int zoneCount) {
+  const navyDeep = Color(0xFF0C2444); // vanjski navy (jeftinije)
+  const navyLite = Color(0xFF5A8AD0); // navy prema središtu
+  const goldDeep = Color(0xFF3E3115); // tamna bronca
+  const goldLite = Color(0xFFCBA24E); // antikno zlato / šampanjac
+  final n = math.max(zoneCount, 1);
+  return List<Color>.generate(n, (i) {
+    final t = n <= 1 ? 0.0 : i / (n - 1);
+    return i.isEven
+        ? Color.lerp(navyDeep, navyLite, t)!
+        : Color.lerp(goldDeep, goldLite, t)!;
+  });
+}
+
+/// Prigušena, opaque „rezervirano" crvena — jasno različita od pune prodane
+/// crvene i od zona (navy/zlato), neovisno o pozadini.
+Color _heldColor(ColorScheme cs) =>
+    Color.lerp(cs.tertiary, cs.surfaceContainerHighest, 0.5)!;
 
 class _PinkaGridWallState extends State<PinkaGridWall> {
   /// Server mod: ćelija (y*w+x) → mjesto koje NIJE slobodno.
@@ -527,7 +546,12 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                   onEnter: (e) => _setHover(_cellAt(e.localPosition, size)),
                   onHover: (e) => _setHover(_cellAt(e.localPosition, size)),
                   onExit: (_) => _setHover(null),
-                  child: GestureDetector(
+                  // Očisti hover na SVAKI dodir/klik: onHover ne pali dok je
+                  // gumb pritisnut, pa nakon brzog drag-a stara hover ćelija
+                  // ostane osvijetljena pored prave selekcije („dva odabrana").
+                  child: Listener(
+                    onPointerDown: (_) => _setHover(null),
+                    child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTapUp: (d) => _onTap(_cellAt(d.localPosition, size)),
                     child: Stack(
@@ -545,7 +569,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                               zoneOf: _zoneOf,
                               zoneColors: zoneColors,
                               soldColor: cs.tertiary,
-                              heldColor: cs.tertiary.withValues(alpha: 0.45),
+                              heldColor: _heldColor(cs),
                               blockedColor: cs.surfaceContainerHighest,
                               soldCells: _cellsInState(_SlotDraw.sold),
                               heldCells: _cellsInState(_SlotDraw.held),
@@ -560,9 +584,6 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                             height: _h,
                             hoverCell: _hoverCell,
                             selectedCell: _selectedCell,
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white
-                                : AppTheme.croBlue,
                           ),
                         ),
                         // Fullscreen picker: zoom + pan ispod nišana za
@@ -576,6 +597,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                           ),
                       ],
                     ),
+                  ),
                   ),
                 );
               },
@@ -776,14 +798,12 @@ class _OverlayPainter extends CustomPainter {
   final int height;
   final int? hoverCell;
   final int? selectedCell;
-  final Color color;
 
   _OverlayPainter({
     required this.width,
     required this.height,
     required this.hoverCell,
     required this.selectedCell,
-    required this.color,
   });
 
   Rect _cellRect(int cell, Size size) {
@@ -796,13 +816,23 @@ class _OverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Bijeli obrub s tamnim halom — čitljiv i na navy i na zlatnim zonama
+    // (neovisan o temi; croBlue-na-navy je prije nestajao).
     if (selectedCell != null) {
+      final r = _cellRect(selectedCell!, size).inflate(1);
       canvas.drawRect(
-        _cellRect(selectedCell!, size).inflate(0.5),
+        r,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = color,
+          ..strokeWidth = 3.5
+          ..color = Colors.black.withValues(alpha: 0.55),
+      );
+      canvas.drawRect(
+        r,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8
+          ..color = Colors.white,
       );
     }
     if (hoverCell != null && hoverCell != selectedCell) {
@@ -810,8 +840,8 @@ class _OverlayPainter extends CustomPainter {
         _cellRect(hoverCell!, size),
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = color.withValues(alpha: 0.8),
+          ..strokeWidth = 1.2
+          ..color = Colors.white.withValues(alpha: 0.75),
       );
     }
   }
@@ -819,8 +849,7 @@ class _OverlayPainter extends CustomPainter {
   @override
   bool shouldRepaint(_OverlayPainter oldDelegate) {
     return oldDelegate.hoverCell != hoverCell ||
-        oldDelegate.selectedCell != selectedCell ||
-        oldDelegate.color != color;
+        oldDelegate.selectedCell != selectedCell;
   }
 }
 
@@ -882,8 +911,8 @@ Future<String?> showPinkaGridPicker(
 /// je zaključa. Kao biranje pina na karti: nema sukoba gesti (pan/zoom idu
 /// InteractiveVieweru, nišan stoji), precizno je i usput razgledaš zauzete.
 ///
-/// Grid se crta na fiksnih [_kGridPx] logičkih piksela (10 px/ćelija na 120)
-/// pa zoom ostaje čitljiv; InteractiveViewer skalira taj layer.
+/// Grid child je TOČNO veličine viewporta (kvadrat `side`), pa je scale 1
+/// uvijek savršen fit; InteractiveViewer skalira taj layer za zoom.
 class _PinkaGridPickerScreen extends StatefulWidget {
   final PinkaSlotMap map;
   final List<PinkaSlot> slots;
@@ -898,8 +927,6 @@ class _PinkaGridPickerScreen extends StatefulWidget {
   @override
   State<_PinkaGridPickerScreen> createState() => _PinkaGridPickerScreenState();
 }
-
-const double _kGridPx = 1200;
 
 class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
   final _tc = TransformationController();
@@ -954,9 +981,11 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
   void _onTransform() {
     final side = _side;
     if (side == null) return;
+    // Grid child je točno `side` px (scale 1 = fit), pa je scena u prostoru
+    // ćelija 0..side. Središte viewporta → ćelija pod nišanom.
     final scene = _tc.toScene(Offset(side / 2, side / 2));
-    final cx = (scene.dx / _kGridPx * _w).floor().clamp(0, _w - 1);
-    final cy = (scene.dy / _kGridPx * _h).floor().clamp(0, _h - 1);
+    final cx = (scene.dx / side * _w).floor().clamp(0, _w - 1);
+    final cy = (scene.dy / side * _h).floor().clamp(0, _h - 1);
     final cell = cy * _w + cx;
     if (cell != _candidate) setState(() => _candidate = cell);
   }
@@ -970,16 +999,15 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
         tx, ty, 0, 1, //
       );
 
-  Matrix4 _initialMatrix(double side, double minScale, double maxScale) {
-    // S početnim odabirom: uleti na tu ćeliju; inače prikaži cijeli grid.
+  /// S početnim odabirom: uleti (scale 3) i centriraj tu ćeliju; inače
+  /// identitet = cijeli grid stane (child je već veličine viewporta).
+  Matrix4 _initialMatrix(double side) {
     final focus = _cellForKey(widget.initialSlotKey);
-    if (focus != null) {
-      final scale = (minScale * 4).clamp(minScale, maxScale);
-      final sx = ((focus % _w) + 0.5) / _w * _kGridPx;
-      final sy = ((focus ~/ _w) + 0.5) / _h * _kGridPx;
-      return _affine(scale, side / 2 - scale * sx, side / 2 - scale * sy);
-    }
-    return _affine(minScale, 0, 0); // fit: cijeli grid
+    if (focus == null) return Matrix4.identity();
+    const scale = 3.0;
+    final sx = ((focus % _w) + 0.5) / _w * side;
+    final sy = ((focus ~/ _w) + 0.5) / _h * side;
+    return _affine(scale, side / 2 - scale * sx, side / 2 - scale * sy);
   }
 
   @override
@@ -1002,13 +1030,11 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
                 final side =
                     math.min(constraints.maxWidth, constraints.maxHeight);
                 _side = side;
-                final minScale = side / _kGridPx;
-                final maxScale = minScale * 8;
                 if (!_inited) {
                   _inited = true;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!mounted) return;
-                    _tc.value = _initialMatrix(side, minScale, maxScale);
+                    _tc.value = _initialMatrix(side);
                     _onTransform();
                   });
                 }
@@ -1021,28 +1047,30 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
                         children: [
                           InteractiveViewer(
                             transformationController: _tc,
-                            minScale: minScale,
-                            maxScale: maxScale,
+                            minScale: 1,
+                            maxScale: 8,
                             // Dovoljno margine da SVAKA ćelija (i rubna) dođe
                             // pod središnji nišan.
-                            boundaryMargin: const EdgeInsets.all(_kGridPx),
+                            boundaryMargin: EdgeInsets.all(side),
+                            // Child je TOČNO veličine viewporta (side) pa je
+                            // scale 1 uvijek savršen fit — nema krhkog računa
+                            // skale sa stale dimenzijama.
                             child: SizedBox(
-                              width: _kGridPx,
-                              height: _kGridPx,
+                              width: side,
+                              height: side,
                               child: Stack(
                                 children: [
                                   RepaintBoundary(
                                     child: CustomPaint(
                                       isComplex: true,
-                                      size: const Size(_kGridPx, _kGridPx),
+                                      size: Size(side, side),
                                       painter: _GridPainter(
                                         width: _w,
                                         height: _h,
                                         zoneOf: _zoneOf,
                                         zoneColors: _colors,
                                         soldColor: cs.tertiary,
-                                        heldColor:
-                                            cs.tertiary.withValues(alpha: 0.45),
+                                        heldColor: _heldColor(cs),
                                         blockedColor:
                                             cs.surfaceContainerHighest,
                                         soldCells: _cells(_SlotDraw.sold),
@@ -1053,14 +1081,14 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
                                     ),
                                   ),
                                   CustomPaint(
-                                    size: const Size(_kGridPx, _kGridPx),
+                                    size: Size(side, side),
                                     painter: _PickerCandidatePainter(
                                       width: _w,
                                       height: _h,
                                       cell: _candidate,
-                                      color: theme.brightness == Brightness.dark
-                                          ? Colors.white
-                                          : AppTheme.croBlue,
+                                      // Bijela s tamnim halom — čitljiva i na
+                                      // navy i na zlatnim zonama.
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
