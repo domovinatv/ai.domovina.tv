@@ -5,8 +5,11 @@
  *  1. SPA routing — sve HTML rute vraćaju index.html (Flutter preuzima routing)
  *  2. Statički asseti — proslijeđuju se direktno iz Pages ASSETS bindinga
  *  3. OG/social tagovi — za /v/<ytId> i /?v=<ytId> fetchamo info.json + summary.json
- *     s CDN-a i injectamo bogate meta tagove PRIJE nego crawler dobije odgovor
- *  4. JSON-LD VideoObject — za Google rich-result kartice
+ *     s CDN-a i injectamo bogate meta tagove PRIJE nego crawler dobije odgovor.
+ *     Isti obrazac za /p/<slug> (person hub), /c/<slug> (kanal) i
+ *     /c/<slug>/doniraj|/support (Zid podrške).
+ *  4. JSON-LD — VideoObject (/v/), ProfilePage+Person (/p/), PodcastSeries+
+ *     ItemList (/c/), DonateAction (/c/…/doniraj) za Google rich-result kartice
  *  5. COEP/COOP headeri — potrebni za Flutter Skwasm (WebAssembly renderer)
  *
  * NAPOMENA: web/_redirects nije prisutan — worker je jedini izvor SPA routinga.
@@ -313,6 +316,41 @@ export default {
         return htmlResponse(injectPersonTags(indexHtml, slug, person), 'public, max-age=3600, s-maxage=3600');
       }
       // Slug ne postoji (404) ili API nedostupan — Flutter pokaže prazno stanje.
+      return htmlResponse(await (await indexPromise).text(), 'no-store');
+    }
+
+    // Kanal — /c/<slug> i Zid podrške /c/<slug>/doniraj | /c/<slug>/support.
+    // Slug koristi crtice, CDN channel id podvlake — isti mapping kao
+    // lib/router/app_router.dart (slug.replaceAll('-', '_')). Ostale /c/
+    // podrute (npr. /c/<slug>/claim) namjerno padaju na SPA fallback.
+    const cSupportMatch = path.match(/^\/c\/([a-z0-9-]{2,80})\/(doniraj|support)$/);
+    const cMatch = !cSupportMatch && path.match(/^\/c\/([a-z0-9-]{2,80})$/);
+    if (cSupportMatch || cMatch) {
+      const slug = (cSupportMatch || cMatch)[1];
+      const channelId = slug.replace(/-/g, '_');
+      const channel = await fetchJson(
+        `${CDN}/channels/data/${channelId}.json?${channelCacheBuster()}`,
+      );
+      if (channel && channel.name) {
+        const indexHtml = await (await indexPromise).text();
+        if (cSupportMatch) {
+          // Kampanja preko ISTOG RPC-a koji app zove (PinkaClient
+          // .campaignForSubject): refs = [UC… id, interni channel id].
+          const campaign = await fetchCampaign(
+            env,
+            [extractUcId(channel), channelId].filter(Boolean),
+          );
+          return htmlResponse(
+            injectSupportTags(indexHtml, slug, cSupportMatch[2], channel, campaign),
+            'public, max-age=3600, s-maxage=3600',
+          );
+        }
+        return htmlResponse(
+          injectChannelTags(indexHtml, slug, channel),
+          'public, max-age=3600, s-maxage=3600',
+        );
+      }
+      // Kanal ne postoji na CDN-u ili je listing nedostupan — plain SPA.
       return htmlResponse(await (await indexPromise).text(), 'no-store');
     }
 
@@ -701,6 +739,241 @@ ${jsonLd}
     .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '')
     .replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
   return html.replace('</head>', `${tags}\n</head>`);
+}
+
+/**
+ * Isti 5-min bucket cache-buster kao CdnConfig._channelCacheBuster u appu —
+ * channel listing JSON se mijenja s novim videima, a uploader stavlja
+ * Cache-Control: immutable na sve fajlove, pa bi bez bustera edge servirao
+ * stale listing danima.
+ */
+function channelCacheBuster() {
+  return 'v=' + Math.floor(Date.now() / 300000);
+}
+
+/** "https://www.youtube.com/channel/UCxxx" → "UCxxx"; null kad ga nema. */
+function extractUcId(channel) {
+  const m = (channel.youtube_channel_url || '').match(/\/channel\/(UC[A-Za-z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Aktivna pinka kampanja za kanal — isti SECURITY DEFINER RPC koji app zove
+ * (pinka_finance.active_campaign_for_subject; vidi lib/pinka_sdk/src/
+ * pinka_client.dart). Anon key je javan (već zapečen u web bundle preko
+ * --dart-define), ali ga držimo u Pages env (SUPABASE_URL + SUPABASE_ANON_KEY)
+ * da ne živi u gitu. Bez env-a ili na grešci → null: doniraj stranica i dalje
+ * dobije channel-specifične tagove, samo bez detalja kampanje.
+ */
+async function fetchCampaign(env, refs) {
+  const base = (env.SUPABASE_URL || '').replace(/\/+$/, '');
+  const key = env.SUPABASE_ANON_KEY;
+  if (!base || !key || refs.length === 0) return null;
+  try {
+    const res = await fetch(`${base}/rest/v1/rpc/active_campaign_for_subject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Profile': 'pinka_finance',
+      },
+      body: JSON.stringify({
+        p_subject_type: 'podcast_channel',
+        p_subject_refs: refs,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const row = Array.isArray(data) ? data[0] : data;
+    return row && typeof row === 'object' ? row : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Ukloni default <title>/meta/canonical/JSON-LD iz index.html prije injecta —
+ * crawler uvijek čita PRVI match pa naš mora biti jedini.
+ */
+function stripHeadMeta(html) {
+  return html
+    .replace(/<title>[^<]*<\/title>/gi, '')
+    .replace(/<meta\s[^>]*(?:property|name)=["'](?:og:|twitter:|article:|profile:|description)[^"']*["'][^>]*>/gi, '')
+    .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
+}
+
+/**
+ * OG/JSON-LD za kanal (/c/<slug>) — PodcastSeries s epizodama kao
+ * workExample. Podaci iz CDN channels/data/<id>.json.
+ */
+function injectChannelTags(indexHtml, slug, ch) {
+  const name = (ch.name || '').trim();
+  const epCount = Number(ch.video_count)
+    || (Array.isArray(ch.videos) ? ch.videos.length : 0);
+  const epWord = croPlural(epCount, 'epizoda', 'epizode', 'epizoda');
+  const hours = Math.round((Number(ch.total_duration_seconds) || 0) / 3600);
+  const hourWord = croPlural(hours, 'sat', 'sata', 'sati');
+
+  const title = `${name} — AI obrada podcasta`;
+  const chDesc = (ch.description || '').replace(/\s+/g, ' ').trim();
+  let desc = chDesc
+    || `AI-obrađene epizode kanala ${name}: ${epCount} ${epWord}`
+      + `${hours > 0 ? `, ≈ ${hours} ${hourWord} sadržaja` : ''}. `
+      + 'Sažetci, transkripti, poglavlja i Magisterium analiza na DOMOVINA.ai.';
+  if (desc.length > 300) desc = desc.slice(0, 297) + '…';
+
+  const canonical = `${SITE}/c/${slug}`;
+  // Avatari su kvadratni (900×900) → twitter "summary" kartica, ne large.
+  const image = ch.avatar_cover || ch.avatar_square || `${SITE}/og-image.png`;
+  const twitterCard = (ch.avatar_cover || ch.avatar_square)
+    ? 'summary' : 'summary_large_image';
+
+  const episodes = (Array.isArray(ch.videos) ? ch.videos : []).slice(0, 10);
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'PodcastSeries',
+    name,
+    url: canonical,
+    description: desc,
+    inLanguage: 'hr',
+    ...(image ? { image } : {}),
+    ...(ch.youtube_channel_url ? { sameAs: ch.youtube_channel_url } : {}),
+    publisher: {
+      '@type': 'Organization',
+      name: 'DOMOVINA.ai',
+      logo: { '@type': 'ImageObject', url: `${SITE}/icons/Icon-512.png` },
+    },
+    workExample: episodes.map((v) => ({
+      '@type': 'PodcastEpisode',
+      name: v.title_hr || v.title,
+      url: `${SITE}/v/${v.id}`,
+      ...(v.date ? { datePublished: v.date } : {}),
+      ...(v.duration_seconds
+        ? { timeRequired: isoDuration(v.duration_seconds) } : {}),
+    })),
+  }, null, 2);
+
+  const tags = `
+  <title>${x(title)} – DOMOVINA.ai</title>
+  <meta name="description" content="${x(desc)}">
+  <link rel="canonical" href="${canonical}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="hr_HR">
+  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:logo" content="${SITE}/og-image-square.png">
+  <meta property="og:title" content="${x(title)}">
+  <meta property="og:description" content="${x(desc)}">
+  <meta property="og:url" content="${canonical}">
+  <meta property="og:image" content="${x(image)}">
+  <meta property="og:image:alt" content="${x(name)} — DOMOVINA.ai">
+
+  <meta name="twitter:card" content="${twitterCard}">
+  <meta name="twitter:title" content="${x(title)}">
+  <meta name="twitter:description" content="${x(desc)}">
+  <meta name="twitter:image" content="${x(image)}">
+  <meta name="twitter:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta name="twitter:label1" content="Epizode">
+  <meta name="twitter:data1" content="${epCount}">${
+    hours > 0 ? `\n  <meta name="twitter:label2" content="Sadržaj">\n  <meta name="twitter:data2" content="≈ ${hours} ${hourWord}">` : ''
+  }
+
+  <script type="application/ld+json">
+${jsonLd}
+  </script>`;
+
+  return stripHeadMeta(indexHtml).replace('</head>', `${tags}\n</head>`);
+}
+
+/**
+ * OG/JSON-LD za Zid podrške (/c/<slug>/doniraj | /support) — DonateAction.
+ * NAMJERNO bez iznosa (mijenjaju se, a odgovor se edge-cachira 1h); opisujemo
+ * mehanizam (SEPA + on-chain EURe) i javnu Gnosis Safe adresu kampanje.
+ * Canonical uvijek /doniraj (HR primarna); og:url prati stvarni share path.
+ */
+function injectSupportTags(indexHtml, slug, variant, ch, campaign) {
+  const name = (ch.name || '').trim();
+  const canonical = `${SITE}/c/${slug}/doniraj`;
+  const ogUrl = `${SITE}/c/${slug}/${variant}`;
+
+  const campTitle = (campaign?.title || '').replace(/\s+/g, ' ').trim();
+  const title = campTitle || `Podrži ${name} — Zid podrške`;
+  const campDesc = (campaign?.description || '').replace(/\s+/g, ' ').trim();
+  let desc = campDesc
+    || `Podrži kanal ${name} izravno: SEPA uplata (EPC QR) ili on-chain EURe `
+      + 'donacija na javni Gnosis Safe kampanje. Svaki doprinos dobiva '
+      + 'kvadratić na Zidu podrške.';
+  if (desc.length > 300) desc = desc.slice(0, 297) + '…';
+
+  const cover = campaign?.cover_image_url || null;
+  const image = cover || ch.avatar_cover || ch.avatar_square
+    || `${SITE}/og-image.png`;
+  const twitterCard = cover ? 'summary_large_image' : 'summary';
+  const safe = (campaign?.destination_address || '').trim() || null;
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'DonateAction',
+    name: title,
+    description: desc,
+    url: canonical,
+    recipient: {
+      '@type': 'Organization',
+      name,
+      url: `${SITE}/c/${slug}`,
+      ...(ch.youtube_channel_url ? { sameAs: ch.youtube_channel_url } : {}),
+      ...(safe ? {
+        identifier: {
+          '@type': 'PropertyValue',
+          propertyID: 'gnosis-safe',
+          name: 'Gnosis Safe kampanje (EURe, chain 100)',
+          value: safe,
+        },
+      } : {}),
+    },
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: canonical,
+      actionPlatform: [
+        'https://schema.org/DesktopWebPlatform',
+        'https://schema.org/MobileWebPlatform',
+      ],
+    },
+    provider: { '@type': 'Organization', name: 'DOMOVINA.ai', url: SITE },
+  }, null, 2);
+
+  const tags = `
+  <title>${x(title)} – DOMOVINA.ai</title>
+  <meta name="description" content="${x(desc)}">
+  <link rel="canonical" href="${canonical}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="hr_HR">
+  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:logo" content="${SITE}/og-image-square.png">
+  <meta property="og:title" content="${x(title)}">
+  <meta property="og:description" content="${x(desc)}">
+  <meta property="og:url" content="${ogUrl}">
+  <meta property="og:image" content="${x(image)}">
+  <meta property="og:image:alt" content="${x(title)}">
+
+  <meta name="twitter:card" content="${twitterCard}">
+  <meta name="twitter:title" content="${x(title)}">
+  <meta name="twitter:description" content="${x(desc)}">
+  <meta name="twitter:image" content="${x(image)}">
+  <meta name="twitter:image:alt" content="${x(title)}">
+  <meta name="twitter:label1" content="Kanal">
+  <meta name="twitter:data1" content="${x(name)}">
+  <meta name="twitter:label2" content="Načini podrške">
+  <meta name="twitter:data2" content="SEPA · EURe (Gnosis)">
+
+  <script type="application/ld+json">
+${jsonLd}
+  </script>`;
+
+  return stripHeadMeta(indexHtml).replace('</head>', `${tags}\n</head>`);
 }
 
 function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId }) {
