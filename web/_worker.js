@@ -156,6 +156,16 @@ const AASA_JSON = JSON.stringify({
         // Legacy fallback za iOS < 13 (noviji iOS čita components).
         paths: ['NOT /auth/*', 'NOT /login-callback', 'NOT /youtube-claim/*', '*'],
       },
+      {
+        // airKUNA wallet — hvata SAMO donacijske linkove (/c/<slug>/...).
+        // Naveden nakon ai.domovina: kad su oba appa instalirana, glavni app
+        // ima prednost; airkuna-only korisnici dobivaju Doniraj flow.
+        // Android assetlinks za com.airkuna.wallet čeka signing cert prvog
+        // EAS builda (airkuna A4).
+        appID: '6SCK58757K.com.airkuna.wallet',
+        components: [{ '/': '/c/*', comment: 'domovina.ai kampanje → airKUNA Doniraj' }],
+        paths: ['/c/*'],
+      },
     ],
   },
   webcredentials: {
