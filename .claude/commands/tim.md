@@ -24,8 +24,10 @@ Zatim (primjeri za pane `%1` = dev1):
   `tmux send-keys -t %1 'Refaktoriraj X u fajlu Y. Kad završiš, ispiši SAŽETAK.' ; tmux send-keys -t %1 Enter`
 - **Pročitaj što radi / je li gotov:**
   `tmux capture-pane -t %1 -p -S -100`
-- **Potvrdi permission prompt** (pročitaj ga PRIJE potvrde!):
-  `tmux send-keys -t %1 Enter` (ili strelice pa Enter)
+- **Permission promptovi**: svi paneli rade s
+  `--dangerously-skip-permissions` pa ih u pravilu NEMA. Ako ipak iskoči
+  neki dijalog (npr. trust folder), pročitaj ga pa potvrdi:
+  `tmux send-keys -t %1 Enter`
 - **Očisti kontekst nakon završenog taska:**
   `tmux send-keys -t %1 '/clear' ; tmux send-keys -t %1 Enter`
   (za dugi task u tijeku radije `/compact`)
@@ -39,8 +41,9 @@ Zatim (primjeri za pane `%1` = dev1):
    30–60 s. Dev je gotov kad TUI opet čeka input (prazan prompt na dnu).
 3. **Ti si integrator**: ti radiš git commit/deploy i finalnu provjeru
    (`flutter analyze`), ne devovi — reci im to u svakom tasku.
-4. **U task uvijek uključi**: točne fajlove/opseg, definiciju gotovog i
-   "ne commitaj, ne deployaj".
+4. **U task uvijek uključi**: točne fajlove/opseg i definiciju gotovog.
+   (Devovi već kroz system prompt znaju: ne commitaju, ne deployaju,
+   završavaju SAŽETKOM — ne moraš to ponavljati.)
 5. Korisniku redovito daj kratak status: tko što radi, što je gotovo.
 
 ## Posao za raspodjelu
