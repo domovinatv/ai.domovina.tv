@@ -2386,6 +2386,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaPaymentConfirmedOnchain => 'Plaćanje je potvrđeno na lancu.';
 
   @override
+  String get pinkaDonateAgain => 'Doniraj još jednom';
+
+  @override
   String pinkaCopiedLabel(String label) {
     return 'Kopirano: $label';
   }
@@ -3153,4 +3156,59 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get pinkaGridTakenTitle => 'Ovaj je kvadratić već zauzet';
+
+  @override
+  String get pinkaSlotIntro =>
+      'Odaberi svoj kvadratić — bliže središtu, veći doprinos. Mjesto ti se rezervira dok traje uplata.';
+
+  @override
+  String pinkaSlotZoneFallback(int index) {
+    return 'Zona $index';
+  }
+
+  @override
+  String get pinkaSlotStatusHeld => 'Rezervirano — netko upravo plaća';
+
+  @override
+  String get pinkaSlotStatusBlocked => 'Ovo mjesto nije u ponudi';
+
+  @override
+  String get pinkaSlotHeldTitle => 'Kvadratić je rezerviran';
+
+  @override
+  String get pinkaSlotHeldBody =>
+      'Netko ga upravo plaća. Ako uplata ne sjedne, kvadratić se vraća u ponudu — pokušaj kasnije ili odaberi drugi.';
+
+  @override
+  String pinkaSlotPriceLocked(String price) {
+    return 'Cijena mjesta: $price €';
+  }
+
+  @override
+  String get pinkaSlotTopUpHint =>
+      'Možeš dati i više — manje od cijene mjesta ne.';
+
+  @override
+  String get pinkaSlotTopUpLabel => 'Iznos';
+
+  @override
+  String get pinkaSlotClear => 'Odustani';
+
+  @override
+  String pinkaSlotBelowPrice(String price) {
+    return 'Iznos ne smije biti manji od cijene mjesta ($price €).';
+  }
+
+  @override
+  String get pinkaSlotTakenError =>
+      'Netko je bio brži — taj je kvadratić upravo zauzet. Odaberi drugi.';
+
+  @override
+  String pinkaSlotHoldCountdown(String time) {
+    return 'Mjesto ti je rezervirano još $time.';
+  }
+
+  @override
+  String get pinkaSlotHoldExpired =>
+      'Rezervacija je istekla, ali uplata i dalje vrijedi — kad sjedne, dobivaš isti kvadratić ako je slobodan, inače najbliži u istoj ili skupljoj zoni.';
 }

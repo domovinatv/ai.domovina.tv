@@ -1,6 +1,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_contribution_intent.dart';
+import '../models/pinka_slot.dart';
 import '../pinka_client.dart';
 import '../pinka_config.dart';
 import '../util/pinka_intent_status.dart';
@@ -23,7 +25,10 @@ class PinkaContributePanel extends StatefulWidget {
   final PinkaCampaign campaign;
   final PinkaClient client;
   final PinkaConfig config;
-  final VoidCallback? onPaid;
+
+  /// Poziva se kad uplata sjedne — s iznosom i javnim imenom donatora
+  /// (null = anonimno), da host može animirati "dolazak" doprinosa na zid.
+  final void Function(int amountCents, String? displayName)? onPaid;
 
   /// Host hook: display-name prijavljenog korisnika ili `null` (gost/anon).
   /// Kad je ne-null, ime donatora se predispuni; kad je null, uz polje se
@@ -41,6 +46,22 @@ class PinkaContributePanel extends StatefulWidget {
   final int? presetAmountCents;
   final int presetAmountTick;
 
+  /// Mjesto odabrano na zidu (`'60:60'`) — kad je postavljeno, iznos je
+  /// ZAKLJUČAN na [selectedSlotPriceCents] (nadoplata gore je OK, ispod nije:
+  /// server odbija s `amount_below_slot_price`).
+  final String? selectedSlotKey;
+  final int? selectedSlotPriceCents;
+
+  /// Ljudski čitljiv opis odabranog mjesta ("Zlatni krug · 60 · 60").
+  final String? selectedSlotLabel;
+
+  /// Korisnik odustaje od mjesta i vraća se na obične iznose.
+  final VoidCallback? onClearSlot;
+
+  /// Mjesto je preoteto dok je korisnik birao — host osvježi mapu i očisti
+  /// odabir. Prima ključ mjesta koje je palo (može biti `null`).
+  final void Function(String? slotKey)? onSlotConflict;
+
   const PinkaContributePanel({
     super.key,
     required this.campaign,
@@ -51,6 +72,11 @@ class PinkaContributePanel extends StatefulWidget {
     this.onSignInRequested,
     this.presetAmountCents,
     this.presetAmountTick = 0,
+    this.selectedSlotKey,
+    this.selectedSlotPriceCents,
+    this.selectedSlotLabel,
+    this.onClearSlot,
+    this.onSlotConflict,
   });
 
   @override
@@ -87,7 +113,25 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   PinkaIntentStatus? _intentStatus;
   Timer? _statusTimer;
 
+  /// Do kada je mjesto rezervirano (hold) — odbrojava se ispod QR-a.
+  DateTime? _holdExpiresAt;
+  Timer? _holdTimer;
+
   PinkaCampaign get _c => widget.campaign;
+
+  bool get _hasSlot => widget.selectedSlotKey != null;
+
+  /// Ime kako će pisati na zidu — null za anonimne/prazno polje.
+  String? get _publicDisplayName {
+    if (_anonymous) return null;
+    final n = _nameCtrl.text.trim();
+    return n.isEmpty ? null : n;
+  }
+
+  /// Donja granica iznosa: minimum kampanje, a uz odabrano mjesto i njegova
+  /// cijena (server odbija manjak s `amount_below_slot_price`).
+  int get _minCents =>
+      math.max(_c.minContributionCents, widget.selectedSlotPriceCents ?? 0);
 
   @override
   void initState() {
@@ -97,7 +141,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     }
     _customFocus.addListener(_onCustomFocus);
     _prefillFromAuth();
-    if (widget.presetAmountCents != null) {
+    if (widget.selectedSlotPriceCents != null) {
+      _applyPresetAmount(widget.selectedSlotPriceCents!);
+    } else if (widget.presetAmountCents != null) {
       _applyPresetAmount(widget.presetAmountCents!);
     }
   }
@@ -105,7 +151,11 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   @override
   void didUpdateWidget(covariant PinkaContributePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.presetAmountTick != oldWidget.presetAmountTick &&
+    // Novo mjesto → iznos se zaključava na njegovu cijenu.
+    if (widget.selectedSlotKey != oldWidget.selectedSlotKey &&
+        widget.selectedSlotPriceCents != null) {
+      setState(() => _applyPresetAmount(widget.selectedSlotPriceCents!));
+    } else if (widget.presetAmountTick != oldWidget.presetAmountTick &&
         widget.presetAmountCents != null) {
       setState(() => _applyPresetAmount(widget.presetAmountCents!));
     }
@@ -115,7 +165,11 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// (npr. skuplje zone zida) upišu se u "Ostalo" da UI odražava odabir.
   void _applyPresetAmount(int cents) {
     _amountCents = cents;
-    if (_presetsCents.contains(cents)) {
+    // Uz odabrano mjesto nema čipova, pa polje MORA pokazati iznos — inače bi
+    // ostalo prazno kad se cijena zone poklopi s presetom.
+    if (_hasSlot) {
+      _customCtrl.text = fmtEur(cents);
+    } else if (_presetsCents.contains(cents)) {
       _customCtrl.clear();
     } else {
       _customCtrl.text = fmtEur(cents);
@@ -154,6 +208,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   @override
   void dispose() {
     _statusTimer?.cancel();
+    _holdTimer?.cancel();
     _customFocus.dispose();
     _customCtrl.dispose();
     _nameCtrl.dispose();
@@ -166,37 +221,74 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     if (c != null) setState(() => _amountCents = c);
   }
 
-  // ── SEPA ───────────────────────────────────────────────────────────────
-  Future<void> _submitSepa() async {
-    if (_amountCents < _c.minContributionCents) {
-      setState(() =>
-          _error = appStrings.pinkaMinAmount(fmtEur(_c.minContributionCents)));
-      return;
-    }
+  /// Iznos ispod donje granice → poruka koja kaže ZAŠTO (cijena mjesta vs.
+  /// minimum kampanje). Vraća `true` kad je iznos u redu.
+  bool _validateAmount({required bool onchain}) {
+    if (_amountCents >= _minCents) return true;
+    final msg = _hasSlot
+        ? appStrings.pinkaSlotBelowPrice(fmtEur(_minCents))
+        : appStrings.pinkaMinAmount(fmtEur(_minCents));
     setState(() {
-      _phase = _Phase.creating;
-      _error = null;
+      if (onchain) {
+        _walletNote = msg;
+      } else {
+        _error = msg;
+      }
     });
+    return false;
+  }
+
+  /// Kreira pending doprinos (+ rezervira mjesto ako je odabrano). Vraća
+  /// `null` kad je mjesto preoteto — panel je tada već prikazao poruku i
+  /// javio hostu da osvježi mapu.
+  Future<PinkaContributionIntent?> _createContribution() async {
     try {
-      final intent = await widget.client.contribute(
+      return await widget.client.contribute(
         campaignId: _c.id,
         amountCents: _amountCents,
         displayName: _anonymous ? null : _nameCtrl.text,
         message: _anonymous ? null : _msgCtrl.text,
         anonymous: _anonymous,
+        slotKeys: widget.selectedSlotKey == null
+            ? null
+            : [widget.selectedSlotKey!],
       );
-      if (!mounted) return;
+    } on PinkaSlotTaken catch (e) {
+      if (!mounted) return null;
+      setState(() {
+        _phase = _Phase.idle;
+        _walletPhase = _WalletPhase.idle;
+        _error = appStrings.pinkaSlotTakenError;
+        _walletNote = appStrings.pinkaSlotTakenError;
+      });
+      widget.onSlotConflict?.call(e.slotKey ?? widget.selectedSlotKey);
+      return null;
+    }
+  }
+
+  // ── SEPA ───────────────────────────────────────────────────────────────
+  Future<void> _submitSepa() async {
+    if (!_validateAmount(onchain: false)) return;
+    setState(() {
+      _phase = _Phase.creating;
+      _error = null;
+    });
+    try {
+      final intent = await _createContribution();
+      if (intent == null || !mounted) return;
       setState(() {
         _intent = intent;
         _phase = _Phase.awaiting;
       });
       _startStatusPolling(intent);
+      _startHoldCountdown(intent.holdExpiresAt);
       final paid = await widget.client.waitForPaid(intent.contributionId);
       if (!mounted) return;
       _statusTimer?.cancel();
+      _holdTimer?.cancel();
       if (paid) {
         setState(() => _phase = _Phase.paid);
-        widget.onPaid?.call();
+        widget.onPaid?.call(_amountCents, _publicDisplayName);
       }
     } catch (e) {
       if (!mounted) return;
@@ -205,6 +297,19 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         _error = appStrings.pinkaPaymentCreateFailed;
       });
     }
+  }
+
+  /// Odbrojavanje holda ispod QR-a — donator vidi koliko mu vremena mjesto
+  /// stoji rezervirano. Istek NIJE gubitak novca: kasna uplata se i dalje
+  /// kreditira, a mjesto se vraća ili premješta u istu/skuplju zonu.
+  void _startHoldCountdown(DateTime? expiresAt) {
+    _holdTimer?.cancel();
+    if (expiresAt == null) return;
+    setState(() => _holdExpiresAt = expiresAt);
+    _holdTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {}); // samo osvježi prikaz preostalog vremena
+    });
   }
 
   /// Polla rail status endpoint (`/api/intents/<sid>`) svake 3 s dok QR čeka
@@ -232,16 +337,22 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   Future<void> _payFromWallet() async {
     final dest = _c.destinationAddress;
     if (dest == null) return;
-    if (_amountCents < _c.minContributionCents) {
-      setState(() =>
-          _walletNote = appStrings.pinkaMinAmount(fmtEur(_c.minContributionCents)));
-      return;
-    }
+    if (!_validateAmount(onchain: true)) return;
     setState(() {
       _walletNote = null;
       _walletPhase = _WalletPhase.connecting;
     });
     try {
+      // Uz odabrano mjesto uplata mora kreditirati KONKRETAN pending doprinos
+      // (onaj koji drži hold). Bez toga backend inserta novi doprinos, hold
+      // istekne i korisnik plati bez kvadratića.
+      String? contributionId;
+      if (_hasSlot) {
+        final intent = await _createContribution();
+        if (intent == null || !mounted) return;
+        contributionId = intent.contributionId;
+        setState(() => _holdExpiresAt = intent.holdExpiresAt);
+      }
       // Osiguraj povezani novčanik. Prvi put (bez keša) ovo radi full-page
       // handoff na wallet.domovina.ai i ne vrati se — korisnik se vrati i
       // ponovno tapne "Plati" (tada je identitet keširan pa je instant).
@@ -257,13 +368,16 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       setState(() => _walletPhase = _WalletPhase.confirming);
       // Poll verifier dok tx ne mine + kreditira (~Gnosis 5s blokovi).
       for (var i = 0; i < 20; i++) {
-        final r = await widget.client
-            .confirmOnchain(campaignId: _c.id, txHash: txHash);
+        final r = await widget.client.confirmOnchain(
+          campaignId: _c.id,
+          txHash: txHash,
+          contributionId: contributionId,
+        );
         if (r.reverted) throw StateError('reverted');
         if (r.isCredited) {
           if (!mounted) return;
           setState(() => _phase = _Phase.paid);
-          widget.onPaid?.call();
+          widget.onPaid?.call(_amountCents, _publicDisplayName);
           return;
         }
         await Future<void>.delayed(const Duration(seconds: 3));
@@ -359,6 +473,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _amountPicker(ThemeData theme) {
+    // Odabrano mjesto ima FIKSNU cijenu — preset čipovi bi lagali da je iznos
+    // slobodan izbor. Nadoplata gore ostaje moguća kroz "Ostalo".
+    if (_hasSlot) return _slotAmountLock(theme);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -390,6 +507,77 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Zaključan iznos uz odabrano mjesto: što je odabrano, koliko stoji, kako
+  /// odustati — i polje za nadoplatu (iznad cijene je uvijek dopušteno).
+  Widget _slotAmountLock(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final price = widget.selectedSlotPriceCents ?? _minCents;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.grid_view_rounded, size: 16, color: cs.tertiary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  widget.selectedSlotLabel ?? widget.selectedSlotKey!,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (widget.onClearSlot != null)
+                TextButton(
+                  onPressed: widget.onClearSlot,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  child: Text(appStrings.pinkaSlotClear),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            appStrings.pinkaSlotPriceLocked(fmtEur(price)),
+            style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800, color: cs.tertiary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            appStrings.pinkaSlotTopUpHint,
+            style:
+                theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: 130,
+            child: TextField(
+              controller: _customCtrl,
+              focusNode: _customFocus,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [_eurAmountFormatter],
+              decoration: InputDecoration(
+                isDense: true,
+                suffixText: '€',
+                labelText: appStrings.pinkaSlotTopUpLabel,
+              ),
+              onChanged: _setAmountFromCustom,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -592,8 +780,39 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           multiline: true,
         ),
         const SizedBox(height: 12),
+        _holdCountdown(theme),
         _sepaProgress(theme),
       ],
+    );
+  }
+
+  /// "Mjesto ti je rezervirano još MM:SS". Nakon isteka NE prijeti gubitkom
+  /// novca — kasna uplata se i dalje kreditira, pa je poruka smirujuća.
+  Widget _holdCountdown(ThemeData theme) {
+    final until = _holdExpiresAt;
+    if (until == null || !_hasSlot) return const SizedBox.shrink();
+    final left = until.difference(DateTime.now());
+    final cs = theme.colorScheme;
+    final expired = left.isNegative;
+    final text = expired
+        ? appStrings.pinkaSlotHoldExpired
+        : appStrings.pinkaSlotHoldCountdown(_fmtDuration(left));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(expired ? Icons.info_outline : Icons.lock_clock,
+              size: 14, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(text,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: cs.onSurfaceVariant)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -824,8 +1043,33 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         Text(appStrings.pinkaPaymentConfirmedOnchain,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        FilledButton.tonalIcon(
+          onPressed: _resetForAnother,
+          icon: const Icon(Icons.replay, size: 18),
+          label: Text(appStrings.pinkaDonateAgain),
+        ),
       ],
     );
+  }
+
+  /// "Doniraj još jednom": natrag na obrazac za novi intent. Ime i iznos
+  /// ostaju (vjerojatno isti donator), poruka se čisti (potrošena na zidu),
+  /// odabir mjesta se pušta hostu — to je mjesto sad zauzeto.
+  void _resetForAnother() {
+    _statusTimer?.cancel();
+    _holdTimer?.cancel();
+    widget.onClearSlot?.call();
+    setState(() {
+      _phase = _Phase.idle;
+      _walletPhase = _WalletPhase.idle;
+      _intent = null;
+      _intentStatus = null;
+      _holdExpiresAt = null;
+      _error = null;
+      _walletNote = null;
+      _msgCtrl.clear();
+    });
   }
 
   Widget _qrBox(String data) {
@@ -845,6 +1089,14 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       ),
     );
   }
+}
+
+/// H:MM:SS za holdove duže od sata (SEPA intent živi 24 h), inače MM:SS.
+String _fmtDuration(Duration d) {
+  final h = d.inHours;
+  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return h > 0 ? '$h:$m:$s' : '$m:$s';
 }
 
 /// Dozvoli samo valjani EUR iznos u tipkanju: znamenke + najviše jedan

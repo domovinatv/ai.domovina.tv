@@ -2955,6 +2955,10 @@
   "@pinkaPaymentConfirmedOnchain": {
     "description": "Potvrda da je uplata zabilježena na lancu."
   },
+  "pinkaDonateAgain": "Doniraj još jednom",
+  "@pinkaDonateAgain": {
+    "description": "Gumb na ekranu zahvale koji vraća obrazac za novu donaciju."
+  },
   "pinkaCopiedLabel": "Kopirano: {label}",
   "@pinkaCopiedLabel": {
     "description": "SnackBar potvrda kopiranja vrijednosti (IBAN/adresa/opis).",
@@ -3893,5 +3897,81 @@
   "pinkaGridTakenTitle": "Ovaj je kvadratić već zauzet",
   "@pinkaGridTakenTitle": {
     "description": "Naslov bottom sheeta kad korisnik tapne zauzeti kvadratić (prikazuje se donator)."
+  },
+  "pinkaSlotIntro": "Odaberi svoj kvadratić — bliže središtu, veći doprinos. Mjesto ti se rezervira dok traje uplata.",
+  "@pinkaSlotIntro": {
+    "description": "Uvodna rečenica iznad zida kad kampanja ima pravu mapu mjesta (server rezervira kvadratić)."
+  },
+  "pinkaSlotZoneFallback": "Zona {index}",
+  "@pinkaSlotZoneFallback": {
+    "description": "Rezervni naziv zone kad backend pošalje ključ koji aplikacija još ne poznaje.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "pinkaSlotStatusHeld": "Rezervirano — netko upravo plaća",
+  "@pinkaSlotStatusHeld": {
+    "description": "Redak ispod zida kad je pokazivač nad kvadratićem u stanju „held”."
+  },
+  "pinkaSlotStatusBlocked": "Ovo mjesto nije u ponudi",
+  "@pinkaSlotStatusBlocked": {
+    "description": "Redak ispod zida kad je pokazivač nad kvadratićem koji je organizator izuzeo iz ponude."
+  },
+  "pinkaSlotHeldTitle": "Kvadratić je rezerviran",
+  "@pinkaSlotHeldTitle": {
+    "description": "Naslov bottom sheeta kad korisnik tapne rezervirani (još neplaćeni) kvadratić."
+  },
+  "pinkaSlotHeldBody": "Netko ga upravo plaća. Ako uplata ne sjedne, kvadratić se vraća u ponudu — pokušaj kasnije ili odaberi drugi.",
+  "@pinkaSlotHeldBody": {
+    "description": "Objašnjenje u bottom sheetu za rezervirani kvadratić."
+  },
+  "pinkaSlotPriceLocked": "Cijena mjesta: {price} €",
+  "@pinkaSlotPriceLocked": {
+    "description": "Zaključan iznos u panelu za uplatu kad je odabran kvadratić.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pinkaSlotTopUpHint": "Možeš dati i više — manje od cijene mjesta ne.",
+  "@pinkaSlotTopUpHint": {
+    "description": "Napomena uz zaključan iznos: nadoplata je dopuštena, manjak nije."
+  },
+  "pinkaSlotTopUpLabel": "Iznos",
+  "@pinkaSlotTopUpLabel": {
+    "description": "Oznaka polja za iznos kad je odabrano mjesto (umjesto preset čipova)."
+  },
+  "pinkaSlotClear": "Odustani",
+  "@pinkaSlotClear": {
+    "description": "Gumb koji poništava odabir kvadratića i vraća obične iznose."
+  },
+  "pinkaSlotBelowPrice": "Iznos ne smije biti manji od cijene mjesta ({price} €).",
+  "@pinkaSlotBelowPrice": {
+    "description": "Pogreška kad je upisani iznos ispod cijene odabranog kvadratića.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pinkaSlotTakenError": "Netko je bio brži — taj je kvadratić upravo zauzet. Odaberi drugi.",
+  "@pinkaSlotTakenError": {
+    "description": "Pogreška kad server odbije rezervaciju jer je mjesto u međuvremenu zauzeto (409 slot_taken)."
+  },
+  "pinkaSlotHoldCountdown": "Mjesto ti je rezervirano još {time}.",
+  "@pinkaSlotHoldCountdown": {
+    "description": "Odbrojavanje rezervacije ispod SEPA QR-a.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pinkaSlotHoldExpired": "Rezervacija je istekla, ali uplata i dalje vrijedi — kad sjedne, dobivaš isti kvadratić ako je slobodan, inače najbliži u istoj ili skupljoj zoni.",
+  "@pinkaSlotHoldExpired": {
+    "description": "Poruka nakon isteka holda: kasna uplata se i dalje kreditira (mark_contribution_paid prihvaća istekli doprinos)."
   }
 }

@@ -3920,6 +3920,12 @@ abstract class AppLocalizations {
   /// **'Plaćanje je potvrđeno na lancu.'**
   String get pinkaPaymentConfirmedOnchain;
 
+  /// Gumb na ekranu zahvale koji vraća obrazac za novu donaciju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Doniraj još jednom'**
+  String get pinkaDonateAgain;
+
   /// SnackBar potvrda kopiranja vrijednosti (IBAN/adresa/opis).
   ///
   /// In hr, this message translates to:
@@ -5095,6 +5101,90 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Ovaj je kvadratić već zauzet'**
   String get pinkaGridTakenTitle;
+
+  /// Uvodna rečenica iznad zida kad kampanja ima pravu mapu mjesta (server rezervira kvadratić).
+  ///
+  /// In hr, this message translates to:
+  /// **'Odaberi svoj kvadratić — bliže središtu, veći doprinos. Mjesto ti se rezervira dok traje uplata.'**
+  String get pinkaSlotIntro;
+
+  /// Rezervni naziv zone kad backend pošalje ključ koji aplikacija još ne poznaje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zona {index}'**
+  String pinkaSlotZoneFallback(int index);
+
+  /// Redak ispod zida kad je pokazivač nad kvadratićem u stanju „held”.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervirano — netko upravo plaća'**
+  String get pinkaSlotStatusHeld;
+
+  /// Redak ispod zida kad je pokazivač nad kvadratićem koji je organizator izuzeo iz ponude.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovo mjesto nije u ponudi'**
+  String get pinkaSlotStatusBlocked;
+
+  /// Naslov bottom sheeta kad korisnik tapne rezervirani (još neplaćeni) kvadratić.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kvadratić je rezerviran'**
+  String get pinkaSlotHeldTitle;
+
+  /// Objašnjenje u bottom sheetu za rezervirani kvadratić.
+  ///
+  /// In hr, this message translates to:
+  /// **'Netko ga upravo plaća. Ako uplata ne sjedne, kvadratić se vraća u ponudu — pokušaj kasnije ili odaberi drugi.'**
+  String get pinkaSlotHeldBody;
+
+  /// Zaključan iznos u panelu za uplatu kad je odabran kvadratić.
+  ///
+  /// In hr, this message translates to:
+  /// **'Cijena mjesta: {price} €'**
+  String pinkaSlotPriceLocked(String price);
+
+  /// Napomena uz zaključan iznos: nadoplata je dopuštena, manjak nije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Možeš dati i više — manje od cijene mjesta ne.'**
+  String get pinkaSlotTopUpHint;
+
+  /// Oznaka polja za iznos kad je odabrano mjesto (umjesto preset čipova).
+  ///
+  /// In hr, this message translates to:
+  /// **'Iznos'**
+  String get pinkaSlotTopUpLabel;
+
+  /// Gumb koji poništava odabir kvadratića i vraća obične iznose.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odustani'**
+  String get pinkaSlotClear;
+
+  /// Pogreška kad je upisani iznos ispod cijene odabranog kvadratića.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iznos ne smije biti manji od cijene mjesta ({price} €).'**
+  String pinkaSlotBelowPrice(String price);
+
+  /// Pogreška kad server odbije rezervaciju jer je mjesto u međuvremenu zauzeto (409 slot_taken).
+  ///
+  /// In hr, this message translates to:
+  /// **'Netko je bio brži — taj je kvadratić upravo zauzet. Odaberi drugi.'**
+  String get pinkaSlotTakenError;
+
+  /// Odbrojavanje rezervacije ispod SEPA QR-a.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesto ti je rezervirano još {time}.'**
+  String pinkaSlotHoldCountdown(String time);
+
+  /// Poruka nakon isteka holda: kasna uplata se i dalje kreditira (mark_contribution_paid prihvaća istekli doprinos).
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervacija je istekla, ali uplata i dalje vrijedi — kad sjedne, dobivaš isti kvadratić ako je slobodan, inače najbliži u istoj ili skupljoj zoni.'**
+  String get pinkaSlotHoldExpired;
 }
 
 class _AppLocalizationsDelegate

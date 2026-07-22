@@ -1,33 +1,58 @@
 library;
 
+import 'dart:math' as math;
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../../main.dart' show log;
 import '../../../../theme/app_theme.dart';
 import '../models/pinka_public_contribution.dart';
+import '../models/pinka_slot.dart';
 import '../util/pinka_money.dart';
 import 'pinka_common.dart';
 
-/// Vizualni "zid" od 120×120 kvadratića: donacijom kupuješ svoj kvadratić.
-/// 10 koncentričnih cjenovnih prstenova (rub 1 € → jezgra 1000 €), portirano
-/// iz pixel-grid-v1 billboard buildera. Crta se kao JEDAN CustomPaint pass
-/// (nikad 14.400 widgeta); hover/selekcija idu kroz zaseban overlay painter
-/// iza RepaintBoundaryja da ne repaintaju bazu.
+/// Vizualni "zid" kvadratića: donacijom kupuješ svoj kvadratić. Crta se kao
+/// JEDAN CustomPaint pass (nikad 14.400 widgeta); hover/selekcija idu kroz
+/// zaseban overlay painter iza RepaintBoundaryja da ne repaintaju bazu.
 ///
-/// Faza 1 = prezentacija: doprinosi se na ćelije mapiraju deterministički na
-/// klijentu (hash id-a unutar najskupljeg prstena koji iznos pokriva).
-/// TODO: prava rezervacija kvadratića traži `cell_x`/`cell_y` kolone u
-/// `contributions` + unique constraint — backend faza 2 u domovina-api.
+/// **Dva izvora podataka, bez feature flaga:**
+/// - [map] + [slots] ne-null → server je izvor istine. Mjesto se stvarno
+///   rezervira (`slot_maps`/`slot_zones`/`slots`, migracija 20260722120000),
+///   geometrija zona se izvodi iz mape, a stanja su tri: slobodno / `held` /
+///   `sold`.
+/// - [slots] `null` (kampanja nema mapu) → legacy prikaz: doprinosi se na
+///   ćelije mapiraju deterministički na klijentu. Nitko ništa ne posjeduje,
+///   ali zid izgleda živo. Uključivanje = seed mape na backendu.
 class PinkaGridWall extends StatefulWidget {
+  /// Legacy izvor (kad kampanja nema mapu mjesta).
   final List<PinkaPublicContribution> contributions;
 
-  /// Tap na SLOBODAN kvadratić — host postavi iznos u panel za uplatu.
+  /// Mapa mjesta kampanje; `null` → legacy prikaz.
+  final PinkaSlotMap? map;
+
+  /// Zauzeta mjesta (view vraća samo `state <> 'free'`); `null` → legacy.
+  final List<PinkaSlot>? slots;
+
+  /// Mjesto koje host trenutno drži odabranim (`'60:60'`) — selekcijom
+  /// upravlja host jer je ona vezana uz panel za uplatu.
+  final String? selectedSlotKey;
+
+  /// Tap na SLOBODNO mjesto (server mod).
+  final void Function(String slotKey, int priceCents, String zoneName)?
+      onSlotTap;
+
+  /// Tap na slobodan kvadratić u LEGACY modu — samo predlaže iznos.
   final void Function(int amountCents, String zoneName)? onZoneTap;
 
   const PinkaGridWall({
     super.key,
     required this.contributions,
+    this.map,
+    this.slots,
+    this.selectedSlotKey,
+    this.onSlotTap,
     this.onZoneTap,
   });
 
@@ -37,10 +62,10 @@ class PinkaGridWall extends StatefulWidget {
 
 const int _gridSide = 120;
 
-/// Prsten zida: [startLayer] = udaljenost od ruba od koje prsten počinje,
-/// [priceCents] = cijena kvadratića. Poredano izvana (0) prema jezgri (9);
-/// geometrija identična pixel-grid-v1 `_zones`, cijene ÷10 pa vanjskih pet
-/// prstenova odgovara preset čipovima u PinkaContributePanel.
+/// Prsten zida u LEGACY geometriji: [startLayer] = udaljenost od ruba od koje
+/// prsten počinje, [priceCents] = cijena kvadratića. Server mod ovo ne koristi
+/// — tamo su prstenovi jednake debljine, izvedeni iz `slot_maps.width` i broja
+/// zona (vidi `seed_grid_map`).
 class _ZoneConfig {
   final int startLayer;
   final int priceCents;
@@ -48,7 +73,7 @@ class _ZoneConfig {
   const _ZoneConfig(this.startLayer, this.priceCents);
 }
 
-const List<_ZoneConfig> _zones = [
+const List<_ZoneConfig> _legacyZones = [
   _ZoneConfig(0, 100), // Vanjski pojas — 1 €
   _ZoneConfig(3, 200), // Zaštitni prsten — 2 €
   _ZoneConfig(6, 500), // Središnji pojas — 5 €
@@ -61,19 +86,17 @@ const List<_ZoneConfig> _zones = [
   _ZoneConfig(51, 100000), // Jezgra — 1000 €
 ];
 
-/// Prsten ćelije preko udaljenosti od ruba — ekvivalent "first match wins"
-/// containsPoint skeniranju iz originala, ali O(1) jer su prstenovi koncentrični.
-int _zoneIndexOf(int x, int y) {
+/// Prsten ćelije preko udaljenosti od ruba — legacy geometrija.
+int _legacyZoneIndexOf(int x, int y) {
   final layer = [x, y, _gridSide - 1 - x, _gridSide - 1 - y]
       .reduce((a, b) => a < b ? a : b);
-  for (var i = _zones.length - 1; i >= 0; i--) {
-    if (layer >= _zones[i].startLayer) return i;
+  for (var i = _legacyZones.length - 1; i >= 0; i--) {
+    if (layer >= _legacyZones[i].startLayer) return i;
   }
   return 0;
 }
 
-/// Ćelije po prstenu (indeks = y*120+x, row-major) — strukturno, keširano
-/// jednom za cijelu aplikaciju.
+/// Ćelije po prstenu (indeks = y*120+x, row-major) — legacy placement.
 final Map<int, List<int>> _zoneCellsCache = {};
 
 List<int> _zoneCells(int zone) {
@@ -81,15 +104,15 @@ List<int> _zoneCells(int zone) {
     final cells = <int>[];
     for (var y = 0; y < _gridSide; y++) {
       for (var x = 0; x < _gridSide; x++) {
-        if (_zoneIndexOf(x, y) == zone) cells.add(y * _gridSide + x);
+        if (_legacyZoneIndexOf(x, y) == zone) cells.add(y * _gridSide + x);
       }
     }
     return cells;
   });
 }
 
-/// FNV-1a 32-bit — stabilan hash id-a doprinosa za deterministički placement
-/// (bez Random/DateTime: isti popis doprinosa uvijek daje isti raspored).
+/// FNV-1a 32-bit — stabilan hash id-a doprinosa za deterministički legacy
+/// placement (bez Random/DateTime: isti popis uvijek daje isti raspored).
 int _fnv1a(String s) {
   var h = 0x811c9dc5;
   for (final cu in s.codeUnits) {
@@ -100,32 +123,107 @@ int _fnv1a(String s) {
 }
 
 class _PinkaGridWallState extends State<PinkaGridWall> {
-  /// Ćelija (y*120+x) → doprinos koji je "drži".
+  /// Server mod: ćelija (y*w+x) → mjesto koje NIJE slobodno.
+  Map<int, PinkaSlot> _slotByCell = const {};
+
+  /// Legacy mod: ćelija → doprinos koji je "drži".
   Map<int, PinkaPublicContribution> _cellOwners = const {};
 
-  /// Potpis zadnjeg mapiranog popisa — preskoči replacement kad se zid nije
-  /// promijenio (refresh svakih 12 s obično vrati isti popis).
-  String _placedSignature = '';
+  /// Zona svake ćelije, predizračunata — painter je čita bez računanja po
+  /// ćeliji, a hit-test i cijena idu kroz isti izvor.
+  Uint8List _zoneOf = Uint8List(0);
+
+  /// Potpis podataka/geometrije — jeftina usporedba u [CustomPainter.shouldRepaint].
+  String _signature = '';
+  String _geometrySignature = '';
 
   int? _hoverCell;
-  int? _selectedCell;
+  int? _legacySelectedCell;
+
+  bool get _serverMode => widget.map != null && widget.slots != null;
+  int get _w => widget.map?.width ?? _gridSide;
+  int get _h => widget.map?.height ?? _gridSide;
+
+  List<PinkaSlotZone> get _zones => widget.map?.zones ?? const [];
 
   @override
   void initState() {
     super.initState();
-    _placeContributions();
+    _rebuildGeometry();
+    _rebuildData();
   }
 
   @override
   void didUpdateWidget(covariant PinkaGridWall oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _placeContributions();
+    _rebuildGeometry();
+    _rebuildData();
   }
 
+  /// Geometrija zona. Server: prstenovi JEDNAKE debljine
+  /// `(min(w,h)/2) / brojZona`, identično `seed_grid_map`-u — inače bi klijent
+  /// naplaćivao drugu cijenu nego što server traži. Legacy: stara tablica.
+  void _rebuildGeometry() {
+    final sig = _serverMode
+        ? 'srv:${_w}x$_h:${_zones.length}'
+        : 'legacy:$_gridSide';
+    if (sig == _geometrySignature && _zoneOf.isNotEmpty) return;
+    _geometrySignature = sig;
+
+    final w = _w, h = _h;
+    final out = Uint8List(w * h);
+    final zoneCount = _zones.length;
+    final band = zoneCount > 0 ? (math.min(w, h) / 2.0) / zoneCount : 0.0;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        int zone;
+        if (_serverMode && zoneCount > 0) {
+          final layer = math.min(math.min(x, y), math.min(w - 1 - x, h - 1 - y));
+          zone = math.min((layer / band).floor(), zoneCount - 1);
+        } else {
+          zone = _legacyZoneIndexOf(x, y);
+        }
+        out[y * w + x] = zone;
+      }
+    }
+    _zoneOf = out;
+  }
+
+  void _rebuildData() {
+    if (_serverMode) {
+      _placeSlots();
+    } else {
+      _placeContributions();
+    }
+  }
+
+  /// Server mod: mjesta dolaze s koordinatama — nema ničega za "rasporediti".
+  void _placeSlots() {
+    final slots = widget.slots!;
+    final sig = 'srv:${slots.length}:'
+        '${slots.map((s) => '${s.slotKey}${s.state}').join(',').hashCode}';
+    if (sig == _signature) return;
+    _signature = sig;
+
+    final byCell = <int, PinkaSlot>{};
+    for (final s in slots) {
+      if (s.posX < 0 || s.posX >= _w || s.posY < 0 || s.posY >= _h) continue;
+      byCell[s.indexFor(_w)] = s;
+    }
+    _slotByCell = byCell;
+    _cellOwners = const {};
+    final held = byCell.values.where((s) => s.isHeld).length;
+    log('PinkaGridWall: server mod — ${byCell.length} zauzetih mjesta'
+        ' (${byCell.length - held} prodanih, $held rezerviranih)');
+  }
+
+  /// Legacy mod: hash id-a doprinosa unutar najskupljeg prstena koji iznos
+  /// pokriva. Izgleda kao vlasništvo, ali nitko ništa ne posjeduje — zato je
+  /// ovo samo fallback dok kampanja nema mapu mjesta.
   void _placeContributions() {
-    final sig = widget.contributions.map((c) => c.id).join(',');
-    if (sig == _placedSignature) return;
-    _placedSignature = sig;
+    final sig = 'legacy:${widget.contributions.map((c) => c.id).join(',')}';
+    if (sig == _signature) return;
+    _signature = sig;
 
     // Kanonski redoslijed po id-u — placement ne ovisi o redoslijedu s API-ja.
     final sorted = [...widget.contributions]
@@ -136,8 +234,8 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
     for (final c in sorted) {
       // Najskuplji prsten koji si iznos može priuštiti; ispod 1 € → rub.
       var zone = 0;
-      for (var i = _zones.length - 1; i >= 0; i--) {
-        if (c.amountCents >= _zones[i].priceCents) {
+      for (var i = _legacyZones.length - 1; i >= 0; i--) {
+        if (c.amountCents >= _legacyZones[i].priceCents) {
           zone = i;
           break;
         }
@@ -159,32 +257,69 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
       if (!placed) unplaced++;
     }
     _cellOwners = owners;
-    log('PinkaGridWall: mapirano ${owners.length}/${widget.contributions.length}'
-        ' doprinosa${spills > 0 ? ', $spills prelijevanja u jeftiniji prsten' : ''}'
+    _slotByCell = const {};
+    log('PinkaGridWall: legacy mod — mapirano ${owners.length}/'
+        '${widget.contributions.length} doprinosa'
+        '${spills > 0 ? ', $spills prelijevanja u jeftiniji prsten' : ''}'
         '${unplaced > 0 ? ', $unplaced NEsmješteno (zid pun)' : ''}');
   }
 
-  List<String> _zoneNames(AppLocalizations l) => [
-        l.pinkaGridZoneOuterBelt,
-        l.pinkaGridZoneDefenseRing,
-        l.pinkaGridZoneMidBelt,
-        l.pinkaGridZoneHighZone,
-        l.pinkaGridZoneGoldenCircle,
-        l.pinkaGridZoneBusiness,
-        l.pinkaGridZoneExecutive,
-        l.pinkaGridZonePrestige,
-        l.pinkaGridZoneElite,
-        // Jezgra se verzalizira u kodu (ARB vrijednosti bez ALL-CAPS-a).
-        l.pinkaGridZoneCore.toUpperCase(),
-      ];
+  // ── Zone: cijena + naziv ─────────────────────────────────────────────────
+
+  int _zoneAt(int cell) => cell < _zoneOf.length ? _zoneOf[cell] : 0;
+
+  int _priceOfZone(int zone) {
+    if (_serverMode) {
+      return zone < _zones.length ? _zones[zone].priceCents : 0;
+    }
+    return _legacyZones[zone.clamp(0, _legacyZones.length - 1)].priceCents;
+  }
+
+  /// `label_key` iz baze → prevedeni naziv. Sirovi ključ se NIKAD ne prikazuje;
+  /// nepoznat ključ (nova zona na backendu) pada na redni broj.
+  String _zoneName(AppLocalizations l, int zone) {
+    final key = _serverMode && zone < _zones.length
+        ? _zones[zone].labelKey
+        : 'pinkaSlotZone$zone';
+    return switch (key) {
+      'pinkaSlotZone0' => l.pinkaGridZoneOuterBelt,
+      'pinkaSlotZone1' => l.pinkaGridZoneDefenseRing,
+      'pinkaSlotZone2' => l.pinkaGridZoneMidBelt,
+      'pinkaSlotZone3' => l.pinkaGridZoneHighZone,
+      'pinkaSlotZone4' => l.pinkaGridZoneGoldenCircle,
+      'pinkaSlotZone5' => l.pinkaGridZoneBusiness,
+      'pinkaSlotZone6' => l.pinkaGridZoneExecutive,
+      'pinkaSlotZone7' => l.pinkaGridZonePrestige,
+      'pinkaSlotZone8' => l.pinkaGridZoneElite,
+      // Jezgra se verzalizira u kodu (ARB vrijednosti bez ALL-CAPS-a).
+      'pinkaSlotZone9' => l.pinkaGridZoneCore.toUpperCase(),
+      _ => l.pinkaSlotZoneFallback(zone + 1),
+    };
+  }
+
+  // ── Hit test / interakcija ───────────────────────────────────────────────
 
   int? _cellAt(Offset local, Size size) {
-    final cellW = size.width / _gridSide;
-    final cellH = size.height / _gridSide;
+    final cellW = size.width / _w;
+    final cellH = size.height / _h;
     if (cellW <= 0 || cellH <= 0) return null;
-    final x = (local.dx / cellW).floor().clamp(0, _gridSide - 1);
-    final y = (local.dy / cellH).floor().clamp(0, _gridSide - 1);
-    return y * _gridSide + x;
+    final x = (local.dx / cellW).floor().clamp(0, _w - 1);
+    final y = (local.dy / cellH).floor().clamp(0, _h - 1);
+    return y * _w + x;
+  }
+
+  /// Odabrana ćelija: u server modu je vlasnik selekcije HOST (vezana je uz
+  /// panel za uplatu), u legacyju lokalno stanje.
+  int? get _selectedCell {
+    if (!_serverMode) return _legacySelectedCell;
+    final key = widget.selectedSlotKey;
+    if (key == null) return null;
+    final parts = key.split(':');
+    if (parts.length != 2) return null;
+    final x = int.tryParse(parts[0]);
+    final y = int.tryParse(parts[1]);
+    if (x == null || y == null) return null;
+    return y * _w + x;
   }
 
   void _setHover(int? cell) {
@@ -194,26 +329,97 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
 
   void _onTap(int? cell) {
     if (cell == null) return;
+    final l = AppLocalizations.of(context);
+
+    if (_serverMode) {
+      final slot = _slotByCell[cell];
+      if (slot != null) {
+        if (slot.isBlocked) return;
+        // Hold NE otkriva tko drži mjesto (besplatna rezervacija ne smije
+        // biti kanal za oglašavanje) — samo poruka da je privremeno zauzeto.
+        if (slot.isHeld) {
+          _showHeldSheet(l);
+        } else {
+          _showSlotSheet(l, slot);
+        }
+        return;
+      }
+      final zone = _zoneAt(cell);
+      final x = cell % _w;
+      final y = cell ~/ _w;
+      widget.onSlotTap?.call('$x:$y', _priceOfZone(zone), _zoneName(l, zone));
+      return;
+    }
+
     final owner = _cellOwners[cell];
     if (owner != null) {
       _showOwnerSheet(owner);
       return;
     }
-    final zone = _zoneIndexOf(cell % _gridSide, cell ~/ _gridSide);
-    setState(() => _selectedCell = cell);
-    final name = _zoneNames(AppLocalizations.of(context))[zone];
-    widget.onZoneTap?.call(_zones[zone].priceCents, name);
+    final zone = _zoneAt(cell);
+    setState(() => _legacySelectedCell = cell);
+    widget.onZoneTap?.call(_priceOfZone(zone), _zoneName(l, zone));
   }
 
-  /// Bottom sheet za zauzeti kvadratić — isti vizualni jezik kao kartica na
+  /// Bottom sheet za PRODANO mjesto — isti vizualni jezik kao kartica na
   /// PinkaWallList zidu (ime + iznos + poruka).
+  void _showSlotSheet(AppLocalizations l, PinkaSlot slot) {
+    _sheet(
+      title: l.pinkaGridTakenTitle,
+      name: slot.displayName ?? l.pinkaAnonymous,
+      amountCents: slot.priceCents,
+      message: slot.message,
+    );
+  }
+
   void _showOwnerSheet(PinkaPublicContribution c) {
+    _sheet(
+      title: AppLocalizations.of(context).pinkaGridTakenTitle,
+      name: c.displayNameOrAnon,
+      amountCents: c.amountCents,
+      message: c.message,
+    );
+  }
+
+  /// Rezervirano mjesto: privremeno stanje, ne vlasništvo — reci to izravno
+  /// umjesto da tap izgleda kao da se ništa nije dogodilo.
+  void _showHeldSheet(AppLocalizations l) {
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l.pinkaSlotHeldTitle,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(l.pinkaSlotHeldBody,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _sheet({
+    required String title,
+    required String name,
+    required int amountCents,
+    String? message,
+  }) {
     final theme = Theme.of(context);
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (ctx) {
-        final l = AppLocalizations.of(ctx);
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -221,7 +427,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l.pinkaGridTakenTitle,
+                Text(title,
                     style: theme.textTheme.labelSmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 10),
@@ -229,7 +435,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                   children: [
                     Flexible(
                       child: Text(
-                        c.displayNameOrAnon,
+                        name,
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis,
@@ -237,7 +443,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      '${fmtEur(c.amountCents)} €',
+                      '${fmtEur(amountCents)} €',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: theme.colorScheme.tertiary,
@@ -245,10 +451,10 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                     ),
                   ],
                 ),
-                if (c.message != null && c.message!.trim().isNotEmpty) ...[
+                if (message != null && message.trim().isNotEmpty) ...[
                   const SizedBox(height: 8),
                   PinkaLinkify(
-                    text: c.message!.trim(),
+                    text: message.trim(),
                     style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant),
                   ),
@@ -267,12 +473,15 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
     final cs = theme.colorScheme;
     final l = AppLocalizations.of(context);
 
+    final zoneCount = _serverMode ? _zones.length : _legacyZones.length;
     // Zone gradiraju kroz tint brand navy palete (croBlue → svjetlije prema
     // jezgri) — nikad cs.primary za brand-FILL (M3 dark ga izblijedi) i bez
-    // random Material boja. Zauzete ćelije = tertiary (crveni akcent).
+    // random Material boja. Prodano = tertiary (crveni akcent), rezervirano =
+    // polovični tint prema tertiary (očito privremeno stanje).
     final zoneColors = List<Color>.generate(
-      _zones.length,
-      (i) => Color.lerp(AppTheme.croBlue, Colors.white, 0.38 * i / 9)!,
+      math.max(zoneCount, 1),
+      (i) => Color.lerp(
+          AppTheme.croBlue, Colors.white, 0.38 * i / math.max(zoneCount - 1, 1))!,
     );
     final rim = AppTheme.brandRim(theme.brightness);
 
@@ -280,7 +489,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          l.pinkaGridIntro,
+          _serverMode ? l.pinkaSlotIntro : l.pinkaGridIntro,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: cs.onSurfaceVariant),
         ),
@@ -296,8 +505,7 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
             ),
           ),
           child: AspectRatio(
-            // Grid je 120×120 → kvadrat 1:1 (NE 16:9 billboard iz originala).
-            aspectRatio: 1,
+            aspectRatio: _w / _h,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final size = constraints.biggest;
@@ -311,22 +519,31 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Baza (14.400 ćelija) iza RepaintBoundaryja —
-                        // repainta se samo kad se promijene doprinosi/tema,
+                        // Baza (svih w*h ćelija) iza RepaintBoundaryja —
+                        // repainta se samo kad se promijene mjesta/tema,
                         // NE na hover.
                         RepaintBoundary(
                           child: CustomPaint(
                             isComplex: true,
                             painter: _GridPainter(
+                              width: _w,
+                              height: _h,
+                              zoneOf: _zoneOf,
                               zoneColors: zoneColors,
-                              occupiedColor: cs.tertiary,
-                              occupiedCells: _cellOwners.keys.toSet(),
-                              signature: _placedSignature,
+                              soldColor: cs.tertiary,
+                              heldColor: cs.tertiary.withValues(alpha: 0.45),
+                              blockedColor: cs.surfaceContainerHighest,
+                              soldCells: _cellsInState(_SlotDraw.sold),
+                              heldCells: _cellsInState(_SlotDraw.held),
+                              blockedCells: _cellsInState(_SlotDraw.blocked),
+                              signature: '$_signature|$_geometrySignature',
                             ),
                           ),
                         ),
                         CustomPaint(
                           painter: _OverlayPainter(
+                            width: _w,
+                            height: _h,
                             hoverCell: _hoverCell,
                             selectedCell: _selectedCell,
                             color: theme.brightness == Brightness.dark
@@ -351,7 +568,24 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
     );
   }
 
-  /// Redak ispod grida: hover → zona/donator, inače uputa za tap.
+  Set<int> _cellsInState(_SlotDraw want) {
+    if (!_serverMode) {
+      // Legacy: sve "zauzeto" je prodano — druga stanja ne postoje.
+      return want == _SlotDraw.sold ? _cellOwners.keys.toSet() : const {};
+    }
+    final out = <int>{};
+    _slotByCell.forEach((cell, s) {
+      final draw = s.isHeld
+          ? _SlotDraw.held
+          : s.isBlocked
+              ? _SlotDraw.blocked
+              : _SlotDraw.sold;
+      if (draw == want) out.add(cell);
+    });
+    return out;
+  }
+
+  /// Redak ispod grida: hover → stanje mjesta, inače uputa za tap.
   Widget _statusLabel(ThemeData theme, AppLocalizations l) {
     final style = theme.textTheme.labelSmall
         ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
@@ -360,63 +594,122 @@ class _PinkaGridWallState extends State<PinkaGridWall> {
       return Text(l.pinkaGridTapHint,
           style: style, overflow: TextOverflow.ellipsis);
     }
-    final owner = _cellOwners[cell];
-    if (owner != null) {
-      return Text(
-        '${owner.displayNameOrAnon} · ${fmtEur(owner.amountCents)} €',
-        style: style?.copyWith(
-            color: theme.colorScheme.tertiary, fontWeight: FontWeight.w600),
-        overflow: TextOverflow.ellipsis,
-      );
+
+    if (_serverMode) {
+      final slot = _slotByCell[cell];
+      if (slot != null) {
+        if (slot.isHeld) {
+          return Text(l.pinkaSlotStatusHeld,
+              style: style?.copyWith(fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis);
+        }
+        if (slot.isBlocked) {
+          return Text(l.pinkaSlotStatusBlocked,
+              style: style, overflow: TextOverflow.ellipsis);
+        }
+        return Text(
+          '${slot.displayName ?? l.pinkaAnonymous}'
+          ' · ${fmtEur(slot.priceCents)} €',
+          style: style?.copyWith(
+              color: theme.colorScheme.tertiary, fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
+        );
+      }
+    } else {
+      final owner = _cellOwners[cell];
+      if (owner != null) {
+        return Text(
+          '${owner.displayNameOrAnon} · ${fmtEur(owner.amountCents)} €',
+          style: style?.copyWith(
+              color: theme.colorScheme.tertiary, fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
+        );
+      }
     }
-    final zone = _zoneIndexOf(cell % _gridSide, cell ~/ _gridSide);
+
+    final zone = _zoneAt(cell);
     return Text(
       l.pinkaGridZonePriceLabel(
-          _zoneNames(l)[zone], fmtEur(_zones[zone].priceCents)),
+          _zoneName(l, zone), fmtEur(_priceOfZone(zone))),
       style: style?.copyWith(fontWeight: FontWeight.w600),
       overflow: TextOverflow.ellipsis,
     );
   }
 }
 
-/// Baza zida: svih 14.400 ćelija u jednom paint passu (port BillboardPainter).
-class _GridPainter extends CustomPainter {
-  final List<Color> zoneColors;
-  final Color occupiedColor;
-  final Set<int> occupiedCells;
+/// Kako se ćelija crta. `held` je namjerno vizualno odvojen od `sold`: bez
+/// toga djelomično plaćen zid izgleda lažno pun.
+enum _SlotDraw { sold, held, blocked }
 
-  /// Potpis placement mape — jeftina usporedba u [shouldRepaint].
+/// Baza zida: sve ćelije u jednom paint passu (port BillboardPainter).
+class _GridPainter extends CustomPainter {
+  final int width;
+  final int height;
+  final Uint8List zoneOf;
+  final List<Color> zoneColors;
+  final Color soldColor;
+  final Color heldColor;
+  final Color blockedColor;
+  final Set<int> soldCells;
+  final Set<int> heldCells;
+  final Set<int> blockedCells;
+
+  /// Potpis podataka + geometrije — jeftina usporedba u [shouldRepaint].
   final String signature;
 
   _GridPainter({
+    required this.width,
+    required this.height,
+    required this.zoneOf,
     required this.zoneColors,
-    required this.occupiedColor,
-    required this.occupiedCells,
+    required this.soldColor,
+    required this.heldColor,
+    required this.blockedColor,
+    required this.soldCells,
+    required this.heldCells,
+    required this.blockedCells,
     required this.signature,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cellW = size.width / _gridSide;
-    final cellH = size.height / _gridSide;
+    final cellW = size.width / width;
+    final cellH = size.height / height;
     const spacing = 0.5;
     final paint = Paint()..style = PaintingStyle.fill;
+    // Rub oko rezerviranog mjesta crtamo samo kad ćelija ima dovoljno piksela
+    // da se rub uopće vidi (na 120×120 u uskom stupcu ćelija je ~3 px).
+    final drawHeldRim = cellW >= 4 && heldCells.isNotEmpty;
+    final rimPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = soldColor;
 
-    for (var y = 0; y < _gridSide; y++) {
-      for (var x = 0; x < _gridSide; x++) {
-        final cell = y * _gridSide + x;
-        paint.color = occupiedCells.contains(cell)
-            ? occupiedColor
-            : zoneColors[_zoneIndexOf(x, y)];
-        canvas.drawRect(
-          Rect.fromLTWH(
-            x * cellW + spacing,
-            y * cellH + spacing,
-            cellW - spacing * 2,
-            cellH - spacing * 2,
-          ),
-          paint,
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        final cell = y * width + x;
+        final Color color;
+        if (soldCells.contains(cell)) {
+          color = soldColor;
+        } else if (heldCells.contains(cell)) {
+          color = heldColor;
+        } else if (blockedCells.contains(cell)) {
+          color = blockedColor;
+        } else {
+          final z = cell < zoneOf.length ? zoneOf[cell] : 0;
+          color = zoneColors[z < zoneColors.length ? z : zoneColors.length - 1];
+        }
+        paint.color = color;
+        final rect = Rect.fromLTWH(
+          x * cellW + spacing,
+          y * cellH + spacing,
+          cellW - spacing * 2,
+          cellH - spacing * 2,
         );
+        canvas.drawRect(rect, paint);
+        if (drawHeldRim && heldCells.contains(cell)) {
+          canvas.drawRect(rect, rimPaint);
+        }
       }
     }
   }
@@ -424,30 +717,36 @@ class _GridPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GridPainter oldDelegate) {
     return oldDelegate.signature != signature ||
-        oldDelegate.occupiedColor != occupiedColor ||
+        oldDelegate.soldCells.length != soldCells.length ||
+        oldDelegate.heldCells.length != heldCells.length ||
+        oldDelegate.soldColor != soldColor ||
         oldDelegate.zoneColors.first != zoneColors.first ||
         oldDelegate.zoneColors.last != zoneColors.last;
   }
 }
 
-/// Overlay iznad baze: samo hover + zadnje tapnuta ćelija (2 strokea max) —
+/// Overlay iznad baze: samo hover + odabrana ćelija (2 strokea max) —
 /// repainta se na svaki pomak ćelije, ali NE dira bazni pass.
 class _OverlayPainter extends CustomPainter {
+  final int width;
+  final int height;
   final int? hoverCell;
   final int? selectedCell;
   final Color color;
 
   _OverlayPainter({
+    required this.width,
+    required this.height,
     required this.hoverCell,
     required this.selectedCell,
     required this.color,
   });
 
   Rect _cellRect(int cell, Size size) {
-    final cellW = size.width / _gridSide;
-    final cellH = size.height / _gridSide;
-    final x = cell % _gridSide;
-    final y = cell ~/ _gridSide;
+    final cellW = size.width / width;
+    final cellH = size.height / height;
+    final x = cell % width;
+    final y = cell ~/ width;
     return Rect.fromLTWH(x * cellW, y * cellH, cellW, cellH);
   }
 

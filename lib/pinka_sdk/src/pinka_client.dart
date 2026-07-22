@@ -253,13 +253,23 @@ class PinkaClient {
 
   /// Verificira + kreditira in-app on-chain (EURe) donaciju po tx hashu.
   /// Vraća `mined=false` dok je tx još pending (caller polla).
+  ///
+  /// [contributionId] se šalje kad je uz uplatu vezano MJESTO: bez njega
+  /// backend INSERTA novi doprinos, pa bi hold ostao na starom (pending)
+  /// doprinosu i istekao — korisnik bi platio i ne bi dobio kvadratić.
   Future<PinkaOnchainConfirm> confirmOnchain({
     required String campaignId,
     required String txHash,
+    String? contributionId,
   }) async {
     final res = await _client.functions.invoke(
       config.onchainConfirmFn,
-      body: {'campaign_id': campaignId, 'tx_hash': txHash},
+      body: {
+        'campaign_id': campaignId,
+        'tx_hash': txHash,
+        // Null-aware map entry (Dart 3): izostavlja se kad nema mjesta.
+        'contribution_id': ?contributionId,
+      },
     );
     final data = (res.data as Map).cast<String, dynamic>();
     if (data['error'] != null) throw PinkaFailure(data['error'].toString());

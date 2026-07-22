@@ -19,6 +19,12 @@ class PinkaContributionIntent {
   final String? statusUrl;
   final String? expiresAt;
 
+  /// Mjesta rezervirana ovom uplatom (grid kvadratići / sjedala) i trenutak
+  /// do kojeg hold vrijedi. Hold i vijek intenta umiru istovremeno — backend
+  /// ih izjednačuje u `attach_intent`.
+  final List<String> slotKeys;
+  final DateTime? holdExpiresAt;
+
   const PinkaContributionIntent({
     required this.contributionId,
     required this.sid,
@@ -33,6 +39,8 @@ class PinkaContributionIntent {
     required this.checkoutUrl,
     required this.statusUrl,
     required this.expiresAt,
+    this.slotKeys = const [],
+    this.holdExpiresAt,
   });
 
   factory PinkaContributionIntent.fromJson(Map<String, dynamic> json) {
@@ -50,6 +58,12 @@ class PinkaContributionIntent {
       checkoutUrl: (json['checkout_url'] as String?) ?? '',
       statusUrl: json['status_url'] as String?,
       expiresAt: json['expires_at'] as String?,
+      slotKeys: (json['slot_keys'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+      holdExpiresAt:
+          DateTime.tryParse((json['hold_expires_at'] as String?) ?? ''),
     );
   }
 }

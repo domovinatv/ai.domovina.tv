@@ -1,6 +1,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,7 @@ import '../../../../services/locale_service.dart';
 import '../../../../widgets/language_toggle_button.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_public_contribution.dart';
+import '../models/pinka_slot.dart';
 import '../models/pinka_yield_position.dart';
 import '../pinka_client.dart';
 import '../pinka_config.dart';
@@ -79,7 +81,8 @@ class PinkaCampaignScreen extends StatefulWidget {
   State<PinkaCampaignScreen> createState() => _PinkaCampaignScreenState();
 }
 
-class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
+class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
+    with TickerProviderStateMixin {
   PinkaCampaign? _campaign;
   bool _loading = true;
   List<PinkaPublicContribution> _wall = const [];
@@ -94,9 +97,26 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
 
   /// Iznos odabran tapom na kvadratić zida (PinkaGridWall) + tick da se isti
   /// iznos smije primijeniti ponovno; ključ panela za scroll-to-panel.
+  /// Koristi se SAMO u legacy modu (kampanja bez mape mjesta).
   int? _gridAmountCents;
   int _gridAmountTick = 0;
   final GlobalKey _panelKey = GlobalKey();
+
+  /// Sidro zida za "let" nove donacije (cilj animacije); aktivni letovi da ih
+  /// dispose ekrana može počistiti.
+  final GlobalKey _wallKey = GlobalKey();
+  final List<(AnimationController, OverlayEntry)> _flights = [];
+
+  /// Mapa mjesta i zauzeta mjesta sa servera. `_slotMap == null` → legacy
+  /// prikaz zida; grid mod se pali PODACIMA (seed mape), ne feature flagom.
+  PinkaSlotMap? _slotMap;
+  List<PinkaSlot>? _slots;
+
+  /// Mjesto koje korisnik trenutno drži odabranim (`'60:60'`) + cijena i
+  /// naziv zone za panel.
+  String? _selectedSlotKey;
+  int? _selectedSlotPriceCents;
+  String? _selectedSlotLabel;
 
   @override
   void initState() {
@@ -109,6 +129,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    for (final f in List.of(_flights)) {
+      _cleanupFlight(f);
+    }
     _wallScroll.dispose();
     _railScroll.dispose();
     super.dispose();
@@ -129,6 +152,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
     }
     final list = await widget.client.wall(c.id);
     final yield_ = await widget.client.yieldPosition(c.id);
+    // Mapa se dohvaća jednom (mijenja se samo seedom/brisanjem na backendu);
+    // mjesta na svakom osvježavanju jer je to živo stanje zida.
+    final map = _slotMap ?? await widget.client.slotMap(c.id);
+    final slots = map == null ? null : await widget.client.slots(c.id);
     // Live on-chain EURe saldo Safe-a (uz kumulativni "prikupljeno") — čita se
     // direktno s javnog Gnosis RPC-a, null na grešku → red se ne prikaže.
     final balance = c.supportsOnchain
@@ -145,6 +172,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
       _wall = list;
       _yield = yield_;
       _balanceCents = balance ?? _balanceCents;
+      _slotMap = map;
+      _slots = slots;
     });
     if (_firstLoad) {
       _seen.addAll(list.map((e) => e.id));
@@ -175,14 +204,47 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
     return '${widget.config.shareBaseUrl}$path';
   }
 
-  /// Tap na slobodan kvadratić zida: postavi iznos u panel za uplatu, dovuci
-  /// panel u vidno polje (mobile scrolla stranicu, desktop svoj rail) i
-  /// potvrdi snackbarom.
+  /// Tap na slobodan kvadratić zida (LEGACY mod): postavi iznos u panel za
+  /// uplatu, dovuci panel u vidno polje i potvrdi snackbarom.
   void _onGridZoneTap(int amountCents, String zoneName) {
     setState(() {
       _gridAmountCents = amountCents;
       _gridAmountTick++;
     });
+    _revealPanel();
+    _toast(appStrings.pinkaGridAmountSet(zoneName, fmtEur(amountCents)));
+  }
+
+  /// Tap na slobodno mjesto (SERVER mod): odabir se pamti i prosljeđuje
+  /// panelu, koji zaključava iznos na cijenu mjesta. Rezervacija nastaje tek
+  /// pri kreiranju doprinosa — dotad je ovo samo namjera.
+  void _onSlotTap(String slotKey, int priceCents, String zoneName) {
+    final coords = slotKey.replaceAll(':', ' · ');
+    setState(() {
+      _selectedSlotKey = slotKey;
+      _selectedSlotPriceCents = priceCents;
+      _selectedSlotLabel = '$zoneName · $coords';
+    });
+    _revealPanel();
+    _toast(appStrings.pinkaGridAmountSet(zoneName, fmtEur(priceCents)));
+  }
+
+  void _clearSlot() {
+    setState(() {
+      _selectedSlotKey = null;
+      _selectedSlotPriceCents = null;
+      _selectedSlotLabel = null;
+    });
+  }
+
+  /// Mjesto je preoteto dok je korisnik birao — očisti odabir i odmah povuci
+  /// svježu mapu da preoteta ćelija pocrveni.
+  void _onSlotConflict(String? slotKey) {
+    _clearSlot();
+    _refresh();
+  }
+
+  void _revealPanel() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _panelKey.currentContext;
       if (ctx == null) return;
@@ -192,13 +254,94 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
         alignment: 0.05,
       );
     });
+  }
+
+  void _toast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content:
-            Text(appStrings.pinkaGridAmountSet(zoneName, fmtEur(amountCents))),
+        content: Text(message),
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  /// "Poleti" mini karticu doprinosa iz panela (gdje je donator upravo gledao
+  /// progress 5/5) prema vrhu zida — vizualni dolazak donacije u listu.
+  void _flyDonationToWall(int amountCents, String? displayName) {
+    final panelBox =
+        _panelKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlayState = Overlay.maybeOf(context, rootOverlay: true);
+    if (panelBox == null || !panelBox.attached || overlayState == null) return;
+    final overlayBox = overlayState.context.findRenderObject() as RenderBox?;
+    if (overlayBox == null) return;
+    final screen = overlayBox.size;
+
+    // Start: sredina panela, gdje je stajao stepper/potvrda.
+    final start = panelBox.localToGlobal(panelBox.size.center(Offset.zero)) -
+        const Offset(80, 20);
+
+    // Cilj: vrh zida — najnoviji unos ide na početak liste. Kad je zid izvan
+    // ekrana (mobile, daleko ispod), klampanje drži cilj na rubu viewporta pa
+    // se i dalje vidi smjer leta.
+    final wallBox = _wallKey.currentContext?.findRenderObject() as RenderBox?;
+    var end = (wallBox != null && wallBox.attached)
+        ? wallBox.localToGlobal(const Offset(12, 12))
+        : Offset(24, screen.height - 96);
+    end = Offset(
+      end.dx.clamp(12.0, math.max(12.0, screen.width - 220.0)),
+      end.dy.clamp(12.0, math.max(12.0, screen.height - 72.0)),
+    );
+
+    final controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
+    final curve =
+        CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
+    // Kvadratni bézier s kontrolnom točkom iznad spojnice — blagi luk.
+    final control =
+        Offset((start.dx + end.dx) / 2, math.min(start.dy, end.dy) - 100);
+
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => AnimatedBuilder(
+        animation: curve,
+        builder: (context, _) {
+          final t = curve.value;
+          final u = 1 - t;
+          final pos = start * (u * u) + control * (2 * u * t) + end * (t * t);
+          // Zadnjih 15% puta kartica se "stopi" u zid (fade + blagi shrink).
+          final fade = t < 0.85 ? 1.0 : (1 - t) / 0.15;
+          return Positioned(
+            left: pos.dx,
+            top: pos.dy,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: fade.clamp(0.0, 1.0),
+                child: Transform.scale(
+                  scale: 1 - 0.2 * t,
+                  alignment: Alignment.topLeft,
+                  child: _FlyingDonationChip(
+                      amountCents: amountCents, displayName: displayName),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    final flight = (controller, entry);
+    _flights.add(flight);
+    overlayState.insert(entry);
+    controller.forward().whenCompleteOrCancel(() => _cleanupFlight(flight));
+  }
+
+  /// Skini overlay i oslobodi controller — idempotentno (let završi sam ILI
+  /// ga počisti dispose ekrana, što god dođe prvo).
+  void _cleanupFlight((AnimationController, OverlayEntry) flight) {
+    if (!_flights.remove(flight)) return;
+    final (controller, entry) = flight;
+    controller.stop();
+    if (entry.mounted) entry.remove();
+    controller.dispose();
   }
 
   void _copyShareLink() {
@@ -266,16 +409,32 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
           campaign: c,
           client: widget.client,
           config: widget.config,
-          onPaid: _refresh,
+          // Uplata je sjela → mjesto je prešlo u `sold`; odmah povuci svježu
+          // mapu da se ime pojavi na kvadratiću, očisti odabir i animiraj
+          // "dolazak" doprinosa na zid.
+          onPaid: (amountCents, displayName) {
+            _clearSlot();
+            _refresh();
+            _flyDonationToWall(amountCents, displayName);
+          },
           signedInName: () => AuthService.instance.isSignedIn
               ? AuthService.instance.currentUser?.displayName
               : null,
           onSignInRequested: (ctx) => showAuthSheet(ctx),
           presetAmountCents: _gridAmountCents,
           presetAmountTick: _gridAmountTick,
+          selectedSlotKey: _selectedSlotKey,
+          selectedSlotPriceCents: _selectedSlotPriceCents,
+          selectedSlotLabel: _selectedSlotLabel,
+          onClearSlot: _clearSlot,
+          onSlotConflict: _onSlotConflict,
         );
         final grid = PinkaGridWall(
           contributions: _wall,
+          map: _slotMap,
+          slots: _slots,
+          selectedSlotKey: _selectedSlotKey,
+          onSlotTap: _onSlotTap,
           onZoneTap: _onGridZoneTap,
         );
         final verify = c.supportsOnchain ? _verifyCard(theme, c) : null;
@@ -323,7 +482,9 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                             ?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
                     Expanded(
-                      child: _wall.isEmpty
+                      child: KeyedSubtree(
+                        key: _wallKey,
+                        child: _wall.isEmpty
                           ? Align(
                               alignment: Alignment.topLeft,
                               child: Text(appStrings.pinkaWallEmpty,
@@ -345,6 +506,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                                     flashIds: _flashIds),
                               ),
                             ),
+                      ),
                     ),
                   ],
                 ),
@@ -470,7 +632,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
         else
-          PinkaWallList(contributions: _wall, flashIds: _flashIds),
+          KeyedSubtree(
+            key: _wallKey,
+            child: PinkaWallList(contributions: _wall, flashIds: _flashIds),
+          ),
       ],
     );
   }
@@ -656,6 +821,63 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen> {
                 widget.config.tokenForAddressUrl(y.atokenAddress!, dest)),
           ),
       ],
+    );
+  }
+}
+
+/// Mini kartica doprinosa koja "leti" iz panela na zid — ista vizualna
+/// obitelj kao unos u [PinkaWallList], samo kompaktna (ime + iznos).
+class _FlyingDonationChip extends StatelessWidget {
+  final int amountCents;
+  final String? displayName;
+
+  const _FlyingDonationChip(
+      {required this.amountCents, required this.displayName});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: cs.tertiaryContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.tertiary.withValues(alpha: 0.6)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.favorite, size: 16, color: cs.tertiary),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Text(
+                displayName ?? appStrings.pinkaAnonymous,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onTertiaryContainer),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              '${fmtEur(amountCents)} €',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700, color: cs.tertiary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

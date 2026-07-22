@@ -2364,6 +2364,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your payment is confirmed on-chain.';
 
   @override
+  String get pinkaDonateAgain => 'Donate again';
+
+  @override
   String pinkaCopiedLabel(String label) {
     return 'Copied: $label';
   }
@@ -3133,4 +3136,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinkaGridTakenTitle => 'This square is already taken';
+
+  @override
+  String get pinkaSlotIntro =>
+      'Pick your square — the closer to the centre, the bigger the contribution. Your spot is held while you pay.';
+
+  @override
+  String pinkaSlotZoneFallback(int index) {
+    return 'Zone $index';
+  }
+
+  @override
+  String get pinkaSlotStatusHeld => 'Held — someone is paying right now';
+
+  @override
+  String get pinkaSlotStatusBlocked => 'This spot is not for sale';
+
+  @override
+  String get pinkaSlotHeldTitle => 'This square is held';
+
+  @override
+  String get pinkaSlotHeldBody =>
+      'Someone is paying for it right now. If the payment doesn\'t land, the square goes back up — try later or pick another one.';
+
+  @override
+  String pinkaSlotPriceLocked(String price) {
+    return 'Price of this spot: $price €';
+  }
+
+  @override
+  String get pinkaSlotTopUpHint =>
+      'You can give more — less than the price of the spot you can\'t.';
+
+  @override
+  String get pinkaSlotTopUpLabel => 'Amount';
+
+  @override
+  String get pinkaSlotClear => 'Cancel';
+
+  @override
+  String pinkaSlotBelowPrice(String price) {
+    return 'The amount can\'t be lower than the price of the spot ($price €).';
+  }
+
+  @override
+  String get pinkaSlotTakenError =>
+      'Someone was faster — that square has just been taken. Pick another one.';
+
+  @override
+  String pinkaSlotHoldCountdown(String time) {
+    return 'Your spot is held for another $time.';
+  }
+
+  @override
+  String get pinkaSlotHoldExpired =>
+      'The hold expired, but your payment still counts — once it lands you get the same square if it\'s free, otherwise the nearest one in the same or a pricier zone.';
 }
