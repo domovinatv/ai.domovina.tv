@@ -5227,6 +5227,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Mjesto je zauzeto'**
   String get pinkaSlotPickerTaken;
+
+  /// Poruka/onemogućeni gumb u fullscreen pickeru kad je nišan iznad praznog platna izvan 120×120 mreže.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pomakni nišan na mrežu'**
+  String get pinkaSlotPickerOffGrid;
 }
 
 class _AppLocalizationsDelegate

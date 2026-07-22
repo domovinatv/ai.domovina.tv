@@ -934,8 +934,15 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
   late final Map<int, PinkaSlot> _slotByCell;
   late final List<Color> _colors;
 
-  int _candidate = 0;
-  double? _side; // strana kvadratnog viewporta (px na ekranu)
+  /// Ćelija pod nišanom, ili `null` kad je nišan iznad praznog platna (izvan
+  /// mreže) — grid „lebdi" u širem 2D prostoru (Figma-style), pa nišan smije
+  /// biti i pored njega.
+  int? _candidate;
+
+  /// Puni pravokutni viewport (landscape na desktopu, portrait na mobitelu) i
+  /// logička strana kvadratnog grida koji u njemu lebdi.
+  Size? _viewport;
+  double _gridPx = 0;
   bool _inited = false;
 
   int get _w => widget.map.width;
@@ -954,7 +961,7 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
     _slotByCell = byCell;
     _colors = _zoneColors(_zones.length);
     _candidate = _cellForKey(widget.initialSlotKey) ??
-        (_h ~/ 2) * _w + (_w ~/ 2); // default: sredina (jezgra)
+        (_h ~/ 2) * _w + (_w ~/ 2); // default: sredina (jezgra), korigira _onTransform
     _tc.addListener(_onTransform);
   }
 
@@ -977,16 +984,19 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
     super.dispose();
   }
 
-  /// Ćelija pod nišanom = scena u središtu viewporta → koordinate.
+  /// Ćelija pod nišanom = scena u središtu PRAVOKUTNOG viewporta → koordinate.
+  /// Grid lebdi u širem 2D prostoru, pa nišan može pasti izvan mreže → `null`.
   void _onTransform() {
-    final side = _side;
-    if (side == null) return;
-    // Grid child je točno `side` px (scale 1 = fit), pa je scena u prostoru
-    // ćelija 0..side. Središte viewporta → ćelija pod nišanom.
-    final scene = _tc.toScene(Offset(side / 2, side / 2));
-    final cx = (scene.dx / side * _w).floor().clamp(0, _w - 1);
-    final cy = (scene.dy / side * _h).floor().clamp(0, _h - 1);
-    final cell = cy * _w + cx;
+    final vp = _viewport;
+    final g = _gridPx;
+    if (vp == null || g <= 0) return;
+    final scene = _tc.toScene(Offset(vp.width / 2, vp.height / 2));
+    int? cell;
+    if (scene.dx >= 0 && scene.dx < g && scene.dy >= 0 && scene.dy < g) {
+      final cx = (scene.dx / g * _w).floor().clamp(0, _w - 1);
+      final cy = (scene.dy / g * _h).floor().clamp(0, _h - 1);
+      cell = cy * _w + cx;
+    }
     if (cell != _candidate) setState(() => _candidate = cell);
   }
 
@@ -999,15 +1009,19 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
         tx, ty, 0, 1, //
       );
 
-  /// S početnim odabirom: uleti (scale 3) i centriraj tu ćeliju; inače
-  /// identitet = cijeli grid stane (child je već veličine viewporta).
-  Matrix4 _initialMatrix(double side) {
+  /// Grid (kvadrat `g`) centriran u pravokutnom viewportu. S početnim odabirom:
+  /// uleti (scale 3) i centriraj tu ćeliju; inače lagani „fit s marginom" (0.85)
+  /// da se odmah vidi kako grid lebdi u širem prostoru (Figma-osjećaj).
+  Matrix4 _initialMatrix(Size vp, double g) {
     final focus = _cellForKey(widget.initialSlotKey);
-    if (focus == null) return Matrix4.identity();
-    const scale = 3.0;
-    final sx = ((focus % _w) + 0.5) / _w * side;
-    final sy = ((focus ~/ _w) + 0.5) / _h * side;
-    return _affine(scale, side / 2 - scale * sx, side / 2 - scale * sy);
+    if (focus != null) {
+      const s = 3.0;
+      final sx = ((focus % _w) + 0.5) / _w * g;
+      final sy = ((focus ~/ _w) + 0.5) / _h * g;
+      return _affine(s, vp.width / 2 - s * sx, vp.height / 2 - s * sy);
+    }
+    const s = 0.85;
+    return _affine(s, vp.width / 2 - s * g / 2, vp.height / 2 - s * g / 2);
   }
 
   @override
@@ -1027,86 +1041,85 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final side =
-                    math.min(constraints.maxWidth, constraints.maxHeight);
-                _side = side;
+                final vp = Size(constraints.maxWidth, constraints.maxHeight);
+                // Grid je kvadrat strane min(W,H) i LEBDI u punom pravokutnom
+                // viewportu (landscape/portrait), ne reže se u kvadrat.
+                final g = math.min(vp.width, vp.height);
+                _viewport = vp;
+                _gridPx = g;
                 if (!_inited) {
                   _inited = true;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!mounted) return;
-                    _tc.value = _initialMatrix(side);
+                    _tc.value = _initialMatrix(vp, g);
                     _onTransform();
                   });
                 }
-                return Center(
-                  child: SizedBox(
-                    width: side,
-                    height: side,
-                    child: ClipRect(
-                      child: Stack(
-                        children: [
-                          InteractiveViewer(
-                            transformationController: _tc,
-                            minScale: 1,
-                            maxScale: 8,
-                            // Dovoljno margine da SVAKA ćelija (i rubna) dođe
-                            // pod središnji nišan.
-                            boundaryMargin: EdgeInsets.all(side),
-                            // Child je TOČNO veličine viewporta (side) pa je
-                            // scale 1 uvijek savršen fit — nema krhkog računa
-                            // skale sa stale dimenzijama.
-                            child: SizedBox(
-                              width: side,
-                              height: side,
-                              child: Stack(
-                                children: [
-                                  RepaintBoundary(
-                                    child: CustomPaint(
-                                      isComplex: true,
-                                      size: Size(side, side),
-                                      painter: _GridPainter(
-                                        width: _w,
-                                        height: _h,
-                                        zoneOf: _zoneOf,
-                                        zoneColors: _colors,
-                                        soldColor: cs.tertiary,
-                                        heldColor: _heldColor(cs),
-                                        blockedColor:
-                                            cs.surfaceContainerHighest,
-                                        soldCells: _cells(_SlotDraw.sold),
-                                        heldCells: _cells(_SlotDraw.held),
-                                        blockedCells: _cells(_SlotDraw.blocked),
-                                        signature: 'picker:${_slotByCell.length}',
-                                      ),
-                                    ),
-                                  ),
-                                  CustomPaint(
-                                    size: Size(side, side),
-                                    painter: _PickerCandidatePainter(
-                                      width: _w,
-                                      height: _h,
-                                      cell: _candidate,
-                                      // Bijela s tamnim halom — čitljiva i na
-                                      // navy i na zlatnim zonama.
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
+                return Stack(
+                  children: [
+                    // Puni pravokutnik = platno; grid (kvadrat) lebdi unutra.
+                    Positioned.fill(
+                      child: InteractiveViewer(
+                      transformationController: _tc,
+                      // Manje od 1 dopušta odmicanje/razgledavanje u širem
+                      // prostoru (Figma-osjećaj), više za precizan odabir.
+                      minScale: 0.4,
+                      maxScale: 10,
+                      // Beskonačna margina = slobodan 2D pan u svim smjerovima;
+                      // grid lebdi u „beskonačnom" platnu.
+                      boundaryMargin: const EdgeInsets.all(double.infinity),
+                      // constrained:false → child zadržava svoju kvadratnu
+                      // veličinu `g` umjesto da ga viewport rastegne u pravokutnik.
+                      constrained: false,
+                      child: SizedBox(
+                        width: g,
+                        height: g,
+                        child: Stack(
+                          children: [
+                            RepaintBoundary(
+                              child: CustomPaint(
+                                isComplex: true,
+                                size: Size(g, g),
+                                painter: _GridPainter(
+                                  width: _w,
+                                  height: _h,
+                                  zoneOf: _zoneOf,
+                                  zoneColors: _colors,
+                                  soldColor: cs.tertiary,
+                                  heldColor: _heldColor(cs),
+                                  blockedColor: cs.surfaceContainerHighest,
+                                  soldCells: _cells(_SlotDraw.sold),
+                                  heldCells: _cells(_SlotDraw.held),
+                                  blockedCells: _cells(_SlotDraw.blocked),
+                                  signature: 'picker:${_slotByCell.length}',
+                                ),
                               ),
                             ),
-                          ),
-                          // Fiksni nišan na sredini — u SCREEN prostoru, ne
-                          // transformira se s gridom.
-                          const IgnorePointer(
-                            child: Center(
-                              child: SizedBox(
-                                  width: 48, height: 48, child: _Reticle()),
+                            CustomPaint(
+                              size: Size(g, g),
+                              painter: _PickerCandidatePainter(
+                                width: _w,
+                                height: _h,
+                                cell: _candidate,
+                                // Bijela s tamnim halom — čitljiva i na navy i
+                                // na zlatnim zonama.
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                    ),
+                    // Fiksni nišan na sredini pravokutnika — u SCREEN prostoru,
+                    // ne transformira se s gridom.
+                    const IgnorePointer(
+                      child: Center(
+                        child: SizedBox(
+                            width: 48, height: 48, child: _Reticle()),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -1133,6 +1146,21 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
   Widget _bottomBar(ThemeData theme, AppLocalizations l) {
     final cs = theme.colorScheme;
     final cell = _candidate;
+
+    // Nišan iznad praznog platna (izvan mreže): pozovi korisnika da ga vrati.
+    if (cell == null) {
+      return _bottomBarShell(
+        theme,
+        cs,
+        icon: Icons.control_camera,
+        iconColor: cs.onSurfaceVariant,
+        status: l.pinkaSlotPickerOffGrid,
+        coords: null,
+        buttonLabel: l.pinkaSlotPickerOffGrid,
+        onPressed: null,
+      );
+    }
+
     final x = cell % _w, y = cell ~/ _w;
     final zone = cell < _zoneOf.length ? _zoneOf[cell] : 0;
     final price = zone < _zones.length ? _zones[zone].priceCents : 0;
@@ -1155,6 +1183,30 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
           '${slot.displayName ?? l.pinkaAnonymous} · ${fmtEur(slot.priceCents)} €';
     }
 
+    return _bottomBarShell(
+      theme,
+      cs,
+      icon: free ? Icons.check_circle_outline : Icons.block,
+      iconColor: free ? cs.tertiary : cs.onSurfaceVariant,
+      status: status,
+      coords: '$x:$y',
+      buttonLabel:
+          free ? l.pinkaSlotPickerConfirm(fmtEur(price)) : l.pinkaSlotPickerTaken,
+      onPressed: free ? () => Navigator.of(context).pop('$x:$y') : null,
+    );
+  }
+
+  Widget _bottomBarShell(
+    ThemeData theme,
+    ColorScheme cs, {
+    required IconData icon,
+    required Color iconColor,
+    required String status,
+    required String? coords,
+    required String buttonLabel,
+    required VoidCallback? onPressed,
+  }) {
+    final l = AppLocalizations.of(context);
     return SafeArea(
       top: false,
       child: Container(
@@ -1169,11 +1221,7 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
           children: [
             Row(
               children: [
-                Icon(
-                  free ? Icons.check_circle_outline : Icons.block,
-                  size: 18,
-                  color: free ? cs.tertiary : cs.onSurfaceVariant,
-                ),
+                Icon(icon, size: 18, color: iconColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(status,
@@ -1181,9 +1229,10 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
                           ?.copyWith(fontWeight: FontWeight.w700),
                       overflow: TextOverflow.ellipsis),
                 ),
-                Text('· $x:$y',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: cs.onSurfaceVariant)),
+                if (coords != null)
+                  Text('· $coords',
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
             const SizedBox(height: 4),
@@ -1192,17 +1241,14 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
                     ?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 10),
             FilledButton.icon(
-              onPressed:
-                  free ? () => Navigator.of(context).pop('$x:$y') : null,
+              onPressed: onPressed,
               style: FilledButton.styleFrom(
                 backgroundColor: cs.tertiary,
                 foregroundColor: cs.onTertiary,
                 padding: const EdgeInsets.symmetric(vertical: 13),
               ),
               icon: const Icon(Icons.check, size: 18),
-              label: Text(free
-                  ? l.pinkaSlotPickerConfirm(fmtEur(price))
-                  : l.pinkaSlotPickerTaken),
+              label: Text(buttonLabel),
             ),
           ],
         ),
@@ -1216,7 +1262,9 @@ class _PinkaGridPickerScreenState extends State<_PinkaGridPickerScreen> {
 class _PickerCandidatePainter extends CustomPainter {
   final int width;
   final int height;
-  final int cell;
+
+  /// `null` kad je nišan izvan mreže (iznad praznog platna) — ništa se ne crta.
+  final int? cell;
   final Color color;
 
   _PickerCandidatePainter({
@@ -1228,10 +1276,12 @@ class _PickerCandidatePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final c = cell;
+    if (c == null) return;
     final cellW = size.width / width;
     final cellH = size.height / height;
-    final x = cell % width;
-    final y = cell ~/ width;
+    final x = c % width;
+    final y = c ~/ width;
     final rect = Rect.fromLTWH(x * cellW, y * cellH, cellW, cellH);
     final sw = math.max(cellW * 0.16, 1.5);
     // Tamni halo pa svijetli rub — čitljivo i na svijetlim i tamnim zonama.

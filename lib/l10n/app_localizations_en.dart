@@ -3216,4 +3216,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinkaSlotPickerTaken => 'This spot is taken';
+
+  @override
+  String get pinkaSlotPickerOffGrid => 'Move the crosshair onto the grid';
 }

@@ -3236,4 +3236,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get pinkaSlotPickerTaken => 'Mjesto je zauzeto';
+
+  @override
+  String get pinkaSlotPickerOffGrid => 'Pomakni nišan na mrežu';
 }

@@ -4006,5 +4006,9 @@
   "pinkaSlotPickerTaken": "Mjesto je zauzeto",
   "@pinkaSlotPickerTaken": {
     "description": "Onemogućeni gumb u pickeru kad je kvadratić pod nišanom zauzet/rezerviran/izuzet."
+  },
+  "pinkaSlotPickerOffGrid": "Pomakni nišan na mrežu",
+  "@pinkaSlotPickerOffGrid": {
+    "description": "Poruka/onemogućeni gumb u fullscreen pickeru kad je nišan iznad praznog platna izvan 120×120 mreže."
   }
 }

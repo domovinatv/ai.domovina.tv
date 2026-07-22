@@ -854,5 +854,6 @@
   "pinkaSlotPickerTitle": "Pick your spot",
   "pinkaSlotPickerHint": "Drag and pinch to zoom; the square under the crosshair is your pick.",
   "pinkaSlotPickerConfirm": "Confirm spot · {price} €",
-  "pinkaSlotPickerTaken": "This spot is taken"
+  "pinkaSlotPickerTaken": "This spot is taken",
+  "pinkaSlotPickerOffGrid": "Move the crosshair onto the grid"
 }
