@@ -16,9 +16,16 @@ import 'package:markdown/markdown.dart' as md;
 ///
 /// Mehanika: [markPersonMentions] omota pogotke u `⟦…⟧` delimitere (znakovi
 /// koji se realno ne pojavljuju u sadržaju), [PersonMarkSyntax] ih parsira u
-/// custom `personMark` inline element, a [PersonMarkBuilder] renderira kroz
-/// `TextStyle.backgroundColor` (radi line-wrap preko flutter_markdown
-/// inline-merge mehanizma — bez WidgetSpan-a koji bi lomio prijelom retka).
+/// custom `personMark` inline element, a [PersonMarkBuilder] renderira
+/// zaobljeni crveni chip kroz `Text.rich(WidgetSpan(...))`.
+///
+/// VAŽNO (inline flow): flutter_markdown `_mergeInlineChildren` merga u
+/// paragraf SAMO widgete s ne-null `textSpan` (`Text.rich`/`RichText`) —
+/// obični `Text('…')` završi kao zaseban item u `Wrap`-u i vizualno lomi
+/// rečenicu u novi red. Zato builder MORA vratiti `Text.rich`; unutarnji
+/// `WidgetSpan` (baseline-aligned) nosi Container sa zaobljenim rubovima.
+/// Chip je atomaran (ne prelama se preko redaka) — imena su kratka pa je to
+/// prihvatljiv trade-off za zaobljene rubove.
 
 const String _open = '⟦';
 const String _close = '⟧';
@@ -132,9 +139,8 @@ class PersonMarkSyntax extends md.InlineSyntax {
   }
 }
 
-/// Renderira `personMark` element: bijeli tekst na crvenoj pozadini.
-/// `TextStyle.backgroundColor` (ne Container) da highlight normalno prelama
-/// preko više redaka unutar paragrafa.
+/// Renderira `personMark` element: bijeli tekst na crvenom zaobljenom chipu,
+/// inline u rečenici (vidi napomenu o `Text.rich` u headeru datoteke).
 class PersonMarkBuilder extends MarkdownElementBuilder {
   final Color background;
   final Color foreground;
@@ -143,12 +149,34 @@ class PersonMarkBuilder extends MarkdownElementBuilder {
 
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Text(
-      element.textContent,
-      style: (preferredStyle ?? const TextStyle()).copyWith(
-        color: foreground,
-        backgroundColor: background,
-        fontWeight: FontWeight.w600,
+    final base = preferredStyle ?? const TextStyle();
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            // Baseline poravnanje: tekst u chipu sjedi na istoj liniji kao
+            // okolna rečenica (bez toga chip "pluta" iznad baseline-a).
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                element.textContent,
+                style: base.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                  // Bez naslijeđenog paragraph height-a (1.65) — chip bi
+                  // inače naduo visinu retka u kojem se nalazi.
+                  height: 1.2,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
