@@ -2413,6 +2413,11 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String sectionPersonMentionedHere(String name) {
+    return 'Ovdje se spominje: $name';
+  }
+
+  @override
   String get sectionCopyLink => 'Kopiraj poveznicu';
 
   @override

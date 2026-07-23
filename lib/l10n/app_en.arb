@@ -644,6 +644,7 @@
   "sectionArticle": "Article",
   "sectionPlayFrom": "Play from {timestamp}",
   "sectionPersonSpeaksHere": "{name} speaks here",
+  "sectionPersonMentionedHere": "Mentioned here: {name}",
   "sectionCopyLink": "Copy link",
   "sectionLinkCopied": "Link copied: {timestamp}",
   "sectionTheologicalAssessment": "Theological assessment",

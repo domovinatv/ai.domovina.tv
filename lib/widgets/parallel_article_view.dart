@@ -43,11 +43,15 @@ class ParallelArticleView extends StatelessWidget {
   final bool showScreenshot;
 
   /// Person-highlight marker (dolazak s /p/ profila preko `?p=<slug>`):
-  /// sekcija s ovim timestampom dobiva crvenu "X govori ovdje" oznaku.
+  /// sekcija s ovim timestampom dobiva crvenu pill oznaku, a sva pojavljivanja
+  /// imena u tekstu SVIH sekcija dobiju inline needle highlight.
   final String? highlightTimestamp;
 
-  /// Ime osobe za marker — prikazuje se samo na [highlightTimestamp] sekciji.
+  /// Ime osobe — needle za inline highlight + tekst pill oznake.
   final String? highlightPersonName;
+
+  /// True → pill "X govori ovdje"; false → "Ovdje se spominje: X".
+  final bool highlightSpeaks;
 
   const ParallelArticleView({
     super.key,
@@ -60,6 +64,7 @@ class ParallelArticleView extends StatelessWidget {
     this.showScreenshot = true,
     this.highlightTimestamp,
     this.highlightPersonName,
+    this.highlightSpeaks = true,
   });
 
   @override
@@ -105,6 +110,8 @@ class ParallelArticleView extends StatelessWidget {
                           sec.screenshotTimestamp == highlightTimestamp
                               ? highlightPersonName
                               : null,
+                      personHighlightSpeaks: highlightSpeaks,
+                      personNeedle: highlightPersonName,
                     ),
                   ),
                   SizedBox(width: columnGap),

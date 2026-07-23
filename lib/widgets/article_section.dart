@@ -8,6 +8,7 @@ import '../models/magisterium_data.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 import 'magisterium_section.dart';
+import 'person_needle_highlight.dart';
 import 'citation_helpers.dart';
 import 'clip_share_sheet.dart';
 import '../services/clip_service.dart';
@@ -25,11 +26,17 @@ class ArticleSection extends StatelessWidget {
   final bool showScreenshot;
 
   /// Person-highlight marker (dolazak s /p/ profila preko `?p=<slug>`):
-  /// sekcija s ovim timestampom dobiva crvenu "X govori ovdje" oznaku.
+  /// sekcija s ovim timestampom dobiva crvenu pill oznaku, a sva pojavljivanja
+  /// imena u tekstu SVIH sekcija dobiju inline needle highlight.
   final String? highlightTimestamp;
 
-  /// Ime osobe za marker — prikazuje se samo na [highlightTimestamp] sekciji.
+  /// Ime osobe — needle za inline highlight (sve sekcije) + tekst pill oznake
+  /// (samo [highlightTimestamp] sekcija).
   final String? highlightPersonName;
+
+  /// True kad osoba stvarno GOVORI (diarizirani govornik) → pill "X govori
+  /// ovdje"; false kad se samo spominje → pill "Ovdje se spominje: X".
+  final bool highlightSpeaks;
 
   const ArticleSection({
     super.key,
@@ -41,6 +48,7 @@ class ArticleSection extends StatelessWidget {
     this.showScreenshot = true,
     this.highlightTimestamp,
     this.highlightPersonName,
+    this.highlightSpeaks = true,
   });
 
   @override
@@ -72,6 +80,7 @@ class ArticleSection extends StatelessWidget {
             showScreenshot: showScreenshot,
             highlightTimestamp: highlightTimestamp,
             highlightPersonName: highlightPersonName,
+            highlightSpeaks: highlightSpeaks,
           ),
         ),
       ],
@@ -88,6 +97,7 @@ class _IterationBlock extends StatelessWidget {
   final bool showScreenshot;
   final String? highlightTimestamp;
   final String? highlightPersonName;
+  final bool highlightSpeaks;
 
   const _IterationBlock({
     required this.iteration,
@@ -98,6 +108,7 @@ class _IterationBlock extends StatelessWidget {
     this.showScreenshot = true,
     this.highlightTimestamp,
     this.highlightPersonName,
+    this.highlightSpeaks = true,
   });
 
   @override
@@ -140,6 +151,8 @@ class _IterationBlock extends StatelessWidget {
                   personHighlight: sec.screenshotTimestamp == highlightTimestamp
                       ? highlightPersonName
                       : null,
+                  personHighlightSpeaks: highlightSpeaks,
+                  personNeedle: highlightPersonName,
                 ),
               ),
             );
@@ -231,10 +244,19 @@ class ArticleSectionCard extends StatefulWidget {
   /// Null za audio-only ili kad raspon nije poznat (cutter treba `video_h264.mp4`).
   final int? clipEndSec;
 
-  /// Ime osobe za person-highlight marker ("X govori ovdje", bijeli tekst na
-  /// crvenoj pozadini) iznad naslova sekcije. Non-null samo na sekciji na koju
-  /// je korisnik doveden s profila govornika (`/v/<id>/t/<sec>?p=<slug>`).
+  /// Ime osobe za person-highlight pill (bijeli tekst na crvenoj pozadini)
+  /// iznad naslova sekcije. Non-null samo na sekciji na koju je korisnik
+  /// doveden s profila osobe (`/v/<id>/t/<sec>?p=<slug>`).
   final String? personHighlight;
+
+  /// Varijanta pill teksta: true → "X govori ovdje" (diarizirani govornik),
+  /// false → "Ovdje se spominje: X" (osoba se samo spominje).
+  final bool personHighlightSpeaks;
+
+  /// Ime osobe za inline needle highlight — SVA pojavljivanja imena u tekstu
+  /// ove sekcije označe se bijelo-na-crveno (vidi person_needle_highlight.dart).
+  /// Za razliku od [personHighlight], postavlja se na SVIM sekcijama.
+  final String? personNeedle;
 
   const ArticleSectionCard({
     super.key,
@@ -247,6 +269,8 @@ class ArticleSectionCard extends StatefulWidget {
     this.showScreenshot = true,
     this.clipEndSec,
     this.personHighlight,
+    this.personHighlightSpeaks = true,
+    this.personNeedle,
   });
 
   @override
@@ -289,7 +313,13 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
     final mag = widget.sectionMagisterium;
     final lang = EpisodeLanguageScope.of(context);
     final subtitle = pickLang(lang, section.subtitle, section.subtitleEn);
-    final content = pickLang(lang, section.content, section.contentEn);
+    var content = pickLang(lang, section.content, section.contentEn);
+    // Person-needle highlight: omotaj spomene imena u ⟦…⟧ markere koje custom
+    // inline syntax renderira bijelo-na-crveno (vidi person_needle_highlight).
+    final needle = widget.personNeedle;
+    if (needle != null && needle.isNotEmpty) {
+      content = markPersonMentions(content, needle);
+    }
     final screenshotDesc = pickLang(
       lang,
       section.screenshotDescription,
@@ -326,7 +356,11 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        l.sectionPersonSpeaksHere(widget.personHighlight!),
+                        widget.personHighlightSpeaks
+                            ? l.sectionPersonSpeaksHere(
+                                widget.personHighlight!)
+                            : l.sectionPersonMentionedHere(
+                                widget.personHighlight!),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -523,12 +557,22 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
             ),
           const SizedBox(height: 12),
 
-          // Article content — markdown
+          // Article content — markdown (+ opcijski person-needle inline syntax)
           MarkdownBody(
             data: content,
             styleSheet: MarkdownStyleSheet.fromTheme(
               theme,
             ).copyWith(p: theme.textTheme.bodyMedium?.copyWith(height: 1.65)),
+            inlineSyntaxes:
+                needle != null && needle.isNotEmpty ? [PersonMarkSyntax()] : null,
+            builders: needle != null && needle.isNotEmpty
+                ? {
+                    'personMark': PersonMarkBuilder(
+                      background: theme.colorScheme.tertiary,
+                      foreground: Colors.white,
+                    ),
+                  }
+                : const {},
             onTapLink: (text, href, title) {
               if (href != null) openUrl(href);
             },

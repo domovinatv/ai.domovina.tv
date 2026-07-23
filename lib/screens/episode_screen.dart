@@ -37,6 +37,7 @@ import '../widgets/article_section.dart';
 import '../widgets/magisterium_panel.dart';
 import '../widgets/magisterium_v2_view.dart';
 import '../widgets/parallel_article_view.dart';
+import '../widgets/person_needle_highlight.dart' show hasPersonMention;
 import '../widgets/entities_section.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
@@ -488,10 +489,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
   String? _audioArtUrl;
 
   /// Person-highlight marker (dolazak s /p/ profila preko `?p=<slug>`):
-  /// timestamp sekcije na koju je deep-link sletio + razriješeno ime osobe.
-  /// Null kad nema `?p=` ili nema `/t/<sec>` sidra. Vidi [_initPersonHighlight].
+  /// timestamp sekcije za pill oznaku + razriješeno ime osobe (needle za
+  /// inline highlight u tekstu svih sekcija). Pill se prikaže samo kad je
+  /// tvrdnja provjerljiva: osoba je diarizirani govornik ("govori ovdje") ILI
+  /// ciljna sekcija stvarno sadrži spomen imena ("ovdje se spominje").
+  /// Vidi [_initPersonHighlight].
   String? _personHighlightTs;
   String? _personHighlightName;
+  bool _personHighlightSpeaks = false;
 
   @override
   void initState() {
@@ -561,11 +566,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _initVideo();
   }
 
-  /// Razriješi `?p=<slug>` u (timestamp ciljne sekcije, ime osobe) za crvenu
-  /// "X govori ovdje" oznaku. Ime se matcha protiv diariziranih govornika
-  /// epizode istim [personSlug] foldom koji koristi i backend (pa dobijemo
-  /// pravo ime s dijakriticima bez dodatnog fetcha); fallback je "otfoldani"
-  /// slug (Title Case, bez dijakritika).
+  /// Razriješi `?p=<slug>` u (ime osobe za needle highlight, timestamp sekcije
+  /// za pill). Ime se matcha protiv diariziranih govornika epizode istim
+  /// [personSlug] foldom koji koristi i backend (pa dobijemo pravo ime s
+  /// dijakriticima bez dodatnog fetcha); fallback je "otfoldani" slug (Title
+  /// Case, bez dijakritika) + async dorada s person API-ja.
+  ///
+  /// Pill se postavlja SAMO kad je tvrdnja provjerljiva (feedback 2026-07-23:
+  /// "govori ovdje" bio prikazan i za osobu koja se samo spominje):
+  ///  - osoba je diarizirani govornik → "X govori ovdje"
+  ///  - inače, ciljna sekcija sadrži spomen imena → "Ovdje se spominje: X"
+  ///  - inače bez pilla — inline needle highlight pokazuje spomene drugdje.
   void _initPersonHighlight() {
     final slug = widget.highlightPersonSlug;
     final startAt = widget.startAtSeconds;
@@ -589,31 +600,54 @@ class _EpisodeContentState extends State<_EpisodeContent>
         .where((w) => w.isNotEmpty)
         .map((w) => w[0].toUpperCase() + w.substring(1))
         .join(' ');
-    var matched = false;
+    var speaks = false;
     final speakers = widget.data.summary?.summary.speakers ?? const [];
     for (final sp in speakers) {
       final dn = sp.displayName;
       if (dn != null && personSlug(dn) == slug) {
         name = dn;
-        matched = true;
+        speaks = true;
         break;
       }
     }
 
-    _personHighlightTs = ts;
     _personHighlightName = name;
-    log('person highlight: $slug → "$name" @ $ts');
+    _personHighlightSpeaks = speaks;
+    if (speaks) {
+      _personHighlightTs = ts;
+    } else {
+      // Spomen-pill samo ako ciljna sekcija stvarno sadrži ime (HR izvornik;
+      // matching je dijakritik-neosjetljiv pa fold fallback imena ne smeta).
+      final secContent = _sectionContentFor(ts);
+      if (secContent != null && hasPersonMention(secContent, name)) {
+        _personHighlightTs = ts;
+      }
+    }
+    log('person highlight: $slug → "$name" @ $ts '
+        '(speaks=$speaks, pill=${_personHighlightTs != null})');
 
     // Slug nije među govornicima ove epizode (npr. spomen ili drukčije
     // diarizirano ime) → fallback ime iz sluga nema dijakritike ("Stojic").
     // Doradi async s pravim imenom s person API-ja (5-min CDN cache, jeftino).
-    if (!matched) {
+    if (!speaks) {
       PersonService.fetch(slug).then((hub) {
         final proper = hub?.name.trim();
         if (!mounted || proper == null || proper.isEmpty) return;
         setState(() => _personHighlightName = proper);
       });
     }
+  }
+
+  /// HR sadržaj sekcije s danim screenshot timestampom, ili null.
+  String? _sectionContentFor(String ts) {
+    final article = widget.data.article;
+    if (article == null) return null;
+    for (final iter in article.iterations) {
+      for (final sec in iter.sections) {
+        if (sec.screenshotTimestamp == ts) return sec.content;
+      }
+    }
+    return null;
   }
 
   /// `p=<slug>` query string za playback URL sync — čuva person marker u
@@ -1383,6 +1417,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 showScreenshot: !data.isAudioOnly,
                 highlightTimestamp: _personHighlightTs,
                 highlightPersonName: _personHighlightName,
+                highlightSpeaks: _personHighlightSpeaks,
                 onPlayTap: _videoReady
                     ? (ts) {
                         _seekAndPlay(ts, preroll: true);
@@ -1517,6 +1552,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         showScreenshot: !data.isAudioOnly,
                         highlightTimestamp: _personHighlightTs,
                         highlightPersonName: _personHighlightName,
+                        highlightSpeaks: _personHighlightSpeaks,
                         onPlayTap: _videoReady
                             ? (ts) => _seekAndPlay(ts, preroll: true)
                             : null,

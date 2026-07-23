@@ -2391,6 +2391,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String sectionPersonMentionedHere(String name) {
+    return 'Mentioned here: $name';
+  }
+
+  @override
   String get sectionCopyLink => 'Copy link';
 
   @override

@@ -2991,7 +2991,16 @@
   },
   "sectionPersonSpeaksHere": "{name} govori ovdje",
   "@sectionPersonSpeaksHere": {
-    "description": "Crvena oznaka na sekciji članka kad korisnik dođe s profila govornika (/p/…?p=slug) — pokazuje točno mjesto gdje osoba govori.",
+    "description": "Crvena oznaka na sekciji članka kad korisnik dođe s profila govornika (/p/…?p=slug), a osoba je među diariziranim govornicima epizode.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionPersonMentionedHere": "Ovdje se spominje: {name}",
+  "@sectionPersonMentionedHere": {
+    "description": "Crvena oznaka na sekciji članka kad korisnik dođe s profila osobe (/p/…?p=slug), a osoba se u epizodi samo spominje (nije diarizirani govornik).",
     "placeholders": {
       "name": {
         "type": "String"
