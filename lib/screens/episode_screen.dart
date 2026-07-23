@@ -10,6 +10,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../l10n/app_localizations.dart';
 import '../main.dart' show log;
 import '../models/person_hub.dart' show personSlug;
+import '../models/podcast_article.dart' show PodcastSection;
 import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
@@ -616,10 +617,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
     if (speaks) {
       _personHighlightTs = ts;
     } else {
-      // Spomen-pill samo ako ciljna sekcija stvarno sadrži ime (HR izvornik;
-      // matching je dijakritik-neosjetljiv pa fold fallback imena ne smeta).
-      final secContent = _sectionContentFor(ts);
-      if (secContent != null && hasPersonMention(secContent, name)) {
+      // Spomen-pill samo ako ciljna sekcija stvarno referencira osobu:
+      // ime u tekstu (dijakritik-neosjetljivo) ILI među `entities` sekcije
+      // (AI atribucija spomena — ime često nije u prozi članka).
+      final sec = _sectionFor(ts);
+      final inText =
+          sec != null && hasPersonMention(sec.content, name);
+      final inEntities = sec != null &&
+          sec.entities.any((e) => personSlug(e) == slug);
+      if (inText || inEntities) {
         _personHighlightTs = ts;
       }
     }
@@ -638,13 +644,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     }
   }
 
-  /// HR sadržaj sekcije s danim screenshot timestampom, ili null.
-  String? _sectionContentFor(String ts) {
+  /// Sekcija članka s danim screenshot timestampom, ili null.
+  PodcastSection? _sectionFor(String ts) {
     final article = widget.data.article;
     if (article == null) return null;
     for (final iter in article.iterations) {
       for (final sec in iter.sections) {
-        if (sec.screenshotTimestamp == ts) return sec.content;
+        if (sec.screenshotTimestamp == ts) return sec;
       }
     }
     return null;
@@ -1449,7 +1455,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 Divider(height: 1, color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 12),
               ],
-              EntitiesSection(summary: summaryForUi.summary),
+              EntitiesSection(
+                summary: summaryForUi.summary,
+                highlightPersonSlug: widget.highlightPersonSlug,
+              ),
               _MetadataFooter(data: data),
             ],
           ),
@@ -1574,7 +1583,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         color: theme.colorScheme.outlineVariant,
                       ),
                       const SizedBox(height: 12),
-                      EntitiesSection(summary: summaryForUi.summary),
+                      EntitiesSection(
+                summary: summaryForUi.summary,
+                highlightPersonSlug: widget.highlightPersonSlug,
+              ),
                       _MetadataFooter(data: data),
                     ],
                   ),

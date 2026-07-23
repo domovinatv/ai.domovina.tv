@@ -8,7 +8,15 @@ import '../l10n/app_localizations.dart';
 class EntitiesSection extends StatelessWidget {
   final SummaryContent summary;
 
-  const EntitiesSection({super.key, required this.summary});
+  /// Person-highlight (dolazak s /p/ profila preko `?p=<slug>`): chip osobe
+  /// čiji slug matcha renderira se bijelo-na-crveno (needle dekoracija).
+  final String? highlightPersonSlug;
+
+  const EntitiesSection({
+    super.key,
+    required this.summary,
+    this.highlightPersonSlug,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +43,9 @@ class EntitiesSection extends StatelessWidget {
             // govornici dobiju bogat profil; ostali (samo spomenuti) padnu na
             // uredno prazno stanje. Mjesta/organizacije nisu klikabilni.
             onItemTap: (name) => context.go('/p/${personSlug(name)}'),
+            isHighlighted: highlightPersonSlug != null
+                ? (name) => personSlug(name) == highlightPersonSlug
+                : null,
           ),
           const SizedBox(height: 16),
           _EntityGroup(
@@ -65,12 +76,17 @@ class _EntityGroup extends StatelessWidget {
   /// Ako je zadan, svaki chip postaje klikabilan (npr. osobe → profil).
   final void Function(String item)? onItemTap;
 
+  /// Ako je zadan i vrati true, chip se renderira bijelo-na-crveno
+  /// (person-needle highlight).
+  final bool Function(String item)? isHighlighted;
+
   const _EntityGroup({
     required this.icon,
     required this.title,
     required this.items,
     required this.color,
     this.onItemTap,
+    this.isHighlighted,
   });
 
   @override
@@ -102,18 +118,27 @@ class _EntityGroup extends StatelessWidget {
           spacing: 6,
           runSpacing: 6,
           children: items.map((item) {
+            final highlighted = isHighlighted?.call(item) ?? false;
             final chip = Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: color.withAlpha(20),
+                color: highlighted
+                    ? theme.colorScheme.tertiary
+                    : color.withAlpha(20),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: color.withAlpha(60)),
+                border: Border.all(
+                  color: highlighted
+                      ? theme.colorScheme.tertiary
+                      : color.withAlpha(60),
+                ),
               ),
               child: Text(
                 item,
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: color.withAlpha(220)),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: highlighted ? Colors.white : color.withAlpha(220),
+                  fontWeight: highlighted ? FontWeight.bold : null,
+                ),
               ),
             );
             if (onItemTap == null) return chip;
