@@ -23,6 +23,7 @@ import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/player_resume.dart';
 import '../services/page_meta.dart';
+import '../services/person_service.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -588,11 +589,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
         .where((w) => w.isNotEmpty)
         .map((w) => w[0].toUpperCase() + w.substring(1))
         .join(' ');
+    var matched = false;
     final speakers = widget.data.summary?.summary.speakers ?? const [];
     for (final sp in speakers) {
       final dn = sp.displayName;
       if (dn != null && personSlug(dn) == slug) {
         name = dn;
+        matched = true;
         break;
       }
     }
@@ -600,6 +603,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _personHighlightTs = ts;
     _personHighlightName = name;
     log('person highlight: $slug → "$name" @ $ts');
+
+    // Slug nije među govornicima ove epizode (npr. spomen ili drukčije
+    // diarizirano ime) → fallback ime iz sluga nema dijakritike ("Stojic").
+    // Doradi async s pravim imenom s person API-ja (5-min CDN cache, jeftino).
+    if (!matched) {
+      PersonService.fetch(slug).then((hub) {
+        final proper = hub?.name.trim();
+        if (!mounted || proper == null || proper.isEmpty) return;
+        setState(() => _personHighlightName = proper);
+      });
+    }
   }
 
   /// `p=<slug>` query string za playback URL sync — čuva person marker u
