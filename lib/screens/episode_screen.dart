@@ -8,6 +8,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../l10n/app_localizations.dart';
+import '../main.dart' show log;
+import '../models/person_hub.dart' show personSlug;
 import '../onboarding/moments/m1_save_progress_toast.dart';
 import '../onboarding/moments/m2_link_identity_sheet.dart';
 import '../onboarding/triggers/watch_seconds_tracker.dart';
@@ -50,11 +52,16 @@ class EpisodeScreen extends StatefulWidget {
   /// sticky pref. Ostavljeno null/false znaci: koristi sticky pref ili HR default.
   final bool initialLanguageEn;
 
+  /// Person slug iz `?p=<slug>` (dolazak s /p/ profila govornika) — sekcija na
+  /// koju `/t/<sec>` sleti dobiva crvenu "X govori ovdje" oznaku u članku.
+  final String? highlightPersonSlug;
+
   const EpisodeScreen({
     super.key,
     required this.youtubeId,
     this.startAtSeconds,
     this.initialLanguageEn = false,
+    this.highlightPersonSlug,
   });
 
   @override
@@ -101,6 +108,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
         data: _data!,
         startAtSeconds: widget.startAtSeconds,
         initialLanguageEn: widget.initialLanguageEn,
+        highlightPersonSlug: widget.highlightPersonSlug,
       );
     }
 
@@ -374,11 +382,13 @@ class _EpisodeContent extends StatefulWidget {
   final EpisodeData data;
   final int? startAtSeconds;
   final bool initialLanguageEn;
+  final String? highlightPersonSlug;
 
   const _EpisodeContent({
     required this.data,
     this.startAtSeconds,
     this.initialLanguageEn = false,
+    this.highlightPersonSlug,
   });
 
   @override
@@ -476,6 +486,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// Razrješava se iz channel indexa u [_resolveChannelSlug].
   String? _audioArtUrl;
 
+  /// Person-highlight marker (dolazak s /p/ profila preko `?p=<slug>`):
+  /// timestamp sekcije na koju je deep-link sletio + razriješeno ime osobe.
+  /// Null kad nema `?p=` ili nema `/t/<sec>` sidra. Vidi [_initPersonHighlight].
+  String? _personHighlightTs;
+  String? _personHighlightName;
+
   @override
   void initState() {
     super.initState();
@@ -538,9 +554,59 @@ class _EpisodeContentState extends State<_EpisodeContent>
       return VideoChapterMark(position: s.dur, timestamp: s.ts, label: label);
     }).toList();
 
+    _initPersonHighlight();
+
     _scrollController.addListener(_onScroll);
     _initVideo();
   }
+
+  /// Razriješi `?p=<slug>` u (timestamp ciljne sekcije, ime osobe) za crvenu
+  /// "X govori ovdje" oznaku. Ime se matcha protiv diariziranih govornika
+  /// epizode istim [personSlug] foldom koji koristi i backend (pa dobijemo
+  /// pravo ime s dijakriticima bez dodatnog fetcha); fallback je "otfoldani"
+  /// slug (Title Case, bez dijakritika).
+  void _initPersonHighlight() {
+    final slug = widget.highlightPersonSlug;
+    final startAt = widget.startAtSeconds;
+    if (slug == null || slug.isEmpty || startAt == null) return;
+    if (_sortedSections.isEmpty) return;
+
+    // Sekcija u koju deep-link sekunda pada (zadnja s početkom <= startAt);
+    // prije prve sekcije → prva (deep-link na sam uvod).
+    final pos = Duration(seconds: startAt);
+    var ts = _sortedSections.first.ts;
+    for (final s in _sortedSections) {
+      if (pos >= s.dur) {
+        ts = s.ts;
+      } else {
+        break;
+      }
+    }
+
+    var name = slug
+        .split('-')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
+    final speakers = widget.data.summary?.summary.speakers ?? const [];
+    for (final sp in speakers) {
+      final dn = sp.displayName;
+      if (dn != null && personSlug(dn) == slug) {
+        name = dn;
+        break;
+      }
+    }
+
+    _personHighlightTs = ts;
+    _personHighlightName = name;
+    log('person highlight: $slug → "$name" @ $ts');
+  }
+
+  /// `p=<slug>` query string za playback URL sync — čuva person marker u
+  /// adresnoj traci da copy-paste link zadrži oznaku. Null bez aktivnog markera.
+  String? get _highlightQuery => _personHighlightName != null
+      ? 'p=${widget.highlightPersonSlug}'
+      : null;
 
   @override
   void dispose() {
@@ -605,6 +671,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       '/v/${widget.data.youtubeId}',
       isEn: lang == EpisodeLanguage.en,
       seconds: sec,
+      query: _highlightQuery,
     );
     _lastUrlSyncedSec = sec;
   }
@@ -883,6 +950,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         '/v/${widget.data.youtubeId}',
         sec,
         langSuffix: _language == EpisodeLanguage.en ? '/en' : null,
+        query: _highlightQuery,
       );
       // Media Session position update — drži lock screen scrub bar u syncu.
       // Throttled na sec granularnost (isti gate kao URL sync).
@@ -1299,6 +1367,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 youtubeId: data.youtubeId,
                 sectionKeys: _sectionKeys,
                 showScreenshot: !data.isAudioOnly,
+                highlightTimestamp: _personHighlightTs,
+                highlightPersonName: _personHighlightName,
                 onPlayTap: _videoReady
                     ? (ts) {
                         _seekAndPlay(ts, preroll: true);
@@ -1431,6 +1501,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         youtubeId: data.youtubeId,
                         sectionKeys: _sectionKeys,
                         showScreenshot: !data.isAudioOnly,
+                        highlightTimestamp: _personHighlightTs,
+                        highlightPersonName: _personHighlightName,
                         onPlayTap: _videoReady
                             ? (ts) => _seekAndPlay(ts, preroll: true)
                             : null,

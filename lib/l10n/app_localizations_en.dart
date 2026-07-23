@@ -2386,6 +2386,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String sectionPersonSpeaksHere(String name) {
+    return '$name speaks here';
+  }
+
+  @override
   String get sectionCopyLink => 'Copy link';
 
   @override

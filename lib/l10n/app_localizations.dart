@@ -3956,6 +3956,12 @@ abstract class AppLocalizations {
   /// **'Pusti od {timestamp}'**
   String sectionPlayFrom(String timestamp);
 
+  /// Crvena oznaka na sekciji članka kad korisnik dođe s profila govornika (/p/…?p=slug) — pokazuje točno mjesto gdje osoba govori.
+  ///
+  /// In hr, this message translates to:
+  /// **'{name} govori ovdje'**
+  String sectionPersonSpeaksHere(String name);
+
   /// Tooltip gumba koji kopira dijeljivu poveznicu na sekciju s vremenskom oznakom.
   ///
   /// In hr, this message translates to:

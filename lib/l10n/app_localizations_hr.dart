@@ -2408,6 +2408,11 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String sectionPersonSpeaksHere(String name) {
+    return '$name govori ovdje';
+  }
+
+  @override
   String get sectionCopyLink => 'Kopiraj poveznicu';
 
   @override

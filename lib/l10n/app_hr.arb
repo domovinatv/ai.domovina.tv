@@ -2989,6 +2989,15 @@
       }
     }
   },
+  "sectionPersonSpeaksHere": "{name} govori ovdje",
+  "@sectionPersonSpeaksHere": {
+    "description": "Crvena oznaka na sekciji članka kad korisnik dođe s profila govornika (/p/…?p=slug) — pokazuje točno mjesto gdje osoba govori.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "sectionCopyLink": "Kopiraj poveznicu",
   "@sectionCopyLink": {
     "description": "Tooltip gumba koji kopira dijeljivu poveznicu na sekciju s vremenskom oznakom."

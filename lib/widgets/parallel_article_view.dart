@@ -42,6 +42,13 @@ class ParallelArticleView extends StatelessWidget {
   /// Kad false (audio-only epizode), sekcije ne renderiraju screenshot blok.
   final bool showScreenshot;
 
+  /// Person-highlight marker (dolazak s /p/ profila preko `?p=<slug>`):
+  /// sekcija s ovim timestampom dobiva crvenu "X govori ovdje" oznaku.
+  final String? highlightTimestamp;
+
+  /// Ime osobe za marker — prikazuje se samo na [highlightTimestamp] sekciji.
+  final String? highlightPersonName;
+
   const ParallelArticleView({
     super.key,
     required this.article,
@@ -51,6 +58,8 @@ class ParallelArticleView extends StatelessWidget {
     this.onPlayTap,
     this.columnGap = 32,
     this.showScreenshot = true,
+    this.highlightTimestamp,
+    this.highlightPersonName,
   });
 
   @override
@@ -92,6 +101,10 @@ class ParallelArticleView extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       showScreenshot: showScreenshot,
                       clipEndSec: showScreenshot ? endSec : null,
+                      personHighlight:
+                          sec.screenshotTimestamp == highlightTimestamp
+                              ? highlightPersonName
+                              : null,
                     ),
                   ),
                   SizedBox(width: columnGap),

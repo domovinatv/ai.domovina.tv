@@ -243,6 +243,7 @@ class _SingleColumn extends StatelessWidget {
               _EpisodesSection(
                 title: l.personEpisodesHeading,
                 episodes: hub.episodes,
+                personSlug: hub.slug,
               ),
             ],
             if (hub.mentions.isNotEmpty) ...[
@@ -250,6 +251,7 @@ class _SingleColumn extends StatelessWidget {
               _EpisodesSection(
                 title: l.personMentionedIn,
                 episodes: hub.mentions,
+                personSlug: hub.slug,
               ),
             ],
           ],
@@ -307,6 +309,7 @@ class _TwoColumn extends StatelessWidget {
                 child: _EpisodeListColumn(
                   title: l.personEpisodesHeading,
                   episodes: hub.episodes,
+                  personSlug: hub.slug,
                 ),
               ),
             // Desni stupac — „Spominje se u" (spomeni), zaseban scroll. Tanka
@@ -318,6 +321,7 @@ class _TwoColumn extends StatelessWidget {
                 child: _EpisodeListColumn(
                   title: l.personMentionedIn,
                   episodes: hub.mentions,
+                  personSlug: hub.slug,
                 ),
               ),
             ],
@@ -666,7 +670,15 @@ class _EpisodesSection extends StatelessWidget {
   final String title;
   final List<PersonEpisode> episodes;
 
-  const _EpisodesSection({required this.title, required this.episodes});
+  /// Slug osobe — prosljeđuje se kao `?p=` na episode deep-link da episode
+  /// ekran označi sekciju gdje osoba govori ("X govori ovdje" marker).
+  final String personSlug;
+
+  const _EpisodesSection({
+    required this.title,
+    required this.episodes,
+    required this.personSlug,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -675,7 +687,7 @@ class _EpisodesSection extends StatelessWidget {
       children: [
         _SectionTitle(title: title),
         const SizedBox(height: 10),
-        for (final e in episodes) _EpisodeCard(episode: e),
+        for (final e in episodes) _EpisodeCard(episode: e, personSlug: personSlug),
       ],
     );
   }
@@ -687,7 +699,14 @@ class _EpisodeListColumn extends StatelessWidget {
   final String title;
   final List<PersonEpisode> episodes;
 
-  const _EpisodeListColumn({required this.title, required this.episodes});
+  /// Slug osobe — prosljeđuje se kao `?p=` na episode deep-link (marker).
+  final String personSlug;
+
+  const _EpisodeListColumn({
+    required this.title,
+    required this.episodes,
+    required this.personSlug,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +720,7 @@ class _EpisodeListColumn extends StatelessWidget {
             child: _SectionTitle(title: title),
           );
         }
-        return _EpisodeCard(episode: episodes[i - 1]);
+        return _EpisodeCard(episode: episodes[i - 1], personSlug: personSlug);
       },
     );
   }
@@ -710,7 +729,11 @@ class _EpisodeListColumn extends StatelessWidget {
 class _EpisodeCard extends StatelessWidget {
   final PersonEpisode episode;
 
-  const _EpisodeCard({required this.episode});
+  /// Slug osobe — appenda se kao `?p=` na deep-link da episode ekran prikaže
+  /// "X govori ovdje" marker na ciljanoj sekciji članka.
+  final String personSlug;
+
+  const _EpisodeCard({required this.episode, required this.personSlug});
 
   @override
   Widget build(BuildContext context) {
@@ -724,7 +747,7 @@ class _EpisodeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.go(episode.routePath),
+        onTap: () => context.go('${episode.routePath}?p=$personSlug'),
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Row(

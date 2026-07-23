@@ -172,8 +172,11 @@ GoRouter createRouter() {
           final videoId = state.pathParameters['videoId']!;
           final t = state.uri.queryParameters['t'];
           final startAt = t != null ? int.tryParse(t) : null;
+          // `?p=<person-slug>` — person-highlight marker (dolazak s /p/
+          // profila govornika); vidi EpisodeScreen.highlightPersonSlug.
+          final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-${startAt ?? 0}-hr'),
+            key: ValueKey('video-$videoId-${startAt ?? 0}-hr-${person ?? ''}'),
             // Android TV (Leanback): standalone 10-foot UI. EN toggle nije jos
             // u TV varijanti (Faza 4.5), pa /v/<id>/en za sada renderira isti
             // TvEpisodeScreen (vidi tv ruta /en ispod).
@@ -185,6 +188,7 @@ GoRouter createRouter() {
                 : EpisodeScreen(
                     youtubeId: videoId,
                     startAtSeconds: startAt,
+                    highlightPersonSlug: person,
                   ),
           );
         },
@@ -240,8 +244,9 @@ GoRouter createRouter() {
           final videoId = state.pathParameters['videoId']!;
           final t = state.uri.queryParameters['t'];
           final startAt = t != null ? int.tryParse(t) : null;
+          final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-${startAt ?? 0}-en'),
+            key: ValueKey('video-$videoId-${startAt ?? 0}-en-${person ?? ''}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -251,6 +256,7 @@ GoRouter createRouter() {
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                     initialLanguageEn: true,
+                    highlightPersonSlug: person,
                   ),
           );
         },
@@ -263,8 +269,9 @@ GoRouter createRouter() {
         pageBuilder: (context, state) {
           final videoId = state.pathParameters['videoId']!;
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
+          final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-${startAt ?? 0}-hr'),
+            key: ValueKey('video-$videoId-${startAt ?? 0}-hr-${person ?? ''}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -273,6 +280,7 @@ GoRouter createRouter() {
                 : EpisodeScreen(
                     youtubeId: videoId,
                     startAtSeconds: startAt,
+                    highlightPersonSlug: person,
                   ),
           );
         },
@@ -283,8 +291,9 @@ GoRouter createRouter() {
         pageBuilder: (context, state) {
           final videoId = state.pathParameters['videoId']!;
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
+          final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-${startAt ?? 0}-en'),
+            key: ValueKey('video-$videoId-${startAt ?? 0}-en-${person ?? ''}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -294,6 +303,7 @@ GoRouter createRouter() {
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                     initialLanguageEn: true,
+                    highlightPersonSlug: person,
                   ),
           );
         },

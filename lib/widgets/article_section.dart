@@ -24,6 +24,13 @@ class ArticleSection extends StatelessWidget {
   /// Kad false (audio-only epizode), sekcije ne renderiraju screenshot blok.
   final bool showScreenshot;
 
+  /// Person-highlight marker (dolazak s /p/ profila preko `?p=<slug>`):
+  /// sekcija s ovim timestampom dobiva crvenu "X govori ovdje" oznaku.
+  final String? highlightTimestamp;
+
+  /// Ime osobe za marker — prikazuje se samo na [highlightTimestamp] sekciji.
+  final String? highlightPersonName;
+
   const ArticleSection({
     super.key,
     required this.article,
@@ -32,6 +39,8 @@ class ArticleSection extends StatelessWidget {
     this.onPlayTap,
     this.magisterium,
     this.showScreenshot = true,
+    this.highlightTimestamp,
+    this.highlightPersonName,
   });
 
   @override
@@ -61,6 +70,8 @@ class ArticleSection extends StatelessWidget {
             onPlayTap: onPlayTap,
             magisterium: magisterium,
             showScreenshot: showScreenshot,
+            highlightTimestamp: highlightTimestamp,
+            highlightPersonName: highlightPersonName,
           ),
         ),
       ],
@@ -75,6 +86,8 @@ class _IterationBlock extends StatelessWidget {
   final void Function(String timestamp)? onPlayTap;
   final MagisteriumData? magisterium;
   final bool showScreenshot;
+  final String? highlightTimestamp;
+  final String? highlightPersonName;
 
   const _IterationBlock({
     required this.iteration,
@@ -83,6 +96,8 @@ class _IterationBlock extends StatelessWidget {
     required this.onPlayTap,
     this.magisterium,
     this.showScreenshot = true,
+    this.highlightTimestamp,
+    this.highlightPersonName,
   });
 
   @override
@@ -122,6 +137,9 @@ class _IterationBlock extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 56),
                   showScreenshot: showScreenshot,
                   clipEndSec: showScreenshot ? endSec : null,
+                  personHighlight: sec.screenshotTimestamp == highlightTimestamp
+                      ? highlightPersonName
+                      : null,
                 ),
               ),
             );
@@ -213,6 +231,11 @@ class ArticleSectionCard extends StatefulWidget {
   /// Null za audio-only ili kad raspon nije poznat (cutter treba `video_h264.mp4`).
   final int? clipEndSec;
 
+  /// Ime osobe za person-highlight marker ("X govori ovdje", bijeli tekst na
+  /// crvenoj pozadini) iznad naslova sekcije. Non-null samo na sekciji na koju
+  /// je korisnik doveden s profila govornika (`/v/<id>/t/<sec>?p=<slug>`).
+  final String? personHighlight;
+
   const ArticleSectionCard({
     super.key,
     required this.section,
@@ -223,6 +246,7 @@ class ArticleSectionCard extends StatefulWidget {
     this.padding = const EdgeInsets.only(bottom: 56, top: 80),
     this.showScreenshot = true,
     this.clipEndSec,
+    this.personHighlight,
   });
 
   @override
@@ -278,6 +302,41 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Person-highlight marker — "X govori ovdje" (dolazak s /p/ profila).
+          // Brand crvena (cs.tertiary = croRed) + bijeli tekst, namjerno upadljiv
+          // da se odmah vidi ZAŠTO je korisnik doveden baš na ovu sekciju.
+          if (widget.personHighlight != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiary,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.record_voice_over,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        l.sectionPersonSpeaksHere(widget.personHighlight!),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           // Timestamp badge + play button + score badge + subtitle
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
