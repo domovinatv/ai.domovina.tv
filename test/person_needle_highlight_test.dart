@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:domovina_ai/widgets/person_needle_highlight.dart';
@@ -69,4 +71,75 @@ void main() {
       expect(markPersonMentions(text, 'Damir Stojić'), same(text));
     });
   });
+
+  group('PersonMarkBuilder inline rendering', () {
+    testWidgets('chip je mergean u isti RichText kao okolni tekst (inline)',
+        (tester) async {
+      final marked = markPersonMentions(
+        'Uvodni tekst o gostu Damiru Stojiću i njegovoj katehezi.',
+        'Damir Stojić',
+      );
+      expect(marked, contains('⟦'));
+
+      await tester.pumpWidget(_Harness(marked));
+
+      // Cijeli paragraf mora biti JEDAN mergani text widget čiji span tree
+      // sadrži i okolni tekst i WidgetSpan chipa — to je definicija inline
+      // flowa u flutter_markdownu. Da chip nije mergean, paragraf bi bio
+      // Wrap s više zasebnih text widgeta (i chip bi "lomio" rečenicu).
+      final richTexts = tester
+          .widgetList<RichText>(find.byType(RichText))
+          .where((rt) => rt.text.toPlainText().contains('Uvodni tekst'))
+          .toList();
+      expect(richTexts, hasLength(1));
+
+      var hasWidgetSpan = false;
+      richTexts.single.text.visitChildren((span) {
+        if (span is WidgetSpan) hasWidgetSpan = true;
+        return true;
+      });
+      expect(hasWidgetSpan, isTrue,
+          reason: 'chip (WidgetSpan) mora biti unutar merganog paragrafa');
+
+      // Zaobljeni rubovi: Container chipa ima BoxDecoration s borderRadius.
+      final chipContainer = tester.widget<Container>(
+        find.ancestor(
+          of: find.text('Damiru Stojiću'),
+          matching: find.byType(Container),
+        ),
+      );
+      final deco = chipContainer.decoration! as BoxDecoration;
+      expect(deco.borderRadius, isNotNull);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Widget test harness: chip mora biti INLINE u paragrafu (mergean u isti
+// RichText kao okolni tekst kroz flutter_markdown _mergeInlineChildren), ne
+// zaseban blok. Regresija: builder koji vrati obični Text (textSpan == null)
+// završi kao zaseban item u Wrap-u → highlight lomi rečenicu u novi red.
+// ---------------------------------------------------------------------------
+
+class _Harness extends StatelessWidget {
+  final String data;
+  const _Harness(this.data);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: MarkdownBody(
+          data: data,
+          inlineSyntaxes: [PersonMarkSyntax()],
+          builders: {
+            'personMark': PersonMarkBuilder(
+              background: Colors.red,
+              foreground: Colors.white,
+            ),
+          },
+        ),
+      ),
+    );
+  }
 }
