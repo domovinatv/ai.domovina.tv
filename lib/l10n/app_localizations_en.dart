@@ -892,6 +892,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get episodeOpenOnYouTube => 'Open on YouTube';
 
   @override
+  String get episodeOpenOnX => 'Open on 𝕏';
+
+  @override
   String get episodeCopyMomentLink => 'Copy link to this moment';
 
   @override

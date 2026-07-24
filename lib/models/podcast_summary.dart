@@ -52,7 +52,10 @@ class SummarySource {
       youtubeId: json['youtube_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       uploadDate: json['upload_date'] as String? ?? '',
-      durationSeconds: json['duration_seconds'] as int? ?? 0,
+      // X/Twitter izvor daje decimalan `duration_seconds` (245.295) — čitaj kao
+      // `num` pa `.toInt()`, inače `as int?` baca TypeError, `loadSummary` puca,
+      // summary postane null i `summaryFor(...)!` u buildu bijeli ekran.
+      durationSeconds: (json['duration_seconds'] as num?)?.toInt() ?? 0,
     );
   }
 }

@@ -19,9 +19,13 @@ class PodcastInfo {
   final List<YtChapter> chapters;
   final List<YtThumbnail> thumbnails;
 
-  /// Izvor epizode — npr. `youtube` (default) ili `beamly` (audio podcast feed
-  /// preko transistor.fm-a). Iz info.json `_source`.
+  /// Izvor epizode — npr. `youtube` (default), `x` (X/Twitter post) ili
+  /// `beamly` (audio podcast feed preko transistor.fm-a). Iz info.json `_source`.
   final String source;
+
+  /// yt-dlp `extractor` — npr. `youtube`, `twitter`. Sekundarni marker izvora
+  /// (X info.json ima `extractor: "twitter"`). Vidi [isX].
+  final String extractor;
 
   /// Direktni link na audio (mp3) za audio-only epizode. Iz info.json
   /// `_sound_link`. Null za standardne (video) epizode.
@@ -51,23 +55,33 @@ class PodcastInfo {
     required this.chapters,
     required this.thumbnails,
     this.source = 'youtube',
+    this.extractor = 'youtube',
     this.soundLink,
     this.ytMatched = true,
   });
 
   factory PodcastInfo.fromJson(Map<String, dynamic> json) {
+    // Non-YouTube izvori (X/Twitter) imaju drukčiji info.json oblik: nedostaju
+    // `channel`/`channel_url`/`view_count`/`categories`, a `duration` može biti
+    // decimalan (245.295) umjesto cijelog broja. Sve numeričke vrijednosti zato
+    // čitamo preko `num` (int ILI double) i tek onda `.toInt()`, a `channel`
+    // fallback-amo na `uploader` ("Hobba 🟢"). Vidi CLAUDE.md / X info.json.
+    final channelRaw = json['channel'] as String?;
+    final uploaderRaw = json['uploader'] as String? ?? '';
     return PodcastInfo(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
-      channel: json['channel'] as String? ?? '',
+      channel: (channelRaw != null && channelRaw.isNotEmpty)
+          ? channelRaw
+          : uploaderRaw,
       channelId: json['channel_id'] as String? ?? '',
-      uploader: json['uploader'] as String? ?? '',
+      uploader: uploaderRaw,
       uploadDate: json['upload_date'] as String? ?? '',
-      duration: json['duration'] as int? ?? 0,
+      duration: (json['duration'] as num?)?.toInt() ?? 0,
       durationString: json['duration_string'] as String? ?? '',
-      viewCount: json['view_count'] as int? ?? 0,
-      likeCount: json['like_count'] as int? ?? 0,
-      commentCount: json['comment_count'] as int?,
+      viewCount: (json['view_count'] as num?)?.toInt() ?? 0,
+      likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
+      commentCount: (json['comment_count'] as num?)?.toInt(),
       description: json['description'] as String? ?? '',
       thumbnail: json['thumbnail'] as String? ?? '',
       webpageUrl: json['webpage_url'] as String? ?? '',
@@ -80,20 +94,35 @@ class PodcastInfo {
           .map((t) => YtThumbnail.fromJson(t as Map<String, dynamic>))
           .toList(),
       source: json['_source'] as String? ?? 'youtube',
+      extractor: json['extractor'] as String? ?? 'youtube',
       soundLink: json['_sound_link'] as String?,
       ytMatched: json['_yt_matched'] as bool? ?? true,
     );
   }
 
-  /// Link na izvornu epizodu za "Otvori izvor" akciju. Kad epizoda NIJE
-  /// povezana s YouTube videom (`_yt_matched == false`, npr. beamly/transistor
-  /// audio podcasti) vodi na `webpage_url` (launchedfm.com/episode/…); inače na
-  /// YouTube watch URL. Null ako nema upotrebljivog URL-a.
+  /// Je li izvor X/Twitter post (ne YouTube). X info.json ima `_source: "x"` i
+  /// `extractor: "twitter"`; kao dodatni guard gledamo i host webpage_url-a.
+  /// Za X epizode `id` je SINTETIČKI (sha256→11 znakova) — NIJE pravi YouTube
+  /// ID, pa se iz njega ne smije graditi ytimg thumbnail ni youtube.com/watch
+  /// link. Vidi [sourceUrl].
+  bool get isX =>
+      source == 'x' ||
+      extractor == 'twitter' ||
+      webpageUrl.contains('x.com/') ||
+      webpageUrl.contains('twitter.com/');
+
+  /// Link na izvornu epizodu za "Otvori izvor" akciju. Za ne-YouTube izvore
+  /// (X post preko `_source: "x"`, ili beamly/transistor audio podcasti s
+  /// `_yt_matched == false`) `id` je sintetički pa vodimo na `webpage_url`
+  /// (npr. x.com/…/status/… ili launchedfm.com/episode/…). Za prave YouTube
+  /// epizode gradimo watch URL iz `id`. Null ako nema upotrebljivog URL-a.
   ///
   /// NB: audio-vs-video odluku za PLAYBACK/UI radi probe (`EpisodeData.isAudioOnly`),
   /// ne ovaj getter — `_sound_link` postoji i na video epizodama.
   String? get sourceUrl {
-    if (!ytMatched) return webpageUrl.isNotEmpty ? webpageUrl : null;
+    if (isX || !ytMatched) {
+      return webpageUrl.isNotEmpty ? webpageUrl : null;
+    }
     return 'https://www.youtube.com/watch?v=$id';
   }
 

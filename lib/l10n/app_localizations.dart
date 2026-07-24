@@ -1616,6 +1616,12 @@ abstract class AppLocalizations {
   /// **'Otvori na YouTubeu'**
   String get episodeOpenOnYouTube;
 
+  /// Tooltip/label for the action that opens the episode's X (Twitter) post source.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori na 𝕏'**
+  String get episodeOpenOnX;
+
   /// Tooltip for the share action that copies a link to the current playback position.
   ///
   /// In hr, this message translates to:

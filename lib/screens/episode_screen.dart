@@ -1232,6 +1232,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final l = AppLocalizations.of(context);
     final url = data.info.sourceUrl;
     if (url == null) return null;
+    // X/Twitter izvor: `id` je sintetički pa `sourceUrl` vodi na webpage_url
+    // (x.com/…/status/…) — pokaži 𝕏 oznaku, ne crvenu YouTube ikonu.
+    if (data.info.isX) {
+      return IconButton(
+        icon: const Text('𝕏', style: TextStyle(fontSize: 18)),
+        tooltip: l.episodeOpenOnX,
+        onPressed: () => openUrl(url),
+      );
+    }
     if (data.isAudioOnly) {
       return IconButton(
         icon: const Icon(Icons.open_in_new),
@@ -2155,7 +2164,21 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             ),
                           ),
                         ),
-                    ] else if (data.info.ytMatched)
+                    ] else if (data.info.isX && data.info.sourceUrl != null)
+                      // X/Twitter izvor: sintetički `id` — NIKAD YouTube link.
+                      // Vodi na izvorni X post (webpage_url).
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => openUrl(data.info.sourceUrl!),
+                          icon: const Text('𝕏', style: TextStyle(fontSize: 18)),
+                          label: Text(l.episodeOpenOnX),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      )
+                    else if (data.info.ytMatched)
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(

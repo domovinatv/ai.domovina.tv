@@ -892,6 +892,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get episodeOpenOnYouTube => 'Otvori na YouTubeu';
 
   @override
+  String get episodeOpenOnX => 'Otvori na 𝕏';
+
+  @override
   String get episodeCopyMomentLink => 'Kopiraj link na ovaj trenutak';
 
   @override

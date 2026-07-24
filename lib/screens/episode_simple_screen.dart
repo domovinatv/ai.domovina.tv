@@ -591,12 +591,18 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             ),
             if (data.info.sourceUrl != null)
               IconButton(
-                icon: data.isAudioOnly
-                    ? const Icon(Icons.open_in_new)
-                    : const Icon(Icons.smart_display, color: Color(0xFFFF0000)),
-                tooltip: data.isAudioOnly
-                    ? l.commonOpenSource
-                    : l.episodeOpenOnYouTube,
+                // X/Twitter izvor → 𝕏 (sourceUrl vodi na webpage_url, ne YT).
+                icon: data.info.isX
+                    ? const Text('𝕏', style: TextStyle(fontSize: 18))
+                    : data.isAudioOnly
+                        ? const Icon(Icons.open_in_new)
+                        : const Icon(Icons.smart_display,
+                            color: Color(0xFFFF0000)),
+                tooltip: data.info.isX
+                    ? l.episodeOpenOnX
+                    : data.isAudioOnly
+                        ? l.commonOpenSource
+                        : l.episodeOpenOnYouTube,
                 onPressed: () => openUrl(data.info.sourceUrl!),
               ),
             ViewModeToggleButton(

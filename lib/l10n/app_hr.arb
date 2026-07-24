@@ -1141,6 +1141,10 @@
   "@episodeOpenOnYouTube": {
     "description": "Tooltip for the action that opens the episode's YouTube source."
   },
+  "episodeOpenOnX": "Otvori na 𝕏",
+  "@episodeOpenOnX": {
+    "description": "Tooltip/label for the action that opens the episode's X (Twitter) post source."
+  },
   "episodeCopyMomentLink": "Kopiraj link na ovaj trenutak",
   "@episodeCopyMomentLink": {
     "description": "Tooltip for the share action that copies a link to the current playback position."
