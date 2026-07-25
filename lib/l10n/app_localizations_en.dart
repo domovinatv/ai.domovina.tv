@@ -3232,4 +3232,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinkaSlotPickerOffGrid => 'Move the crosshair onto the grid';
+
+  @override
+  String get authSectionPlayback => 'Playback';
+
+  @override
+  String get mediaBackgroundPlaybackTitle => 'Background playback';
+
+  @override
+  String get mediaBackgroundPlaybackSubtitle =>
+      'Keep listening when you lock the screen or switch to another app.';
 }

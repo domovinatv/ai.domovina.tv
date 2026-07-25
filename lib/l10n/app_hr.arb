@@ -4038,5 +4038,17 @@
   "pinkaSlotPickerOffGrid": "Pomakni nišan na mrežu",
   "@pinkaSlotPickerOffGrid": {
     "description": "Poruka/onemogućeni gumb u fullscreen pickeru kad je nišan iznad praznog platna izvan 120×120 mreže."
+  },
+  "authSectionPlayback": "Reprodukcija",
+  "@authSectionPlayback": {
+    "description": "Naslov sekcije s postavkama reprodukcije na /account ekranu."
+  },
+  "mediaBackgroundPlaybackTitle": "Reprodukcija u pozadini",
+  "@mediaBackgroundPlaybackTitle": {
+    "description": "Naslov prekidača koji određuje nastavlja li reprodukcija kad app ili tab ode u pozadinu."
+  },
+  "mediaBackgroundPlaybackSubtitle": "Nastavi slušati kad zaključaš zaslon ili prijeđeš u drugu aplikaciju.",
+  "@mediaBackgroundPlaybackSubtitle": {
+    "description": "Objašnjenje ispod prekidača za reprodukciju u pozadini."
   }
 }

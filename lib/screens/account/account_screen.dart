@@ -17,6 +17,7 @@ import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log, rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
+import '../../services/background_playback.dart';
 import '../../services/entitlement_service.dart';
 import '../../services/episode_language.dart';
 import '../../services/locale_service.dart';
@@ -122,7 +123,9 @@ class _AccountScreenState extends State<AccountScreen> {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 380),
-        child: Padding(
+        // Scrollable jer sadržaj s postavkama više ne stane na niske ekrane
+        // (landscape mobitel); dok stane, Center ga i dalje drži po sredini.
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -156,6 +159,14 @@ class _AccountScreenState extends State<AccountScreen> {
                 onPressed: () => openPaywall(context, UpgradeTrigger.generic),
               ),
               const SizedBox(height: 28),
+              // Postavka je lokalna (uređaj/preglednik) i ne ovisi o prijavi —
+              // isti prekidač kao u _signedInBody.
+              SizedBox(
+                width: double.infinity,
+                child: _sectionLabel(theme, l.authSectionPlayback),
+              ),
+              _backgroundPlaybackCard(theme),
+              const SizedBox(height: 16),
               _languageCard(theme),
             ],
           ),
@@ -190,6 +201,9 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(height: 16),
               _sectionLabel(theme, l.authSectionDevices),
               _devicesCard(theme),
+              const SizedBox(height: 16),
+              _sectionLabel(theme, l.authSectionPlayback),
+              _backgroundPlaybackCard(theme),
               const SizedBox(height: 16),
               _sectionLabel(theme, l.authSectionLanguage),
               _languageCard(theme),
@@ -295,6 +309,34 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
       ),
       child: child,
+    );
+  }
+
+  /// „Reprodukcija u pozadini" — nastavlja li ono što svira raditi kad app ili
+  /// tab izgubi prvi plan. Default uključeno; pref je lokalan (uređaj/preglednik),
+  /// ne veže se uz račun. ListenableBuilder jer BackgroundPlayback vrijednost
+  /// učitava lazy (bez init() poziva u main()) pa stigne nakon prvog builda.
+  Widget _backgroundPlaybackCard(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+    return ListenableBuilder(
+      listenable: BackgroundPlayback.instance,
+      builder: (context, _) => _card(
+        theme,
+        child: SwitchListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+          secondary: Icon(Icons.headset_outlined, color: cs.primary),
+          title: Text(l.mediaBackgroundPlaybackTitle),
+          subtitle: Text(
+            l.mediaBackgroundPlaybackSubtitle,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          value: BackgroundPlayback.instance.enabled,
+          onChanged: (v) => BackgroundPlayback.instance.setEnabled(v),
+        ),
+      ),
     );
   }
 

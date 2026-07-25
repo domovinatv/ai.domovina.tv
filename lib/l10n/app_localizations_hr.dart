@@ -3253,4 +3253,14 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get pinkaSlotPickerOffGrid => 'Pomakni nišan na mrežu';
+
+  @override
+  String get authSectionPlayback => 'Reprodukcija';
+
+  @override
+  String get mediaBackgroundPlaybackTitle => 'Reprodukcija u pozadini';
+
+  @override
+  String get mediaBackgroundPlaybackSubtitle =>
+      'Nastavi slušati kad zaključaš zaslon ili prijeđeš u drugu aplikaciju.';
 }

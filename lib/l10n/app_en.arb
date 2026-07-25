@@ -858,5 +858,8 @@
   "pinkaSlotPickerHint": "Drag and pinch to zoom; the square under the crosshair is your pick.",
   "pinkaSlotPickerConfirm": "Confirm spot · {price} €",
   "pinkaSlotPickerTaken": "This spot is taken",
-  "pinkaSlotPickerOffGrid": "Move the crosshair onto the grid"
+  "pinkaSlotPickerOffGrid": "Move the crosshair onto the grid",
+  "authSectionPlayback": "Playback",
+  "mediaBackgroundPlaybackTitle": "Background playback",
+  "mediaBackgroundPlaybackSubtitle": "Keep listening when you lock the screen or switch to another app."
 }

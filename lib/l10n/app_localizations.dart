@@ -5251,6 +5251,24 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Pomakni nišan na mrežu'**
   String get pinkaSlotPickerOffGrid;
+
+  /// Naslov sekcije s postavkama reprodukcije na /account ekranu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reprodukcija'**
+  String get authSectionPlayback;
+
+  /// Naslov prekidača koji određuje nastavlja li reprodukcija kad app ili tab ode u pozadinu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reprodukcija u pozadini'**
+  String get mediaBackgroundPlaybackTitle;
+
+  /// Objašnjenje ispod prekidača za reprodukciju u pozadini.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi slušati kad zaključaš zaslon ili prijeđeš u drugu aplikaciju.'**
+  String get mediaBackgroundPlaybackSubtitle;
 }
 
 class _AppLocalizationsDelegate
