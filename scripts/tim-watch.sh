@@ -18,6 +18,9 @@
 #   GREŠKA     u panelu je API/tool greška, rate limit, crash
 #   KONTEKST   panel prešao 70 % konteksta (vrijeme za /compact ili /clear)
 #   VERDIKT    reviewer je zapisao novi .tim/reviews/*.md
+#   COMMIT     HEAD se pomaknuo (orkestratorova integracija)
+#   PAŽNJA     commit aplikacijskog koda BEZ zabilježenog verdikta — kršenje
+#              pravila "review prije commita" (tooling commitovi se ne broje)
 #   PANEL      panel je nestao (zatvoren/ugašen)
 #   TIM        session je nestao → watcher staje
 #
@@ -67,6 +70,8 @@ ROLES=(planner orkestrator reviewer dev1 dev2)
 PREV_SNAP=(); PREV_BUSY=(); PREV_BLOCK=(); PREV_ERR=(); PREV_CTX=(); PREV_PEND=(); PEND_WARNED=()
 for i in "${!ROLES[@]}"; do PREV_SNAP[$i]=""; PREV_BUSY[$i]=0; PREV_BLOCK[$i]=0; PREV_ERR[$i]=0; PREV_CTX[$i]=0; PREV_PEND[$i]=""; PEND_WARNED[$i]=""; done
 SEEN_REVIEWS=$(ls "$ROOT"/.tim/reviews/*.md 2>/dev/null | tr '\n' ' ')
+PREV_HEAD=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo none)
+VERDICTS_SINCE_COMMIT=0
 
 emit "TIM watcher pokrenut na sessionu $SESSION (interval ${INTERVAL}s)"
 
@@ -145,9 +150,26 @@ while :; do
     [ -e "$f" ] || continue
     case " $SEEN_REVIEWS " in
       *" $f "*) ;;
-      *) emit "VERDIKT $(basename "$f"): $(head -1 "$f")"; SEEN_REVIEWS="$SEEN_REVIEWS $f" ;;
+      *) emit "VERDIKT $(basename "$f"): $(head -1 "$f")"
+         SEEN_REVIEWS="$SEEN_REVIEWS $f"
+         VERDICTS_SINCE_COMMIT=$((VERDICTS_SINCE_COMMIT + 1)) ;;
     esac
   done
+
+  # Integracija: pomak HEAD-a + provjera invarijante "review prije commita".
+  head=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo none)
+  if [ "$head" != "$PREV_HEAD" ] && [ "$head" != none ]; then
+    subj=$(git -C "$ROOT" log -1 --format='%h %s' 2>/dev/null)
+    emit "COMMIT $subj"
+    # Tooling commitovi (skripte tima, njihove komande i doc) ne trebaju verdikt.
+    appfiles=$(git -C "$ROOT" show --name-only --format= HEAD 2>/dev/null \
+      | grep -vE '^scripts/tim|^\.claude/commands/|^docs/ai-tim-tmux\.md$' | grep -v '^$' | head -5)
+    if [ -n "$appfiles" ] && [ "$VERDICTS_SINCE_COMMIT" -eq 0 ]; then
+      emit "PAŽNJA commit dira kod bez zabilježenog verdikta reviewera: $(printf '%s' "$appfiles" | tr '\n' ' ')"
+    fi
+    VERDICTS_SINCE_COMMIT=0
+    PREV_HEAD=$head
+  fi
 
   [ "$ONCE" -eq 1 ] && break
   sleep "$INTERVAL"
