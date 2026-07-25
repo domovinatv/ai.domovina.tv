@@ -193,6 +193,14 @@ koju čovjek gleda periferno, a koja mu ne može upasti usred tipkanja.
   dira ih gotovo svaki UI task. Ili sve i18n izmjene jednog kruga idu jednom
   devu, ili se taskovi serijaliziraju. Isto vrijedi za `web/_worker.js`
   (sve rute na jednom mjestu) i `pubspec.yaml`.
+- **Claude Code u prazan input box upisuje PRIJEDLOG sljedeće poruke**, faint
+  (SGR 2) tekstom, i taj se prijedlog mijenja sam od sebe između poteza. Po
+  sadržaju je neraspoznatljiv od pravog neposlanog unosa — prva verzija nadzora
+  ga je prijavljivala kao „korisnikova poruka čeka Enter" i time proizvela niz
+  krivih savjeta. Jedina pouzdana razlika je stil, mjeren na `capture-pane -e`:
+  pravi unos nosi SGR `[39]`, prijedlog `[39, 2, 0]`. Provjereno u oba smjera
+  (kontrolni panel s ručno utipkanim tekstom prolazi, živi prijedlozi se
+  odbacuju).
 - **Utipkan a neposlan tekst je tiha zamka.** Poruka koja ostane u input boxu
   (netko je tipkao pa otišao, ili je Enter promašio) izgleda identično kao
   „panel čeka posao" — orkestrator polla, dev miruje, nitko ne napreduje.

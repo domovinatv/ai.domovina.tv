@@ -63,13 +63,27 @@ is_cleared() { printf '%s' "$1" | grep -q 'ctx: 0/'; }
 # sadržaj = poruka stoji u input boxu. (Povijesni "❯ …" redovi su gore u
 # transkriptu, zato gledamo samo dno.)
 #
-# GOTCHA: iza prompta NIJE obični razmak nego U+00A0 (non-breaking space,
-# bajtovi c2 a0) — uzorak "^❯ ." zato nikad ne pogodi živi slučaj, a sintetički
-# test s običnim razmakom prođe. Zato tražimo bilo koji alfanumerik/kosu crtu
-# iza prompta: prazan input box ima samo ❯ + NBSP + padding.
+# GOTCHA 1: iza prompta NIJE obični razmak nego U+00A0 (c2 a0) — uzorak "^❯ ."
+# nikad ne pogodi živi slučaj, a sintetički test s običnim razmakom prođe.
+#
+# GOTCHA 2 (izmjereno 2026-07-25): Claude Code u prazan input box upisuje
+# PRIJEDLOG sljedeće poruke, tamnosivim tekstom. Po sadržaju je neraspoznatljiv
+# od pravog neposlanog unosa — prva verzija ovog detektora je zato prijavljivala
+# prijedloge kao "korisnikova poruka čeka Enter" i generirala krive savjete.
+# Razlika je isključivo u stilu (izmjereno preko capture-pane -e, ista linija,
+# isti panel):
+#     pravi utipkan unos → SGR [39]        (obična boja)
+#     prijedlog sučelja  → SGR [39, 2, 0]  ← SGR 2 = faint
+# (Poslane poruke u transkriptu nose [38;5;239, 48;5;237] jer su u okviru s
+# pozadinom — njih ionako ne gledamo, uzima se samo ZADNJA ❯ linija = input box.)
+# Zato se linija hvata SA escape kodovima i odbacuje ako nosi faint atribut.
 pending_input() {
-  printf '%s' "$1" | sed 's/[[:space:]]*$//' | tail -6 \
-    | grep -E '^❯.*[[:alnum:]/]' | tail -1 | cut -c1-60
+  tmux capture-pane -p -e -t "$1" -S -8 2>/dev/null \
+    | grep -a '❯' | tail -1 \
+    | grep -av $'\033\[2m' \
+    | LC_ALL=C sed $'s/\033\\[[0-9;]*m//g' \
+    | sed 's/[[:space:]]*$//' \
+    | grep -E '^❯.*[[:alnum:]/]' | cut -c1-60
 }
 
 ctx_pct() {
@@ -140,7 +154,7 @@ while :; do
     # Neposlan tekst u input boxu — javi tek ako preživi dva ciklusa (da se ne
     # javlja dok korisnik tipka) i nikad za planner (ondje čovjek piše stalno).
     if [ "$role" != "planner" ]; then
-      pend=$(pending_input "$cur")
+      pend=$(pending_input "$pane")
       if [ -n "$pend" ] && [ "$pend" = "${PREV_PEND[$i]}" ] && [ "$pend" != "${PEND_WARNED[$i]}" ]; then
         emit "NEPOSLANO $role ima utipkan tekst koji nije poslan: ${pend}"
         PEND_WARNED[$i]="$pend"
@@ -179,6 +193,9 @@ while :; do
       | grep -vE '^scripts/tim|^\.claude/commands/|^docs/ai-tim-tmux\.md$' | grep -v '^$' | head -5)
     # Ni release commit: deploy.sh mehanički bumpa verziju u pubspec.yaml i
     # appVersion konstantu u main.dart — nema što recenzirati.
+    # Commit koji ne dira kod (samo dokumentacija) također ne treba verdikt.
+    codefiles=$(printf '%s' "$appfiles" | grep -vE '^docs/|\.md$' || true)
+    [ -z "$codefiles" ] && appfiles=""
     case "$subj" in
       *"chore(release)"*)
         others=$(printf '%s' "$appfiles" | grep -vE '^pubspec\.yaml$|^lib/main\.dart$' || true)
