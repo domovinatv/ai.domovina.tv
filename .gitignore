@@ -62,3 +62,6 @@ test-results/
 # Claude Code runtime
 .claude/scheduled_tasks.lock
 .claude/worktrees/
+
+# AI tim (scripts/tim.sh) runtime stanje — pane mapa, status linija, verdikti
+.tim/

@@ -20,6 +20,19 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 
 `.env` must contain `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_PURGE_TOKEN`.
 
+## AI tim (tmux, 5 panela)
+
+`./scripts/tim.sh` diže jedan tmux session s pet Claude Code panela:
+**planner** (opus, tu čovjek promptira) → **orkestrator** (fable) →
+**dev1/dev2** (opus) → **reviewer** (fable, diže se na opus za rizičan diff).
+Petlja, helperi (`tim-send.sh`/`tim-read.sh`/`tim-status.sh`) i zamke:
+`docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`.
+
+**Rule**: agent NIKAD ne šalje poruke u planner panel (korisnik ondje tipka) —
+napredak ide u tmux status bar preko `scripts/tim-status.sh set "…"`. Review
+ide PRIJE commita i PRIJE `/clear`, da dorade padnu devu kojem je kontekst još
+živ.
+
 ## Known Issues & Gotchas
 
 > **Web delivery, rendering & caching** (service worker staleness, cache-busting
