@@ -11,12 +11,15 @@ import '../l10n/app_localizations.dart';
 import '../models/person_hub.dart';
 import '../pinka_sdk/pinka_sdk.dart';
 import '../services/background_audio.dart';
+import '../services/background_playback.dart';
 import '../services/cdn_config.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/episode_language.dart';
+import '../services/media_session.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
+import '../services/playback_intent.dart';
 import '../services/player_resume.dart';
 import '../services/page_meta.dart';
 import '../services/url_sync.dart';
@@ -173,6 +176,10 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   Duration _duration = Duration.zero;
   bool _isPlaying = false;
 
+  /// „Želi li korisnik da ovo svira?" — čuva izričitu Pauzu od framework
+  /// pauza (odlazak u pozadinu). Vidi services/playback_intent.dart.
+  PlaybackIntent? _intent;
+
   /// In-app YouTube embed mode — native player pauziran, iframe preuzima.
   bool _ytMode = false;
 
@@ -236,24 +243,37 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     _resumeHintTimer?.cancel();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
+    MediaSession.clear();
+    _intent?.dispose();
     _player?.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.paused &&
+        state != AppLifecycleState.hidden) {
+      return;
+    }
+    final intent = _intent;
+    // Prozor tolerancije otvaramo PRIJE ikakvog čekanja: framework pauza
+    // (media_kitov SurfaceView teardown na Androidu, browserov hidden tab)
+    // ne smije proći kao korisnikova.
+    intent?.suppress();
+    // Korisnik je sam pauzirao — odlazak u pozadinu to ne poništava.
+    if (intent != null && !intent.wantsPlayback) return;
+    if (!BackgroundPlayback.instance.enabled) {
+      _player?.pause();
+      return;
+    }
+    // Web: ne force-playamo — browser sam drži audio (Media Session).
+    if (kIsWeb) return;
     // Android kill-a SurfaceView kad Video widget (u _PlayerTab) ode u bg
     // pa media_kit auto-pauzira. Force-play kratko nakon tranzicije —
     // foreground service iz audio_service-a drzi process zivim.
-    // Web: ne force-playamo — browser hendla media sam, a force-play bi
-    // poništio rucnu Pause kad korisnik prebaci tab.
-    if (kIsWeb) return;
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
-      Future<void>.delayed(const Duration(milliseconds: 150), () {
-        _player?.play();
-      });
-    }
+    Future<void>.delayed(const Duration(milliseconds: 150), () {
+      _player?.play();
+    });
   }
 
   List<({String timestamp, String topic, int totalSeconds})> _buildChapters() {
@@ -315,6 +335,12 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             sec,
             langSuffix: _language == EpisodeLanguage.en ? '/en' : null,
           );
+          // Media Session position update — drži lock screen scrub bar u
+          // syncu. Throttled na sec granularnost (isti gate kao URL sync).
+          MediaSession.setPositionState(
+            duration: Duration(seconds: widget.data.info.duration),
+            position: pos,
+          );
           // CDN URL (ne i.ytimg.com) da home rail "Nastavi slusati" moze
           // renderati thumbnail bez CORS bloka.
           WatchProgressService.instance.scheduleSave(
@@ -333,8 +359,21 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       });
 
       player.stream.playing.listen((playing) {
-        if (mounted) setState(() => _isPlaying = playing);
+        // mounted guard i za MediaSession: player.dispose() emitira zadnji
+        // `false` nakon što smo već pozvali MediaSession.clear().
+        if (!mounted) return;
+        setState(() => _isPlaying = playing);
+        // Web lock screen / Now Playing stanje. No-op na nativeu.
+        MediaSession.setPlaybackState(playing);
       });
+
+      // Namjera reprodukcije — pretplaćuje se na isti `playing` stream (jedini
+      // izvor koji hvata i media_kitove interne kontrole: playAndPauseOnTap,
+      // tipkovničke kratice, Material gumbe).
+      _intent = PlaybackIntent(
+        playingStream: player.stream.playing,
+        isPlayingNow: () => player.state.playing,
+      );
 
       // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
       // na iOS odbaci seek pa video kreće od 0). Web fallback na muted autoplay
@@ -382,6 +421,31 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           artist: channelName,
           artUri: composed ?? squareUrl ?? thumbUrl,
           duration: Duration(seconds: widget.data.info.duration),
+        );
+
+        // Media Session API — web ekvivalent background audija: signal OS-u
+        // da je tab "playing media" pa zvuk nastavlja kad se zaslon zaključa
+        // ili korisnik prijeđe na drugi tab, uz lock-screen kontrole. No-op
+        // na nativeu (tamo isto radi audio_service, gore).
+        // Artwork: 1:1 avatar kanala (Now Playing je kvadratan), fallback
+        // thumbnail. Android-kompozicija (`composed`) je samo za notifikaciju.
+        MediaSession.attachMetadata(
+          title: widget.data.displayTitle,
+          artist: channelName,
+          artUrl: squareUrl ?? thumbUrl,
+        );
+        MediaSession.setActionHandlers(
+          onPlay: () => _player?.play(),
+          onPause: () => _player?.pause(),
+          onSeekTo: (pos) => _player?.seek(pos),
+          onSeekBackward: (off) {
+            final cur = _player?.state.position ?? Duration.zero;
+            _player?.seek(cur - off);
+          },
+          onSeekForward: (off) {
+            final cur = _player?.state.position ?? Duration.zero;
+            _player?.seek(cur + off);
+          },
         );
       }
     } catch (e) {

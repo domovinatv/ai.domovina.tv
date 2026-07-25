@@ -12,6 +12,7 @@ import '../main.dart' show log;
 import '../models/person_hub.dart' show personSlug;
 import '../models/podcast_article.dart' show PodcastSection;
 import '../services/background_audio.dart';
+import '../services/background_playback.dart';
 import '../services/episode_language.dart';
 import '../services/media_session.dart';
 import '../services/channel_cache.dart';
@@ -22,6 +23,7 @@ import '../services/open_url.dart';
 import '../services/player_resume.dart';
 import '../services/page_meta.dart';
 import '../services/person_service.dart';
+import '../services/playback_intent.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -462,13 +464,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
   Timer? _resumeHintTimer;
   static const _resumeHintDuration = Duration(seconds: 4);
 
-  /// Snapshot stanja playera u trenutku otvaranja endDrawer-a. Kad korisnik
-  /// zatvori drawer, ako je bio playing pri otvaranju, resumeamo — neki
-  /// build pipelines pauziraju Video widget na drawer detach (media_kit
-  /// SurfaceView lifecycle). Bez ovog korisnik gubi zvuk kad swipe-right
-  /// drawer zatvori, što je glavni mobile use case (audio dok scrollaš
-  /// po članku).
-  bool _wasPlayingWhenDrawerOpened = false;
+  /// Odgovor na „želi li korisnik da ovo svira?". Ožičen na
+  /// `player.stream.playing` (jedini izvor koji hvata i media_kitove interne
+  /// kontrole), s prozorom tolerancije oko poznatih framework tranzicija —
+  /// zatvaranje endDrawera (dispose `Video` widgeta → media_kit pauza) i
+  /// odlazak u pozadinu (SurfaceView teardown). Zamjenjuje raniji snapshot
+  /// „je li svirao kad je drawer otvoren", koji je poništavao korisnikovu
+  /// Pauzu ako je stisnuta dok je drawer bio otvoren.
+  /// Vidi `services/playback_intent.dart`.
+  PlaybackIntent? _playbackIntent;
 
   /// Per-episode jezik prikaza. URL `/en` sufix ima prednost nad sticky pref.
   /// Inicijalno HR; ako URL nije EN, ucitaj sticky pref iz prefs-a.
@@ -656,6 +660,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     MediaSession.clear();
+    _playbackIntent?.dispose();
     _player?.dispose();
     super.dispose();
   }
@@ -669,13 +674,29 @@ class _EpisodeContentState extends State<_EpisodeContent>
         _endDrawerWasOpenBeforeBg = true;
         s!.closeEndDrawer();
       }
+      final intent = _playbackIntent;
+      // Korisnikova Pauza je neopoziva — odlazak u pozadinu je ne poništava.
+      if (intent != null && !intent.wantsPlayback) return;
+
+      if (!BackgroundPlayback.instance.enabled) {
+        // Pref iskljucen: pozadina znaci tisinu, isto na webu i nativeu.
+        // Namjerno BEZ suppress() — ovu pauzu i zelimo upisati u namjeru, da
+        // se reprodukcija ne vrati na sljedecoj framework tranziciji.
+        _player?.pause();
+        return;
+      }
+
+      // Pref ukljucen: pauzu koju izazove sama tranzicija (Android SurfaceView
+      // teardown, browser throttling) ne smijemo procitati kao korisnikovu.
+      intent?.suppress();
       // Android kill-a SurfaceView kad Video widget ode u bg pa media_kit
       // auto-pauzira. Force-play kratko nakon tranzicije — foreground service
       // iz audio_service-a drzi process zivim, pa play() prodje.
-      // Web: ne force-playamo, browser hendla media sam i user-pauzu treba
-      // postivati kad tab ode u pozadinu.
+      // Web: ne force-playamo, browser sam drzi audio u pozadinskom tabu.
       if (!kIsWeb) {
         Future<void>.delayed(const Duration(milliseconds: 150), () {
+          if (!mounted) return;
+          if (intent != null && !intent.shouldResume) return;
           _player?.play();
         });
       }
@@ -687,6 +708,35 @@ class _EpisodeContentState extends State<_EpisodeContent>
         });
       }
     }
+  }
+
+  /// `onEndDrawerChanged` za oba layouta (mobilni s Magisteriumom i bez njega).
+  ///
+  /// Zatvaranje endDrawera dispose-a `Video` widget, a media_kit na to
+  /// pauzira player — bez resumea korisnik gubi zvuk na swipe-right, što je
+  /// glavni mobile use case (audio dok scrollaš po članku). Zato: otvori
+  /// prozor tolerancije pa nakon animacije vrati reprodukciju SAMO ako
+  /// namjera i dalje postoji. Ako je korisnik prije zatvaranja stisnuo Pauzu,
+  /// [PlaybackIntent.shouldResume] je false i ostaje pauzirano.
+  ///
+  /// Timing: Flutterov `DrawerController.close()` zove `drawerCallback(false)`
+  /// odmah nakon `fling()`, dakle na POČETKU close animacije; sadržaj drawera
+  /// se unmounta tek kad kontroler dođe u `dismissed`. Prozor tolerancije
+  /// stignemo otvoriti prije framework pauze.
+  void _onEndDrawerChanged(bool isOpen) {
+    if (isOpen) return;
+    // Drawer zatvaramo i sami kad app ide u pozadinu — tada o reprodukciji
+    // odlučuje didChangeAppLifecycleState (poštuje i pref „u pozadini"),
+    // pa ovaj handler mora šutjeti da mu ne kontrira resumeom.
+    if (_endDrawerWasOpenBeforeBg) return;
+
+    final intent = _playbackIntent;
+    intent?.suppress();
+    if (intent == null) return;
+    Future<void>.delayed(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      if (intent.shouldResume) _player?.play();
+    });
   }
 
   // ---------- helpers -------------------------------------------------------
@@ -834,6 +884,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
       _positionSub = player.stream.position.listen(_onVideoPosition);
 
       if (mounted) {
+        // Namjera se veže tek sad: `openAndResume` je gotov, pa je
+        // `state.playing` konačan odgovor je li reprodukcija uopće krenula
+        // (web autoplay policy je može odbiti). Sve kasnije promjene — naši
+        // gumbi, media_kitov tap-to-pause, tipkovnica, lock screen — stižu
+        // kroz stream.
+        _playbackIntent = PlaybackIntent(
+          playingStream: player.stream.playing,
+          isPlayingNow: () => player.state.playing,
+          initiallyWants: player.state.playing,
+        );
         setState(() {
           _player = player;
           _videoController = controller;
@@ -1833,24 +1893,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: theme.colorScheme.surfaceContainerLow,
-        onEndDrawerChanged: (isOpen) {
-          if (isOpen) {
-            // Snapshot playing state odmah pri otvaranju — service-class
-            // resume detekcija pri close.
-            _wasPlayingWhenDrawerOpened = _player?.state.playing ?? false;
-          } else {
-            // Drawer zatvoren. Ako je bio playing kad je otvoren i sad nije
-            // (media_kit ga pauzirao zbog Video widget detach), resume.
-            if (_wasPlayingWhenDrawerOpened) {
-              Future<void>.delayed(const Duration(milliseconds: 120), () {
-                if (!mounted) return;
-                if (!(_player?.state.playing ?? false)) {
-                  _player?.play();
-                }
-              });
-            }
-          }
-        },
+        onEndDrawerChanged: _onEndDrawerChanged,
         drawer: isWide
             ? null
             : Drawer(
@@ -2220,18 +2263,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.colorScheme.surfaceContainerLow,
-      onEndDrawerChanged: (isOpen) {
-        if (isOpen) {
-          _wasPlayingWhenDrawerOpened = _player?.state.playing ?? false;
-        } else if (_wasPlayingWhenDrawerOpened) {
-          Future<void>.delayed(const Duration(milliseconds: 120), () {
-            if (!mounted) return;
-            if (!(_player?.state.playing ?? false)) {
-              _player?.play();
-            }
-          });
-        }
-      },
+      onEndDrawerChanged: _onEndDrawerChanged,
       endDrawer: _videoReady && !showVideo
           ? Drawer(
               width: 360,

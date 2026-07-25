@@ -1,5 +1,4 @@
 import 'dart:js_interop';
-import 'package:web/web.dart' as web;
 
 /// Web-only wrapper oko `navigator.mediaSession` API-ja.
 ///
@@ -59,7 +58,7 @@ void attachMetadataImpl({
     final initObj = <String, dynamic>{
       'title': title,
       'artist': artist,
-      if (album != null) 'album': album,
+      'album': ?album,
       if (artUrl != null)
         'artwork': [
           _Artwork(src: artUrl, sizes: '1200x630', type: 'image/jpeg'),

@@ -9,6 +9,7 @@ import 'l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/background_audio.dart';
+import 'services/background_playback.dart';
 import 'services/entitlement_service.dart';
 import 'services/locale_service.dart';
 import 'services/revenue_cat_service.dart';
@@ -119,6 +120,8 @@ void main() async {
   await ThemeController.instance.init();
   // Ucitaj spremljeni UI jezik (default hrvatski).
   await LocaleController.instance.init();
+  // Ucitaj pref "Reprodukcija u pozadini" (default ukljuceno).
+  await BackgroundPlayback.instance.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {
