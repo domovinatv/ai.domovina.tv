@@ -8,8 +8,10 @@
 #   TIM_WATCH_INTERVAL=10 ./scripts/tim-watch.sh
 #
 # Što javlja:
-#   GOTOV      dev prešao iz rada u mirovanje i ispisao SAŽETAK
-#   MIRUJE     panel prestao raditi bez SAŽETKA (sumnjivo — prekid ili greška)
+#   GOTOV      dev (samo dev1/dev2) stao i ispisao SAŽETAK
+#   MIRUJE     dev stao BEZ sažetka (sumnjivo — prekid ili greška). Planner,
+#              orkestrator i reviewer se namjerno NE prate ovako: oni se nakon
+#              svakog odgovora vraćaju u mirovanje i alarm bi bio neprekidan.
 #   BLOKIRAN   panel čeka odgovor (picker "Enter to select" / dijalog)
 #   GREŠKA     u panelu je API/tool greška, rate limit, crash
 #   KONTEKST   panel prešao 70 % konteksta (vrijeme za /compact ili /clear)
@@ -91,14 +93,19 @@ while :; do
       PREV_ERR[$i]=0
     fi
 
-    # Prijelaz rad → mirovanje: gotov posao ili tihi prekid.
-    if [ "${PREV_BUSY[$i]}" = "1" ] && [ "$busy" -eq 0 ]; then
-      if has_summary "$cur"; then
-        emit "GOTOV $role je završio i ispisao SAŽETAK"
-      elif ! is_blocked "$cur"; then
-        emit "MIRUJE $role je stao bez SAŽETKA — provjeri je li prekinut"
-      fi
-    fi
+    # Prijelaz rad → mirovanje. SAMO za devove: planner, orkestrator i reviewer
+    # se poslije svakog odgovora legitimno vrate u mirovanje, pa bi ih ovo
+    # prijavljivalo bez prestanka (uhvaćeno u prvom satu rada).
+    case "$role" in
+      dev1|dev2)
+        if [ "${PREV_BUSY[$i]}" = "1" ] && [ "$busy" -eq 0 ]; then
+          if has_summary "$cur"; then
+            emit "GOTOV $role je završio i ispisao SAŽETAK"
+          elif ! is_blocked "$cur"; then
+            emit "MIRUJE $role je stao bez SAŽETKA — provjeri je li prekinut"
+          fi
+        fi ;;
+    esac
     [ "${PREV_BUSY[$i]}" = "gone" ] || PREV_BUSY[$i]=$busy
 
     # Kontekst preko 70 % — jednom po prelasku praga.
