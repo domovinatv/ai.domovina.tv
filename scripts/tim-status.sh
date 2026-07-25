@@ -4,6 +4,7 @@
 #   ./scripts/tim-status.sh                 # tko radi, tko čeka, zadnji verdikti
 #   ./scripts/tim-status.sh set "T3 dev1 · T4 dev2 · review pending"
 #                                           # ambijentalna linija u tmux status baru
+#   ./scripts/tim-status.sh session         # ime tmux sessiona ovog projekta
 #
 # "set" je jedini način da orkestrator javi napredak korisniku a da mu NE
 # upadne u planner panel — tmux status bar se osvježava svakih 5 s.
@@ -12,24 +13,29 @@
 # na dnu panela. Ako je panel u nekom dijalogu, pokaže se kao IDLE — zato
 # prije zaključka pogledaj scripts/tim-read.sh <uloga>.
 set -euo pipefail
+. "$(cd "$(dirname "$0")" && pwd)/tim-common.sh"
 
-SESSION="${TIM_SESSION:-tim}"
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
-ROLES="planner orkestrator reviewer dev1 dev2"
+SESSION=$(tim_session_name)
+TARGET=$(tim_target)
+ROOT=$(tim_repo_root)
 
-if [ "${1:-}" = "set" ]; then
-  shift
-  mkdir -p "$ROOT/.tim"
-  printf '%s' "$*" > "$ROOT/.tim/status.line"
-  echo "status: $*"
-  exit 0
-fi
+case "${1:-}" in
+  session)
+    echo "$SESSION"; exit 0 ;;
+  set)
+    shift
+    mkdir -p "$ROOT/.tim"
+    printf '%s' "$*" > "$ROOT/.tim/status.line"
+    echo "status: $*"
+    exit 0 ;;
+esac
 
-tmux has-session -t "$SESSION" 2>/dev/null || { echo "Session '$SESSION' ne radi (pokreni ./scripts/tim.sh)." >&2; exit 1; }
+tmux has-session -t "$TARGET" 2>/dev/null || { echo "Session '$SESSION' ne radi (pokreni ./scripts/tim.sh)." >&2; exit 1; }
 
+echo "session: $SESSION"
 printf '%-12s %-5s %-6s %s\n' ULOGA PANE STANJE 'ZADNJA LINIJA'
-for role in $ROLES; do
-  pane=$(tmux show -v -t "$SESSION" "@tim_$role" 2>/dev/null || true)
+for role in $TIM_ROLES; do
+  pane=$(tim_pane "$role")
   [ -n "$pane" ] || continue
   tail=$(tmux capture-pane -p -t "$pane" -S -25 2>/dev/null | cat -s || true)
   if printf '%s' "$tail" | grep -qi 'esc to interrupt'; then state=BUSY; else state=IDLE; fi

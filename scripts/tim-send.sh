@@ -6,13 +6,15 @@
 #
 # Uloge: planner | orkestrator | reviewer | dev1 | dev2
 #
-# Zašto skripta a ne goli send-keys: pane ID se čita iz tmux user opcije
-# (@tim_<uloga>) koju je postavio tim.sh, tekst ide u -l literal modu (ne
-# interpretira se kao imena tipki, pa navodnici/$/- prolaze netaknuti), a
-# Enter ide ODVOJENO nakon kratke pauze — Claude Code TUI inače proguta red.
+# Zašto skripta a ne goli send-keys: session je per-projekt (tim-<repo-slug>,
+# vidi tim-common.sh), pane ID se čita iz tmux user opcije (@tim_<uloga>) koju
+# je postavio tim.sh, tekst ide u -l literal modu (ne interpretira se kao imena
+# tipki, pa navodnici/$/- prolaze netaknuti), a Enter ide ODVOJENO nakon kratke
+# pauze — Claude Code TUI inače proguta red.
 set -euo pipefail
+. "$(cd "$(dirname "$0")" && pwd)/tim-common.sh"
 
-SESSION="${TIM_SESSION:-tim}"
+SESSION=$(tim_session_name)
 FORCE=0
 [ "${1:-}" = "--force" ] && { FORCE=1; shift; }
 
@@ -37,12 +39,12 @@ if [ "$role" = "planner" ] && [ "$FORCE" -eq 0 ]; then
   exit 2
 fi
 
-pane=$(tmux show -v -t "$SESSION" "@tim_$role" 2>/dev/null || true)
+pane=$(tim_pane "$role")
 [ -n "$pane" ] || { echo "GREŠKA: uloga '$role' nije registrirana u sessionu '$SESSION'." >&2; exit 1; }
-tmux list-panes -t "$SESSION" -F '#{pane_id}' | grep -qx "$pane" || {
+tmux list-panes -t "$(tim_target)" -F '#{pane_id}' | grep -qx "$pane" || {
   echo "GREŠKA: pane $pane ($role) više ne postoji — je li panel zatvoren?" >&2; exit 1; }
 
 tmux send-keys -t "$pane" -l "$msg"
 sleep 0.4
 tmux send-keys -t "$pane" Enter
-echo "→ $role ($pane): $msg"
+echo "→ $role ($pane @ $SESSION): $msg"

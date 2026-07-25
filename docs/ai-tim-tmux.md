@@ -5,7 +5,7 @@ promptira samo u jednom od njih. Pokretanje:
 
 ```bash
 cd ~/git/domovinatv/domovina.ai && ./scripts/tim.sh     # ⌘+Enter za fullscreen
-tmux kill-session -t tim                                # gašenje svega
+tmux kill-session -t "=$(./scripts/tim-status.sh session)"   # gašenje SAMO ovog tima
 ```
 
 ```
@@ -22,6 +22,24 @@ tmux kill-session -t tim                                # gašenje svega
 Lijevi stupac je tvoj chat; srednji je "management" (koordinacija + kontrola
 kvalitete); desni su ruke. Čitaš zdesna nalijevo kad te zanima *što se radi*, a
 slijeva nadesno kad *zadaješ*.
+
+## Ime sessiona je per-projekt
+
+Session se zove `tim-<repo-slug>`, izvedeno iz imena repo direktorija:
+`domovina.ai` → **`tim-domovina-ai`** (točke i ostali znakovi se sanitiziraju —
+tmux ih ne dopušta u imenu). Tako na istom Macu paralelno radi po jedan tim za
+svaki projekt, svaki u svom iTerm prozoru, bez kolizije. Override: `TIM_SESSION=…`.
+
+```bash
+tmux ls | grep '^tim-'                                       # svi timovi na stroju
+./scripts/tim-status.sh session                              # ime tima ovog repoa
+tmux kill-session -t "=$(./scripts/tim-status.sh session)"   # ubij samo ovaj
+```
+
+**Zašto `=` ispred imena:** tmux radi *prefix matching* na imenima sessiona —
+`kill-session -t tim` bi, ako session doslovno imena `tim` ne postoji, pogodio
+prvi koji počinje s "tim" (npr. `tim-rodj`, tuđi projekt). `=` traži egzaktan
+match. Skripte to rade same (`tim_target()` u `scripts/tim-common.sh`).
 
 ## Zašto ovako
 
@@ -124,6 +142,11 @@ Planovi (`docs/plans/`) NISU gitignorirani — oni su trag odluka i idu u repo.
 
 Da se ne retestira svaki put:
 
+- `set-option`/`show-options`/`rename-window` **ne** primaju `=` prefiks
+  ("no such session: =ime") — njima ide golo ime; sigurno je jer tmux egzaktno
+  ime traži prije prefiksa. `has-session`/`attach`/`kill-session`/`list-panes`
+  `=` primaju i ondje je obavezan. Otud dva helpera: `tim_target()` i
+  `tim_opt_target()`.
 - `#{@role}` user opcija se rezolvira u `pane-border-format` i `list-panes -F`
   kroz hijerarhiju pane→window→session — zato border pokazuje točnu ulogu iako
   Claude Code TUI pregazi `pane_title`.
@@ -139,5 +162,6 @@ Da se ne retestira svaki put:
 ## Isti obrazac u drugim repoima
 
 `rodjendaonice.domovina.ai` ima svoju varijantu (session `tim-rodj`, 3 panela,
-handoff dokumenti umjesto plan-fajlova). Session imena se namjerno razlikuju da
-timovi mogu raditi paralelno.
+handoff dokumenti umjesto plan-fajlova). Kad se i ondje napravi ovaj prolaz,
+ime mu po ovoj konvenciji postaje `tim-rodjendaonice-domovina-ai` — prefiks
+`tim-` je zajednički da `tmux ls | grep '^tim-'` izlista sve timove na stroju.

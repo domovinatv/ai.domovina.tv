@@ -28,6 +28,11 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 Petlja, helperi (`tim-send.sh`/`tim-read.sh`/`tim-status.sh`) i zamke:
 `docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`.
 
+Session se zove `tim-<repo-slug>` (`tim-domovina-ai`) da timovi za različite
+projekte na istom stroju ne kolidiraju. **Rule**: tmux radi prefix matching na
+imenima sessiona — `kill-session`/`has-session`/`attach` uvijek s `=` prefiksom
+(`-t "=$(./scripts/tim-status.sh session)"`), inače možeš ubiti tuđi tim.
+
 **Rule**: agent NIKAD ne šalje poruke u planner panel (korisnik ondje tipka) —
 napredak ide u tmux status bar preko `scripts/tim-status.sh set "…"`. Review
 ide PRIJE commita i PRIJE `/clear`, da dorade padnu devu kojem je kontekst još

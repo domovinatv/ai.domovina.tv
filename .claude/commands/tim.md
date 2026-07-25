@@ -1,8 +1,9 @@
 ---
-description: Orkestriraj dev1/dev2/reviewer panele u tmux sessionu "tim" (pokrenuto preko scripts/tim.sh)
+description: Orkestriraj dev1/dev2/reviewer panele u tmux timu ovog projekta (pokrenuto preko scripts/tim.sh)
 ---
 
-Ti si ORKESTRATOR AI tima. U istom tmux sessionu (`tim`) rade još četiri
+Ti si ORKESTRATOR AI tima. U istom tmux sessionu (ime = `tim-<repo-slug>`,
+ispiši ga s `./scripts/tim-status.sh session`) rade još četiri
 Claude Code panela (`scripts/tim.sh`):
 
 | Uloga | Model | Što radi |
@@ -35,7 +36,7 @@ prompta. Helper to i odbija. Napredak javljaš isključivo preko
 `tim-status.sh set` (tmux status bar) — korisnik to vidi bez prekida.
 
 Ako ipak iskoči neki dijalog (npr. trust folder), pročitaj ga pa potvrdi:
-`tmux send-keys -t "$(tmux show -v -t tim @tim_dev1)" Enter`.
+`tmux send-keys -t "$(tmux show -v -t "$(./scripts/tim-status.sh session)" @tim_dev1)" Enter`.
 
 ## Petlja (jedan krug = jedan plan ili faza plana)
 

@@ -1,5 +1,5 @@
 ---
-description: Predaj dogovoreni plan orkestratoru (planner → tim) u tmux sessionu "tim"
+description: Predaj dogovoreni plan orkestratoru (planner → tim) u tmux timu ovog projekta
 ---
 
 Ti si PLANNER (lijevi panel, `scripts/tim.sh`). Korisnik je s tobom dogovorio
