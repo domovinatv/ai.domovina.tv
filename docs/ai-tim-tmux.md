@@ -112,9 +112,10 @@ poruka bi ti upala usred prompta. Umjesto toga:
 ```
 
 `tim-watch.sh` je čisti promatrač (ništa ne šalje, ništa ne mijenja): javlja
-`GOTOV` (dev stao + SAŽETAK), `MIRUJE` (stao BEZ sažetka — sumnjivo),
-`BLOKIRAN` (čeka odgovor na pitanje), `GREŠKA`, `KONTEKST` (>70 %), `VERDIKT`
-(novi fajl u `.tim/reviews/`), `PANEL`/`TIM` (nestali). Povijest u
+`GOTOV` (dev stao + SAŽETAK), `MIRUJE` (dev stao BEZ sažetka — sumnjivo),
+`BLOKIRAN` (čeka odgovor na pitanje), `NEPOSLANO` (utipkan tekst stoji u input
+boxu >40 s), `GREŠKA`, `KONTEKST` (>70 %), `VERDIKT` (novi fajl u
+`.tim/reviews/`), `PANEL`/`TIM` (nestali). Povijest u
 `.tim/watch.log`. Namjerno NE javlja početke radova — nadzor mora biti tiši
 od tima. Pusti ga u zaseban prozor (`./scripts/tim-watch.sh`) ili ga koristi
 kao izvor događaja za agenta.
@@ -176,6 +177,16 @@ koju čovjek gleda periferno, a koja mu ne može upasti usred tipkanja.
   dira ih gotovo svaki UI task. Ili sve i18n izmjene jednog kruga idu jednom
   devu, ili se taskovi serijaliziraju. Isto vrijedi za `web/_worker.js`
   (sve rute na jednom mjestu) i `pubspec.yaml`.
+- **Utipkan a neposlan tekst je tiha zamka.** Poruka koja ostane u input boxu
+  (netko je tipkao pa otišao, ili je Enter promašio) izgleda identično kao
+  „panel čeka posao" — orkestrator polla, dev miruje, nitko ne napreduje.
+  Watcher to javlja kao `NEPOSLANO`. Isto vrijedi za tebe: ako utipkaš uputu
+  devu, provjeri da si je poslao.
+- **Ako ručno pišeš devu, javi orkestratoru.** Rad koji si naručio izravno u
+  dev panelu ne postoji u orkestratorovoj knjigovodstvenoj slici: neće ga
+  uključiti u opseg reviewa ni u zapisnik plana, a može i sudariti fajlove s
+  taskom koji je sam dodijelio. Kratka poruka orkestratoru („dev2 sam dodatno
+  zamolio za X") to rješava.
 - **Prebacivanje sessiona tmux prefiksom (`prefix )`) te može odvesti u tuđi
   tim** — poruka onda završi u krivom planneru. Prije tipkanja provjeri ime
   u status baru (lijevo dolje) ili `./scripts/tim-status.sh session`.

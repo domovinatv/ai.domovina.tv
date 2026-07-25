@@ -13,6 +13,8 @@
 #              orkestrator i reviewer se namjerno NE prate ovako: oni se nakon
 #              svakog odgovora vraćaju u mirovanje i alarm bi bio neprekidan.
 #   BLOKIRAN   panel čeka odgovor (picker "Enter to select" / dijalog)
+#   NEPOSLANO  u input boxu stoji utipkan tekst koji nitko nije poslao (>40 s)
+#              — tiha zamka: svi čekaju, a poruka nikad nije stigla
 #   GREŠKA     u panelu je API/tool greška, rate limit, crash
 #   KONTEKST   panel prešao 70 % konteksta (vrijeme za /compact ili /clear)
 #   VERDIKT    reviewer je zapisao novi .tim/reviews/*.md
@@ -46,15 +48,24 @@ snap() { tmux capture-pane -p -t "$1" -S -40 2>/dev/null | cat -s; }
 # Marker skupovi. Držani kao fiksni stringovi (BSD grep + multibajtni TUI znaci).
 is_blocked() { printf '%s' "$1" | grep -qE 'Enter to select|Tab/Arrow keys|Do you want to|❯ 1\. Yes'; }
 has_error()  { printf '%s' "$1" | grep -qE 'API Error|Request timed out|rate limit|Overloaded|usage limit reached|Killed: 9|command not found|Segmentation fault|Traceback \(most recent'; }
-has_summary() { printf '%s' "$1" | grep -qiE 'SAŽETAK|SAZETAK'; }
+# Kraj devovog rada: doslovni marker ILI strukturni naslovi koje modeli
+# stvarno ispisuju (uhvaćeno u radu — dev2 je završio bez riječi "SAŽETAK").
+has_summary() { printf '%s' "$1" | grep -qiE 'SAŽETAK|SAZETAK|Verifikacij|Namjerno nedovršeno|Promijenjeni fajlovi|za orkestratora'; }
+# Neposlan tekst: zadnjih 6 linija panela, red koji počinje promptom "❯" i ima
+# sadržaj = poruka stoji u input boxu. (Povijesni "❯ …" redovi su gore u
+# transkriptu, zato gledamo samo dno.)
+pending_input() {
+  printf '%s' "$1" | sed 's/[[:space:]]*$//' | tail -6 | grep '^❯ .' | tail -1 | cut -c1-60
+}
+
 ctx_pct() {
   # footer: "ctx: 134.4k/1.0M (13%)"
   printf '%s' "$1" | grep -oE 'ctx: [^)]*\(([0-9]+)%\)' | tail -1 | grep -oE '\(([0-9]+)%\)' | tr -dc '0-9'
 }
 
 ROLES=(planner orkestrator reviewer dev1 dev2)
-PREV_SNAP=(); PREV_BUSY=(); PREV_BLOCK=(); PREV_ERR=(); PREV_CTX=()
-for i in "${!ROLES[@]}"; do PREV_SNAP[$i]=""; PREV_BUSY[$i]=0; PREV_BLOCK[$i]=0; PREV_ERR[$i]=0; PREV_CTX[$i]=0; done
+PREV_SNAP=(); PREV_BUSY=(); PREV_BLOCK=(); PREV_ERR=(); PREV_CTX=(); PREV_PEND=(); PEND_WARNED=()
+for i in "${!ROLES[@]}"; do PREV_SNAP[$i]=""; PREV_BUSY[$i]=0; PREV_BLOCK[$i]=0; PREV_ERR[$i]=0; PREV_CTX[$i]=0; PREV_PEND[$i]=""; PEND_WARNED[$i]=""; done
 SEEN_REVIEWS=$(ls "$ROOT"/.tim/reviews/*.md 2>/dev/null | tr '\n' ' ')
 
 emit "TIM watcher pokrenut na sessionu $SESSION (interval ${INTERVAL}s)"
@@ -107,6 +118,18 @@ while :; do
         fi ;;
     esac
     [ "${PREV_BUSY[$i]}" = "gone" ] || PREV_BUSY[$i]=$busy
+
+    # Neposlan tekst u input boxu — javi tek ako preživi dva ciklusa (da se ne
+    # javlja dok korisnik tipka) i nikad za planner (ondje čovjek piše stalno).
+    if [ "$role" != "planner" ]; then
+      pend=$(pending_input "$cur")
+      if [ -n "$pend" ] && [ "$pend" = "${PREV_PEND[$i]}" ] && [ "$pend" != "${PEND_WARNED[$i]}" ]; then
+        emit "NEPOSLANO $role ima utipkan tekst koji nije poslan: ${pend}"
+        PEND_WARNED[$i]="$pend"
+      fi
+      [ -n "$pend" ] || PEND_WARNED[$i]=""
+      PREV_PEND[$i]="$pend"
+    fi
 
     # Kontekst preko 70 % — jednom po prelasku praga.
     pct=$(ctx_pct "$cur"); pct=${pct:-0}

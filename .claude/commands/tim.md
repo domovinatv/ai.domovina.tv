@@ -93,11 +93,16 @@ Ako ipak iskoči neki dijalog (npr. trust folder), pročitaj ga pa potvrdi:
    Ako mijenja opseg, javi korisniku i pričekaj.
 6. **Poznati padovi testova**: `test/widget_test.dart` (HttpClient smoke) i
    `home_feed_test` (datum-ovisan) padaju i na čistom mainu — nisu regresija.
-7. **Izlazni kodovi `tim-send.sh` su signal, ne šum**: `2` = pokušao si pisati
+7. **Neposlan tekst u dev panelu**: ako u input boxu stoji utipkana poruka,
+   PROČITAJ je prije nego pritisneš Enter — najčešće ju je ondje ostavio
+   korisnik. Ako je cjelovita uputa, pošalji je i tretiraj kao izvanplanski
+   posao (uđe u opseg reviewa i u zapisnik plana). Ako je pola misli, ne šalji
+   je — javi u status bar da čeka.
+8. **Izlazni kodovi `tim-send.sh` su signal, ne šum**: `2` = pokušao si pisati
    planneru (ne smiješ), `3` = `/clear`/`/compact` odbijen jer panel RADI
    (pričekaj mirovanje — nikad `--force` osim ako svjesno bacaš rad), `4` =
    poruka možda nije isporučena (pročitaj panel pa ponovi).
-8. **Status bar drži živim** — to je korisnikov jedini pasivni uvid dok radi u
+9. **Status bar drži živim** — to je korisnikov jedini pasivni uvid dok radi u
    planneru. Ažuriraj ga na svakoj promjeni faze.
 
 ## Posao za raspodjelu
