@@ -44,7 +44,35 @@ pane=$(tim_pane "$role")
 tmux list-panes -t "$(tim_target)" -F '#{pane_id}' | grep -qx "$pane" || {
   echo "GREŠKA: pane $pane ($role) više ne postoji — je li panel zatvoren?" >&2; exit 1; }
 
+snap() { tmux capture-pane -p -t "$pane" -S -30 2>/dev/null | cat -s; }
+
+# Zaštita konteksta: /clear i /compact poslani panelu KOJI RADI TUI stavi u
+# red i izvrši ih čim task završi — pobrisao bi upravo ono što reviewer treba
+# (ili prekinuo posao u tijeku). Zato ih šaljemo samo u panel u mirovanju.
+case "$msg" in
+  /clear*|/compact*)
+    if [ "$FORCE" -eq 0 ]; then
+      a=$(snap); sleep 1.0; b=$(snap)
+      if [ "$a" != "$b" ]; then
+        echo "ODBIJENO: $role trenutno RADI — '$msg' bi se izvršio čim završi i" >&2
+        echo "          pobrisao kontekst prije nego što ga pročitaš/reviewer pregleda." >&2
+        echo "          Pričekaj mirovanje (scripts/tim-status.sh) ili --force." >&2
+        exit 3
+      fi
+    fi ;;
+esac
+
+before=$(snap)
 tmux send-keys -t "$pane" -l "$msg"
 sleep 0.4
 tmux send-keys -t "$pane" Enter
 echo "→ $role ($pane @ $SESSION): $msg"
+
+# Potvrda isporuke: submit uvijek prerenda panel. Bez promjene je poruka
+# najvjerojatnije ostala u input boxu (TUI je bio u dijalogu ili nije primio Enter).
+sleep 0.8
+[ "$(snap)" != "$before" ] || {
+  echo "UPOZORENJE: panel se nije promijenio — poruka možda nije poslana." >&2
+  echo "            Provjeri: ./scripts/tim-read.sh $role 20" >&2
+  exit 4
+}

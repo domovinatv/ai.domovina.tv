@@ -26,6 +26,7 @@ Uvijek preko helpera (rješavaju pane ID, quoting i Enter — ne petljaj s golim
 ./scripts/tim-status.sh              # BUSY/IDLE po ulogama + verdikti
 ./scripts/tim-status.sh set 'T1 dev1 · T2 dev2 · review pending'   # korisniku u status bar
 ./scripts/tim-send.sh dev2 /clear    # očisti kontekst (u tijeku posla radije /compact)
+./scripts/tim-watch.sh --once        # jedan prolaz nadzora: blokirani/greške/kontekst
 ```
 
 **Poruka mora biti jedna linija.** Dugi sadržaj ide u fajl, a ti šalješ
@@ -92,7 +93,11 @@ Ako ipak iskoči neki dijalog (npr. trust folder), pročitaj ga pa potvrdi:
    Ako mijenja opseg, javi korisniku i pričekaj.
 6. **Poznati padovi testova**: `test/widget_test.dart` (HttpClient smoke) i
    `home_feed_test` (datum-ovisan) padaju i na čistom mainu — nisu regresija.
-7. **Status bar drži živim** — to je korisnikov jedini pasivni uvid dok radi u
+7. **Izlazni kodovi `tim-send.sh` su signal, ne šum**: `2` = pokušao si pisati
+   planneru (ne smiješ), `3` = `/clear`/`/compact` odbijen jer panel RADI
+   (pričekaj mirovanje — nikad `--force` osim ako svjesno bacaš rad), `4` =
+   poruka možda nije isporučena (pročitaj panel pa ponovi).
+8. **Status bar drži živim** — to je korisnikov jedini pasivni uvid dok radi u
    planneru. Ažuriraj ga na svakoj promjeni faze.
 
 ## Posao za raspodjelu

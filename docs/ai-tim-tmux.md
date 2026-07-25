@@ -106,8 +106,24 @@ poruka bi ti upala usred prompta. Umjesto toga:
 ```bash
 ./scripts/tim-send.sh <uloga> '<jedna linija>'   # planner|orkestrator|reviewer|dev1|dev2
 ./scripts/tim-read.sh  <uloga> [linija]
-./scripts/tim-status.sh [set "<tekst>"]
+./scripts/tim-status.sh [set "<tekst>"] [session]
+./scripts/tim-watch.sh [--once]                  # nadzornik: 1 linija = 1 događaj
+./scripts/tim-kill.sh [-f]                       # ugasi SAMO tim ovog repoa
 ```
+
+`tim-watch.sh` je čisti promatrač (ništa ne šalje, ništa ne mijenja): javlja
+`GOTOV` (dev stao + SAŽETAK), `MIRUJE` (stao BEZ sažetka — sumnjivo),
+`BLOKIRAN` (čeka odgovor na pitanje), `GREŠKA`, `KONTEKST` (>70 %), `VERDIKT`
+(novi fajl u `.tim/reviews/`), `PANEL`/`TIM` (nestali). Povijest u
+`.tim/watch.log`. Namjerno NE javlja početke radova — nadzor mora biti tiši
+od tima. Pusti ga u zaseban prozor (`./scripts/tim-watch.sh`) ili ga koristi
+kao izvor događaja za agenta.
+
+**Dvije zaštite u `tim-send.sh`** (obje se gase s `--force`):
+`/clear` i `/compact` se **odbijaju dok panel radi** (TUI bi ih stavio u red i
+izvršio čim task završi — pobrisao bi baš ono što reviewer treba); i svaka
+poruka se nakon slanja **provjeri** — ako se panel nije prerendao, izlaz je 4
+uz upozorenje da poruka vjerojatno nije stigla.
 
 `tim-send.sh` rješava tri zamke odjednom: pane ID čita iz tmux user opcije
 (`@tim_<uloga>`, postavlja je `tim.sh`) umjesto da pogađa geometriju; tekst
