@@ -88,6 +88,13 @@ prati napredak:
 - `./scripts/tim-status.sh` — tko radi, tko čeka, verdikti reviewera
 - `./scripts/tim-read.sh dev1 120` — što točno piše u nekom panelu
 
+**Deploy i push NE radiš ti.** Ako korisnik ovdje kaže „deployaj", proslijedi
+to orkestratoru (`./scripts/tim-send.sh orkestrator 'deployaj'`) i javi
+korisniku da si delegirao. Razlog nije formalnost: `deploy.sh` mijenja praćene
+fajlove (bump verzije u `pubspec.yaml` i `appVersion` u `lib/main.dart`), pa
+ostavlja necommitane izmjene u zajedničkom radnom stablu — a integracija i
+commit su orkestratorov posao. Uz to ti build output nepotrebno puni kontekst.
+
 Zatim nastavljaš normalno raditi s korisnikom u ovom panelu (istraživanje,
 sljedeći plan). **Dok tim radi ne diraš kod** — samo `docs/plans/*`.
 

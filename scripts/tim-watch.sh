@@ -177,6 +177,14 @@ while :; do
     # Tooling commitovi (skripte tima, njihove komande i doc) ne trebaju verdikt.
     appfiles=$(git -C "$ROOT" show --name-only --format= HEAD 2>/dev/null \
       | grep -vE '^scripts/tim|^\.claude/commands/|^docs/ai-tim-tmux\.md$' | grep -v '^$' | head -5)
+    # Ni release commit: deploy.sh mehanički bumpa verziju u pubspec.yaml i
+    # appVersion konstantu u main.dart — nema što recenzirati.
+    case "$subj" in
+      *"chore(release)"*)
+        others=$(printf '%s' "$appfiles" | grep -vE '^pubspec\.yaml$|^lib/main\.dart$' || true)
+        [ -z "$others" ] && appfiles=""
+        ;;
+    esac
     if [ -n "$appfiles" ] && [ "$VERDICTS_SINCE_COMMIT" -eq 0 ]; then
       emit "PAŽNJA commit dira kod bez zabilježenog verdikta reviewera: $(printf '%s' "$appfiles" | tr '\n' ' ')"
     fi

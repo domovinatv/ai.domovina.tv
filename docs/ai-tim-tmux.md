@@ -198,6 +198,12 @@ koju čovjek gleda periferno, a koja mu ne može upasti usred tipkanja.
   „panel čeka posao" — orkestrator polla, dev miruje, nitko ne napreduje.
   Watcher to javlja kao `NEPOSLANO`. Isto vrijedi za tebe: ako utipkaš uputu
   devu, provjeri da si je poslao.
+- **Deploy pripada orkestratoru, i kad ga tražiš od plannera.** `deploy.sh`
+  bumpa verziju u `pubspec.yaml` i `lib/main.dart`, pa iza sebe ostavlja
+  necommitane izmjene u zajedničkom radnom stablu — netko ih mora commitati, i
+  to je integrator. Izmjereno 2026-07-25: planner je odradio deploy na izravnu
+  uputu, orkestrator je poslije commitao version bump; radilo je, ali su uloge
+  ispale zamućene, a build output je sjeo u plannerov kontekst.
 - **Ako ručno pišeš devu, javi orkestratoru.** Rad koji si naručio izravno u
   dev panelu ne postoji u orkestratorovoj knjigovodstvenoj slici: neće ga
   uključiti u opseg reviewa ni u zapisnik plana, a može i sudariti fajlove s
