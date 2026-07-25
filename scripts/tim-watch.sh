@@ -9,7 +9,8 @@
 #
 # Što javlja:
 #   GOTOV      dev (samo dev1/dev2) stao i ispisao SAŽETAK
-#   MIRUJE     dev stao BEZ sažetka (sumnjivo — prekid ili greška). Planner,
+#   MIRUJE     dev stao BEZ sažetka (sumnjivo — prekid ili greška); NE javlja se
+#              za panel koji je upravo očišćen s /clear (ctx: 0). Planner,
 #              orkestrator i reviewer se namjerno NE prate ovako: oni se nakon
 #              svakog odgovora vraćaju u mirovanje i alarm bi bio neprekidan.
 #   BLOKIRAN   panel čeka odgovor (picker "Enter to select" / dijalog)
@@ -54,6 +55,10 @@ has_error()  { printf '%s' "$1" | grep -qE 'API Error|Request timed out|rate lim
 # Kraj devovog rada: doslovni marker ILI strukturni naslovi koje modeli
 # stvarno ispisuju (uhvaćeno u radu — dev2 je završio bez riječi "SAŽETAK").
 has_summary() { printf '%s' "$1" | grep -qiE 'SAŽETAK|SAZETAK|Verifikacij|Namjerno nedovršeno|Promijenjeni fajlovi|za orkestratora'; }
+# Svjež/očišćen panel: /clear obriše transkript pa i sažetak nestane — to nije
+# tihi prekid nego uredan kraj kruga (uhvaćeno kad je orkestrator poslao /clear
+# objema devovima nakon VERDIKT: OK).
+is_cleared() { printf '%s' "$1" | grep -q 'ctx: 0/'; }
 # Neposlan tekst: zadnjih 6 linija panela, red koji počinje promptom "❯" i ima
 # sadržaj = poruka stoji u input boxu. (Povijesni "❯ …" redovi su gore u
 # transkriptu, zato gledamo samo dno.)
@@ -117,6 +122,8 @@ while :; do
         if [ "${PREV_BUSY[$i]}" = "1" ] && [ "$busy" -eq 0 ]; then
           if has_summary "$cur"; then
             emit "GOTOV $role je završio i ispisao SAŽETAK"
+          elif is_cleared "$cur"; then
+            : # orkestrator je očistio kontekst nakon verdikta — normalno
           elif ! is_blocked "$cur"; then
             emit "MIRUJE $role je stao bez SAŽETKA — provjeri je li prekinut"
           fi
