@@ -9,9 +9,12 @@
 # "set" je jedini način da orkestrator javi napredak korisniku a da mu NE
 # upadne u planner panel — tmux status bar se osvježava svakih 5 s.
 #
-# BUSY/IDLE je heuristika: Claude Code TUI dok radi drži "esc to interrupt"
-# na dnu panela. Ako je panel u nekom dijalogu, pokaže se kao IDLE — zato
-# prije zaključka pogledaj scripts/tim-read.sh <uloga>.
+# BUSY/IDLE se mjeri iz DVA uzorka panela u razmaku od ~1.2 s: dok Claude Code
+# radi, status linija broji vrijeme ("Puzzling… (1m 31s · ↓ 4.5k tokens…)"), pa
+# se sadržaj mijenja. Tekstualni marker ("esc to interrupt") NIJE dovoljan —
+# u 2.1.220 ga footer zna zamijeniti token/effort prikazom (uhvaćeno u radu).
+# Panel zaglavljen u dijalogu izgleda kao IDLE — zato prije zaključka pogledaj
+# scripts/tim-read.sh <uloga>.
 set -euo pipefail
 . "$(cd "$(dirname "$0")" && pwd)/tim-common.sh"
 
@@ -32,15 +35,37 @@ esac
 
 tmux has-session -t "$TARGET" 2>/dev/null || { echo "Session '$SESSION' ne radi (pokreni ./scripts/tim.sh)." >&2; exit 1; }
 
+snap() { tmux capture-pane -p -t "$1" -S -25 2>/dev/null | cat -s || true; }
+
 echo "session: $SESSION"
-printf '%-12s %-5s %-6s %s\n' ULOGA PANE STANJE 'ZADNJA LINIJA'
+declare -a PANES ROLESEEN FIRST
 for role in $TIM_ROLES; do
   pane=$(tim_pane "$role")
   [ -n "$pane" ] || continue
-  tail=$(tmux capture-pane -p -t "$pane" -S -25 2>/dev/null | cat -s || true)
-  if printf '%s' "$tail" | grep -qi 'esc to interrupt'; then state=BUSY; else state=IDLE; fi
-  last=$(printf '%s' "$tail" | grep -v '^[[:space:]]*$' | tail -1 | cut -c1-60)
-  printf '%-12s %-5s %-6s %s\n' "$role" "$pane" "$state" "$last"
+  ROLESEEN+=("$role"); PANES+=("$pane"); FIRST+=("$(snap "$pane")")
+done
+sleep 1.2   # drugi uzorak — promjena sadržaja = panel radi
+
+printf '%-12s %-5s %-6s %-6s %s\n' ULOGA PANE STANJE CTX 'ZADNJA LINIJA'
+for i in "${!PANES[@]}"; do
+  pane="${PANES[$i]}"
+  second=$(snap "$pane")
+  if [ "$second" != "${FIRST[$i]}" ] || printf '%s' "$second" | grep -qi 'esc to interrupt'; then
+    state=BUSY
+  else
+    state=IDLE
+  fi
+  # Popunjenost konteksta iz footera ("ctx: 134.4k/1.0M (13%)") — signal
+  # orkestratoru kad je devu vrijeme za /clear.
+  ctx=$(printf '%s' "$second" | grep -oE 'ctx: [^ ]+' | tail -1 | cut -d' ' -f2 | cut -d/ -f1 || true)
+  # Zadnja SADRŽAJNA linija: bez footera, okvira i praznog prompta. Filtri su
+  # FIKSNI stringovi, ne bracket klase — okvir i ❯ su multibajtni, pa ih BSD
+  # grep u [] ne hvata pouzdano.
+  last=$(printf '%s' "$second" | sed 's/[[:space:]]*$//' \
+    | grep -v '^$' | grep -v '^ *ctx:' | grep -v '⏵⏵' \
+    | grep -v '^─' | grep -v '^ *❯$' | grep -v 'Tip:' \
+    | tail -1 | cut -c1-55 || true)
+  printf '%-12s %-5s %-6s %-6s %s\n' "${ROLESEEN[$i]}" "$pane" "$state" "${ctx:-–}" "$last"
 done
 
 if [ -s "$ROOT/.tim/status.line" ]; then

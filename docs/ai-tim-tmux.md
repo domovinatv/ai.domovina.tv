@@ -126,6 +126,47 @@ putanju.
 
 Planovi (`docs/plans/`) NISU gitignorirani — oni su trag odluka i idu u repo.
 
+## Odluke o dizajnu (zašto baš tako)
+
+**Gdje što živi — tri sloja, ne jedan:**
+
+| Sloj | Za što služi | Kod nas |
+|---|---|---|
+| `--append-system-prompt` | identitet i pravila koja vrijede **uvijek**, u svakoj poruci | uloge u `tim.sh` |
+| slash komanda (`.claude/commands/*.md`) | determinističan **ritual** koji netko pokrene | `/pocni`, `/delegiraj`, `/tim`, `/pregled` |
+| skill | sposobnost koju model **sam otkrije**, s pratećim fajlovima | ne koristimo — kickoff je fiksan, discovery ne treba |
+
+Uvodni prompt u clipboardu je bio četvrta, najgora varijanta: neverzioniran,
+ispari, i duplicira ono što system prompt ionako nosi. Pravilo: **ako to mora
+vrijediti uvijek → system prompt; ako to pokrećeš → slash komanda.**
+
+**Zašto reviewer nije samo još jedan zadatak orkestratoru:** orkestratorov
+kontekst je pun dispatcha, sažetaka i polling ispisa; svjež panel gleda samo
+diff naspram plana. Odvojen panel je i jedini način da review ima *drugi*
+model od izvođenja.
+
+**Zašto status ide u tmux status bar, a ne u planner panel:** jedina površina
+koju čovjek gleda periferno, a koja mu ne može upasti usred tipkanja.
+
+## Vruće točke i zamke iz prakse
+
+- **Panel koji čeka odgovor izgleda kao gotov.** Claude Code za pitanja s
+  ponuđenim opcijama otvori picker (`Enter to select · Tab/Arrow keys to
+  navigate`) i time *prestane raditi* — `tim-status.sh` ga vidi kao IDLE.
+  Orkestrator zato ne smije zaključiti "dev je gotov" bez SAŽETKA: ako u
+  zadnjoj liniji piše `Enter to select`, dev je **blokiran pitanjem** i treba
+  mu odgovoriti (`tim-send.sh dev1 '2'` ili tekstom).
+- **`app_hr.arb` / `app_en.arb` su najgore usko grlo za paralelizaciju** —
+  dira ih gotovo svaki UI task. Ili sve i18n izmjene jednog kruga idu jednom
+  devu, ili se taskovi serijaliziraju. Isto vrijedi za `web/_worker.js`
+  (sve rute na jednom mjestu) i `pubspec.yaml`.
+- **Prebacivanje sessiona tmux prefiksom (`prefix )`) te može odvesti u tuđi
+  tim** — poruka onda završi u krivom planneru. Prije tipkanja provjeri ime
+  u status baru (lijevo dolje) ili `./scripts/tim-status.sh session`.
+- **`ctx` stupac u `tim-status.sh`** pokazuje popunjenost konteksta po panelu —
+  to je signal orkestratoru kad devu treba `/clear` (nakon `VERDIKT: OK`) ili
+  `/compact` (usred dugog taska).
+
 ## Ograničenja i zamke
 
 - **Nema worktreeja po devu.** Lomi relativni path dependency u `pubspec.yaml`
@@ -152,6 +193,14 @@ Da se ne retestira svaki put:
   ime traži prije prefiksa. `has-session`/`attach`/`kill-session`/`list-panes`
   `=` primaju i ondje je obavezan. Otud dva helpera: `tim_target()` i
   `tim_opt_target()`.
+- **BUSY/IDLE se NE može mjeriti tekstom "esc to interrupt"** — u 2.1.220 ga
+  footer zna zamijeniti prikazom tokena/efforta ("Puzzling… (1m 31s · ↓ 4.5k
+  tokens · thinking with high effort)"). Zato `tim-status.sh` uzima dva uzorka
+  panela u razmaku od 1.2 s i uspoređuje ih: promjena = BUSY.
+- Filtriranje TUI linija radi FIKSNIM stringovima, ne bracket klasama —
+  okvir (`─`) i prompt (`❯`) su multibajtni i BSD `grep` ih u `[]` ne hvata
+  pouzdano. Uz `set -e` svaki takav `grep -v` treba `|| true` (prazan rezultat
+  je izlaz 1 i ubio bi skriptu).
 - `#{@role}` user opcija se rezolvira u `pane-border-format` i `list-panes -F`
   kroz hijerarhiju pane→window→session — zato border pokazuje točnu ulogu iako
   Claude Code TUI pregazi `pane_title`.

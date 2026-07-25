@@ -47,7 +47,12 @@ Ako ipak iskoči neki dijalog (npr. trust folder), pročitaj ga pa potvrdi:
    taska (T1) + sve što plan ne pokriva. Ostalo (ne commitaj, SAŽETAK na kraju)
    devovi već imaju u system promptu.
 3. **Polling** svakih 30–60 s (`tim-status.sh`, pa `tim-read.sh <dev>` kad
-   padne na IDLE). Dev je gotov kad je ispisao SAŽETAK i TUI čeka input.
+   padne na IDLE). Dev je gotov **samo ako je ispisao SAŽETAK**.
+   IDLE ≠ gotov: ako zadnja linija sadrži `Enter to select` ili `Tab/Arrow
+   keys`, dev je **blokiran pitanjem** — pročitaj panel, pa odgovori
+   (`./scripts/tim-send.sh dev1 '2'` za ponuđenu opciju, ili tekstom).
+   Ako mu je odluka izvan opsega taska, odluči ti; ako mijenja plan, pitaj
+   korisnika. `ctx` stupac ti govori kad devu treba `/compact` ili `/clear`.
 4. **Review** — tek kad su OBA taska iz kruga gotova, i **prije** nego što
    išta commitaš (radno stablo tada sadrži točno ono što se pregledava):
    ```bash

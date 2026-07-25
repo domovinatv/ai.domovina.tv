@@ -59,10 +59,14 @@ Pravila pri pisanju plana:
    paralelno — dev1 i dev2 dijele isti radni direktorij (bez worktreeja, razlog
    u headeru `scripts/tim.sh`). Ako se preklapaju, spoji ih u jedan task ili ih
    označi kao serijske.
-2. **Task je veličine jednog konteksta** — ako ne stane u ~jedan `/clear`
+2. **Poznate zajedničke točke** koje ruše paralelizaciju: `lib/l10n/app_hr.arb`
+   i `app_en.arb` (dira ih gotovo svaki UI task — sve i18n izmjene kruga daj
+   JEDNOM devu), `web/_worker.js` (sve rute), `pubspec.yaml`, `CLAUDE.md`.
+   Ako dva taska trebaju isti od tih fajlova, označi ih kao serijske.
+3. **Task je veličine jednog konteksta** — ako ne stane u ~jedan `/clear`
    ciklus, razbij ga.
-3. Ne prepisuj CLAUDE.md pravila u plan; devovi ih imaju.
-4. Ako nešto nisi provjerio u kodu, napiši „**PROVJERITI:** …" umjesto da
+4. Ne prepisuj CLAUDE.md pravila u plan; devovi ih imaju.
+5. Ako nešto nisi provjerio u kodu, napiši „**PROVJERITI:** …" umjesto da
    pogađaš — dev to onda tretira kao prvi korak taska, ne kao činjenicu.
 
 ## 2. Pošalji orkestratoru
