@@ -10,9 +10,12 @@ Izvor je transkript svake Claude Code sesije (~/.claude/projects/<slug>/*.jsonl)
 gdje svaka assistant poruka nosi stvarni `usage` blok. To je mjerenje, ne
 procjena — ne koristi se nikakav tokenizer ni heuristika.
 
-Uloga se pripisuje preko `agent-name` zapisa koji Claude Code upiše kad je
-session pokrenut s `-n <ime>` (tim.sh to radi za svih pet panela). Sesije bez
-tog zapisa (npr. ovaj alatničarski chat) idu u "ostalo" i NE ulaze u zbroj tima.
+Uloga se pripisuje preko `agent-name` ILI `custom-title` zapisa (oba nastaju iz
+`claude -n <ime>`; tim.sh to radi za svih pet panela). OBA su nužna: `/clear`
+otvara NOVI transkript u kojem `agent-name` više ne postoji, ali `custom-title`
+preživi — bez njega bi devovi nakon prvog čišćenja konteksta nestali iz
+mjerenja. Sesije bez ijednog zapisa (npr. ovaj alatnički chat) idu u "ostalo" i
+NE ulaze u zbroj tima.
 
 Dedupe: isti assistant zapis se u JSONL-u pojavi više puta (stream update),
 pa se `usage` broji jednom po `message.id`.
@@ -75,7 +78,7 @@ def record_ts(rec: dict) -> float | None:
         return None
 
 
-def collect(repo_root: pathlib.Path, since: float | None):
+def collect(repo_root: pathlib.Path, since: float | None, until: float | None = None):
     """→ {(uloga, model): {in, cw, cr, out, msgs}}"""
     pdir = project_dir(repo_root)
     totals: dict[tuple[str, str], dict[str, int]] = {}
@@ -93,22 +96,26 @@ def collect(repo_root: pathlib.Path, since: float | None):
                         rec = json.loads(line)
                     except json.JSONDecodeError:
                         continue
-                    if rec.get("type") == "agent-name":
-                        name = rec.get("agentName")
+                    rtype = rec.get("type")
+                    if rtype in ("agent-name", "custom-title"):
+                        name = rec.get("agentName") or rec.get("customTitle")
                         if name in ROLES:
                             role = name
                         continue
-                    if rec.get("type") != "assistant":
+                    if rtype != "assistant":
                         continue
                     msg = rec.get("message") or {}
                     usage = msg.get("usage")
                     mid = msg.get("id")
                     if not usage or not mid or mid in seen:
                         continue
-                    if since is not None:
+                    if since is not None or until is not None:
                         ts = record_ts(rec)
-                        if ts is not None and ts < since:
-                            continue
+                        if ts is not None:
+                            if since is not None and ts < since:
+                                continue
+                            if until is not None and ts > until:
+                                continue
                     seen.add(mid)
                     rows.append((msg.get("model") or "?", usage))
         except OSError:
@@ -145,6 +152,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--since", help="HH:MM ili ISO vrijeme — broji samo poruke od tada")
+    ap.add_argument("--until", help="HH:MM ili ISO vrijeme — gornja granica (za mjerenje jednog kruga)")
     ap.add_argument("--json", action="store_true", help="strojno čitljiv ispis")
     ap.add_argument("--watch", type=int, metavar="SEK",
                     help="petlja: ispiši liniju kad se potrošnja promijeni")
@@ -154,9 +162,10 @@ def main() -> int:
 
     repo_root = pathlib.Path(__file__).resolve().parent.parent
     since = parse_since(args.since)
+    until = parse_since(args.until)
 
     def snapshot():
-        totals, pdir = collect(repo_root, since)
+        totals, pdir = collect(repo_root, since, until)
         if not args.all:
             totals = {k: v for k, v in totals.items() if k[0] in ROLES}
         return totals, pdir
@@ -193,8 +202,8 @@ def main() -> int:
         return 1
 
     print(f"izvor: {pdir}")
-    if args.since:
-        print(f"od:    {args.since}")
+    if args.since or args.until:
+        print(f"okvir: {args.since or 'početak'} → {args.until or 'sada'}")
     print()
     hdr = f"{'ULOGA':<12} {'MODEL':<16} {'ULAZ':>8} {'CACHE-W':>9} {'CACHE-R':>9} {'IZLAZ':>8} {'PORUKA':>7} {'≈USD':>8}"
     print(hdr)
