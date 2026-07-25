@@ -254,6 +254,11 @@ Da se ne retestira svaki put:
 - `#{@role}` user opcija se rezolvira u `pane-border-format` i `list-panes -F`
   kroz hijerarhiju pane→window→session — zato border pokazuje točnu ulogu iako
   Claude Code TUI pregazi `pane_title`.
+- **Prompt u TUI input boxu je `❯` + U+00A0 (non-breaking space)**, ne obični
+  razmak. Uzorak `^❯ .` zato nikad ne pogodi živi panel — a sintetički test
+  napisan s običnim razmakom uredno prođe. Detekcija neposlanog teksta traži
+  alfanumerik iza prompta. Pouka šire: TUI parsere validiraj na uhvaćenom
+  panelu (`tmux capture-pane … | od -An -tx1`), ne na vlastitoj fixture-i.
 - `tmux send-keys -l "$msg"` prenosi navodnike, `$VAR` i `--flag` doslovno u
   TUI input; Enter mora ići kao zaseban `send-keys` nakon ~0.4 s.
 - `split-window -l 60%` (ne stari `-p`) radi na 3.5a; postotak je relativan na

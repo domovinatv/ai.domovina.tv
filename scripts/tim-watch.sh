@@ -62,8 +62,14 @@ is_cleared() { printf '%s' "$1" | grep -q 'ctx: 0/'; }
 # Neposlan tekst: zadnjih 6 linija panela, red koji počinje promptom "❯" i ima
 # sadržaj = poruka stoji u input boxu. (Povijesni "❯ …" redovi su gore u
 # transkriptu, zato gledamo samo dno.)
+#
+# GOTCHA: iza prompta NIJE obični razmak nego U+00A0 (non-breaking space,
+# bajtovi c2 a0) — uzorak "^❯ ." zato nikad ne pogodi živi slučaj, a sintetički
+# test s običnim razmakom prođe. Zato tražimo bilo koji alfanumerik/kosu crtu
+# iza prompta: prazan input box ima samo ❯ + NBSP + padding.
 pending_input() {
-  printf '%s' "$1" | sed 's/[[:space:]]*$//' | tail -6 | grep '^❯ .' | tail -1 | cut -c1-60
+  printf '%s' "$1" | sed 's/[[:space:]]*$//' | tail -6 \
+    | grep -E '^❯.*[[:alnum:]/]' | tail -1 | cut -c1-60
 }
 
 ctx_pct() {
