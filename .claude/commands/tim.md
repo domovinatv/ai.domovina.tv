@@ -47,8 +47,16 @@ Ako ipak iskoči neki dijalog (npr. trust folder), pročitaj ga pa potvrdi:
    fajlova disjunktni. Inače serijaliziraj. U poruci: putanja plana + oznaka
    taska (T1) + sve što plan ne pokriva. Ostalo (ne commitaj, SAŽETAK na kraju)
    devovi već imaju u system promptu.
-3. **Polling** svakih 30–60 s (`tim-status.sh`, pa `tim-read.sh <dev>` kad
-   padne na IDLE). Dev je gotov **samo ako je ispisao SAŽETAK**.
+3. **Čekanje**: ne pollaj u petlji tolikim brojem poteza — svaki ciklus ti
+   ulazi u kontekst i onda se cijeli kontekst čita iznova (u prvom krugu je
+   polling proizveo 2.4 M cache-read tokena i učinio orkestratora najskupljim
+   panelom u timu). Umjesto toga **blokiraj jednom u shellu** dok devovi ne
+   padnu na IDLE, pa se probudi gotov:
+   ```bash
+   until ./scripts/tim-status.sh | grep -qv BUSY; do sleep 20; done   # ili vlastita until petlja
+   ```
+   Ako moraš pollati ručno, radi to rijetko (`tim-status.sh`, pa
+   `tim-read.sh <dev>` tek kad padne na IDLE). Dev je gotov **samo ako je ispisao SAŽETAK**.
    IDLE ≠ gotov: ako zadnja linija sadrži `Enter to select` ili `Tab/Arrow
    keys`, dev je **blokiran pitanjem** — pročitaj panel, pa odgovori
    (`./scripts/tim-send.sh dev1 '2'` za ponuđenu opciju, ili tekstom).

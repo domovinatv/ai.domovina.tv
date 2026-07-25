@@ -59,12 +59,19 @@ natrag onom devu koji je kod i pisao — dok mu je kontekst još živ.
 | Panel | Model | Zašto |
 |---|---|---|
 | planner | **opus** | Kriva odluka u planu množi se s dva deva — tu ide najjači model. |
-| orkestrator | **fable** | Dispatch, polling, čitanje sažetaka, git. Mehanika, ne dubina; brz i jeftin. |
+| orkestrator | **fable** | Dispatch, polling, čitanje sažetaka, git. Traži pouzdanost i brzinu, ne dubinu. |
 | reviewer | **fable** (+ eskalacija) | Konformnost planu, `flutter analyze`, očiti bugovi. Za *Rizik: visok* orkestrator mu pošalje `/model opus` prije pregleda. |
 | dev1, dev2 | **opus** | Pisanje koda. |
 
 Override preko env varijabli:
 `TIM_MODEL_PLAN`, `TIM_MODEL_ORCH`, `TIM_MODEL_REVIEW`, `TIM_MODEL_DEV`.
+
+⚠️ **Fable NIJE jeftiniji od Opusa — dvostruko je skuplji** (API cjenik: fable-5
+$10/$50 po MTok, opus-5 $5/$25). Podjela stoji zbog *sposobnosti i brzine*
+koordinacije, ne zbog cijene. Izmjereno na prvom krugu: orkestrator je bio
+NAJSKUPLJI panel u timu ($4.15 od $12.28 ukupno) iako nije napisao ni retka
+koda — polling mu je napuhao cache-read (2.4 M tokena). Ako trošak postane
+problem, prvo skrati polling (vidi dolje), pa tek onda diraj podjelu modela.
 
 ## Petlja
 
@@ -108,8 +115,17 @@ poruka bi ti upala usred prompta. Umjesto toga:
 ./scripts/tim-read.sh  <uloga> [linija]
 ./scripts/tim-status.sh [set "<tekst>"] [session]
 ./scripts/tim-watch.sh [--once]                  # nadzornik: 1 linija = 1 događaj
+./scripts/tim-cost.py [--since HH:MM] [--json]   # izmjerena potrošnja po ulozi i modelu
 ./scripts/tim-kill.sh [-f]                       # ugasi SAMO tim ovog repoa
 ```
+
+`tim-cost.py` **mjeri**, ne procjenjuje: čita `usage` blok svake assistant
+poruke iz transkripata sesija (`~/.claude/projects/<slug>/*.jsonl`), pripisuje
+ulogu preko `agent-name` zapisa koji nastaje iz `claude -n <ime>`, i dedupe-a
+po `message.id` (isti zapis se u JSONL-u ponovi više puta). Sesije bez uloge
+(ovaj alatnički chat, drugi prozori) ne ulaze u zbroj tima osim uz `--all`.
+Iznos u dolarima je API cjenik — vlasnik je na Claude Max pretplati, pa je to
+„koliko bi ovo stajalo preko API-ja", ne račun.
 
 `tim-watch.sh` je čisti promatrač (ništa ne šalje, ništa ne mijenja): javlja
 `GOTOV` (dev stao + SAŽETAK), `MIRUJE` (dev stao BEZ sažetka — sumnjivo),
@@ -190,6 +206,13 @@ koju čovjek gleda periferno, a koja mu ne može upasti usred tipkanja.
 - **Prebacivanje sessiona tmux prefiksom (`prefix )`) te može odvesti u tuđi
   tim** — poruka onda završi u krivom planneru. Prije tipkanja provjeri ime
   u status baru (lijevo dolje) ili `./scripts/tim-status.sh session`.
+- **Polling je glavni trošak orkestratora, ne razmišljanje.** Svaki
+  `capture-pane` ciklus ulazi mu u kontekst i onda se cijeli kontekst čita
+  iznova na sljedećem potezu — 29 poruka orkestratora proizvelo je 2.4 M
+  cache-read tokena u prvom krugu. Umjesto ponavljanog pollanja neka **jednom
+  blokira** u shellu (`until` petlja koja čeka da devovi padnu na IDLE) i
+  probudi se gotov. Nadzor je ionako besplatan: `tim-watch.sh` je bash proces,
+  ne model.
 - **`ctx` stupac u `tim-status.sh`** pokazuje popunjenost konteksta po panelu —
   to je signal orkestratoru kad devu treba `/clear` (nakon `VERDIKT: OK`) ili
   `/compact` (usred dugog taska).
