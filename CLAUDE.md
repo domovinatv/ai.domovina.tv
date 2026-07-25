@@ -26,7 +26,8 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 **planner** (opus, tu čovjek promptira) → **orkestrator** (fable) →
 **dev1/dev2** (opus) → **reviewer** (fable, diže se na opus za rizičan diff).
 Petlja, helperi (`tim-send.sh`/`tim-read.sh`/`tim-status.sh`) i zamke:
-`docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`.
+`docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`,
+kickoff `/pocni` (skripta ga sama pošalje planneru; `TIM_AUTOSTART=0` gasi).
 
 Session se zove `tim-<repo-slug>` (`tim-domovina-ai`) da timovi za različite
 projekte na istom stroju ne kolidiraju. **Rule**: tmux radi prefix matching na

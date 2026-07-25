@@ -68,6 +68,11 @@ Override preko env varijabli:
 
 ## Petlja
 
+0. **Kickoff je automatiziran** — `tim.sh` planneru pošalje `/pocni`
+   (`.claude/commands/pocni.md`) čim mu TUI proradi: pročita ovaj doc i
+   `delegiraj.md`, provjeri panele i stanje repoa, javi ti to u 5 redaka i
+   stane. Nema uvodnog prompta koji moraš čuvati u clipboardu.
+   Isključivanje: `TIM_AUTOSTART=0 ./scripts/tim.sh`.
 1. **Ti u planneru** — normalan razgovor: istraživanje koda, dogovor opsega.
 2. **`/delegiraj`** (ili "daj timu") → planner zapiše
    `docs/plans/YYYY-MM-DD-<slug>.md` (Cilj, Kontekst, Taskovi s popisom
@@ -158,6 +163,12 @@ Da se ne retestira svaki put:
   ijednog API poziva.
 - `status-right "#(cat …/.tim/status.line)"` uz `status-interval 5` daje
   ambijentalni napredak bez ijedne poruke u planner panel.
+- **tmux paneli nasljeđuju okolinu tmux SERVERA, ne shella koji je pokrenuo
+  skriptu** — zato `tim.sh` `TIM_SESSION` upisuje izravno u komandu svakog
+  panela (`TIM_SESSION=… claude …`). Bez toga bi helper pozvan IZ panela kod
+  `TIM_SESSION` overridea izvijestio o krivom (izvedenom) sessionu.
+- Autostart čeka da se u planner panelu pojavi footer "bypass permissions"
+  (do 20 s) prije nego pošalje `/pocni` — slanje prije toga TUI proguta.
 
 ## Isti obrazac u drugim repoima
 

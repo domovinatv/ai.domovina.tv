@@ -21,6 +21,10 @@
 # Puni opis petlje: docs/ai-tim-tmux.md
 # Uloge/pravila: .claude/commands/{delegiraj,tim,pregled}.md
 #
+# Planneru se pri dizanju automatski pošalje /pocni (.claude/commands/pocni.md)
+# — kickoff koji ga orijentira i provjeri da su svi paneli živi. Ne trebaš
+# pamtiti nikakav uvodni prompt. Isključivanje: TIM_AUTOSTART=0
+#
 # Modeli (default: planiranje i pisanje koda = opus, koordinacija = fable):
 #   TIM_MODEL_PLAN=opus TIM_MODEL_ORCH=fable TIM_MODEL_REVIEW=fable \
 #   TIM_MODEL_DEV=opus ./scripts/tim.sh
@@ -92,15 +96,20 @@ dev_prompt() {
 # JEDAN shell string, pa svaki arg mora biti shell-quoted (printf %q) —
 # inače se --append-system-prompt tekst raspadne na riječi.
 q() { printf '%q ' "$@"; }
-CMD_PLAN=$(q claude --dangerously-skip-permissions \
+# TIM_SESSION eksplicitno u okolinu svakog panela: tmux paneli NASLJEĐUJU
+# okolinu tmux SERVERA, ne shella koji je pokrenuo skriptu — bez ovoga bi
+# helperi pozvani IZ panela (tim-status.sh…) kod TIM_SESSION overridea
+# gađali krivi session (izvedeno ime umjesto stvarnog).
+ENVP="TIM_SESSION=$(printf '%q' "$SESSION") "
+CMD_PLAN=$ENVP$(q claude --dangerously-skip-permissions \
   --model "$MODEL_PLAN" -n planner --append-system-prompt "$(planner_prompt)")
-CMD_ORCH=$(q claude --dangerously-skip-permissions \
+CMD_ORCH=$ENVP$(q claude --dangerously-skip-permissions \
   --model "$MODEL_ORCH" -n orkestrator --append-system-prompt "$(orch_prompt)")
-CMD_REVW=$(q claude --dangerously-skip-permissions \
+CMD_REVW=$ENVP$(q claude --dangerously-skip-permissions \
   --model "$MODEL_REVIEW" -n reviewer --append-system-prompt "$(review_prompt)")
-CMD_DEV1=$(q claude --dangerously-skip-permissions \
+CMD_DEV1=$ENVP$(q claude --dangerously-skip-permissions \
   --model "$MODEL_DEV" -n dev1 --append-system-prompt "$(dev_prompt dev1)")
-CMD_DEV2=$(q claude --dangerously-skip-permissions \
+CMD_DEV2=$ENVP$(q claude --dangerously-skip-permissions \
   --model "$MODEL_DEV" -n dev2 --append-system-prompt "$(dev_prompt dev2)")
 
 # Pane ID-evi (%N) su stabilni neovisno o base-index konfiguraciji korisnika.
@@ -150,6 +159,21 @@ tmux set -t "$OPT" status-right-length 140
 tmux set -t "$OPT" status-right "#(cat '$PWD/.tim/status.line' 2>/dev/null) "
 
 tmux select-pane -t "$P_PLAN"
+
+# Kickoff: planneru pošalji /pocni (.claude/commands/pocni.md) čim mu TUI
+# proradi — da ne moraš pamtiti nikakav uvodni prompt. Ovo je JEDINI trenutak
+# kad išta ide u planner panel: session je nov, korisnik još ne tipka.
+# Isključivanje: TIM_AUTOSTART=0 ./scripts/tim.sh
+if [ "${TIM_AUTOSTART:-1}" != "0" ]; then
+  for _ in $(seq 40); do
+    # TUI je spreman kad iscrta footer s permission modom (~2-4 s).
+    tmux capture-pane -p -t "$P_PLAN" -S -20 2>/dev/null | grep -qi 'bypass permissions' && break
+    sleep 0.5
+  done
+  tmux send-keys -t "$P_PLAN" -l '/pocni'
+  sleep 0.4
+  tmux send-keys -t "$P_PLAN" Enter
+fi
 
 if [ -t 0 ]; then
   exec tmux attach -t "$TARGET"
