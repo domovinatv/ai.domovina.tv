@@ -63,9 +63,6 @@ class AppLocalizationsHr extends AppLocalizations {
   String get commonSignOut => 'Odjavi se';
 
   @override
-  String get commonMaybeLater => 'Možda kasnije';
-
-  @override
   String get commonLoading => 'Učitavanje…';
 
   @override
@@ -86,7 +83,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authAccountTitle => 'Moj račun';
 
   @override
-  String get authAnonTitle => 'Niste prijavljeni';
+  String get authAnonTitle => 'Još nisi prijavljen·a';
 
   @override
   String get authAnonSubtitle =>
@@ -139,7 +136,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authProviderApple => 'Apple račun';
 
   @override
-  String get authProviderEmail => 'Magic link ili kôd na e-mail';
+  String get authProviderEmail => 'Poveznica ili kôd na e-mail';
 
   @override
   String get authProviderPasskey => 'Pristupni ključ';
@@ -304,10 +301,6 @@ class AppLocalizationsHr extends AppLocalizations {
       'Došlo je do pogreške ili je poveznica istekla.';
 
   @override
-  String get authM1Toast =>
-      'Tvoj se napredak sprema na ovaj uređaj. Prijavi se da se sinkronizira.';
-
-  @override
   String get authM3Toast =>
       'Spremljeno na ovaj uređaj. Sinkronizirati favorite na sve uređaje?';
 
@@ -374,10 +367,11 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authSuccess => 'Uspješno!';
 
   @override
-  String get authSignInWithPasskey => 'Prijavi se pristupnim ključem';
+  String get authSignInWithPasskey => 'Nastavi pristupnim ključem';
 
   @override
-  String get authPasskeyTileSub => 'Najbrže — Face ID ili otisak, bez lozinke';
+  String get authPasskeyTileSub =>
+      'Face ID ili otisak — ako si ključ već dodao·la';
 
   @override
   String get authBadgeRecommended => 'Preporučeno';
@@ -386,7 +380,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authBadgeLastUsed => 'Zadnji put';
 
   @override
-  String get authSignInWithEid => 'Prijava eOsobnom';
+  String get authSignInWithEid => 'Nastavi eOsobnom';
 
   @override
   String get authContinueWithGoogle => 'Nastavi s Googleom';
@@ -395,7 +389,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authContinueWithApple => 'Nastavi s Apple računom';
 
   @override
-  String get authEmailMagicLink => 'E-mail magic link';
+  String get authEmailMagicLink => 'Nastavi e-mailom';
 
   @override
   String get authEmailTileSub => 'Pošaljemo ti poveznicu i kôd za prijavu';
@@ -436,9 +430,6 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authHeadlineAccount => 'Prijavi se na DOMOVINA.ai';
 
   @override
-  String get authHeadlineMoment2 => 'Spremi napredak na sve uređaje';
-
-  @override
   String get authHeadlineMoment3 => 'Spremi favorite u svoj račun';
 
   @override
@@ -446,11 +437,21 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get authSubAccount =>
-      'Bez lozinke. Pristupni ključ ili tvoj postojeći Google ili Apple račun.';
+      'Bez lozinke. Prvom prijavom automatski nastaje tvoj račun.';
 
   @override
-  String get authSubMoment2 =>
-      'Trenutno tvoja pozicija u reprodukciji ostaje samo na ovom uređaju.';
+  String get authHeadlineGuest => 'Spremi napredak i favorite';
+
+  @override
+  String get authSubGuest =>
+      'Slušaš kao gost — napredak i favoriti ostaju samo na ovom uređaju.';
+
+  @override
+  String get authGuestBarTitle => 'Slušaš kao gost';
+
+  @override
+  String get authGuestBarBody =>
+      'Napredak, favoriti i postavke ostaju samo na ovom uređaju';
 
   @override
   String get authSubMoment3 =>

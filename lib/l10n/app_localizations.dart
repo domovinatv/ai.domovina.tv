@@ -206,12 +206,6 @@ abstract class AppLocalizations {
   /// **'Odjavi se'**
   String get commonSignOut;
 
-  /// Odgodi neobaveznu radnju (npr. prijavu).
-  ///
-  /// In hr, this message translates to:
-  /// **'Možda kasnije'**
-  String get commonMaybeLater;
-
   /// Generičko stanje učitavanja.
   ///
   /// In hr, this message translates to:
@@ -251,7 +245,7 @@ abstract class AppLocalizations {
   /// Naslov praznog stanja na ekranu računa kad korisnik nije prijavljen.
   ///
   /// In hr, this message translates to:
-  /// **'Niste prijavljeni'**
+  /// **'Još nisi prijavljen·a'**
   String get authAnonTitle;
 
   /// Podnaslov praznog stanja na ekranu računa.
@@ -353,7 +347,7 @@ abstract class AppLocalizations {
   /// Podnaslov stavke: prijava putem e-maila.
   ///
   /// In hr, this message translates to:
-  /// **'Magic link ili kôd na e-mail'**
+  /// **'Poveznica ili kôd na e-mail'**
   String get authProviderEmail;
 
   /// Naziv prijavne metode / rezervni naziv pristupnog ključa.
@@ -626,12 +620,6 @@ abstract class AppLocalizations {
   /// **'Došlo je do pogreške ili je poveznica istekla.'**
   String get authInviteError;
 
-  /// Toast pri prvoj epizodi: napredak se sprema lokalno.
-  ///
-  /// In hr, this message translates to:
-  /// **'Tvoj se napredak sprema na ovaj uređaj. Prijavi se da se sinkronizira.'**
-  String get authM1Toast;
-
   /// Toast nakon prvog dodavanja favorita.
   ///
   /// In hr, this message translates to:
@@ -755,13 +743,13 @@ abstract class AppLocalizations {
   /// Primarni gumb za prijavu pristupnim ključem.
   ///
   /// In hr, this message translates to:
-  /// **'Prijavi se pristupnim ključem'**
+  /// **'Nastavi pristupnim ključem'**
   String get authSignInWithPasskey;
 
   /// Podnaslov stavke za prijavu pristupnim ključem.
   ///
   /// In hr, this message translates to:
-  /// **'Najbrže — Face ID ili otisak, bez lozinke'**
+  /// **'Face ID ili otisak — ako si ključ već dodao·la'**
   String get authPasskeyTileSub;
 
   /// Oznaka (badge) na preporučenoj prijavnoj metodi.
@@ -779,7 +767,7 @@ abstract class AppLocalizations {
   /// Stavka za prijavu hrvatskom e-osobnom.
   ///
   /// In hr, this message translates to:
-  /// **'Prijava eOsobnom'**
+  /// **'Nastavi eOsobnom'**
   String get authSignInWithEid;
 
   /// Stavka za prijavu Google računom.
@@ -797,7 +785,7 @@ abstract class AppLocalizations {
   /// Stavka za prijavu putem e-maila.
   ///
   /// In hr, this message translates to:
-  /// **'E-mail magic link'**
+  /// **'Nastavi e-mailom'**
   String get authEmailMagicLink;
 
   /// Podnaslov stavke za prijavu putem e-maila.
@@ -866,12 +854,6 @@ abstract class AppLocalizations {
   /// **'Prijavi se na DOMOVINA.ai'**
   String get authHeadlineAccount;
 
-  /// Naslov prijavnog lista (kontekst: nakon slušanja).
-  ///
-  /// In hr, this message translates to:
-  /// **'Spremi napredak na sve uređaje'**
-  String get authHeadlineMoment2;
-
   /// Naslov prijavnog lista (kontekst: nakon dodavanja favorita).
   ///
   /// In hr, this message translates to:
@@ -887,14 +869,32 @@ abstract class AppLocalizations {
   /// Podnaslov prijavnog lista (kontekst: račun).
   ///
   /// In hr, this message translates to:
-  /// **'Bez lozinke. Pristupni ključ ili tvoj postojeći Google ili Apple račun.'**
+  /// **'Bez lozinke. Prvom prijavom automatski nastaje tvoj račun.'**
   String get authSubAccount;
 
-  /// Podnaslov prijavnog lista (kontekst: nakon slušanja).
+  /// Naslov prijavnog lista (kontekst: anonimni gost).
   ///
   /// In hr, this message translates to:
-  /// **'Trenutno tvoja pozicija u reprodukciji ostaje samo na ovom uređaju.'**
-  String get authSubMoment2;
+  /// **'Spremi napredak i favorite'**
+  String get authHeadlineGuest;
+
+  /// Podnaslov prijavnog lista (kontekst: anonimni gost).
+  ///
+  /// In hr, this message translates to:
+  /// **'Slušaš kao gost — napredak i favoriti ostaju samo na ovom uređaju.'**
+  String get authSubGuest;
+
+  /// Naslov trajne trake na dnu ekrana epizode za neprijavljenog korisnika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slušaš kao gost'**
+  String get authGuestBarTitle;
+
+  /// Podnaslov trajne trake na dnu ekrana epizode za neprijavljenog korisnika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredak, favoriti i postavke ostaju samo na ovom uređaju'**
+  String get authGuestBarBody;
 
   /// Podnaslov prijavnog lista (kontekst: nakon dodavanja favorita).
   ///

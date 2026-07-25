@@ -799,6 +799,9 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
     final l = AppLocalizations.of(context);
     final confirmWord = l.authDeleteConfirmWord;
     return AlertDialog(
+      // Type-to-confirm polje diže tipkovnicu — bez scrollable dialog
+      // overflowa na niskim ekranima.
+      scrollable: true,
       title: Text(l.authDeleteConfirmTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,

@@ -81,11 +81,17 @@ class AuthBrandHeader extends StatelessWidget {
   final String title;
   final String subtitle;
   final double logoSize;
+
+  /// [compact] izostavlja logo/wordmark/trikoloru — za pod-korake (e-mail,
+  /// OTP) gdje otvorena tipkovnica pojede pola sheeta pa CTA ode van ekrana.
+  final bool compact;
+
   const AuthBrandHeader({
     super.key,
     required this.title,
     required this.subtitle,
     this.logoSize = 56,
+    this.compact = false,
   });
 
   @override
@@ -93,12 +99,14 @@ class AuthBrandHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       children: [
-        DomovinaLogoMark(size: logoSize),
-        const SizedBox(height: 12),
-        const DomovinaWordmark(fontSize: 18),
-        const SizedBox(height: 10),
-        const TricolorAccent(),
-        const SizedBox(height: 18),
+        if (!compact) ...[
+          DomovinaLogoMark(size: logoSize),
+          const SizedBox(height: 12),
+          const DomovinaWordmark(fontSize: 18),
+          const SizedBox(height: 10),
+          const TricolorAccent(),
+          const SizedBox(height: 18),
+        ],
         Text(
           title,
           textAlign: TextAlign.center,
@@ -176,6 +184,9 @@ class AuthProviderTile extends StatefulWidget {
   final bool enabled;
   final bool loading;
 
+  /// Semantics sidro za e2e (vidi docs/e2e-testing.md).
+  final String? identifier;
+
   const AuthProviderTile({
     super.key,
     required this.iconChild,
@@ -188,6 +199,7 @@ class AuthProviderTile extends StatefulWidget {
     this.badgeColor,
     this.enabled = true,
     this.loading = false,
+    this.identifier,
   });
 
   @override
@@ -196,6 +208,7 @@ class AuthProviderTile extends StatefulWidget {
 
 class _AuthProviderTileState extends State<AuthProviderTile> {
   bool _hover = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +216,9 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
     final cs = theme.colorScheme;
     final primary = widget.primary;
     final interactive = widget.enabled && !widget.loading;
-    final hover = _hover && interactive;
+    // Tipkovnički fokus (Tab na webu) mora biti vidljiv jednako kao hover —
+    // default InkWell focus overlay se na navy tile-u praktički ne vidi.
+    final hover = (_hover || _focused) && interactive;
 
     final bg = primary
         ? AppTheme.croBlue
@@ -213,7 +228,9 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
         ? Colors.white.withValues(alpha: 0.78)
         : cs.onSurfaceVariant;
 
-    return MouseRegion(
+    return Semantics(
+      identifier: widget.identifier,
+      child: MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       cursor: interactive ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -256,6 +273,8 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
           color: Colors.transparent,
           child: InkWell(
             onTap: interactive ? widget.onTap : null,
+            onFocusChange: (f) => setState(() => _focused = f),
+            focusColor: Colors.transparent,
             borderRadius: BorderRadius.circular(14),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -339,6 +358,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
           ),
         ),
         ),
+      ),
       ),
     );
   }

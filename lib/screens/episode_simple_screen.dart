@@ -10,9 +10,6 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../l10n/app_localizations.dart';
 import '../models/person_hub.dart';
 import '../pinka_sdk/pinka_sdk.dart';
-import '../onboarding/moments/m1_save_progress_toast.dart';
-import '../onboarding/moments/m2_link_identity_sheet.dart';
-import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
 import '../services/cdn_config.dart';
 import '../services/channel_cache.dart';
@@ -25,6 +22,7 @@ import '../services/page_meta.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
+import '../widgets/anonymous_signin_bar.dart';
 import '../widgets/audio_poster.dart';
 import '../widgets/clip_share_sheet.dart';
 import '../widgets/episode_video.dart';
@@ -194,22 +192,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   late final List<({String timestamp, String topic, int totalSeconds})>
   _chapters;
 
-  late final WatchSecondsTracker _watchTracker;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _chapters = _buildChapters();
-    _watchTracker = WatchSecondsTracker(
-      triggerAt: 30,
-      onThreshold: () {
-        if (mounted) maybeShowM2(context);
-      },
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) maybeShowM1(context);
-    });
 
     if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
       _language = EpisodeLanguage.en;
@@ -247,7 +234,6 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     WidgetsBinding.instance.removeObserver(this);
     _positionSub?.cancel();
     _resumeHintTimer?.cancel();
-    _watchTracker.dispose();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     _player?.dispose();
@@ -348,11 +334,6 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
 
       player.stream.playing.listen((playing) {
         if (mounted) setState(() => _isPlaying = playing);
-        if (playing) {
-          _watchTracker.start();
-        } else {
-          _watchTracker.pause();
-        }
       });
 
       // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
@@ -669,35 +650,46 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             ),
           ],
         ),
-        // Sticky "Zid podrške" — uvijek vidljiv CTA na dnu, bez obzira na
-        // scroll; sam se sakrije ako epizoda nema aktivnu kampanju.
-        bottomNavigationBar: PinkaSupportBar.episode(
-          youtubeId: data.youtubeId,
-          // Fallback na kampanju kanala — vidi episode_screen.dart.
-          channelRefs: [
-            ?data.info.youtubeChannelId,
-            ?channelCache.channelIdForName(data.info.channel),
-          ],
-          onOpen: (_, viaChannel) {
-            if (!viaChannel) {
-              context.push(Uri(
-                path: '/v/${data.youtubeId}/support',
-                queryParameters: {'name': data.displayTitle},
-              ).toString());
-              return;
-            }
-            final slug = channelCache
-                .channelIdForName(data.info.channel)
-                ?.replaceAll('_', '-');
-            final uc = data.info.youtubeChannelId;
-            context.push(Uri(
-              path: '/c/${slug ?? 'kanal'}/support',
-              queryParameters: {
-                'uc': ?uc,
-                'name': data.info.channel,
-              },
-            ).toString());
-          },
+        // Dno: "gost" traka (samo neprijavljenima) + sticky "Zid podrške"
+        // (sam se sakrije bez aktivne kampanje). Donji safe area primjenjuje
+        // samo vanjski SafeArea — obje trake se nezavisno pale/gase.
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AnonymousSignInBar(applyBottomSafeArea: false),
+              PinkaSupportBar.episode(
+                youtubeId: data.youtubeId,
+                applyBottomSafeArea: false,
+                // Fallback na kampanju kanala — vidi episode_screen.dart.
+                channelRefs: [
+                  ?data.info.youtubeChannelId,
+                  ?channelCache.channelIdForName(data.info.channel),
+                ],
+                onOpen: (_, viaChannel) {
+                  if (!viaChannel) {
+                    context.push(Uri(
+                      path: '/v/${data.youtubeId}/support',
+                      queryParameters: {'name': data.displayTitle},
+                    ).toString());
+                    return;
+                  }
+                  final slug = channelCache
+                      .channelIdForName(data.info.channel)
+                      ?.replaceAll('_', '-');
+                  final uc = data.info.youtubeChannelId;
+                  context.push(Uri(
+                    path: '/c/${slug ?? 'kanal'}/support',
+                    queryParameters: {
+                      'uc': ?uc,
+                      'name': data.info.channel,
+                    },
+                  ).toString());
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

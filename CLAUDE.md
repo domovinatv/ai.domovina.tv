@@ -95,6 +95,25 @@ umjesto na `/`. Čista logika u `lib/services/auth_return_path.dart`,
 kontrakt čuvaju unit testovi u `test/auth_return_path_test.dart`
 (open-redirect guard + callback-loop guard). Ne zaobilaziti sanitizaciju.
 
+### Auth nudge NIKAD ne prekida reprodukciju
+
+Onboarding momenti M1 (snackbar o napretku) i M2 (auth sheet nakon 30 s
+slušanja) obrisani su 2026-07-25 — modal preko videa prekida upravo ono zbog
+čega je korisnik došao. Zamjena je `widgets/anonymous_signin_bar.dart`: trajna
+slim traka u `bottomNavigationBar` ekrana epizode, vidljiva samo dok je
+`AuthService.instance.isAnonymous`.
+
+**Rule**: novi nudge (prijava, pretplata, install) → persistent surface
+(traka/kartica/chip). Modal SAMO kad ga je korisnik svojim tapom pozvao;
+snackbar SAMO kao potvrda korisnikove radnje (kao M3 na favorit).
+
+**Rule (safe area na dnu)**: kad se u `bottomNavigationBar` slaže više traka
+koje se nezavisno pale/gase (gost traka, `PinkaSupportBar`, mobilna nav),
+donji `SafeArea` ide na zajednički Column — nikad na pojedinu traku. Inače je
+ili duplo (dvije sestre primijene isti inset) ili nula (sve se sakriju).
+
+Prolaz kroz auth UI/UX + otvoreni backlog: `docs/auth-ux-backlog.md`.
+
 ### Backend placement — Cloudflare Worker vs Supabase Edge Function
 
 **Rule (decide by purpose):** does the backend code read/write our Postgres

@@ -11,9 +11,6 @@ import '../l10n/app_localizations.dart';
 import '../main.dart' show log;
 import '../models/person_hub.dart' show personSlug;
 import '../models/podcast_article.dart' show PodcastSection;
-import '../onboarding/moments/m1_save_progress_toast.dart';
-import '../onboarding/moments/m2_link_identity_sheet.dart';
-import '../onboarding/triggers/watch_seconds_tracker.dart';
 import '../services/background_audio.dart';
 import '../services/episode_language.dart';
 import '../services/media_session.dart';
@@ -28,6 +25,7 @@ import '../services/person_service.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
+import '../widgets/anonymous_signin_bar.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/language_toggle_chip.dart';
@@ -472,9 +470,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// po članku).
   bool _wasPlayingWhenDrawerOpened = false;
 
-  // Onboarding — broji sekunde slušanja, okida M2 nakon 30s.
-  late final WatchSecondsTracker _watchTracker;
-
   /// Per-episode jezik prikaza. URL `/en` sufix ima prednost nad sticky pref.
   /// Inicijalno HR; ako URL nije EN, ucitaj sticky pref iz prefs-a.
   EpisodeLanguage _language = EpisodeLanguage.hr;
@@ -519,17 +514,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
         }
       });
     }
-    _watchTracker = WatchSecondsTracker(
-      triggerAt: 30,
-      onThreshold: () {
-        if (mounted) maybeShowM2(context);
-      },
-    );
-    // M1 toast — prvo otvaranje bilo koje epizode.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) maybeShowM1(context);
-    });
-
     final article = widget.data.article;
     _sectionKeys = {
       if (article != null)
@@ -669,7 +653,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _scrollController.dispose();
     _positionSub?.cancel();
     _resumeHintTimer?.cancel();
-    _watchTracker.dispose();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     MediaSession.clear();
@@ -849,16 +832,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
       }
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
-
-      // Onboarding watch tracker — broji "kvalitetne" sekunde slušanja
-      // (pauza pauzira). Okida M2 nakon 30s aktivnog slušanja.
-      player.stream.playing.listen((playing) {
-        if (playing) {
-          _watchTracker.start();
-        } else {
-          _watchTracker.pause();
-        }
-      });
 
       if (mounted) {
         setState(() {
@@ -1949,15 +1922,20 @@ class _EpisodeContentState extends State<_EpisodeContent>
             ],
           ),
         ),
-        // Dno ekrana: sticky "Zid podrške" (uvijek vidljiv CTA, sam se sakrije
-        // bez aktivne kampanje) + postojeća mobilna navigacija ispod njega.
-        bottomNavigationBar: Column(
+        // Dno ekrana: "gost" traka (samo neprijavljenima) + sticky "Zid
+        // podrške" (sam se sakrije bez aktivne kampanje) + postojeća mobilna
+        // navigacija. Donji safe area primjenjuje SAMO vanjski SafeArea —
+        // pojedine trake se pale/gase pa nijedna ne zna je li najniža.
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const AnonymousSignInBar(applyBottomSafeArea: false),
             PinkaSupportBar.episode(
               youtubeId: data.youtubeId,
               channelRefs: _channelSupportRefs,
-              applyBottomSafeArea: !showMobileBottomBar,
+              applyBottomSafeArea: false,
               onOpen: (_, viaChannel) =>
                   context.push(_supportPath(viaChannel: viaChannel)),
             ),
@@ -1965,9 +1943,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               Material(
                 color: theme.colorScheme.surface,
                 elevation: 3,
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
+                child: SizedBox(
                     height: 64,
                     child: Row(
                       children: [
@@ -2022,9 +1998,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       ],
                     ),
                   ),
-                ),
               ),
           ],
+          ),
         ),
       ),
     );
@@ -2311,15 +2287,18 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ],
         ),
       ),
-      // Sticky "Zid podrške" iznad (opcionalne) mobilne navigacije — vidi
-      // standardni layout gore.
-      bottomNavigationBar: Column(
+      // "Gost" traka + sticky "Zid podrške" iznad (opcionalne) mobilne
+      // navigacije — vidi standardni layout gore.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const AnonymousSignInBar(applyBottomSafeArea: false),
           PinkaSupportBar.episode(
             youtubeId: data.youtubeId,
             channelRefs: _channelSupportRefs,
-            applyBottomSafeArea: isWide,
+            applyBottomSafeArea: false,
             onOpen: (_, viaChannel) =>
                 context.push(_supportPath(viaChannel: viaChannel)),
           ),
@@ -2327,9 +2306,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             Material(
               color: theme.colorScheme.surface,
               elevation: 3,
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
+              child: SizedBox(
                   height: 64,
                   child: Row(
                     children: [
@@ -2352,9 +2329,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     ],
                   ),
                 ),
-              ),
             ),
         ],
+        ),
       ),
     );
   }

@@ -72,10 +72,6 @@
   "@commonSignOut": {
     "description": "Odjava korisnika."
   },
-  "commonMaybeLater": "Možda kasnije",
-  "@commonMaybeLater": {
-    "description": "Odgodi neobaveznu radnju (npr. prijavu)."
-  },
   "commonLoading": "Učitavanje…",
   "@commonLoading": {
     "description": "Generičko stanje učitavanja."
@@ -105,7 +101,7 @@
   "@authAccountTitle": {
     "description": "Naslov ekrana za upravljanje računom (/account)."
   },
-  "authAnonTitle": "Niste prijavljeni",
+  "authAnonTitle": "Još nisi prijavljen·a",
   "@authAnonTitle": {
     "description": "Naslov praznog stanja na ekranu računa kad korisnik nije prijavljen."
   },
@@ -173,7 +169,7 @@
   "@authProviderApple": {
     "description": "Podnaslov stavke: prijava Apple računom."
   },
-  "authProviderEmail": "Magic link ili kôd na e-mail",
+  "authProviderEmail": "Poveznica ili kôd na e-mail",
   "@authProviderEmail": {
     "description": "Podnaslov stavke: prijava putem e-maila."
   },
@@ -387,10 +383,6 @@
   "@authInviteError": {
     "description": "Greška pri obradi pozivnice."
   },
-  "authM1Toast": "Tvoj se napredak sprema na ovaj uređaj. Prijavi se da se sinkronizira.",
-  "@authM1Toast": {
-    "description": "Toast pri prvoj epizodi: napredak se sprema lokalno."
-  },
   "authM3Toast": "Spremljeno na ovaj uređaj. Sinkronizirati favorite na sve uređaje?",
   "@authM3Toast": {
     "description": "Toast nakon prvog dodavanja favorita."
@@ -471,11 +463,11 @@
   "@authSuccess": {
     "description": "Naslov ekrana nakon uspješnog preuzimanja prijave."
   },
-  "authSignInWithPasskey": "Prijavi se pristupnim ključem",
+  "authSignInWithPasskey": "Nastavi pristupnim ključem",
   "@authSignInWithPasskey": {
     "description": "Primarni gumb za prijavu pristupnim ključem."
   },
-  "authPasskeyTileSub": "Najbrže — Face ID ili otisak, bez lozinke",
+  "authPasskeyTileSub": "Face ID ili otisak — ako si ključ već dodao·la",
   "@authPasskeyTileSub": {
     "description": "Podnaslov stavke za prijavu pristupnim ključem."
   },
@@ -487,7 +479,7 @@
   "@authBadgeLastUsed": {
     "description": "Oznaka (badge) na zadnje korištenoj prijavnoj metodi."
   },
-  "authSignInWithEid": "Prijava eOsobnom",
+  "authSignInWithEid": "Nastavi eOsobnom",
   "@authSignInWithEid": {
     "description": "Stavka za prijavu hrvatskom e-osobnom."
   },
@@ -499,7 +491,7 @@
   "@authContinueWithApple": {
     "description": "Stavka za prijavu Apple računom."
   },
-  "authEmailMagicLink": "E-mail magic link",
+  "authEmailMagicLink": "Nastavi e-mailom",
   "@authEmailMagicLink": {
     "description": "Stavka za prijavu putem e-maila."
   },
@@ -557,10 +549,6 @@
   "@authHeadlineAccount": {
     "description": "Naslov prijavnog lista (kontekst: račun)."
   },
-  "authHeadlineMoment2": "Spremi napredak na sve uređaje",
-  "@authHeadlineMoment2": {
-    "description": "Naslov prijavnog lista (kontekst: nakon slušanja)."
-  },
   "authHeadlineMoment3": "Spremi favorite u svoj račun",
   "@authHeadlineMoment3": {
     "description": "Naslov prijavnog lista (kontekst: nakon dodavanja favorita)."
@@ -569,13 +557,25 @@
   "@authHeadlineHandoff": {
     "description": "Naslov prijavnog lista (kontekst: prijenos s drugog uređaja)."
   },
-  "authSubAccount": "Bez lozinke. Pristupni ključ ili tvoj postojeći Google ili Apple račun.",
+  "authSubAccount": "Bez lozinke. Prvom prijavom automatski nastaje tvoj račun.",
+  "authHeadlineGuest": "Spremi napredak i favorite",
+  "@authHeadlineGuest": {
+    "description": "Naslov prijavnog lista (kontekst: anonimni gost)."
+  },
+  "authSubGuest": "Slušaš kao gost — napredak i favoriti ostaju samo na ovom uređaju.",
+  "@authSubGuest": {
+    "description": "Podnaslov prijavnog lista (kontekst: anonimni gost)."
+  },
+  "authGuestBarTitle": "Slušaš kao gost",
+  "@authGuestBarTitle": {
+    "description": "Naslov trajne trake na dnu ekrana epizode za neprijavljenog korisnika."
+  },
+  "authGuestBarBody": "Napredak, favoriti i postavke ostaju samo na ovom uređaju",
+  "@authGuestBarBody": {
+    "description": "Podnaslov trajne trake na dnu ekrana epizode za neprijavljenog korisnika."
+  },
   "@authSubAccount": {
     "description": "Podnaslov prijavnog lista (kontekst: račun)."
-  },
-  "authSubMoment2": "Trenutno tvoja pozicija u reprodukciji ostaje samo na ovom uređaju.",
-  "@authSubMoment2": {
-    "description": "Podnaslov prijavnog lista (kontekst: nakon slušanja)."
   },
   "authSubMoment3": "Da ti favoriti ostanu dostupni na svim uređajima.",
   "@authSubMoment3": {
@@ -2834,8 +2834,12 @@
   "@pinkaStepOf": {
     "description": "Zaglavlje progress timelinea SEPA uplate (M od N koraka).",
     "placeholders": {
-      "current": {"type": "int"},
-      "total": {"type": "int"}
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "pinkaStepPaymentTitle": "Uplata iz tvoje banke",
@@ -3797,7 +3801,9 @@
   "@personEpisodesCount": {
     "description": "Broj epizoda u kojima osoba govori — statistika na profilu govornika (/p/:slug).",
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "personAppearsOn": "Gostuje na",

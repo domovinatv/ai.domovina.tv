@@ -63,9 +63,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonSignOut => 'Sign out';
 
   @override
-  String get commonMaybeLater => 'Maybe later';
-
-  @override
   String get commonLoading => 'Loading…';
 
   @override
@@ -86,7 +83,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authAccountTitle => 'My account';
 
   @override
-  String get authAnonTitle => 'You\'re not signed in';
+  String get authAnonTitle => 'You\'re not signed in yet';
 
   @override
   String get authAnonSubtitle =>
@@ -139,7 +136,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authProviderApple => 'Apple account';
 
   @override
-  String get authProviderEmail => 'Magic link or email code';
+  String get authProviderEmail => 'Sign-in link or code by email';
 
   @override
   String get authProviderPasskey => 'Passkey';
@@ -303,10 +300,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Something went wrong, or the link has expired.';
 
   @override
-  String get authM1Toast =>
-      'Your progress is saved on this device. Sign in to sync it everywhere.';
-
-  @override
   String get authM3Toast =>
       'Saved on this device. Sync your favorites across all devices?';
 
@@ -373,11 +366,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSuccess => 'Success!';
 
   @override
-  String get authSignInWithPasskey => 'Sign in with a passkey';
+  String get authSignInWithPasskey => 'Continue with a passkey';
 
   @override
   String get authPasskeyTileSub =>
-      'Fastest — Face ID or fingerprint, no password';
+      'Face ID or fingerprint — if you already added a key';
 
   @override
   String get authBadgeRecommended => 'Recommended';
@@ -386,7 +379,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authBadgeLastUsed => 'Last used';
 
   @override
-  String get authSignInWithEid => 'Sign in with eID';
+  String get authSignInWithEid => 'Continue with eID';
 
   @override
   String get authContinueWithGoogle => 'Continue with Google';
@@ -395,7 +388,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authContinueWithApple => 'Continue with Apple';
 
   @override
-  String get authEmailMagicLink => 'Email magic link';
+  String get authEmailMagicLink => 'Continue with email';
 
   @override
   String get authEmailTileSub => 'We\'ll send you a link and a code to sign in';
@@ -436,9 +429,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authHeadlineAccount => 'Sign in to DOMOVINA.ai';
 
   @override
-  String get authHeadlineMoment2 => 'Save your progress to every device';
-
-  @override
   String get authHeadlineMoment3 => 'Save favorites to your account';
 
   @override
@@ -446,11 +436,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authSubAccount =>
-      'No password. A passkey or your existing Google or Apple account.';
+      'No password. Signing in for the first time creates your account.';
 
   @override
-  String get authSubMoment2 =>
-      'Right now your playback position stays only on this device.';
+  String get authHeadlineGuest => 'Save your progress and favourites';
+
+  @override
+  String get authSubGuest =>
+      'You\'re listening as a guest — progress and favourites stay only on this device.';
+
+  @override
+  String get authGuestBarTitle => 'You\'re listening as a guest';
+
+  @override
+  String get authGuestBarBody =>
+      'Progress, favourites and settings stay on this device only';
 
   @override
   String get authSubMoment3 =>

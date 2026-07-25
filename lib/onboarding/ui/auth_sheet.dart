@@ -18,7 +18,7 @@ import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';
 import 'auth_ui.dart';
 
-enum AuthSheetOrigin { account, moment2, moment3, handoff }
+enum AuthSheetOrigin { account, guest, moment3, handoff }
 
 /// Koji je korak trenutno prikazan u sheetu.
 enum _SheetView { providers, emailEntry, otpEntry }
@@ -61,12 +61,19 @@ Future<void> showAuthSheet(
       ),
     );
   }
+  // useSafeArea: BEZ njega sheet (isScrollControlled + dug sadržaj) izraste
+  // ispod statusne trake pa drag handle završi pod iOS Dynamic Islandom —
+  // korisnik ga ne može uhvatiti ni zatvoriti sheet gestom.
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     showDragHandle: true,
     backgroundColor: Theme.of(context).colorScheme.surface,
     barrierColor: Colors.black.withValues(alpha: 0.5),
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+    ),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
@@ -113,6 +120,10 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
 
   final _emailCtrl = TextEditingController();
   final _otpCtrl = TextEditingController();
+
+  /// Nakon pogrešnog koda polje se prazni — bez vraćanja fokusa korisnik na
+  /// mobitelu mora ponovo tapnuti polje da mu se digne tipkovnica.
+  final _otpFocus = FocusNode();
   String _otpEmail = '';
   Timer? _resendTimer;
   int _resendSeconds = 0;
@@ -133,15 +144,30 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         AuthProvider.values.where((p) => p.name == raw).firstOrNull;
   }
 
-  String? _lastUsedBadge(AuthProvider p) =>
-      _lastUsed == p ? AppLocalizations.of(context).authBadgeLastUsed : null;
-
   @override
   void dispose() {
     _resendTimer?.cancel();
     _emailCtrl.dispose();
     _otpCtrl.dispose();
+    _otpFocus.dispose();
     super.dispose();
+  }
+
+  bool get _isSubView => _view != _SheetView.providers;
+
+  /// Korak unatrag (OTP → e-mail → providers). Vraća false ako smo na prvom
+  /// koraku — tada sistemski back smije zatvoriti sheet.
+  bool _stepBack() {
+    switch (_view) {
+      case _SheetView.otpEntry:
+        _backToEmailEntry();
+        return true;
+      case _SheetView.emailEntry:
+        _backToProviders();
+        return true;
+      case _SheetView.providers:
+        return false;
+    }
   }
 
   @override
@@ -149,32 +175,61 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 22,
-            right: 22,
-            top: 4,
-            bottom: 18 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AuthBrandHeader(
-                  title: _title(),
-                  subtitle: _subtitle(),
+    // Sistemski back (Android) / swipe na pod-koraku vraća korak unatrag
+    // umjesto da ubije cijeli flow — inače korisnik s OTP koraka izgubi
+    // poslani kôd jednim promašenim gestom.
+    return PopScope(
+      canPop: !_isSubView,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || _busy) return;
+        _stepBack();
+      },
+      child: Semantics(
+        identifier: 'auth-sheet',
+        explicitChildNodes: true,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 22,
+                right: 22,
+                top: 0,
+                bottom: 18 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _topBar(cs),
+                    AuthBrandHeader(
+                      title: _title(),
+                      subtitle: _subtitle(),
+                      // Pod-koraci: bez logo bloka. S otvorenom tipkovnicom
+                      // brand header pojede pola sheeta pa CTA ode van ekrana.
+                      compact: _isSubView,
+                    ),
+                    const SizedBox(height: 20),
+                    // Greška/obavijest IZNAD akcija: passkey tile je na vrhu
+                    // pa bi poruka ispod zadnjeg providera često bila izvan
+                    // vidljivog dijela sheeta.
+                    if (_error != null) ...[
+                      _ErrorNote(message: _error!),
+                      const SizedBox(height: 14),
+                    ],
+                    if (_notice != null) ...[
+                      _NoticeNote(message: _notice!),
+                      const SizedBox(height: 14),
+                    ],
+                    ...switch (_view) {
+                      _SheetView.providers => _providerChildren(),
+                      _SheetView.emailEntry => _emailEntryChildren(),
+                      _SheetView.otpEntry => _otpEntryChildren(theme, cs),
+                    },
+                  ],
                 ),
-                const SizedBox(height: 24),
-                ...switch (_view) {
-                  _SheetView.providers => _providerChildren(cs),
-                  _SheetView.emailEntry => _emailEntryChildren(cs),
-                  _SheetView.otpEntry => _otpEntryChildren(theme, cs),
-                },
-              ],
+              ),
             ),
           ),
         ),
@@ -182,152 +237,187 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     );
   }
 
+  /// Natrag (samo na pod-koracima) + uvijek dostupan ✕. Na iOS-u je gesta
+  /// zatvaranja jedina alternativa, a ona zna kolidirati s drag handleom.
+  Widget _topBar(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    return SizedBox(
+      height: 40,
+      child: Row(
+        children: [
+          if (_isSubView)
+            IconButton(
+              icon: const Icon(Icons.arrow_back, size: 20),
+              tooltip: l.commonBack,
+              visualDensity: VisualDensity.compact,
+              color: cs.onSurfaceVariant,
+              onPressed: _busy ? null : _stepBack,
+            ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            tooltip: l.commonClose,
+            visualDensity: VisualDensity.compact,
+            color: cs.onSurfaceVariant,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── providers view ─────────────────────────────────────────────────────
 
-  List<Widget> _providerChildren(ColorScheme cs) {
-    final l = AppLocalizations.of(context);
+  /// Redoslijed metoda kad korisnik nema povijest prijave.
+  static const _defaultOrder = [
+    AuthProvider.passkey,
+    AuthProvider.certilia,
+    AuthProvider.google,
+    AuthProvider.apple,
+    AuthProvider.email,
+  ];
+
+  List<Widget> _providerChildren() {
+    // Returning user: metoda kojom se zadnji put prijavio ide na vrh kao
+    // istaknuti tile. Bez toga bi mu passkey (koji možda nema) bio primarni
+    // CTA, a njegova stvarna metoda peta u nizu — glavni uzrok "slučajno sam
+    // otvorio drugi račun".
+    final lead = _lastUsed ?? AuthProvider.passkey;
+    final rest = _defaultOrder.where((p) => p != lead);
     return [
-        // Passkey LOGIN — primarna metoda (najmanji friction za returning
-        // usere). Kreiranje passkeyja namjerno NIJE u sheetu: novi korisnik
-        // bi si nakreirao više passkeyja (i računa) u Apple/Google manageru.
-        // Passkey se dodaje kao provider u Moj račun NAKON prijave →
-        // 1 osoba = 1 račun s N providera (GoTrue merga po emailu).
-        AuthProviderTile(
-          primary: true,
-          badge: l.authBadgeRecommended,
-          iconBg: Colors.white.withValues(alpha: 0.16),
-          iconChild:
-              const Icon(Icons.fingerprint, color: Colors.white, size: 22),
-          label: l.authSignInWithPasskey,
-          subtitle: l.authPasskeyTileSub,
-          enabled: !_busy,
-          loading: _passkeyLoginPending,
-          onTap: _signInWithExistingPasskey,
-        ),
-        const SizedBox(height: 12),
-        LabeledDivider(label: l.authOr),
-        const SizedBox(height: 16),
-        AuthProviderTile(
-          iconBg: AppTheme.croRed.withValues(alpha: 0.10),
-          iconChild: const Icon(Icons.badge_outlined,
-              color: AppTheme.croRed, size: 22),
-          label: l.authSignInWithEid,
-          subtitle: l.authProviderCertilia,
-          badge: _lastUsedBadge(AuthProvider.certilia),
-          badgeColor: AppTheme.croBlue,
-          enabled: !_busy,
-          loading: _pending == AuthProvider.certilia,
-          onTap: () => _doLink(AuthProvider.certilia),
-        ),
+      _providerTile(lead, primary: true),
+      const SizedBox(height: 12),
+      LabeledDivider(label: AppLocalizations.of(context).authOr),
+      const SizedBox(height: 16),
+      for (final p in rest) ...[
+        _providerTile(p, primary: false),
         const SizedBox(height: 10),
-        // Službeni Google "G" asset (brand guidelines) na bijeloj podlozi.
-        AuthProviderTile(
-          iconBg: Colors.white,
-          iconChild: Image.asset(
+      ],
+      const SizedBox(height: 8),
+      _ReassuranceNote(origin: origin),
+      const SizedBox(height: 10),
+      const _LegalLine(),
+    ];
+  }
+
+  /// Jedan provider tile. [primary] = istaknuti (navy) na vrhu liste.
+  ///
+  /// Passkey ovdje radi samo LOGIN — kreiranje namjerno nije u sheetu: novi
+  /// korisnik bi si nakreirao više passkeyja (i računa) u Apple/Google
+  /// manageru. Ključ se dodaje u Moj račun NAKON prijave → 1 osoba = 1 račun
+  /// s N providera (GoTrue merga po e-mailu).
+  Widget _providerTile(AuthProvider p, {required bool primary}) {
+    final l = AppLocalizations.of(context);
+    final badge = _lastUsed == p
+        ? l.authBadgeLastUsed
+        : (primary ? l.authBadgeRecommended : null);
+    final badgeColor = _lastUsed == p ? AppTheme.croBlue : AppTheme.croRed;
+
+    final (Widget icon, Color iconBg, String label, String? sub) = switch (p) {
+      AuthProvider.passkey => (
+          Icon(Icons.fingerprint,
+              color: primary ? Colors.white : AppTheme.croBlue, size: 22),
+          primary
+              ? Colors.white.withValues(alpha: 0.16)
+              : AppTheme.croBlue.withValues(alpha: 0.10),
+          l.authSignInWithPasskey,
+          l.authPasskeyTileSub,
+        ),
+      AuthProvider.certilia => (
+          Icon(Icons.badge_outlined,
+              color: primary ? Colors.white : AppTheme.croRed, size: 22),
+          primary
+              ? Colors.white.withValues(alpha: 0.16)
+              : AppTheme.croRed.withValues(alpha: 0.10),
+          l.authSignInWithEid,
+          l.authProviderCertilia,
+        ),
+      // Službeni Google "G" asset (brand guidelines) na bijeloj podlozi.
+      AuthProvider.google => (
+          Image.asset(
             'assets/icons/google_g_logo.png',
             width: 22,
             height: 22,
             filterQuality: FilterQuality.high,
           ),
-          label: l.authContinueWithGoogle,
-          badge: _lastUsedBadge(AuthProvider.google),
-          badgeColor: AppTheme.croBlue,
-          enabled: !_busy,
-          loading: _pending == AuthProvider.google,
-          onTap: () => _doLink(AuthProvider.google),
+          Colors.white,
+          l.authContinueWithGoogle,
+          null,
         ),
-        const SizedBox(height: 10),
-        AuthProviderTile(
-          iconBg: const Color(0xFF111111),
-          iconChild: const Icon(Icons.apple, color: Colors.white, size: 24),
-          label: l.authContinueWithApple,
-          badge: _lastUsedBadge(AuthProvider.apple),
-          badgeColor: AppTheme.croBlue,
-          enabled: !_busy,
-          loading: _pending == AuthProvider.apple,
-          onTap: () => _doLink(AuthProvider.apple),
+      AuthProvider.apple => (
+          const Icon(Icons.apple, color: Colors.white, size: 24),
+          const Color(0xFF111111),
+          l.authContinueWithApple,
+          null,
         ),
-        const SizedBox(height: 10),
-        AuthProviderTile(
-          iconBg: AppTheme.croBlue.withValues(alpha: 0.10),
-          iconChild: const Icon(Icons.alternate_email,
-              color: AppTheme.croBlue, size: 21),
-          label: l.authEmailMagicLink,
-          subtitle: l.authEmailTileSub,
-          badge: _lastUsedBadge(AuthProvider.email),
-          badgeColor: AppTheme.croBlue,
-          enabled: !_busy,
-          onTap: _openEmailEntry,
+      AuthProvider.email => (
+          Icon(Icons.alternate_email,
+              color: primary ? Colors.white : AppTheme.croBlue, size: 21),
+          primary
+              ? Colors.white.withValues(alpha: 0.16)
+              : AppTheme.croBlue.withValues(alpha: 0.10),
+          l.authEmailMagicLink,
+          l.authEmailTileSub,
         ),
-        if (_error != null) ...[
-          const SizedBox(height: 14),
-          _ErrorNote(message: _error!),
-        ],
-        if (_notice != null) ...[
-          const SizedBox(height: 14),
-          _NoticeNote(message: _notice!),
-        ],
-        const SizedBox(height: 18),
-        _ReassuranceNote(origin: origin),
-        const SizedBox(height: 10),
-        const _LegalLine(),
-        const SizedBox(height: 4),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            origin == AuthSheetOrigin.moment2
-                ? l.commonMaybeLater
-                : l.commonClose,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
-      ];
+    };
+
+    return AuthProviderTile(
+      identifier: 'auth-provider-${p.name}',
+      primary: primary,
+      iconChild: icon,
+      iconBg: iconBg,
+      label: label,
+      subtitle: sub,
+      badge: badge,
+      badgeColor: badgeColor,
+      enabled: !_busy,
+      loading: switch (p) {
+        AuthProvider.passkey => _passkeyLoginPending,
+        AuthProvider.email => false,
+        _ => _pending == p,
+      },
+      onTap: switch (p) {
+        AuthProvider.passkey => _signInWithExistingPasskey,
+        AuthProvider.email => _openEmailEntry,
+        _ => () => _doLink(p),
+      },
+    );
   }
 
   // ── e-mail entry view ──────────────────────────────────────────────────
 
-  List<Widget> _emailEntryChildren(ColorScheme cs) {
+  List<Widget> _emailEntryChildren() {
     final l = AppLocalizations.of(context);
     return [
-        AutofillGroup(
-          child: TextField(
-            controller: _emailCtrl,
-            autofocus: true,
-            enabled: !_emailBusy,
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _sendEmailCode(),
-            decoration: InputDecoration(
-              hintText: l.authEmailHint,
-              prefixIcon: const Icon(Icons.alternate_email, size: 20),
-            ),
+      AutofillGroup(
+        child: TextField(
+          controller: _emailCtrl,
+          autofocus: true,
+          enabled: !_emailBusy,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _sendEmailCode(),
+          decoration: InputDecoration(
+            hintText: l.authEmailHint,
+            prefixIcon: const Icon(Icons.alternate_email, size: 20),
           ),
         ),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          _ErrorNote(message: _error!),
-        ],
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _emailBusy ? null : _sendEmailCode,
-          child: _emailBusy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(l.authSendCode),
-        ),
-        const SizedBox(height: 4),
-        TextButton(
-          onPressed: _emailBusy ? null : _backToProviders,
-          child: Text(
-            l.commonBack,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
-      ];
+      ),
+      const SizedBox(height: 16),
+      FilledButton(
+        onPressed: _emailBusy ? null : _sendEmailCode,
+        child: _emailBusy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(l.authSendCode),
+      ),
+      const SizedBox(height: 12),
+      const _LegalLine(),
+    ];
   }
 
   // ── OTP entry view ─────────────────────────────────────────────────────
@@ -337,6 +427,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     return [
         TextField(
           controller: _otpCtrl,
+          focusNode: _otpFocus,
           autofocus: true,
           enabled: !_emailBusy,
           keyboardType: TextInputType.number,
@@ -359,14 +450,6 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
             counterText: '',
           ),
         ),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          _ErrorNote(message: _error!),
-        ],
-        if (_notice != null) ...[
-          const SizedBox(height: 12),
-          _NoticeNote(message: _notice!),
-        ],
         const SizedBox(height: 16),
         FilledButton(
           onPressed: _emailBusy ? null : _verifyEmailCode,
@@ -429,7 +512,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     final l = AppLocalizations.of(context);
     return switch (origin) {
       AuthSheetOrigin.account => l.authHeadlineAccount,
-      AuthSheetOrigin.moment2 => l.authHeadlineMoment2,
+      AuthSheetOrigin.guest => l.authHeadlineGuest,
       AuthSheetOrigin.moment3 => l.authHeadlineMoment3,
       AuthSheetOrigin.handoff => l.authHeadlineHandoff,
     };
@@ -439,7 +522,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     final l = AppLocalizations.of(context);
     return switch (origin) {
       AuthSheetOrigin.account => l.authSubAccount,
-      AuthSheetOrigin.moment2 => l.authSubMoment2,
+      AuthSheetOrigin.guest => l.authSubGuest,
       AuthSheetOrigin.moment3 => l.authSubMoment3,
       AuthSheetOrigin.handoff => l.authSubHandoff,
     };
@@ -590,6 +673,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
             result.message ?? AppLocalizations.of(context).authCodeInvalid;
         _otpCtrl.clear();
       });
+      _otpFocus.requestFocus();
     }
   }
 
@@ -660,28 +744,32 @@ class _LegalLine extends StatelessWidget {
       decoration: TextDecoration.underline,
       decorationColor: cs.primary.withValues(alpha: 0.5),
     );
+    // MouseRegion + vertikalni padding: goli GestureDetector u WidgetSpanu
+    // nema pointer kursor na webu i daje tap target visine teksta (~14 px).
+    WidgetSpan legalLink(String text, String route) => WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => context.push(route),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(text, style: link),
+              ),
+            ),
+          ),
+        );
+
     return Text.rich(
       TextSpan(
         style: base,
         children: [
           TextSpan(text: l.authLegalPrefix),
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: GestureDetector(
-              onTap: () => context.push('/terms'),
-              child: Text(l.authLegalTerms, style: link),
-            ),
-          ),
+          legalLink(l.authLegalTerms, '/terms'),
           TextSpan(text: l.authLegalAnd),
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: GestureDetector(
-              onTap: () => context.push('/privacy'),
-              child: Text(l.authLegalPrivacy, style: link),
-            ),
-          ),
+          legalLink(l.authLegalPrivacy, '/privacy'),
           TextSpan(text: l.authLegalSuffix),
         ],
       ),
