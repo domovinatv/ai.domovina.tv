@@ -321,15 +321,31 @@ tmux kill-session -t "=$(./scripts/tim-status.sh session)"
 Dodatna zamka: `set-option` i `rename-window` taj prefiks **ne** primaju, dok ga
 `has-session`, `attach` i `kill-session` primaju i ondje je obavezan.
 
-### 8.2. Slanje poruke lijepi se na neposlan tekst
+### 8.2. Lažna uzbuna: tekst koji nije bio tekst
 
-Pomoćnik za slanje upiše tekst pa pošalje Enter. Ako u ciljnom panelu već stoji nešto
-utipkano a neposlano, poruka se **zalijepi na to** i sve odlazi kao jedan prompt.
+Ovu sam zamku prvo pogrešno dijagnosticirao, pa je vrijedi ispričati s krivim
+zaključkom uključenim.
 
-U našem slučaju u orkestratorovu polju stajala je rečenica koja je počinjala riječju
-„deployaj". Da se spojila s mojom porukom, mogla je izazvati drugi deploy. Ovaj put
-nije — ali to je bila sreća, a ne svojstvo alata. Popravak je očistiti liniju
-(`send-keys C-u`) prije slanja.
+U orkestratorovu ulaznom polju dvaput sam u ispisu panela vidio rečenicu koja ondje
+stoji, a nije poslana — jednom onu koja je počinjala riječju „deployaj". Pomoćnik za
+slanje upiše tekst pa zasebno pošalje Enter i **ne čisti liniju**, pa sam zaključio da
+se moja poruka lijepi na zatečeni tekst i da je „deployaj" mogao izazvati drugi deploy.
+
+Provjerio sam to umjesto da pretpostavim: poslao sam poruku i odmah pročitao panel.
+Stigla je sama, bez ijednog traga zatečene rečenice. Isto i drugi put. Ono što sam
+vidio nije bio utipkan tekst nego **prijedlog sljedećeg prompta koji sučelje samo
+iscrtava** u ulaznom polju.
+
+Prava pouka nije o slanju poruka, nego o **nadzoru agenata čitanjem njihova
+terminala**: snimka panela spljošti nagovještaj i stvarni unos u isti niz znakova.
+Ono što izgleda kao stanje često je samo prikaz. Ako se na temelju takve snimke
+odlučuje, odluka se mora potvrditi nečim što nije snimka zaslona — u ovom slučaju
+ishodom same poruke.
+
+Ostatak opreza je stvaran, ali neispitan: skripta doista ne čisti liniju, pa bi se
+tekst koji je čovjek *zaista* utipkao i ostavio neposlanim teoretski spojio s
+porukom. Nemam dokaz da se to ikad dogodilo. `send-keys C-u` prije slanja košta ništa
+i zatvara i taj slučaj.
 
 ### 8.3. Deploy ne zatvara za sobom
 
