@@ -10,6 +10,9 @@
 ///    pauza po HTML spec-u) → auto-resume nakon tranzicije
 ///  - fullscreen fix #2: Esc izađe iz browser fullscreena, ali media_kit
 ///    Flutter ruta ostane → fullscreenchange listener je sinkronizira
+///  - fullscreen u portretu: tri putanje (T4) — pravi landscape na nativeu
+///    (`SystemChrome`), `screen.orientation.lock` gdje web to daje, inače
+///    vizualna rotacija kroz `rotated_fullscreen.dart`
 ///  - YouTube keyboard kratice: Space/K, J/L ±10s, ←/→ ±5s, ↑/↓ glasnoća,
 ///    F fullscreen, M mute, C titlovi, Esc izlaz
 ///
@@ -18,7 +21,7 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
@@ -28,9 +31,11 @@ import '../l10n/app_localizations.dart';
 import '../models/podcast_summary.dart';
 import '../models/speaker_timeline.dart';
 import '../services/browser_fullscreen.dart';
+import '../services/screen_orientation.dart';
 import '../services/seek_undo.dart';
 import '../services/subtitle_prefs.dart';
 import 'playback_controls.dart';
+import 'rotated_fullscreen.dart';
 
 /// Boje govornika po redoslijedu iz speakers liste — dijeli se s
 /// VideoPanel speaker barom da fullscreen badge i bar budu konzistentni.
@@ -67,6 +72,12 @@ class EpisodeVideo extends StatefulWidget {
   /// media_kitovoj fullscreen ruti. Vlasnik je ekran (drži `Player`).
   final SeekUndo? seekUndo;
 
+  /// Postavljeno **samo** na instanci koja živi unutar naše rotacijske
+  /// fullscreen rute (putanja C). Tada gumb i Esc izlaze iz te rute umjesto da
+  /// diraju media_kitov fullscreen, a kontrole dobiju fullscreen raspored
+  /// (speaker badge gore). Vanjska instanca ovo NIKAD ne postavlja.
+  final VoidCallback? onExitRotatedFullscreen;
+
   const EpisodeVideo({
     super.key,
     required this.player,
@@ -75,6 +86,7 @@ class EpisodeVideo extends StatefulWidget {
     this.speakers = const [],
     this.onYouTubeMode,
     this.seekUndo,
+    this.onExitRotatedFullscreen,
   });
 
   @override
@@ -93,6 +105,14 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   /// Glasnoća prije mute-a (M kratica) za restore.
   double _volumeBeforeMute = 100;
 
+  /// Zatvarač naše rotacijske rute dok je otvorena (null = nije otvorena).
+  VoidCallback? _closeRotated;
+
+  /// Jesmo li MI zaključali orijentaciju (putanja A/B). Otključavamo isključivo
+  /// ono što smo sami zaključali — desktop i landscape putanje ne diraju
+  /// sistemsko stanje pa ga ne smiju ni „vraćati".
+  bool _lockedOrientation = false;
+
   @override
   void initState() {
     super.initState();
@@ -106,13 +126,27 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   void dispose() {
     _removeFsListener?.call();
     _subtitlesOn.dispose();
+    // Ekran se rastavlja s bravom orijentacije na sebi (npr. deep-link
+    // navigacija iz fullscreena) — ne ostavljaj uređaj zaključan u landscapeu.
+    if (_lockedOrientation) {
+      _lockedOrientation = false;
+      unlockOrientation();
+    }
     super.dispose();
   }
 
   /// Esc u browseru izađe iz native fullscreena bez znanja Fluttera —
-  /// media_kit fullscreen ruta ostane "zarobljena". Detektiraj i popaj.
+  /// media_kit fullscreen ruta (ili naša rotacijska) ostane "zarobljena".
+  /// Detektiraj i popaj.
   void _onBrowserFullscreenChange() {
     if (isBrowserFullscreen) return;
+    // Rotacijska ruta ima prednost: kad je ona na ekranu, media_kit fullscreen
+    // nije aktivan pa niže provjere nemaju što raditi.
+    final exitRotated = _rotatedExit;
+    if (exitRotated != null) {
+      exitRotated();
+      return;
+    }
     final vs = _videoKey.currentState;
     if (vs == null) return;
     try {
@@ -121,6 +155,12 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       // contextNotifier još nije inicijaliziran — ignore.
     }
   }
+
+  /// Izlaz iz rotacijskog fullscreena, gledano s bilo koje strane: vanjska
+  /// instanca ga zna preko `_closeRotated`, ona unutar rute preko
+  /// `widget.onExitRotatedFullscreen`. `null` = rotacijska ruta nije u igri.
+  VoidCallback? get _rotatedExit =>
+      widget.onExitRotatedFullscreen ?? _closeRotated;
 
   /// Web: re-parent <video> elementa u fullscreen rutu browser tretira kao
   /// remove+insert iz DOM-a i pauzira playback (HTML spec). Resume kratko
@@ -154,18 +194,139 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
     try {
       await defaultExitNativeFullscreen();
     } catch (_) {}
+    // Nakon media_kitovog restorea (on vraća `manual` + sve overlaye), da
+    // završno stanje bude naše: sve orijentacije + edge-to-edge.
+    if (_lockedOrientation) {
+      _lockedOrientation = false;
+      await unlockOrientation();
+    }
     _resumeAfterTransition(wasPlaying);
   }
 
-  void _toggleFullscreen() {
+  // -------------------------------------------------------------------------
+  // Fullscreen: tri putanje (T4)
+  //
+  //  A  native iOS/Android → `SystemChrome` forsira pravi landscape i probija
+  //     sistemsku bravu rotacije (D3), pa ide media_kitova ruta;
+  //  B  web koji ima `screen.orientation.lock` i pusti ga (Android Chrome) →
+  //     browser fullscreen, brava, pa media_kitova ruta;
+  //  C  sve ostalo u portretu (iPhone Safari/Chrome — nema `lock`; desktop
+  //     Chrome u device toolbaru — `lock` odbije) → naša rotacijska ruta.
+  //
+  // Landscape/široki viewport (desktop) NE ulazi u ovu granu uopće: ide
+  // `vs.enterFullscreen()` kao i dosad, bez ikakvog diranja orijentacije.
+  // -------------------------------------------------------------------------
+
+  /// Portretni viewport — jedini slučaj u kojem fullscreen traži rotaciju.
+  /// Blagi faktor da gotovo kvadratni viewport ne skače između putanja.
+  bool get _viewportIsPortrait {
+    final size = MediaQuery.sizeOf(context);
+    return size.height > size.width * 1.05;
+  }
+
+  Future<void> _toggleFullscreen() async {
+    // Unutar rotacijske rute (ili s njom otvorenom) gumb i kratice samo izlaze.
+    final exitRotated = _rotatedExit;
+    if (exitRotated != null) {
+      exitRotated();
+      return;
+    }
+
     final vs = _videoKey.currentState;
     if (vs == null) return;
+
+    bool alreadyFullscreen = false;
     try {
-      vs.isFullscreen() ? vs.exitFullscreen() : vs.enterFullscreen();
+      alreadyFullscreen = vs.isFullscreen();
     } catch (_) {}
+    if (alreadyFullscreen) {
+      try {
+        vs.exitFullscreen();
+      } catch (_) {}
+      return;
+    }
+
+    if (!_viewportIsPortrait) {
+      // Današnja putanja, netaknuta.
+      try {
+        vs.enterFullscreen();
+      } catch (_) {}
+      return;
+    }
+
+    await _enterLandscapeFullscreen(vs);
+  }
+
+  Future<void> _enterLandscapeFullscreen(VideoState vs) async {
+    if (canLockOrientation) {
+      // Web: brava legne SAMO unutar browser fullscreena → prvo fullscreen,
+      // pa lock. Na nativeu je poredak nevažan.
+      if (kIsWeb) {
+        try {
+          await defaultEnterNativeFullscreen();
+        } catch (_) {
+          // iPhone Safari ne podržava requestFullscreen — svejedno probaj
+          // bravu, pa padni na putanju C.
+        }
+      }
+      if (await lockLandscape()) {
+        _lockedOrientation = true;
+        if (!mounted) return;
+        // Putanja A/B: pravi landscape + media_kitova ruta. Resume playbacka i
+        // izlaz iz browser fullscreena rješavaju `_onEnterFullscreen` /
+        // `_onExitFullscreen`, isto kao za desktop.
+        try {
+          vs.enterFullscreen();
+        } catch (_) {}
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    _pushRotatedFullscreen();
+  }
+
+  /// Putanja C. Naša ruta re-parenta `<video>` element u DOM-u isto kao
+  /// media_kitova → browser to čita kao remove+insert i pauzira (CLAUDE.md,
+  /// media_kit zamka #1), pa ide isti `_resumeAfterTransition`.
+  void _pushRotatedFullscreen() {
+    final wasPlaying = widget.player.state.playing;
+    unawaited(
+      showRotatedFullscreen(
+        context: context,
+        onOpened: (exit) => _closeRotated = exit,
+        builder: (_, exit) => EpisodeVideo(
+          player: widget.player,
+          controller: widget.controller,
+          speakerTimeline: widget.speakerTimeline,
+          speakers: widget.speakers,
+          onYouTubeMode: widget.onYouTubeMode,
+          seekUndo: widget.seekUndo,
+          onExitRotatedFullscreen: exit,
+        ),
+        onClosed: _onRotatedFullscreenClosed,
+      ),
+    );
+    _resumeAfterTransition(wasPlaying);
+  }
+
+  void _onRotatedFullscreenClosed() {
+    _closeRotated = null;
+    final wasPlaying = widget.player.state.playing;
+    // Ako smo pri ulasku uspjeli u browser fullscreen (desktop Chrome, device
+    // toolbar), izađi. Kad je izlaz i došao od Esc-a, fullscreena više nema.
+    if (kIsWeb && isBrowserFullscreen) {
+      unawaited(defaultExitNativeFullscreen());
+    }
+    _resumeAfterTransition(wasPlaying);
   }
 
   void _exitFullscreenIfAny() {
+    final exitRotated = _rotatedExit;
+    if (exitRotated != null) {
+      exitRotated();
+      return;
+    }
     final vs = _videoKey.currentState;
     if (vs == null) return;
     try {
@@ -286,6 +447,17 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       const BackgroundPlaybackButton(onVideo: true),
     );
 
+    // Gumb za fullscreen je NAŠ jer bira putanju A/B/C (T4) — media_kitov
+    // `Material*FullscreenButton` zove njihov `toggleFullscreen` bez hooka.
+    // Izgled je namjerno identičan njihovom (ista ikona, ista veličina iz
+    // defaulta teme, bijela), da desktop ostane bit-za-bit isti.
+    final inRotated = widget.onExitRotatedFullscreen != null;
+    Widget fullscreenButton(double iconSize) => _FullscreenPathButton(
+          onPressed: _toggleFullscreen,
+          forceExitIcon: inRotated,
+          iconSize: iconSize,
+        );
+
     final desktopBottomBar = <Widget>[
       const MaterialDesktopPlayOrPauseButton(),
       const MaterialDesktopVolumeButton(),
@@ -294,7 +466,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       backgroundButton,
       ?ytButton,
       if (timeline != null) _subtitleButton(),
-      const MaterialDesktopFullscreenButton(),
+      fullscreenButton(28),
     ];
 
     final mobileBottomBar = <Widget>[
@@ -303,7 +475,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       backgroundButton,
       ?ytButton,
       if (timeline != null) _subtitleButton(),
-      const MaterialFullscreenButton(),
+      fullscreenButton(24),
     ];
 
     final fullscreenTopBar = <Widget>[
@@ -316,10 +488,16 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
         ),
     ];
 
+    // U rotacijskoj ruti media_kit ne zna da je fullscreen (nije njegova ruta)
+    // pa bi vrijedila `normal` tema — zato joj tu dodajemo fullscreen top bar,
+    // da speaker badge postoji i u rotiranoj slici.
+    final normalTopBar = inRotated ? fullscreenTopBar : const <Widget>[];
+
     return MaterialDesktopVideoControlsTheme(
       normal: MaterialDesktopVideoControlsThemeData(
         playAndPauseOnTap: true,
         keyboardShortcuts: _keyboardShortcuts,
+        topButtonBar: normalTopBar,
         bottomButtonBar: desktopBottomBar,
       ),
       fullscreen: MaterialDesktopVideoControlsThemeData(
@@ -331,6 +509,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       child: MaterialVideoControlsTheme(
         normal: MaterialVideoControlsThemeData(
           seekOnDoubleTap: true,
+          topButtonBar: normalTopBar,
           bottomButtonBar: mobileBottomBar,
         ),
         fullscreen: MaterialVideoControlsThemeData(
@@ -375,6 +554,41 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fullscreen gumb — naš jer bira putanju A/B/C (T4). Vizualno je namjerno
+// kopija media_kitovog `Material*FullscreenButton`: ista ikona, ista veličina
+// (28 desktop / 24 mobile, kao defaulti njihove teme) i ista bijela boja.
+// ---------------------------------------------------------------------------
+
+class _FullscreenPathButton extends StatelessWidget {
+  const _FullscreenPathButton({
+    required this.onPressed,
+    required this.forceExitIcon,
+    required this.iconSize,
+  });
+
+  final VoidCallback onPressed;
+
+  /// U našoj rotacijskoj ruti media_kit ne zna da je fullscreen (nije njegova
+  /// ruta) pa `isFullscreen` javlja false — ikonu tada forsiramo.
+  final bool forceExitIcon;
+
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    // `isFullscreen` je media_kitov context-based helper — u njihovoj
+    // fullscreen ruti javlja true, pa se ikona sama prebaci na „izlaz".
+    final exiting = forceExitIcon || isFullscreen(context);
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(exiting ? Icons.fullscreen_exit : Icons.fullscreen),
+      iconSize: iconSize,
+      color: const Color(0xFFFFFFFF),
     );
   }
 }

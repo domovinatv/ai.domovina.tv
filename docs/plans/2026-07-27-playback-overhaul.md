@@ -43,6 +43,13 @@ tolerancije za programske seekove.
   istim controllerom. **Nema hooka za ubacivanje rotacije** → rotacijski
   fullscreen mora biti naša ruta, ne njihova. Dvije `Video` instance nad istim
   controllerom su OK — media_kit i sam to radi.
+  **ISPRAVAK (T4, 2026-07-27)**: na webu to vrijedi samo dok je druga instanca
+  montirana — po playeru postoji jedan `<video>` element (platform-view factory,
+  `web_video_controller/real.dart`), pa zatvaranje fullscreen rute (media_kitove
+  I naše) izbaci element iz DOM-a: zvuk svira, slika crna do reloada.
+  **Pre-postojeći bug, reproducira se i na čistom mainu**; popravak (npr. novi
+  key na `Video` nakon popa) dira desktop putanju → zaseban task izvan ovog
+  plana.
 - `onEnterFullscreen`/`onExitFullscreen` su naši callbackovi i zovu se i iz
   njihove rute → tu ide `SystemChrome` forsiranje orijentacije.
 
@@ -232,7 +239,10 @@ tolerancije za programske seekove.
 - **Fajlovi**: `lib/services/screen_orientation.dart` +
   `screen_orientation_web.dart` + `screen_orientation_stub.dart` (novi),
   `lib/widgets/rotated_fullscreen.dart` (novi),
-  `lib/widgets/episode_video.dart`
+  `lib/widgets/episode_video.dart`,
+  `test/rotated_fullscreen_test.dart` + `test/screen_orientation_test.dart`
+  (novi; dodani tijekom izvedbe — prvi je hit-testing gate koji plan traži,
+  drugi čuva VM stranu js_interop gatea; reviewer r4 potvrdio zadržati)
 
 - **Opis**: tri putanje, jer platforme daju tri razine mogućnosti. **Ne
   pokušavaj jedno rješenje za sve.**
@@ -377,3 +387,6 @@ orkestratoru, ne improvizira se.
   netaknuti.
 - Dual-encode H.264 pipeline (postojeći TODO, nema veze s ovim krugom).
 - Deploy i bump verzije.
+- Popravak pre-postojećeg web buga „crni video nakon izlaska iz fullscreena"
+  (izgubljeni `<video>` element; vidi ISPRAVAK u Saznanjima o media_kitu) —
+  zaseban task, jer dira desktop putanju.
