@@ -4988,10 +4988,10 @@ abstract class AppLocalizations {
   /// **'Osobu nismo pronašli'**
   String get personNotFoundTitle;
 
-  /// Objašnjenje praznog stanja na profilu govornika.
+  /// Objašnjenje praznog stanja na profilu osobe (ni govori ni spominje se).
   ///
   /// In hr, this message translates to:
-  /// **'Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.'**
+  /// **'Ovu osobu još nemamo u bazi — ni kao govornika ni kao spomen u obrađenim epizodama.'**
   String get personNotFoundBody;
 
   /// Tooltip gumba za dijeljenje poveznice na profil govornika.
@@ -5011,6 +5011,24 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Spominje se u'**
   String get personMentionedIn;
+
+  /// Broj epizoda u kojima se osoba spominje — statistika na profilu osobe (/p/:slug).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} spomen} few{{count} spomena} other{{count} spomena}}'**
+  String personMentionsCount(int count);
+
+  /// Naslov sekcije s raspodjelom SPOMENA po kanalima — za osobu koja nikad ne gostuje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spominje se na'**
+  String get personMentionedOn;
+
+  /// Napomena na profilu osobe koja se samo spominje (nikad nije bila gost).
+  ///
+  /// In hr, this message translates to:
+  /// **'Ova osoba nije gostovala u obrađenim epizodama — profil prati gdje se o njoj govori.'**
+  String get personMentionOnlyNote;
 
   /// Snackbar na mobilnom webu (iOS) koji nudi preuzimanje native aplikacije iz App Storea.
   ///

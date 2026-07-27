@@ -694,14 +694,27 @@ function injectPersonTags(indexHtml, slug, person) {
   const epCount = Number(person.episode_count) || (Array.isArray(person.episodes) ? person.episodes.length : 0);
   const chCount = Number(person.channel_count) || (Array.isArray(person.channels) ? person.channels.length : 0);
 
+  const mentionCount = Number(person.mention_episode_count)
+    || (Array.isArray(person.mentions) ? person.mentions.length : 0);
+  const mentionChCount = Array.isArray(person.mention_channels) ? person.mention_channels.length : 0;
+
   const epWord = croPlural(epCount, 'epizodi', 'epizode', 'epizoda'); // "u N epizodi/epizode/epizoda"
   const chWord = croPlural(chCount, 'kanalu', 'kanala', 'kanala');   // "na N kanalu/kanala"
 
   const title = `${name} — podcast profil`;
+  // Osoba koja se SAMO spominje (nikad gost — povijesna/pokojna figura) nema
+  // gostovanja; "gost u 0 epizoda" bi bio i netočan i odbojan u previewu.
+  const mentionOnly = epCount === 0 && mentionCount > 0;
+  const mEpWord = croPlural(mentionCount, 'epizodi', 'epizode', 'epizoda');
+  const mChWord = croPlural(mentionChCount, 'kanalu', 'kanala', 'kanala');
   // Gramatika: "gost u 1 epizodi", "gost u 2 epizode", "gost u 6 epizoda";
   //            "na 1 kanalu", "na 6 kanala".
-  const desc = `Sve epizode u kojima ${name} govori — gost u ${epCount} ${epWord} `
-    + `na ${chCount} ${chWord}. AI sažetci, transkripti i analiza podcasta na DOMOVINA.ai.`;
+  const desc = mentionOnly
+    ? `Gdje se u podcastima spominje ${name} — ${mentionCount} ${mEpWord} `
+      + `na ${mentionChCount} ${mChWord}, sa skokom na točan trenutak spomena. `
+      + 'AI sažetci, transkripti i analiza podcasta na DOMOVINA.ai.'
+    : `Sve epizode u kojima ${name} govori — gost u ${epCount} ${epWord} `
+      + `na ${chCount} ${chWord}. AI sažetci, transkripti i analiza podcasta na DOMOVINA.ai.`;
 
   const canonical = `${SITE}/p/${slug}`;
 
@@ -724,11 +737,17 @@ function injectPersonTags(indexHtml, slug, person) {
       name,
       url: canonical,
       ...(hasAvatar ? { image: person.avatar_url } : {}),
-      subjectOf: {
-        '@type': 'ItemList',
-        numberOfItems: epCount,
-        name: `Epizode u kojima govori ${name}`,
-      },
+      subjectOf: mentionOnly
+        ? {
+          '@type': 'ItemList',
+          numberOfItems: mentionCount,
+          name: `Epizode u kojima se spominje ${name}`,
+        }
+        : {
+          '@type': 'ItemList',
+          numberOfItems: epCount,
+          name: `Epizode u kojima govori ${name}`,
+        },
     },
     publisher: {
       '@type': 'Organization',

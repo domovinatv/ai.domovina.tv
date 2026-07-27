@@ -1,6 +1,10 @@
-/// Model javnog profila govornika ("person hub") — agregira SVE epizode u
-/// kojima jedna osoba GOVORI (diarizirani govornik), kroz sve kanale, iza
-/// stabilnog slug-a.
+/// Model javnog profila osobe ("person hub") — agregira SVE epizode u kojima se
+/// jedna osoba pojavljuje, kroz sve kanale, iza stabilnog slug-a.
+///
+/// Dva odvojena izvora: [PersonHub.episodes] (osoba GOVORI — diarizirani
+/// govornik) i [PersonHub.mentions] (osoba se SPOMINJE u epizodi). Osoba koja
+/// nikad nije bila gost (povijesna/pokojna, npr. bl. Ivan Merz) ima samo
+/// spomene — profil svejedno postoji i nije 404.
 ///
 /// Mapira se 1:1 na `GET https://mcp.domovina.ai/api/person/{slug}` iz
 /// domovina-rag. Ruta u aplikaciji: `/p/:slug` (npr. `/p/don-tomislav-lukac`).
@@ -127,6 +131,15 @@ class PersonHub {
   /// fallback na duljinu [mentions]).
   final int mentionCount;
 
+  /// Raspodjela SPOMENA po kanalima / mjesecima — pandan [channels]/[timeline]
+  /// za osobu koja se samo spominje. Bez njih bi takav profil bio gol (govor-
+  /// agregacije su prazne). Koriste se samo kad [episodes] nema.
+  final List<PersonChannelCount> mentionChannels;
+  final List<PersonMonthCount> mentionTimeline;
+
+  /// Osoba postoji u korpusu samo kroz spomene — nikad nije bila gost.
+  bool get isMentionOnly => episodes.isEmpty && mentions.isNotEmpty;
+
   const PersonHub({
     required this.name,
     required this.slug,
@@ -138,6 +151,8 @@ class PersonHub {
     required this.timeline,
     this.mentions = const [],
     this.mentionCount = 0,
+    this.mentionChannels = const [],
+    this.mentionTimeline = const [],
   });
 
   factory PersonHub.fromJson(Map<String, dynamic> json) {
@@ -145,6 +160,10 @@ class PersonHub {
     final rawEpisodes = json['episodes'] as List<dynamic>? ?? const [];
     final rawTimeline = json['timeline'] as List<dynamic>? ?? const [];
     final rawMentions = json['mentions'] as List<dynamic>? ?? const [];
+    final rawMentionChannels =
+        json['mention_channels'] as List<dynamic>? ?? const [];
+    final rawMentionTimeline =
+        json['mention_timeline'] as List<dynamic>? ?? const [];
     return PersonHub(
       name: json['name'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
@@ -165,6 +184,12 @@ class PersonHub {
           .toList(),
       mentionCount: (json['mention_episode_count'] as num?)?.toInt() ??
           rawMentions.length,
+      mentionChannels: rawMentionChannels
+          .map((e) => PersonChannelCount.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      mentionTimeline: rawMentionTimeline
+          .map((e) => PersonMonthCount.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

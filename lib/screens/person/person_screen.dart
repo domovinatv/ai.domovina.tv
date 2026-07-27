@@ -9,12 +9,17 @@ import '../../services/page_meta.dart';
 import '../../services/person_service.dart';
 import '../../theme/app_theme.dart';
 
-/// Javni profil govornika ("person hub") — /p/:slug.
+/// Javni profil osobe ("person hub") — /p/:slug.
 ///
-/// Dohvaća agregat SVIH epizoda u kojima osoba GOVORI (kroz sve kanale) s
+/// Dohvaća agregat SVIH epizoda u kojima se osoba pojavljuje (kroz sve kanale) s
 /// domovina-rag `/api/person/{slug}` i prikazuje: ime + avatar, statistiku
-/// (epizode / kanali), raspodjelu po kanalima, mjesečni timeline i popis
-/// epizoda. Prazno/404 stanje ako slug ne postoji.
+/// (epizode / kanali / spomeni), raspodjelu po kanalima, mjesečni timeline te
+/// dva popisa epizoda — „Epizode" (govori) i „Spominje se u". Prazno/404 stanje
+/// tek ako slug nije ni govornik ni spomen.
+///
+/// Osoba koja se SAMO spominje (nikad gost — povijesna/pokojna figura) ima
+/// valjan profil: govor-agregacije su prazne, pa se raspodjela po kanalima i
+/// timeline crtaju iz spomena ([PersonHub.mentionChannels]/`mentionTimeline`).
 ///
 /// Slug se prosljeđuje DOSLOVNO iz rute (bez `-`↔`_` transformacije koju rade
 /// kanali) — on je primarni ključ u bazi.
@@ -223,6 +228,11 @@ class _SingleColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    // Osoba bez gostovanja: kanali/timeline dolaze iz spomena (govor-agregacije
+    // su prazne), a naslov sekcije kanala se mijenja u „Spominje se na".
+    final mentionOnly = hub.isMentionOnly;
+    final channels = mentionOnly ? hub.mentionChannels : hub.channels;
+    final timeline = mentionOnly ? hub.mentionTimeline : hub.timeline;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -230,13 +240,20 @@ class _SingleColumn extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
             _Header(hub: hub),
-            if (hub.channels.isNotEmpty) ...[
-              const SizedBox(height: 28),
-              _ChannelsSection(channels: hub.channels),
+            if (mentionOnly) ...[
+              const SizedBox(height: 14),
+              _MentionOnlyNote(text: l.personMentionOnlyNote),
             ],
-            if (hub.timeline.length > 1) ...[
+            if (channels.isNotEmpty) ...[
               const SizedBox(height: 28),
-              _TimelineSection(timeline: hub.timeline),
+              _ChannelsSection(
+                channels: channels,
+                title: mentionOnly ? l.personMentionedOn : l.personAppearsOn,
+              ),
+            ],
+            if (timeline.length > 1) ...[
+              const SizedBox(height: 28),
+              _TimelineSection(timeline: timeline),
             ],
             if (hub.episodes.isNotEmpty) ...[
               const SizedBox(height: 28),
@@ -272,8 +289,12 @@ class _TwoColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final hasMentions = hub.mentions.isNotEmpty;
+    final mentionOnly = hub.isMentionOnly;
+    final channels = mentionOnly ? hub.mentionChannels : hub.channels;
+    final timeline = mentionOnly ? hub.mentionTimeline : hub.timeline;
     // Treći stupac („Spominje se u") traži više širine da sve tri kolone dišu.
-    final maxWidth = hasMentions ? 1440.0 : 1180.0;
+    // Bez gostovanja su stupca samo dva → uža, gušća kompozicija.
+    final maxWidth = hasMentions && !mentionOnly ? 1440.0 : 1180.0;
 
     return Center(
       child: ConstrainedBox(
@@ -290,13 +311,21 @@ class _TwoColumn extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _Header(hub: hub),
-                    if (hub.channels.isNotEmpty) ...[
-                      const SizedBox(height: 28),
-                      _ChannelsSection(channels: hub.channels),
+                    if (mentionOnly) ...[
+                      const SizedBox(height: 14),
+                      _MentionOnlyNote(text: l.personMentionOnlyNote),
                     ],
-                    if (hub.timeline.length > 1) ...[
+                    if (channels.isNotEmpty) ...[
                       const SizedBox(height: 28),
-                      _TimelineSection(timeline: hub.timeline),
+                      _ChannelsSection(
+                        channels: channels,
+                        title:
+                            mentionOnly ? l.personMentionedOn : l.personAppearsOn,
+                      ),
+                    ],
+                    if (timeline.length > 1) ...[
+                      const SizedBox(height: 28),
+                      _TimelineSection(timeline: timeline),
                     ],
                   ],
                 ),
@@ -313,9 +342,11 @@ class _TwoColumn extends StatelessWidget {
                 ),
               ),
             // Desni stupac — „Spominje se u" (spomeni), zaseban scroll. Tanka
-            // vertikalna linija razdvaja ga od „Govori u" radi preglednosti.
+            // vertikalna linija razdvaja ga od „Govori u" radi preglednosti —
+            // samo kad taj stupac postoji (osoba bez gostovanja ga nema).
             if (hasMentions) ...[
-              const VerticalDivider(width: 1, thickness: 1),
+              if (hub.episodes.isNotEmpty)
+                const VerticalDivider(width: 1, thickness: 1),
               Expanded(
                 flex: 2,
                 child: _EpisodeListColumn(
@@ -341,6 +372,11 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
+    // „0 epizoda / 0 kanala" je šum na profilu osobe koja nikad nije gostovala —
+    // govor-pilule se pokazuju samo kad govor postoji, a kanali se tada broje iz
+    // spomena.
+    final speaks = hub.episodes.isNotEmpty;
+    final mentionChannelCount = hub.mentionChannels.length;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -361,20 +397,68 @@ class _Header extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _StatPill(
-                    icon: Icons.podcasts,
-                    label: l.personEpisodesCount(hub.episodeCount),
-                  ),
-                  _StatPill(
-                    icon: Icons.tv,
-                    label: l.channelChannelsCount(hub.channelCount),
-                  ),
+                  if (speaks) ...[
+                    _StatPill(
+                      icon: Icons.podcasts,
+                      label: l.personEpisodesCount(hub.episodeCount),
+                    ),
+                    _StatPill(
+                      icon: Icons.tv,
+                      label: l.channelChannelsCount(hub.channelCount),
+                    ),
+                  ],
+                  if (hub.mentions.isNotEmpty)
+                    _StatPill(
+                      icon: Icons.format_quote,
+                      label: l.personMentionsCount(hub.mentionCount),
+                    ),
+                  if (!speaks && mentionChannelCount > 0)
+                    _StatPill(
+                      icon: Icons.tv,
+                      label: l.channelChannelsCount(mentionChannelCount),
+                    ),
                 ],
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Napomena na profilu osobe koja se samo spominje — objašnjava zašto nema
+/// popisa gostovanja, da prazan „Epizode" stupac ne izgleda kao greška.
+class _MentionOnlyNote extends StatelessWidget {
+  final String text;
+
+  const _MentionOnlyNote({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.croBlue.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline,
+              size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -472,15 +556,17 @@ class _StatPill extends StatelessWidget {
 class _ChannelsSection extends StatelessWidget {
   final List<PersonChannelCount> channels;
 
-  const _ChannelsSection({required this.channels});
+  /// „Gostuje na" (govor) ili „Spominje se na" (osoba bez gostovanja).
+  final String title;
+
+  const _ChannelsSection({required this.channels, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(title: l.personAppearsOn),
+        _SectionTitle(title: title),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,

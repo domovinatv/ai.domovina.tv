@@ -3099,7 +3099,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get personNotFoundBody =>
-      'Ova osoba još nije u našoj bazi govornika ili nema obrađenih epizoda.';
+      'Ovu osobu još nemamo u bazi — ni kao govornika ni kao spomen u obrađenim epizodama.';
 
   @override
   String get personShareTooltip => 'Podijeli profil';
@@ -3109,6 +3109,25 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get personMentionedIn => 'Spominje se u';
+
+  @override
+  String personMentionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count spomena',
+      few: '$count spomena',
+      one: '$count spomen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personMentionedOn => 'Spominje se na';
+
+  @override
+  String get personMentionOnlyNote =>
+      'Ova osoba nije gostovala u obrađenim epizodama — profil prati gdje se o njoj govori.';
 
   @override
   String get appInstallBannerIos => 'DOMOVINA.ai ima i aplikaciju za iPhone.';

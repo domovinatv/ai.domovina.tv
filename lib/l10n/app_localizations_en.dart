@@ -3080,7 +3080,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personNotFoundBody =>
-      'This person isn\'t in our speaker database yet, or has no processed episodes.';
+      'We don\'t have this person yet — neither as a speaker nor as a mention in processed episodes.';
 
   @override
   String get personShareTooltip => 'Share profile';
@@ -3090,6 +3090,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personMentionedIn => 'Mentioned in';
+
+  @override
+  String personMentionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mentions',
+      one: '$count mention',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personMentionedOn => 'Mentioned on';
+
+  @override
+  String get personMentionOnlyNote =>
+      'This person hasn\'t appeared as a guest in processed episodes — this profile tracks where they are talked about.';
 
   @override
   String get appInstallBannerIos => 'DOMOVINA.ai also has an iPhone app.';
