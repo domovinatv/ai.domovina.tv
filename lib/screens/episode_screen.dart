@@ -1506,6 +1506,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 youtubeId: data.youtubeId,
                 summary: summaryForUi.summary,
               ),
+              // Traka spomenutih osoba odmah ispod naslova. Puna sekcija
+              // entiteta je na dnu članka — predaleko da se vidi tko je u
+              // epizodi, i predaleko za crveni marker kad se dođe s /p/ profila.
+              PeopleRail(
+                summary: summaryForUi.summary,
+                highlightPersonSlug: widget.highlightPersonSlug,
+              ),
               // "Zid podrške" za epizodu — sam se sakrije ako epizoda nema
               // aktivnu pinka kampanju (vidi lib/pinka_sdk/). SEPA QR +
               // on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik.
@@ -1615,6 +1622,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         info: data.info,
                         youtubeId: data.youtubeId,
                         summary: summaryForUi.summary,
+                      ),
+                      // Traka osoba — vidi standardni layout iznad.
+                      PeopleRail(
+                        summary: summaryForUi.summary,
+                        highlightPersonSlug: widget.highlightPersonSlug,
                       ),
                       // "Zid podrške" za epizodu — vidi standardni layout iznad.
                       PinkaSupportCard.episode(
