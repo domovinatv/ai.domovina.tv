@@ -5018,6 +5018,18 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} spomen} few{{count} spomena} other{{count} spomena}}'**
   String personMentionsCount(int count);
 
+  /// Oznaka na kartici spomena kad znamo TOČAN trenutak — tap skače na tu sekundu. {time} je mm:ss ili h:mm:ss.
+  ///
+  /// In hr, this message translates to:
+  /// **'spomen u {time}'**
+  String personMentionAtTime(String time);
+
+  /// Oznaka na kartici spomena kad trenutak nije razriješen — tap otvara epizodu od početka.
+  ///
+  /// In hr, this message translates to:
+  /// **'spomen negdje u epizodi'**
+  String get personMentionWholeEpisode;
+
   /// Naslov sekcije s raspodjelom SPOMENA po kanalima — za osobu koja nikad ne gostuje.
   ///
   /// In hr, this message translates to:

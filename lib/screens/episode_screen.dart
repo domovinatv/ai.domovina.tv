@@ -591,21 +591,31 @@ class _EpisodeContentState extends State<_EpisodeContent>
   ///  - osoba je diarizirani govornik → "X govori ovdje"
   ///  - inače, ciljna sekcija sadrži spomen imena → "Ovdje se spominje: X"
   ///  - inače bez pilla — inline needle highlight pokazuje spomene drugdje.
+  ///
+  /// BEZ `/t/<sec>` u URL-u (epizodni spomen — `mention_ts` se nije razriješio
+  /// iz article.json, ~40% spomena) nemamo ciljnu sekundu, pa je sami tražimo:
+  /// prva sekcija koja referencira osobu postaje sidro (pill + auto-scroll).
+  /// Prije 2026-07-27 se u tom slučaju NIŠTA nije razrješavalo — ni ime ni
+  /// pill — pa je jedini trag bio crveni chip u „Osobe" na dnu članka.
   void _initPersonHighlight() {
     final slug = widget.highlightPersonSlug;
     final startAt = widget.startAtSeconds;
-    if (slug == null || slug.isEmpty || startAt == null) return;
+    if (slug == null || slug.isEmpty) return;
     if (_sortedSections.isEmpty) return;
 
     // Sekcija u koju deep-link sekunda pada (zadnja s početkom <= startAt);
-    // prije prve sekcije → prva (deep-link na sam uvod).
-    final pos = Duration(seconds: startAt);
-    var ts = _sortedSections.first.ts;
-    for (final s in _sortedSections) {
-      if (pos >= s.dur) {
-        ts = s.ts;
-      } else {
-        break;
+    // prije prve sekcije → prva (deep-link na sam uvod). Bez startAt-a sidro
+    // tražimo tek dolje, po sadržaju.
+    String? ts;
+    if (startAt != null) {
+      final pos = Duration(seconds: startAt);
+      ts = _sortedSections.first.ts;
+      for (final s in _sortedSections) {
+        if (pos >= s.dur) {
+          ts = s.ts;
+        } else {
+          break;
+        }
       }
     }
 
@@ -626,24 +636,34 @@ class _EpisodeContentState extends State<_EpisodeContent>
     }
 
     _personHighlightName = name;
-    _personHighlightSpeaks = speaks;
-    if (speaks) {
-      _personHighlightTs = ts;
-    } else {
-      // Spomen-pill samo ako ciljna sekcija stvarno referencira osobu:
-      // ime u tekstu (dijakritik-neosjetljivo) ILI među `entities` sekcije
-      // (AI atribucija spomena — ime često nije u prozi članka).
-      final sec = _sectionFor(ts);
-      final inText =
-          sec != null && hasPersonMention(sec.content, name);
-      final inEntities = sec != null &&
+    // Bez ciljne sekunde ne možemo tvrditi "govori ovdje" ni za diariziranog
+    // govornika — sidro nalazimo po spomenu, pa je i tvrdnja "spominje se".
+    _personHighlightSpeaks = speaks && ts != null;
+
+    /// Referencira li sekcija osobu: ime u tekstu (dijakritik-neosjetljivo) ILI
+    /// među `entities` (AI atribucija — ime često nije u prozi članka).
+    bool refersToPerson(String sectionTs) {
+      final sec = _sectionFor(sectionTs);
+      if (sec == null) return false;
+      return hasPersonMention(sec.content, name) ||
           sec.entities.any((e) => personSlug(e) == slug);
-      if (inText || inEntities) {
-        _personHighlightTs = ts;
-      }
     }
-    log('person highlight: $slug → "$name" @ $ts '
-        '(speaks=$speaks, pill=${_personHighlightTs != null})');
+
+    if (ts != null) {
+      // Pill samo kad je tvrdnja provjerljiva na TOJ sekciji.
+      if (speaks || refersToPerson(ts)) _personHighlightTs = ts;
+    } else {
+      // Epizodni spomen: prva sekcija koja referencira osobu postaje sidro.
+      for (final s in _sortedSections) {
+        if (refersToPerson(s.ts)) {
+          _personHighlightTs = s.ts;
+          break;
+        }
+      }
+      if (_personHighlightTs != null) _scrollToPersonAnchor(_personHighlightTs!);
+    }
+    log('person highlight: $slug → "$name" @ ${ts ?? _personHighlightTs} '
+        '(speaks=$speaks, startAt=$startAt, pill=${_personHighlightTs != null})');
 
     // Slug nije među govornicima ove epizode (npr. spomen ili drukčije
     // diarizirano ime) → fallback ime iz sluga nema dijakritike ("Stojic").
@@ -655,6 +675,27 @@ class _EpisodeContentState extends State<_EpisodeContent>
         setState(() => _personHighlightName = proper);
       });
     }
+  }
+
+  /// Doscrollaj članak na sekciju u kojoj se osoba spominje, kad deep-link nema
+  /// `/t/<sec>`. Video se NAMJERNO ne seeka — znamo sekciju, ne sekundu; lažni
+  /// seek bi odveo korisnika na krivo mjesto reprodukcije.
+  ///
+  /// Isti re-scroll safety net kao [_setInitialChapter]: async sadržaj
+  /// (Magisterium, web fontovi, kasne slike) pomiče target nakon prvog frame-a.
+  /// Svaki pokušaj odustaje čim je korisnik sam počeo scrollati.
+  void _scrollToPersonAnchor(String ts) {
+    _scrollTimestamp = ts;
+    void go() {
+      if (!mounted) return;
+      if (_lastManualScroll != null) return;
+      _scrollLock = DateTime.now();
+      _scrollToSection(ts);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => go());
+    Future<void>.delayed(const Duration(milliseconds: 300), go);
+    Future<void>.delayed(const Duration(milliseconds: 1200), go);
   }
 
   /// Sekcija članka s danim screenshot timestampom, ili null.

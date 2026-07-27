@@ -269,6 +269,7 @@ class _SingleColumn extends StatelessWidget {
                 title: l.personMentionedIn,
                 episodes: hub.mentions,
                 personSlug: hub.slug,
+                isMention: true,
               ),
             ],
           ],
@@ -353,6 +354,7 @@ class _TwoColumn extends StatelessWidget {
                   title: l.personMentionedIn,
                   episodes: hub.mentions,
                   personSlug: hub.slug,
+                  isMention: true,
                 ),
               ),
             ],
@@ -760,10 +762,14 @@ class _EpisodesSection extends StatelessWidget {
   /// ekran označi sekciju gdje osoba govori ("X govori ovdje" marker).
   final String personSlug;
 
+  /// Popis spomena (ne gostovanja) → kartice nose oznaku trenutka.
+  final bool isMention;
+
   const _EpisodesSection({
     required this.title,
     required this.episodes,
     required this.personSlug,
+    this.isMention = false,
   });
 
   @override
@@ -773,7 +779,12 @@ class _EpisodesSection extends StatelessWidget {
       children: [
         _SectionTitle(title: title),
         const SizedBox(height: 10),
-        for (final e in episodes) _EpisodeCard(episode: e, personSlug: personSlug),
+        for (final e in episodes)
+          _EpisodeCard(
+            episode: e,
+            personSlug: personSlug,
+            isMention: isMention,
+          ),
       ],
     );
   }
@@ -788,10 +799,14 @@ class _EpisodeListColumn extends StatelessWidget {
   /// Slug osobe — prosljeđuje se kao `?p=` na episode deep-link (marker).
   final String personSlug;
 
+  /// Popis spomena (ne gostovanja) → kartice nose oznaku trenutka.
+  final bool isMention;
+
   const _EpisodeListColumn({
     required this.title,
     required this.episodes,
     required this.personSlug,
+    this.isMention = false,
   });
 
   @override
@@ -806,7 +821,11 @@ class _EpisodeListColumn extends StatelessWidget {
             child: _SectionTitle(title: title),
           );
         }
-        return _EpisodeCard(episode: episodes[i - 1], personSlug: personSlug);
+        return _EpisodeCard(
+          episode: episodes[i - 1],
+          personSlug: personSlug,
+          isMention: isMention,
+        );
       },
     );
   }
@@ -819,15 +838,36 @@ class _EpisodeCard extends StatelessWidget {
   /// "X govori ovdje" marker na ciljanoj sekciji članka.
   final String personSlug;
 
-  const _EpisodeCard({required this.episode, required this.personSlug});
+  /// Kartica je u popisu „Spominje se u" → prikaži je li spomen vezan uz TOČAN
+  /// trenutak (tap seeka onamo) ili je samo epizodni (tap otvara od početka).
+  /// Kod govor-epizoda razlika ne postoji — `first_ts` je uvijek stvaran.
+  final bool isMention;
+
+  const _EpisodeCard({
+    required this.episode,
+    required this.personSlug,
+    this.isMention = false,
+  });
+
+  /// Sekunde → "16:45" / "1:05:30" (sat samo kad postoji).
+  static String _clock(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    final ss = s.toString().padLeft(2, '0');
+    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$ss';
+    return '$m:$ss';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final title = (episode.title != null && episode.title!.trim().isNotEmpty)
         ? episode.title!.trim()
         : episode.youtubeId;
     final channelName = episode.channel.replaceAll('_', ' ');
+    final hasMoment = episode.firstTs > 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -871,7 +911,16 @@ class _EpisodeCard extends StatelessWidget {
                     Wrap(
                       spacing: 10,
                       runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
+                        if (isMention)
+                          _MentionMomentChip(
+                            hasMoment: hasMoment,
+                            label: hasMoment
+                                ? l.personMentionAtTime(
+                                    _clock(episode.firstTs))
+                                : l.personMentionWholeEpisode,
+                          ),
                         _MetaChip(icon: Icons.tv, text: channelName),
                         if (episode.uploadDate.isNotEmpty)
                           _MetaChip(
@@ -885,6 +934,52 @@ class _EpisodeCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Razlikuje dvije vrste spomena u popisu „Spominje se u".
+///
+/// Puna brand-crvena (`cs.tertiary`) = znamo TOČAN trenutak; tap seeka onamo i
+/// ondje dočeka isti crveni marker u članku — namjerno ista boja da korisnik
+/// poveže karticu i marker. Obrubljena/prigušena = trenutak nije razriješen iz
+/// `article.json` (~40% spomena), pa tap otvara epizodu od početka.
+class _MentionMomentChip extends StatelessWidget {
+  final bool hasMoment;
+  final String label;
+
+  const _MentionMomentChip({required this.hasMoment, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = hasMoment ? Colors.white : theme.colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: hasMoment ? theme.colorScheme.tertiary : null,
+        borderRadius: BorderRadius.circular(6),
+        border: hasMoment
+            ? null
+            : Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(hasMoment ? Icons.play_arrow : Icons.subject, size: 12, color: fg),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: fg,
+                fontWeight: hasMoment ? FontWeight.bold : null,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

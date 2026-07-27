@@ -820,6 +820,8 @@
   "personLinkCopied": "Profile link copied",
   "personMentionedIn": "Mentioned in",
   "personMentionsCount": "{count, plural, one{{count} mention} other{{count} mentions}}",
+  "personMentionAtTime": "mentioned at {time}",
+  "personMentionWholeEpisode": "mentioned somewhere in the episode",
   "personMentionedOn": "Mentioned on",
   "personMentionOnlyNote": "This person hasn't appeared as a guest in processed episodes — this profile tracks where they are talked about.",
   "appInstallBannerIos": "DOMOVINA.ai also has an iPhone app.",

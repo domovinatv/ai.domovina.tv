@@ -3847,6 +3847,20 @@
       }
     }
   },
+  "personMentionAtTime": "spomen u {time}",
+  "@personMentionAtTime": {
+    "description": "Oznaka na kartici spomena kad znamo TOČAN trenutak — tap skače na tu sekundu. {time} je mm:ss ili h:mm:ss.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "16:45"
+      }
+    }
+  },
+  "personMentionWholeEpisode": "spomen negdje u epizodi",
+  "@personMentionWholeEpisode": {
+    "description": "Oznaka na kartici spomena kad trenutak nije razriješen — tap otvara epizodu od početka."
+  },
   "personMentionedOn": "Spominje se na",
   "@personMentionedOn": {
     "description": "Naslov sekcije s raspodjelom SPOMENA po kanalima — za osobu koja nikad ne gostuje."

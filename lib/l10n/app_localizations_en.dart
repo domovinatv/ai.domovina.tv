@@ -3103,6 +3103,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String personMentionAtTime(String time) {
+    return 'mentioned at $time';
+  }
+
+  @override
+  String get personMentionWholeEpisode => 'mentioned somewhere in the episode';
+
+  @override
   String get personMentionedOn => 'Mentioned on';
 
   @override

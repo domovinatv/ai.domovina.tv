@@ -3123,6 +3123,14 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String personMentionAtTime(String time) {
+    return 'spomen u $time';
+  }
+
+  @override
+  String get personMentionWholeEpisode => 'spomen negdje u epizodi';
+
+  @override
   String get personMentionedOn => 'Spominje se na';
 
   @override
