@@ -111,12 +111,24 @@ class _MediaKitHandler extends BaseAudioHandler {
           processingState: AudioProcessingState.ready,
           playing: playing,
           updatePosition: player.state.position,
+          speed: player.state.rate,
         ),
       );
     }));
 
     _subs.add(player.stream.position.listen((pos) {
       playbackState.add(playbackState.value.copyWith(updatePosition: pos));
+    }));
+
+    // Bez ovoga lock-screen scrub bar ekstrapolira poziciju na 1,0× pa pri
+    // 1,5× vidno drifta između dva `updatePosition` eventa.
+    _subs.add(player.stream.rate.listen((rate) {
+      playbackState.add(
+        playbackState.value.copyWith(
+          updatePosition: player.state.position,
+          speed: rate,
+        ),
+      );
     }));
 
     _subs.add(player.stream.duration.listen((dur) {

@@ -180,7 +180,9 @@ tolerancije za programske seekove.
 
 - **Fajlovi**: `lib/widgets/episode_video.dart`, `lib/widgets/video_panel.dart`,
   `lib/screens/episode_screen.dart`, `lib/screens/episode_simple_screen.dart`,
-  `lib/services/background_audio.dart`
+  `lib/services/background_audio.dart`, `test/playback_bar_layout_test.dart`
+  (novi; dodan tijekom izvedbe — čuva aritmetiku preljeva 360 dp trake,
+  reviewer r3 potvrdio zadržati)
 
 - **Opis**:
 

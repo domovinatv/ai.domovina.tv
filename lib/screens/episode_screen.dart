@@ -24,6 +24,8 @@ import '../services/player_resume.dart';
 import '../services/page_meta.dart';
 import '../services/person_service.dart';
 import '../services/playback_intent.dart';
+import '../services/playback_speed.dart';
+import '../services/seek_undo.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -474,6 +476,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// Vidi `services/playback_intent.dart`.
   PlaybackIntent? _playbackIntent;
 
+  /// „Vrati me gdje sam bio" nakon ručnog skoka po timelineu. Programske
+  /// skokove (resume pri otvaranju, tap na poglavlje — odluka D2) najavljujemo
+  /// kroz `suppress()`. Vidi `services/seek_undo.dart`.
+  SeekUndo? _seekUndo;
+
   /// Per-episode jezik prikaza. URL `/en` sufix ima prednost nad sticky pref.
   /// Inicijalno HR; ako URL nije EN, ucitaj sticky pref iz prefs-a.
   EpisodeLanguage _language = EpisodeLanguage.hr;
@@ -552,7 +559,25 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _initPersonHighlight();
 
     _scrollController.addListener(_onScroll);
+    // Brzina je globalna postavka (D1) — gumb je mijenja na singletonu, ekran
+    // je odavde prenosi na svoj Player. Jedan smjer, bez dvostrukog puta.
+    PlaybackSpeed.instance.addListener(_applyPlaybackRate);
     _initVideo();
+  }
+
+  /// Primijeni trenutnu globalnu brzinu na player + osvježi media sesiju.
+  void _applyPlaybackRate() {
+    final player = _player;
+    if (player == null) return;
+    final rate = PlaybackSpeed.instance.rate;
+    player.setRate(rate);
+    // Native media sesiju ažurira `background_audio.dart` preko
+    // `player.stream.rate`; web nema takav stream pa gura odmah.
+    MediaSession.setPositionState(
+      duration: Duration(seconds: widget.data.info.duration),
+      position: player.state.position,
+      playbackRate: rate,
+    );
   }
 
   /// Razriješi `?p=<slug>` u (ime osobe za needle highlight, timestamp sekcije
@@ -655,12 +680,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    PlaybackSpeed.instance.removeListener(_applyPlaybackRate);
     _positionSub?.cancel();
     _resumeHintTimer?.cancel();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     MediaSession.clear();
     _playbackIntent?.dispose();
+    _seekUndo?.dispose();
     _player?.dispose();
     super.dispose();
   }
@@ -869,6 +896,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
       final player = Player();
       final controller = VideoController(player);
 
+      // Detekcija skoka mora slušati poziciju PRIJE open/seeka — media_kit
+      // streamovi su broadcast (ne replay), pa kasnija pretplata izgubi rane
+      // evente.
+      _seekUndo = SeekUndo(positionStream: player.stream.position);
+      // Resume-seek pri otvaranju NIJE korisnikov skok. Prozor je namjerno
+      // dug: `openAndResume` čeka duration (do 5 s) prije nego seekne, pa bi
+      // standardnih 1,2 s isteklo prije samog skoka.
+      _seekUndo!.suppress(window: const Duration(seconds: 8));
+
       // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
       // na iOS odbaci seek pa video kreće od 0). Web vraća false ako je browser
       // odbio unmuted autoplay → muted fallback.
@@ -879,6 +915,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
       );
       if (kIsWeb && !unmuted) {
         _mutedAutoplay = true;
+      }
+      if (mounted) {
+        // Otvaranje je gotovo → skrati prozor natrag na normalnu duljinu.
+        _seekUndo?.suppress();
+        // Zapamćena brzina (D1: globalna za uređaj) vrijedi od prve sekunde.
+        await player.setRate(PlaybackSpeed.instance.rate);
       }
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
@@ -1041,9 +1083,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
       );
       // Media Session position update — drži lock screen scrub bar u syncu.
       // Throttled na sec granularnost (isti gate kao URL sync).
+      // playbackRate: bez stvarne brzine scrub bar na lock screenu ekstrapolira
+      // na 1,0× i vidno drifta pri 1,5×.
       MediaSession.setPositionState(
         duration: Duration(seconds: widget.data.info.duration),
         position: pos,
+        playbackRate: PlaybackSpeed.instance.rate,
       );
       // Watch progress — debounced 5s upsert u localStorage (mock).
       // v3: prosljedjujemo title + thumbnail kao denorm cache (skida sekundarni
@@ -1210,6 +1255,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// [preroll]: ako true, seekaj 2s prije za kontekst (samo video chapter lista).
   Future<void> _seekAndPlay(String timestamp, {bool preroll = false}) async {
     _seekLock = DateTime.now();
+    // Tap na poglavlje je namjerna navigacija — Undo se NE nudi (odluka D2).
+    // Prozor je 2 s jer na webu `play()` prethodi seeku pa skok može kasniti.
+    _seekUndo?.suppress(window: const Duration(seconds: 2));
     // Odmah postavi oba pointera i scrollaj — ne cekaj async seek
     setState(() {
       _activeTimestamp = timestamp;
@@ -1763,6 +1811,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           if (showVideo)
             VideoPanel(
               player: _player!,
+              seekUndo: _seekUndo,
               youtubeId: widget.data.youtubeId,
               audioOnly: data.isAudioOnly,
               posterUrl: _audioArtUrl,
@@ -1795,6 +1844,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           Expanded(flex: 2, child: magColumn!),
           VideoPanel(
             player: _player!,
+            seekUndo: _seekUndo,
             youtubeId: widget.data.youtubeId,
             audioOnly: data.isAudioOnly,
             posterUrl: _audioArtUrl,
@@ -1843,6 +1893,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           Expanded(child: scrollBody),
           VideoPanel(
             player: _player!,
+            seekUndo: _seekUndo,
             youtubeId: widget.data.youtubeId,
             audioOnly: data.isAudioOnly,
             posterUrl: _audioArtUrl,
@@ -1912,6 +1963,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 child: SafeArea(
                   child: VideoPanel(
                     player: _player!,
+                    seekUndo: _seekUndo,
                     youtubeId: widget.data.youtubeId,
                     audioOnly: data.isAudioOnly,
                     posterUrl: _audioArtUrl,
@@ -2242,6 +2294,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           Expanded(child: scrollBody),
           VideoPanel(
             player: _player!,
+            seekUndo: _seekUndo,
             youtubeId: widget.data.youtubeId,
             audioOnly: data.isAudioOnly,
             posterUrl: _audioArtUrl,
@@ -2270,6 +2323,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               child: SafeArea(
                 child: VideoPanel(
                   player: _player!,
+                  seekUndo: _seekUndo,
                   youtubeId: widget.data.youtubeId,
                   audioOnly: data.isAudioOnly,
                   posterUrl: _audioArtUrl,

@@ -20,8 +20,10 @@ import '../services/media_session.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/playback_intent.dart';
+import '../services/playback_speed.dart';
 import '../services/player_resume.dart';
 import '../services/page_meta.dart';
+import '../services/seek_undo.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -32,6 +34,7 @@ import '../widgets/episode_video.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/language_toggle_chip.dart';
 import '../widgets/magisterium_v2_view.dart';
+import '../widgets/playback_controls.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/speaker_chip.dart';
 import '../widgets/view_mode_toggle_button.dart';
@@ -180,6 +183,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   /// pauza (odlazak u pozadinu). Vidi services/playback_intent.dart.
   PlaybackIntent? _intent;
 
+  /// „Vrati me gdje sam bio" nakon ručnog skoka po timelineu. Programske
+  /// skokove (resume pri otvaranju, tap na poglavlje — odluka D2) najavljujemo
+  /// kroz `suppress()`. Vidi services/seek_undo.dart.
+  SeekUndo? _seekUndo;
+
   /// In-app YouTube embed mode — native player pauziran, iframe preuzima.
   bool _ytMode = false;
 
@@ -216,7 +224,25 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         }
       });
     }
+    // Brzina je globalna postavka (D1) — gumb je mijenja na singletonu, ekran
+    // je odavde prenosi na svoj Player. Jedan smjer, bez dvostrukog puta.
+    PlaybackSpeed.instance.addListener(_applyPlaybackRate);
     _initVideo();
+  }
+
+  /// Primijeni trenutnu globalnu brzinu na player + osvježi media sesiju.
+  void _applyPlaybackRate() {
+    final player = _player;
+    if (player == null) return;
+    final rate = PlaybackSpeed.instance.rate;
+    player.setRate(rate);
+    // Native media sesiju ažurira `background_audio.dart` preko
+    // `player.stream.rate`; web nema takav stream pa gura odmah.
+    MediaSession.setPositionState(
+      duration: Duration(seconds: widget.data.info.duration),
+      position: player.state.position,
+      playbackRate: rate,
+    );
   }
 
   void _onLanguageChanged(EpisodeLanguage lang) {
@@ -239,12 +265,14 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    PlaybackSpeed.instance.removeListener(_applyPlaybackRate);
     _positionSub?.cancel();
     _resumeHintTimer?.cancel();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
     MediaSession.clear();
     _intent?.dispose();
+    _seekUndo?.dispose();
     _player?.dispose();
     super.dispose();
   }
@@ -337,9 +365,12 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
           );
           // Media Session position update — drži lock screen scrub bar u
           // syncu. Throttled na sec granularnost (isti gate kao URL sync).
+          // playbackRate: bez stvarne brzine scrub bar na lock screenu
+          // ekstrapolira na 1,0× i vidno drifta pri 1,5×.
           MediaSession.setPositionState(
             duration: Duration(seconds: widget.data.info.duration),
             position: pos,
+            playbackRate: PlaybackSpeed.instance.rate,
           );
           // CDN URL (ne i.ytimg.com) da home rail "Nastavi slusati" moze
           // renderati thumbnail bez CORS bloka.
@@ -375,6 +406,14 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         isPlayingNow: () => player.state.playing,
       );
 
+      // Detekcija skoka sluša isti položajni stream — i ona mora biti gore,
+      // prije open/seeka.
+      _seekUndo = SeekUndo(positionStream: player.stream.position);
+      // Resume-seek pri otvaranju NIJE korisnikov skok. Prozor je namjerno
+      // dug: `openAndResume` čeka duration (do 5 s) prije nego seekne, pa bi
+      // standardnih 1,2 s isteklo prije samog skoka.
+      _seekUndo!.suppress(window: const Duration(seconds: 8));
+
       // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
       // na iOS odbaci seek pa video kreće od 0). Web fallback na muted autoplay
       // je u helperu.
@@ -383,6 +422,13 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         uri: widget.data.videoUri,
         startAtSeconds: startAt,
       );
+
+      if (mounted) {
+        // Otvaranje je gotovo → skrati prozor natrag na normalnu duljinu.
+        _seekUndo?.suppress();
+        // Zapamćena brzina (D1: globalna za uređaj) vrijedi od prve sekunde.
+        await player.setRate(PlaybackSpeed.instance.rate);
+      }
 
       if (mounted) {
         setState(() {
@@ -463,6 +509,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   }
 
   Future<void> _seekTo(int seconds) async {
+    // Tap na poglavlje je namjerna navigacija — Undo se NE nudi (odluka D2).
+    _seekUndo?.suppress(window: const Duration(seconds: 2));
     await _player?.seek(Duration(seconds: seconds));
     if (!(_player?.state.playing ?? false)) {
       await _player?.play();
@@ -534,6 +582,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         audioOnly: data.isAudioOnly,
         hasMedia: data.hasMedia,
         posterUrl: _audioArtUrl,
+        seekUndo: _seekUndo,
         onEnterYtMode: () {
           _player?.pause();
           setState(() => _ytMode = true);
@@ -886,6 +935,9 @@ class _PlayerTab extends StatelessWidget {
   final bool audioOnly;
   final bool hasMedia;
   final String? posterUrl;
+
+  /// Ponuda „vrati me gdje sam bio" nakon ručnog skoka. Vlasnik je ekran.
+  final SeekUndo? seekUndo;
   final VoidCallback onEnterYtMode;
   final VoidCallback onExitYtMode;
   final VoidCallback onPlayPause;
@@ -903,6 +955,7 @@ class _PlayerTab extends StatelessWidget {
     required this.audioOnly,
     required this.hasMedia,
     required this.posterUrl,
+    required this.seekUndo,
     required this.onEnterYtMode,
     required this.onExitYtMode,
     required this.onPlayPause,
@@ -954,6 +1007,7 @@ class _PlayerTab extends StatelessWidget {
                     controller: videoController!,
                     speakerTimeline: data.speakerTimeline,
                     speakers: summary?.speakers ?? const [],
+                    seekUndo: seekUndo,
                     onYouTubeMode: youTubeEmbedSupported ? onEnterYtMode : null,
                   )
                 : !hasMedia
@@ -1008,6 +1062,16 @@ class _PlayerTab extends StatelessWidget {
 
           // Seek bar
           if (videoReady && !ytMode) ...[
+            // Undo skoka — samo na audio-only putanji. Kod videa istu pilulu
+            // već crta EpisodeVideo preko slike (i u fullscreenu), pa bi je
+            // ovdje dobili dvaput.
+            if (seekUndo != null && audioOnly)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Center(
+                  child: SeekUndoPill(undo: seekUndo!, onUndo: onSeek),
+                ),
+              ),
             SliderTheme(
               data: SliderThemeData(
                 trackHeight: 3,
@@ -1078,6 +1142,18 @@ class _PlayerTab extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+
+            // Brzina + „u pozadini" u zasebnom redu: transportni red je na
+            // 360 px već pun, a ovo je jedini ulaz u obje postavke na
+            // audio-only epizodi (gdje media_kitova traka ne postoji).
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                SpeedCycleButton(),
+                SizedBox(width: 8),
+                BackgroundPlaybackButton(),
+              ],
             ),
           ],
 

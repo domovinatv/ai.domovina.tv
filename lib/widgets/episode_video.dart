@@ -28,7 +28,9 @@ import '../l10n/app_localizations.dart';
 import '../models/podcast_summary.dart';
 import '../models/speaker_timeline.dart';
 import '../services/browser_fullscreen.dart';
+import '../services/seek_undo.dart';
 import '../services/subtitle_prefs.dart';
+import 'playback_controls.dart';
 
 /// Boje govornika po redoslijedu iz speakers liste — dijeli se s
 /// VideoPanel speaker barom da fullscreen badge i bar budu konzistentni.
@@ -60,6 +62,11 @@ class EpisodeVideo extends StatefulWidget {
   /// (viša kvaliteta preko službenog YouTube playera).
   final VoidCallback? onYouTubeMode;
 
+  /// Ponuda „vrati me gdje sam bio" nakon ručnog skoka po timelineu. Kad je
+  /// zadana, pilula se renderira kroz `controls:` builder pa postoji i u
+  /// media_kitovoj fullscreen ruti. Vlasnik je ekran (drži `Player`).
+  final SeekUndo? seekUndo;
+
   const EpisodeVideo({
     super.key,
     required this.player,
@@ -67,6 +74,7 @@ class EpisodeVideo extends StatefulWidget {
     this.speakerTimeline,
     this.speakers = const [],
     this.onYouTubeMode,
+    this.seekUndo,
   });
 
   @override
@@ -242,20 +250,57 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
     final colors = speakerColorsFor(theme, widget.speakers);
     final timeline = widget.speakerTimeline;
     final ytButton = _youTubeButton();
+    final undo = widget.seekUndo;
+
+    // Brzina i „u pozadini" stoje lijevo od CC gumba, u obje trake; isti popis
+    // ide i u `fullscreen:` varijantu teme pa kontrole postoje i u fullscreenu.
+    //
+    // PRELJEV — media_kit slaže `bottomButtonBar` u goli `Row` bez ikakve
+    // zaštite, a desktop traka živi u 360 dp `VideoPanel` stupcu: sedam gumba
+    // po 48 dp je 336 dp u 328 dp prostora (izmjereno: preljev od točno 8 dp,
+    // vidi `test/playback_bar_layout_test.dart`). Zato tri mjere:
+    //
+    //  1. indikator pozicije umjesto `Spacer`-a dobiva `Expanded` +
+    //     `scaleDown` — jedini elastičan element, skupi se umjesto da traka
+    //     pukne (na 360 dp panelu praktički nestane; isto vrijeme piše i u
+    //     panelovu redu odmah ispod slike, a u fullscreenu je cijelo);
+    //  2. naša dva gumba idu u fiksnih 40 dp uz `scaleDown` — `VisualDensity`
+    //     ovdje NE pomaže (M3 `IconButton` uzima gustoću iz svojih defaulta,
+    //     ne iz `ThemeData`; izmjereno: ostaje 48 dp), a fiksna širina usput
+    //     rješava i to što label brzine raste s vrijednošću („1×" vs „1,75×").
+    Widget positionSlot(Widget indicator) => Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: indicator,
+          ),
+        );
+
+    Widget compactSlot(Widget child) => SizedBox(
+          width: 40,
+          child: FittedBox(fit: BoxFit.scaleDown, child: child),
+        );
+
+    final speedButton = compactSlot(const SpeedCycleButton(onVideo: true));
+    final backgroundButton = compactSlot(
+      const BackgroundPlaybackButton(onVideo: true),
+    );
 
     final desktopBottomBar = <Widget>[
       const MaterialDesktopPlayOrPauseButton(),
       const MaterialDesktopVolumeButton(),
-      const MaterialDesktopPositionIndicator(),
-      const Spacer(),
+      positionSlot(const MaterialDesktopPositionIndicator()),
+      speedButton,
+      backgroundButton,
       ?ytButton,
       if (timeline != null) _subtitleButton(),
       const MaterialDesktopFullscreenButton(),
     ];
 
     final mobileBottomBar = <Widget>[
-      const MaterialPositionIndicator(),
-      const Spacer(),
+      positionSlot(const MaterialPositionIndicator()),
+      speedButton,
+      backgroundButton,
       ?ytButton,
       if (timeline != null) _subtitleButton(),
       const MaterialFullscreenButton(),
@@ -311,6 +356,21 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
                   ),
                 ),
               AdaptiveVideoControls(state),
+              // Iznad kontrola u Z-osi jer mora primiti tap — media_kitov
+              // control layer inače proguta klik (playAndPauseOnTap).
+              // Kroz `controls:` builder pa pilula postoji i u fullscreen ruti.
+              if (undo != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 72,
+                  child: Center(
+                    child: SeekUndoPill(
+                      undo: undo,
+                      onUndo: widget.player.seek,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

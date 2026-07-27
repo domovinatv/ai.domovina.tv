@@ -7,8 +7,10 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
 import '../models/podcast_summary.dart';
+import '../services/seek_undo.dart';
 import 'audio_poster.dart';
 import 'episode_video.dart';
+import 'playback_controls.dart';
 import 'youtube_embed.dart';
 
 /// Marker za jedno poglavlje u video playeru (timestamp + label)
@@ -51,6 +53,11 @@ class VideoPanel extends StatefulWidget {
   /// Cover-art URL za audio-only mod (CORS-safe channel avatar).
   final String? posterUrl;
 
+  /// Ponuda „vrati me gdje sam bio" nakon ručnog skoka. Vlasnik je ekran;
+  /// panel je samo prikazuje iznad seek bara. Ovo je jedina putanja do pilule
+  /// za **audio-only** epizode, gdje [EpisodeVideo] ne postoji.
+  final SeekUndo? seekUndo;
+
   const VideoPanel({
     super.key,
     required this.player,
@@ -69,6 +76,7 @@ class VideoPanel extends StatefulWidget {
     this.youtubeId,
     this.audioOnly = false,
     this.posterUrl,
+    this.seekUndo,
   });
 
   @override
@@ -217,6 +225,7 @@ class _VideoPanelState extends State<VideoPanel> {
                           controller: widget.controller,
                           speakerTimeline: widget.speakerTimeline,
                           speakers: widget.speakers,
+                          seekUndo: widget.seekUndo,
                           onYouTubeMode:
                               youTubeEmbedSupported && widget.youtubeId != null
                               ? _enterYtMode
@@ -305,6 +314,20 @@ class _VideoPanelState extends State<VideoPanel> {
                     ),
                   ),
 
+                // Undo skoka — samo na audio-only putanji. Kod videa istu
+                // pilulu već crta EpisodeVideo preko slike (i u fullscreenu),
+                // pa bi je ovdje dobili dvaput.
+                if (widget.seekUndo != null && widget.audioOnly)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Center(
+                      child: SeekUndoPill(
+                        undo: widget.seekUndo!,
+                        onUndo: widget.player.seek,
+                      ),
+                    ),
+                  ),
+
                 // Seek bar s chapter markerima
                 _SeekBar(
                   value: _sliderValue,
@@ -343,10 +366,14 @@ class _VideoPanelState extends State<VideoPanel> {
                   ],
                 ),
 
-                // Play/Pause + skip buttons
+                // Play/Pause + skip + brzina + „u pozadini".
+                // media_kitov control bar preko slike se sam sakriva (i ne
+                // postoji na audio-only putanji), pa je ovo uvijek vidljivi
+                // ulaz u iste dvije postavke.
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    const SpeedCycleButton(),
                     IconButton(
                       icon: const Icon(Icons.replay_10),
                       onPressed: () => widget.player.seek(
@@ -374,6 +401,7 @@ class _VideoPanelState extends State<VideoPanel> {
                       ),
                       tooltip: '+10s',
                     ),
+                    const BackgroundPlaybackButton(),
                   ],
                 ),
 
