@@ -4050,5 +4050,47 @@
   "mediaBackgroundPlaybackSubtitle": "Nastavi slušati kad zaključaš zaslon ili prijeđeš u drugu aplikaciju.",
   "@mediaBackgroundPlaybackSubtitle": {
     "description": "Objašnjenje ispod prekidača za reprodukciju u pozadini."
+  },
+  "mediaPlaybackSpeed": "Brzina reprodukcije",
+  "@mediaPlaybackSpeed": {
+    "description": "Tooltip na kružnom prekidaču brzine reprodukcije u kontrolama playera."
+  },
+  "mediaPlaybackSpeedSet": "Brzina: {rate}×",
+  "@mediaPlaybackSpeedSet": {
+    "description": "Oznaka trenutne brzine reprodukcije (semantika/potvrda). Brzina je već formatirana po jeziku (hrvatski zarez: 1,5).",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaBackgroundPlaybackTooltipOn": "Reprodukcija u pozadini je uključena",
+  "@mediaBackgroundPlaybackTooltipOn": {
+    "description": "Tooltip na gumbu slušalica u kontrolama playera dok je pozadinska reprodukcija uključena."
+  },
+  "mediaBackgroundPlaybackTooltipOff": "Reprodukcija u pozadini je isključena",
+  "@mediaBackgroundPlaybackTooltipOff": {
+    "description": "Tooltip na gumbu slušalica u kontrolama playera dok je pozadinska reprodukcija isključena."
+  },
+  "mediaBackgroundPlaybackToastOn": "Nastavit će svirati kad izađeš iz aplikacije",
+  "@mediaBackgroundPlaybackToastOn": {
+    "description": "Potvrda (SnackBar) nakon što korisnik uključi pozadinsku reprodukciju iz playera."
+  },
+  "mediaBackgroundPlaybackToastOff": "Reprodukcija će stati kad izađeš iz aplikacije",
+  "@mediaBackgroundPlaybackToastOff": {
+    "description": "Potvrda (SnackBar) nakon što korisnik isključi pozadinsku reprodukciju iz playera."
+  },
+  "mediaSeekUndo": "Natrag na {time}",
+  "@mediaSeekUndo": {
+    "description": "Tekst pilule koja nudi povratak na poziciju prije ručnog skoka po timelineu; {time} je vrijeme u obliku 1:12:03.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaSeekUndoTooltip": "Poništi skok",
+  "@mediaSeekUndoTooltip": {
+    "description": "Tooltip/semantika na piluli koja poništava ručni skok po timelineu."
   }
 }

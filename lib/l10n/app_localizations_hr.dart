@@ -3263,4 +3263,36 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get mediaBackgroundPlaybackSubtitle =>
       'Nastavi slušati kad zaključaš zaslon ili prijeđeš u drugu aplikaciju.';
+
+  @override
+  String get mediaPlaybackSpeed => 'Brzina reprodukcije';
+
+  @override
+  String mediaPlaybackSpeedSet(String rate) {
+    return 'Brzina: $rate×';
+  }
+
+  @override
+  String get mediaBackgroundPlaybackTooltipOn =>
+      'Reprodukcija u pozadini je uključena';
+
+  @override
+  String get mediaBackgroundPlaybackTooltipOff =>
+      'Reprodukcija u pozadini je isključena';
+
+  @override
+  String get mediaBackgroundPlaybackToastOn =>
+      'Nastavit će svirati kad izađeš iz aplikacije';
+
+  @override
+  String get mediaBackgroundPlaybackToastOff =>
+      'Reprodukcija će stati kad izađeš iz aplikacije';
+
+  @override
+  String mediaSeekUndo(String time) {
+    return 'Natrag na $time';
+  }
+
+  @override
+  String get mediaSeekUndoTooltip => 'Poništi skok';
 }

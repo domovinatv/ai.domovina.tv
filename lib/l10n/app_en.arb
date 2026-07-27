@@ -861,5 +861,13 @@
   "pinkaSlotPickerOffGrid": "Move the crosshair onto the grid",
   "authSectionPlayback": "Playback",
   "mediaBackgroundPlaybackTitle": "Background playback",
-  "mediaBackgroundPlaybackSubtitle": "Keep listening when you lock the screen or switch to another app."
+  "mediaBackgroundPlaybackSubtitle": "Keep listening when you lock the screen or switch to another app.",
+  "mediaPlaybackSpeed": "Playback speed",
+  "mediaPlaybackSpeedSet": "Speed: {rate}×",
+  "mediaBackgroundPlaybackTooltipOn": "Background playback is on",
+  "mediaBackgroundPlaybackTooltipOff": "Background playback is off",
+  "mediaBackgroundPlaybackToastOn": "It will keep playing when you leave the app",
+  "mediaBackgroundPlaybackToastOff": "Playback will stop when you leave the app",
+  "mediaSeekUndo": "Back to {time}",
+  "mediaSeekUndoTooltip": "Undo the jump"
 }

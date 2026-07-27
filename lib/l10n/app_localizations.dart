@@ -5269,6 +5269,54 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Nastavi slušati kad zaključaš zaslon ili prijeđeš u drugu aplikaciju.'**
   String get mediaBackgroundPlaybackSubtitle;
+
+  /// Tooltip na kružnom prekidaču brzine reprodukcije u kontrolama playera.
+  ///
+  /// In hr, this message translates to:
+  /// **'Brzina reprodukcije'**
+  String get mediaPlaybackSpeed;
+
+  /// Oznaka trenutne brzine reprodukcije (semantika/potvrda). Brzina je već formatirana po jeziku (hrvatski zarez: 1,5).
+  ///
+  /// In hr, this message translates to:
+  /// **'Brzina: {rate}×'**
+  String mediaPlaybackSpeedSet(String rate);
+
+  /// Tooltip na gumbu slušalica u kontrolama playera dok je pozadinska reprodukcija uključena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reprodukcija u pozadini je uključena'**
+  String get mediaBackgroundPlaybackTooltipOn;
+
+  /// Tooltip na gumbu slušalica u kontrolama playera dok je pozadinska reprodukcija isključena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reprodukcija u pozadini je isključena'**
+  String get mediaBackgroundPlaybackTooltipOff;
+
+  /// Potvrda (SnackBar) nakon što korisnik uključi pozadinsku reprodukciju iz playera.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavit će svirati kad izađeš iz aplikacije'**
+  String get mediaBackgroundPlaybackToastOn;
+
+  /// Potvrda (SnackBar) nakon što korisnik isključi pozadinsku reprodukciju iz playera.
+  ///
+  /// In hr, this message translates to:
+  /// **'Reprodukcija će stati kad izađeš iz aplikacije'**
+  String get mediaBackgroundPlaybackToastOff;
+
+  /// Tekst pilule koja nudi povratak na poziciju prije ručnog skoka po timelineu; {time} je vrijeme u obliku 1:12:03.
+  ///
+  /// In hr, this message translates to:
+  /// **'Natrag na {time}'**
+  String mediaSeekUndo(String time);
+
+  /// Tooltip/semantika na piluli koja poništava ručni skok po timelineu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poništi skok'**
+  String get mediaSeekUndoTooltip;
 }
 
 class _AppLocalizationsDelegate

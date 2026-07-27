@@ -3242,4 +3242,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mediaBackgroundPlaybackSubtitle =>
       'Keep listening when you lock the screen or switch to another app.';
+
+  @override
+  String get mediaPlaybackSpeed => 'Playback speed';
+
+  @override
+  String mediaPlaybackSpeedSet(String rate) {
+    return 'Speed: $rate×';
+  }
+
+  @override
+  String get mediaBackgroundPlaybackTooltipOn => 'Background playback is on';
+
+  @override
+  String get mediaBackgroundPlaybackTooltipOff => 'Background playback is off';
+
+  @override
+  String get mediaBackgroundPlaybackToastOn =>
+      'It will keep playing when you leave the app';
+
+  @override
+  String get mediaBackgroundPlaybackToastOff =>
+      'Playback will stop when you leave the app';
+
+  @override
+  String mediaSeekUndo(String time) {
+    return 'Back to $time';
+  }
+
+  @override
+  String get mediaSeekUndoTooltip => 'Undo the jump';
 }
