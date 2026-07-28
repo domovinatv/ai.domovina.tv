@@ -18,10 +18,12 @@ import '../../widgets/founder_booking.dart';
 import '../../l10n/app_localizations.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
+import 'followed_rail.dart';
 import 'footer.dart';
 import 'home_app_bar.dart';
 import 'home_feed.dart';
 import 'hero_carousel.dart';
+import 'persons_rail.dart';
 import 'search_overlay.dart';
 import 'skeletons.dart';
 import 'sort_mode.dart';
@@ -422,6 +424,17 @@ class _ChannelGridView extends StatelessWidget {
                     ),
                   ),
 
+                // Rail "Novo od praćenih" — po jedna neviđena epizoda za svaki
+                // praćeni kanal/osobu. Osobni je pa stoji uz "Nastavi slušati",
+                // iznad uredničkih railova. Sam se sakrije bez flaga, bez
+                // praćenja ili kad nema ničeg novog. Vidi followed_rail.dart.
+                SliverToBoxAdapter(
+                  child: FollowedRail(
+                    isMobile: isMobile,
+                    onVideoTap: onVideoTap,
+                  ),
+                ),
+
                 // "Najnovije epizode" rail — cross-channel po datumu desc.
                 // CDN URL eksplicitno (`fv.video.thumbnail` moze biti ytimg
                 // URL iz pipeline-a, sto blokira CORS na web build-u).
@@ -476,6 +489,11 @@ class _ChannelGridView extends StatelessWidget {
                           .toList(),
                     ),
                   ),
+
+                // Rail "Osobe" — virtualni kanali (osobe). Sam se sakrije kad je
+                // PersonChannelFlag ugašen ili indeks nije dostupan, pa home
+                // bez flaga izgleda točno kao prije. Vidi persons_rail.dart.
+                SliverToBoxAdapter(child: PersonsRail(isMobile: isMobile)),
 
                 // Puni popis kanala je premjesten s home-a na zaseban surface
                 // (lazy lista + filter) radi scroll-perf-a — na home-u sad samo

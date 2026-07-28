@@ -4,6 +4,10 @@
 User-agent: *
 Allow: /
 
+# Sitemap (dinamicki, generira ga web/_worker.js iz CDN channel listinga
+# + /api/persons; sve rute u jednom urlsetu)
+Sitemap: https://domovina.ai/sitemap.xml
+
 # Social media crawlers — eksplicitno dopusti zbog OG tag scrapinga
 User-agent: facebookexternalhit
 Allow: /

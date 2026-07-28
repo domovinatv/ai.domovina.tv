@@ -5347,6 +5347,141 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Poništi skok'**
   String get mediaSeekUndoTooltip;
+
+  /// Eyebrow na kartici osobe kao virtualnog kanala (u UI-ju se prikazuje velikim slovima): oznaka, broj epizoda, ukupno trajanje. Pandan ključu homeChannelCardMeta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osoba · {count} ep · {duration}'**
+  String personCardMeta(int count, String duration);
+
+  /// Deterministički podnaslov virtualnog kanala osobe kad se nastupi protežu kroz više godina. Rod je namjerno neutralan (glagol, ne imenica „gost/gošća“).
+  ///
+  /// In hr, this message translates to:
+  /// **'Gostuje u {episodes, plural, one{{episodes} epizodi} few{{episodes} epizode} other{{episodes} epizoda}} na {channels, plural, one{{channels} kanalu} few{{channels} kanala} other{{channels} kanala}}, {fromYear}.–{toYear}.'**
+  String personVirtualChannelSubtitle(
+    int episodes,
+    int channels,
+    String fromYear,
+    String toYear,
+  );
+
+  /// Varijanta podnaslova virtualnog kanala kad su svi nastupi unutar iste godine.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gostuje u {episodes, plural, one{{episodes} epizodi} few{{episodes} epizode} other{{episodes} epizoda}} na {channels, plural, one{{channels} kanalu} few{{channels} kanala} other{{channels} kanala}}, {year}.'**
+  String personVirtualChannelSubtitleOneYear(
+    int episodes,
+    int channels,
+    String year,
+  );
+
+  /// Naslov sekcije s glavnim epizodama (tier „primary“) u kanal-formi profila osobe. Ista vrijednost kao personEpisodesHeading, koji ostaje za današnji (ne-kanalski) prikaz profila.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode'**
+  String get personSectionEpisodes;
+
+  /// Naslov sekcije s epizodama u kojima osoba govori kratko (tier „cameo“) na profilu osobe.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kratki nastupi'**
+  String get personSectionCameo;
+
+  /// Jedna rečenica ispod naslova „Kratki nastupi“ koja objašnjava razliku prema glavnim epizodama.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizode u kojima se javlja nakratko — dio šire rasprave, a ne glavni gost.'**
+  String get personSectionCameoHint;
+
+  /// Tooltip na neklikabilnom čipu izvornog kanala epizode kad kanal nije praćen (channelTracked == false).
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj kanal još ne pratimo, pa nema svoju stranicu.'**
+  String get personSourceChannelUntracked;
+
+  /// Akcija uz epizodu na profilu osobe — dojava da je govornik krivo pripisan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi grešku'**
+  String get personReportError;
+
+  /// Potvrda (SnackBar) nakon što korisnik prijavi krivo pripisanog govornika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hvala na dojavi — provjerit ćemo ovu epizodu.'**
+  String get personReportErrorThanks;
+
+  /// Poruka na minimalnom profilu osobe koja je zatražila uklanjanje (opt-out); prikazuje se uz ime umjesto 404.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na zahtjev ove osobe više ne prikazujemo popis nastupa na ovom profilu. Epizode ostaju dostupne na svojim stranicama.'**
+  String get personOptedOut;
+
+  /// Gumb za praćenje osobe na profilu osobe (/p/:slug).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prati'**
+  String get personFollow;
+
+  /// Stanje gumba kad korisnik već prati osobu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pratiš'**
+  String get personFollowing;
+
+  /// Gumb za praćenje kanala na stranici kanala (/c/:slug).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prati'**
+  String get channelFollow;
+
+  /// Stanje gumba kad korisnik već prati kanal.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pratiš'**
+  String get channelFollowing;
+
+  /// Filter čip na /channels: prikazuje i kanale i osobe.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sve'**
+  String get channelsFilterAll;
+
+  /// Filter čip na /channels: samo YouTube kanali.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kanali'**
+  String get channelsFilterChannels;
+
+  /// Filter čip na /channels: samo osobe (virtualni kanali).
+  ///
+  /// In hr, this message translates to:
+  /// **'Osobe'**
+  String get channelsFilterPersons;
+
+  /// Naslov horizontalnog raila s osobama (virtualnim kanalima) na naslovnici.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osobe'**
+  String get homePersonsRailTitle;
+
+  /// Naslov horizontalnog raila s novim epizodama kanala i osoba koje korisnik prati.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novo od praćenih'**
+  String get homeFollowedRailTitle;
+
+  /// Naslov sekcije s pogođenim osobama iznad rezultata pretrage u command paletti.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osobe'**
+  String get searchSectionPeople;
+
+  /// Naslov lanea s osobama (virtualnim kanalima) na Android TV naslovnici.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osobe'**
+  String get tvRailPersons;
 }
 
 class _AppLocalizationsDelegate

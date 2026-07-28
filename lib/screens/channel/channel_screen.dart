@@ -4,7 +4,9 @@ import '../../l10n/app_localizations.dart';
 import '../../models/channel_detail.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
+import '../../services/follow_service.dart';
 import '../../services/page_meta.dart';
+import '../../widgets/follow_button.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
 
@@ -82,6 +84,13 @@ class _ChannelScreenState extends State<ChannelScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                  // „Prati" — lokalni popis praćenja (isti namespace kao osobe).
+                  // Sam se sakrije dok je PersonChannelFlag ugašen.
+                  FollowButton(
+                    followKey: channelFollowKey(widget.channelId),
+                    followLabel: l.channelFollow,
+                    followingLabel: l.channelFollowing,
                   ),
                   // "Preuzmi vlasništvo" — vidljivo samo kad kanal ima kanonski
                   // UC… ID (Faza 0). Vodi na claim flow (/c/<slug>/claim).

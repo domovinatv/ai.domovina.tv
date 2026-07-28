@@ -4123,5 +4123,126 @@
   "mediaSeekUndoTooltip": "Poništi skok",
   "@mediaSeekUndoTooltip": {
     "description": "Tooltip/semantika na piluli koja poništava ručni skok po timelineu."
+  },
+  "personCardMeta": "Osoba · {count} ep · {duration}",
+  "@personCardMeta": {
+    "description": "Eyebrow na kartici osobe kao virtualnog kanala (u UI-ju se prikazuje velikim slovima): oznaka, broj epizoda, ukupno trajanje. Pandan ključu homeChannelCardMeta.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "duration": {
+        "type": "String",
+        "example": "13h 39m"
+      }
+    }
+  },
+  "personVirtualChannelSubtitle": "Gostuje u {episodes, plural, one{{episodes} epizodi} few{{episodes} epizode} other{{episodes} epizoda}} na {channels, plural, one{{channels} kanalu} few{{channels} kanala} other{{channels} kanala}}, {fromYear}.–{toYear}.",
+  "@personVirtualChannelSubtitle": {
+    "description": "Deterministički podnaslov virtualnog kanala osobe kad se nastupi protežu kroz više godina. Rod je namjerno neutralan (glagol, ne imenica „gost/gošća“).",
+    "placeholders": {
+      "episodes": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      },
+      "fromYear": {
+        "type": "String",
+        "example": "2020"
+      },
+      "toYear": {
+        "type": "String",
+        "example": "2026"
+      }
+    }
+  },
+  "personVirtualChannelSubtitleOneYear": "Gostuje u {episodes, plural, one{{episodes} epizodi} few{{episodes} epizode} other{{episodes} epizoda}} na {channels, plural, one{{channels} kanalu} few{{channels} kanala} other{{channels} kanala}}, {year}.",
+  "@personVirtualChannelSubtitleOneYear": {
+    "description": "Varijanta podnaslova virtualnog kanala kad su svi nastupi unutar iste godine.",
+    "placeholders": {
+      "episodes": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      },
+      "year": {
+        "type": "String",
+        "example": "2026"
+      }
+    }
+  },
+  "personSectionEpisodes": "Epizode",
+  "@personSectionEpisodes": {
+    "description": "Naslov sekcije s glavnim epizodama (tier „primary“) u kanal-formi profila osobe. Ista vrijednost kao personEpisodesHeading, koji ostaje za današnji (ne-kanalski) prikaz profila."
+  },
+  "personSectionCameo": "Kratki nastupi",
+  "@personSectionCameo": {
+    "description": "Naslov sekcije s epizodama u kojima osoba govori kratko (tier „cameo“) na profilu osobe."
+  },
+  "personSectionCameoHint": "Epizode u kojima se javlja nakratko — dio šire rasprave, a ne glavni gost.",
+  "@personSectionCameoHint": {
+    "description": "Jedna rečenica ispod naslova „Kratki nastupi“ koja objašnjava razliku prema glavnim epizodama."
+  },
+  "personSourceChannelUntracked": "Ovaj kanal još ne pratimo, pa nema svoju stranicu.",
+  "@personSourceChannelUntracked": {
+    "description": "Tooltip na neklikabilnom čipu izvornog kanala epizode kad kanal nije praćen (channelTracked == false)."
+  },
+  "personReportError": "Prijavi grešku",
+  "@personReportError": {
+    "description": "Akcija uz epizodu na profilu osobe — dojava da je govornik krivo pripisan."
+  },
+  "personReportErrorThanks": "Hvala na dojavi — provjerit ćemo ovu epizodu.",
+  "@personReportErrorThanks": {
+    "description": "Potvrda (SnackBar) nakon što korisnik prijavi krivo pripisanog govornika."
+  },
+  "personOptedOut": "Na zahtjev ove osobe više ne prikazujemo popis nastupa na ovom profilu. Epizode ostaju dostupne na svojim stranicama.",
+  "@personOptedOut": {
+    "description": "Poruka na minimalnom profilu osobe koja je zatražila uklanjanje (opt-out); prikazuje se uz ime umjesto 404."
+  },
+  "personFollow": "Prati",
+  "@personFollow": {
+    "description": "Gumb za praćenje osobe na profilu osobe (/p/:slug)."
+  },
+  "personFollowing": "Pratiš",
+  "@personFollowing": {
+    "description": "Stanje gumba kad korisnik već prati osobu."
+  },
+  "channelFollow": "Prati",
+  "@channelFollow": {
+    "description": "Gumb za praćenje kanala na stranici kanala (/c/:slug)."
+  },
+  "channelFollowing": "Pratiš",
+  "@channelFollowing": {
+    "description": "Stanje gumba kad korisnik već prati kanal."
+  },
+  "channelsFilterAll": "Sve",
+  "@channelsFilterAll": {
+    "description": "Filter čip na /channels: prikazuje i kanale i osobe."
+  },
+  "channelsFilterChannels": "Kanali",
+  "@channelsFilterChannels": {
+    "description": "Filter čip na /channels: samo YouTube kanali."
+  },
+  "channelsFilterPersons": "Osobe",
+  "@channelsFilterPersons": {
+    "description": "Filter čip na /channels: samo osobe (virtualni kanali)."
+  },
+  "homePersonsRailTitle": "Osobe",
+  "@homePersonsRailTitle": {
+    "description": "Naslov horizontalnog raila s osobama (virtualnim kanalima) na naslovnici."
+  },
+  "homeFollowedRailTitle": "Novo od praćenih",
+  "@homeFollowedRailTitle": {
+    "description": "Naslov horizontalnog raila s novim epizodama kanala i osoba koje korisnik prati."
+  },
+  "searchSectionPeople": "Osobe",
+  "@searchSectionPeople": {
+    "description": "Naslov sekcije s pogođenim osobama iznad rezultata pretrage u command paletti."
+  },
+  "tvRailPersons": "Osobe",
+  "@tvRailPersons": {
+    "description": "Naslov lanea s osobama (virtualnim kanalima) na Android TV naslovnici."
   }
 }

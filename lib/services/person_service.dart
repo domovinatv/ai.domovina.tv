@@ -18,7 +18,47 @@ class PersonService {
   /// Base URL person API-ja. Mijenja se ovdje ako se host promijeni.
   static const String _endpoint = 'https://mcp.domovina.ai/api/person';
 
+  /// Indeks svih osoba koje se prikazuju kao virtualni kanal (§4.1 plana
+  /// `docs/plans/virtualni-kanali.md`). Endpoint stiže s F2 — dotad vraća 404
+  /// i [loadIndex] daje `null` (feature ostaje nevidljiv, ništa ne puca).
+  static const String _indexEndpoint = 'https://mcp.domovina.ai/api/persons';
+
   static final http.Client _client = http.Client();
+
+  /// Dohvat indeksa osoba. Vraća `null` kad indeks nije dostupan (404 na
+  /// starom backendu, HTTP greška, timeout, neispravan JSON) — pozivatelj
+  /// tada radi kao da osoba-kao-kanal ne postoji.
+  ///
+  /// Endpoint vraća `Cache-Control: public, max-age=900`; app-level cache je
+  /// [PersonIndexCache], ne CDN `?v=` bucket (odluka O1).
+  static Future<PersonIndex?> loadIndex({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    final uri = Uri.parse(_indexEndpoint);
+    try {
+      final resp = await _client.get(uri).timeout(timeout);
+      if (resp.statusCode == 404) {
+        log('PersonService: /api/persons 404 — backend još nema person index');
+        return null;
+      }
+      if (resp.statusCode != 200) {
+        log('PersonService: /api/persons HTTP ${resp.statusCode}');
+        return null;
+      }
+      final body =
+          jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
+      final index = PersonIndex.fromJson(body);
+      log('PersonService: index — ${index.persons.length} osoba, '
+          '${index.virtualChannels.length} virtualnih kanala');
+      return index;
+    } on TimeoutException {
+      log('PersonService: timeout na /api/persons');
+      return null;
+    } catch (e) {
+      log('PersonService: greška na /api/persons: $e');
+      return null;
+    }
+  }
 
   /// Dohvat profila govornika po slug-u. Vraća `null` na 404 (osoba ne
   /// postoji), grešku ili timeout (graceful) — ekran tada pokaže prazno stanje.

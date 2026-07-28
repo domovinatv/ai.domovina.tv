@@ -1,0 +1,423 @@
+{
+  "name": "Marijana Šarolić Robić",
+  "slug": "marijana-sarolic-robic",
+  "avatar_url": null,
+  "channel_count": 17,
+  "episode_count": 17,
+  "is_virtual_channel": true,
+  "total_duration_seconds": 49151,
+  "avg_magisterium_score": 78,
+  "first_year": 2020,
+  "last_year": 2026,
+  "cameo_episode_count": 0,
+  "optout": false,
+  "channels": [
+    {
+      "channel": "lider",
+      "count": 1
+    },
+    {
+      "channel": "slijedi_svoj_poziv_2",
+      "count": 1
+    },
+    {
+      "channel": "borna_kos_kuca_europe",
+      "count": 1
+    },
+    {
+      "channel": "slo_cro_gospodarska_komora",
+      "count": 1
+    },
+    {
+      "channel": "cotrugli_business_school",
+      "count": 1
+    },
+    {
+      "channel": "poslovni_dnevnik",
+      "count": 1
+    },
+    {
+      "channel": "n1",
+      "count": 1
+    },
+    {
+      "channel": "leadershe",
+      "count": 1
+    },
+    {
+      "channel": "hds_zamp",
+      "count": 1
+    },
+    {
+      "channel": "knowing_ipr",
+      "count": 1
+    },
+    {
+      "channel": "poduzetnicki_mindset",
+      "count": 1
+    },
+    {
+      "channel": "tedxzagreb",
+      "count": 1
+    },
+    {
+      "channel": "mtg_zip",
+      "count": 1
+    },
+    {
+      "channel": "global_thinkers_forum",
+      "count": 1
+    },
+    {
+      "channel": "biznis_world",
+      "count": 1
+    },
+    {
+      "channel": "mba_croatia",
+      "count": 1
+    },
+    {
+      "channel": "ius_info",
+      "count": 1
+    }
+  ],
+  "episodes": [
+    {
+      "youtube_id": "bkp-0X4aG9E",
+      "title": "AI revolucija: Tko će biti građani drugog reda? | Marijana Šarolić Robić x Fintech Talks14",
+      "channel": "lider",
+      "channel_name": "Lider",
+      "channel_youtube_id": "UCboxxQjTe6vkiny3mkIo_BQ",
+      "channel_tracked": false,
+      "upload_date": "2026-06-24",
+      "duration_seconds": 1667,
+      "speaking_seconds": 612,
+      "speaking_share": 0.367,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 42,
+      "deep_link": "https://domovina.ai/v/bkp-0X4aG9E/t/42"
+    },
+    {
+      "youtube_id": "dDDwWZPVS0s",
+      "title": "Kako voditi u svijetu umjetne inteligencije? | Marijana Šarolić Robić | SSP",
+      "channel": "slijedi_svoj_poziv_2",
+      "channel_name": "Slijedi svoj poziv — 2. konferencija o liderstvu",
+      "channel_youtube_id": "UCuk9D5H9mx7birJ1-S22nyQ",
+      "channel_tracked": true,
+      "upload_date": "2026-02-13",
+      "duration_seconds": 1038,
+      "speaking_seconds": 902,
+      "speaking_share": 0.869,
+      "tier": "primary",
+      "magisterium_score": 82,
+      "first_ts": 3,
+      "deep_link": "https://domovina.ai/v/dDDwWZPVS0s/t/3"
+    },
+    {
+      "youtube_id": "glG9kVRGivQ",
+      "title": "Panel „Ljudska prava u doba AI-a”",
+      "channel": "borna_kos_kuca_europe",
+      "channel_name": "Borna Kos / Kuća Europe",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2025-06-04",
+      "duration_seconds": 4162,
+      "speaking_seconds": 1104,
+      "speaking_share": 0.265,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 318,
+      "deep_link": "https://domovina.ai/v/glG9kVRGivQ/t/318"
+    },
+    {
+      "youtube_id": "hHyF_UqPKtk",
+      "title": "Konferencija „Izazovi implementacije umjetne inteligencije u poduzeća”",
+      "channel": "slo_cro_gospodarska_komora",
+      "channel_name": "SLO-CRO gospodarska komora",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2024-05-06",
+      "duration_seconds": 7379,
+      "speaking_seconds": 980,
+      "speaking_share": 0.133,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 1544,
+      "deep_link": "https://domovina.ai/v/hHyF_UqPKtk/t/1544"
+    },
+    {
+      "youtube_id": "FFdkjhc9hEY",
+      "title": "Marijana Šarolić Robić (razgovor)",
+      "channel": "cotrugli_business_school",
+      "channel_name": "COTRUGLI Business School",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2023-08-23",
+      "duration_seconds": 292,
+      "speaking_seconds": 268,
+      "speaking_share": 0.918,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 6,
+      "deep_link": "https://domovina.ai/v/FFdkjhc9hEY/t/6"
+    },
+    {
+      "youtube_id": "CZZiby8IAUQ",
+      "title": "Umjetna inteligencija — potencijal i rizici, koristi i vrijednost za gospodarstvo",
+      "channel": "poslovni_dnevnik",
+      "channel_name": "Poslovni dnevnik",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2022-10-20",
+      "duration_seconds": 2598,
+      "speaking_seconds": 1210,
+      "speaking_share": 0.466,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 51,
+      "deep_link": "https://domovina.ai/v/CZZiby8IAUQ/t/51"
+    },
+    {
+      "youtube_id": "AVsBPQ7iLSQ",
+      "title": "N1 podcast: Kritičko mišljenje i umjetna inteligencija",
+      "channel": "n1",
+      "channel_name": "N1",
+      "channel_youtube_id": "UCpglal7d5mhV4lA1b3-DsCw",
+      "channel_tracked": false,
+      "upload_date": "2022-04-01",
+      "duration_seconds": 3076,
+      "speaking_seconds": 1488,
+      "speaking_share": 0.484,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 0,
+      "deep_link": "https://domovina.ai/v/AVsBPQ7iLSQ"
+    },
+    {
+      "youtube_id": "R3W0fskEptk",
+      "title": "Moderne tehnologije i budućnost prava",
+      "channel": "leadershe",
+      "channel_name": "LeaderSHE",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2022-03-11",
+      "duration_seconds": 4886,
+      "speaking_seconds": 1032,
+      "speaking_share": 0.211,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 402,
+      "deep_link": "https://domovina.ai/v/R3W0fskEptk/t/402"
+    },
+    {
+      "youtube_id": "UaRMz1geMag",
+      "title": "MAKK 2021: Autorsko pravo i umjetna inteligencija (panel)",
+      "channel": "hds_zamp",
+      "channel_name": "HDS ZAMP",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2021-12-17",
+      "duration_seconds": 4993,
+      "speaking_seconds": 806,
+      "speaking_share": 0.161,
+      "tier": "primary",
+      "magisterium_score": 74,
+      "first_ts": 1210,
+      "deep_link": "https://domovina.ai/v/UaRMz1geMag/t/1210"
+    },
+    {
+      "youtube_id": "5c9yfPm8yfs",
+      "title": "Practices of Software Patenting (izlaganje)",
+      "channel": "knowing_ipr",
+      "channel_name": "KnowING IPR",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2021-12-03",
+      "duration_seconds": 2393,
+      "speaking_seconds": 2140,
+      "speaking_share": 0.894,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 18,
+      "deep_link": "https://domovina.ai/v/5c9yfPm8yfs/t/18"
+    },
+    {
+      "youtube_id": "Ib7ebBOAwWs",
+      "title": "Critical thinking leadership — Lideri među nama",
+      "channel": "poduzetnicki_mindset",
+      "channel_name": "Poduzetnički Mindset",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2021-11-18",
+      "duration_seconds": 638,
+      "speaking_seconds": 402,
+      "speaking_share": 0.63,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 27,
+      "deep_link": "https://domovina.ai/v/Ib7ebBOAwWs/t/27"
+    },
+    {
+      "youtube_id": "davaNFH62oQ",
+      "title": "Ima li mjesta za mene u svijetu umjetne inteligencije?",
+      "channel": "tedxzagreb",
+      "channel_name": "TEDxZagreb",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2021-11-09",
+      "duration_seconds": 593,
+      "speaking_seconds": 570,
+      "speaking_share": 0.961,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 4,
+      "deep_link": "https://domovina.ai/v/davaNFH62oQ/t/4"
+    },
+    {
+      "youtube_id": "cZqcZRBiGQo",
+      "title": "Migrant Talent Garden — Creating and testing an idea",
+      "channel": "mtg_zip",
+      "channel_name": "MTG ZIP",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2021-04-21",
+      "duration_seconds": 4272,
+      "speaking_seconds": 1320,
+      "speaking_share": 0.309,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 220,
+      "deep_link": "https://domovina.ai/v/cZqcZRBiGQo/t/220"
+    },
+    {
+      "youtube_id": "GCho3KkCjGc",
+      "title": "The 3rd Athena40 Global Conversation in Zagreb",
+      "channel": "global_thinkers_forum",
+      "channel_name": "Global Thinkers Forum",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2021-03-25",
+      "duration_seconds": 2507,
+      "speaking_seconds": 640,
+      "speaking_share": 0.255,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 505,
+      "deep_link": "https://domovina.ai/v/GCho3KkCjGc/t/505"
+    },
+    {
+      "youtube_id": "r6VnaAZDmF8",
+      "title": "Fireside chat #2: Marijana Šarolić Robić",
+      "channel": "biznis_world",
+      "channel_name": "Biznis World",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2020-11-05",
+      "duration_seconds": 2150,
+      "speaking_seconds": 1804,
+      "speaking_share": 0.839,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 12,
+      "deep_link": "https://domovina.ai/v/r6VnaAZDmF8/t/12"
+    },
+    {
+      "youtube_id": "C0twNvhPq7g",
+      "title": "Pokloni znanje: „Kako zauzdati i zajahati AI”",
+      "channel": "mba_croatia",
+      "channel_name": "MBA Croatia",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2020-09-21",
+      "duration_seconds": 3649,
+      "speaking_seconds": 2960,
+      "speaking_share": 0.811,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 33,
+      "deep_link": "https://domovina.ai/v/C0twNvhPq7g/t/33"
+    },
+    {
+      "youtube_id": "PrPHDgVlqIA",
+      "title": "Panel rasprava: Pravo i nove tehnologije",
+      "channel": "ius_info",
+      "channel_name": "IUS-INFO",
+      "channel_youtube_id": null,
+      "channel_tracked": false,
+      "upload_date": "2020-04-20",
+      "duration_seconds": 2858,
+      "tier": "primary",
+      "magisterium_score": null,
+      "first_ts": 0,
+      "deep_link": "https://domovina.ai/v/PrPHDgVlqIA"
+    }
+  ],
+  "cameo_episodes": [],
+  "timeline": [
+    {
+      "month": "2020-04",
+      "count": 1
+    },
+    {
+      "month": "2020-09",
+      "count": 1
+    },
+    {
+      "month": "2020-11",
+      "count": 1
+    },
+    {
+      "month": "2021-03",
+      "count": 1
+    },
+    {
+      "month": "2021-04",
+      "count": 1
+    },
+    {
+      "month": "2021-11",
+      "count": 2
+    },
+    {
+      "month": "2021-12",
+      "count": 2
+    },
+    {
+      "month": "2022-03",
+      "count": 1
+    },
+    {
+      "month": "2022-04",
+      "count": 1
+    },
+    {
+      "month": "2022-10",
+      "count": 1
+    },
+    {
+      "month": "2023-08",
+      "count": 1
+    },
+    {
+      "month": "2024-05",
+      "count": 1
+    },
+    {
+      "month": "2025-06",
+      "count": 1
+    },
+    {
+      "month": "2026-02",
+      "count": 1
+    },
+    {
+      "month": "2026-06",
+      "count": 1
+    }
+  ],
+  "mentions": [],
+  "mention_episode_count": 0,
+  "mention_channels": [],
+  "mention_timeline": []
+}

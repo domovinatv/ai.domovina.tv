@@ -23,6 +23,7 @@ import '../screens/tv/tv_channel_screen.dart';
 import '../screens/tv/tv_episode_reader_screen.dart';
 import '../screens/tv/tv_episode_screen.dart';
 import '../screens/tv/tv_home_screen.dart';
+import '../screens/tv/tv_person_screen.dart';
 import '../services/tv_mode.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
@@ -75,7 +76,11 @@ GoRouter createRouter() {
           final slug = state.pathParameters['slug']!;
           return NoTransitionPage(
             key: ValueKey('person-$slug'),
-            child: PersonScreen(slug: slug),
+            // Android TV (Leanback) dobiva 10-foot pandan — grid epizoda s
+            // D-pad navigacijom; vidi TvPersonScreen.
+            child: TvMode.isTv
+                ? TvPersonScreen(slug: slug)
+                : PersonScreen(slug: slug),
           );
         },
       ),

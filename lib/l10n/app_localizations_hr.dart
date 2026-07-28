@@ -3322,4 +3322,114 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get mediaSeekUndoTooltip => 'Poništi skok';
+
+  @override
+  String personCardMeta(int count, String duration) {
+    return 'Osoba · $count ep · $duration';
+  }
+
+  @override
+  String personVirtualChannelSubtitle(
+    int episodes,
+    int channels,
+    String fromYear,
+    String toYear,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      episodes,
+      locale: localeName,
+      other: '$episodes epizoda',
+      few: '$episodes epizode',
+      one: '$episodes epizodi',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      channels,
+      locale: localeName,
+      other: '$channels kanala',
+      few: '$channels kanala',
+      one: '$channels kanalu',
+    );
+    return 'Gostuje u $_temp0 na $_temp1, $fromYear.–$toYear.';
+  }
+
+  @override
+  String personVirtualChannelSubtitleOneYear(
+    int episodes,
+    int channels,
+    String year,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      episodes,
+      locale: localeName,
+      other: '$episodes epizoda',
+      few: '$episodes epizode',
+      one: '$episodes epizodi',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      channels,
+      locale: localeName,
+      other: '$channels kanala',
+      few: '$channels kanala',
+      one: '$channels kanalu',
+    );
+    return 'Gostuje u $_temp0 na $_temp1, $year.';
+  }
+
+  @override
+  String get personSectionEpisodes => 'Epizode';
+
+  @override
+  String get personSectionCameo => 'Kratki nastupi';
+
+  @override
+  String get personSectionCameoHint =>
+      'Epizode u kojima se javlja nakratko — dio šire rasprave, a ne glavni gost.';
+
+  @override
+  String get personSourceChannelUntracked =>
+      'Ovaj kanal još ne pratimo, pa nema svoju stranicu.';
+
+  @override
+  String get personReportError => 'Prijavi grešku';
+
+  @override
+  String get personReportErrorThanks =>
+      'Hvala na dojavi — provjerit ćemo ovu epizodu.';
+
+  @override
+  String get personOptedOut =>
+      'Na zahtjev ove osobe više ne prikazujemo popis nastupa na ovom profilu. Epizode ostaju dostupne na svojim stranicama.';
+
+  @override
+  String get personFollow => 'Prati';
+
+  @override
+  String get personFollowing => 'Pratiš';
+
+  @override
+  String get channelFollow => 'Prati';
+
+  @override
+  String get channelFollowing => 'Pratiš';
+
+  @override
+  String get channelsFilterAll => 'Sve';
+
+  @override
+  String get channelsFilterChannels => 'Kanali';
+
+  @override
+  String get channelsFilterPersons => 'Osobe';
+
+  @override
+  String get homePersonsRailTitle => 'Osobe';
+
+  @override
+  String get homeFollowedRailTitle => 'Novo od praćenih';
+
+  @override
+  String get searchSectionPeople => 'Osobe';
+
+  @override
+  String get tvRailPersons => 'Osobe';
 }
