@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' show Random;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,10 +9,14 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/channel_index.dart';
+import '../../models/person_hub.dart';
 import '../../screens/home/home_feed.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
+import '../../services/person_channel_flag.dart';
+import '../../services/person_index_cache.dart';
 import '../../services/watch_progress_service.dart';
+import '../../widgets/person_monogram.dart';
 import 'widgets/tv_channel_card.dart';
 import 'widgets/tv_episode_card.dart';
 import 'widgets/tv_focus.dart';
@@ -19,6 +24,7 @@ import 'widgets/tv_hero.dart';
 import 'widgets/tv_boot_splash.dart';
 import 'widgets/tv_metrics.dart';
 import 'widgets/tv_rail.dart';
+import 'widgets/tv_row_traversal.dart';
 
 /// Faza 2 TV home screen.
 ///
@@ -75,22 +81,54 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   List<ChannelSummary>? _shuffledOrder;
   final _shuffleRandom = Random();
 
+  // Lane "Osobe" (virtualni kanali) — iza PersonChannelFlaga. Flag se NE čita
+  // prvi put u build(): `isOn` pri prvom čitanju pokrene učitavanje koje u
+  // `?vk=1` grani sinkrono zove notifyListeners(), pa bi poziv iz build faze
+  // srušio frame. Zato lokalna kopija koju pune initState + listener.
+  bool _vkOn = false;
+  final _personIndexCache = personIndexCache;
+
   @override
   void initState() {
     super.initState();
     log('TvHomeScreen.init (Faza 2 — real data wiring)');
     _channelCache.addListener(_onCacheUpdate);
     WatchProgressService.instance.addListener(_loadContinueWatching);
+    PersonChannelFlag.instance.addListener(_onFlagChanged);
+    _personIndexCache.addListener(_onPersonIndexUpdate);
     _loadContinueWatching();
+    unawaited(Future.microtask(_initPersonChannelFlag));
   }
 
   @override
   void dispose() {
     _channelCache.removeListener(_onCacheUpdate);
     WatchProgressService.instance.removeListener(_loadContinueWatching);
+    PersonChannelFlag.instance.removeListener(_onFlagChanged);
+    _personIndexCache.removeListener(_onPersonIndexUpdate);
     _searchFocus.dispose();
     _heroPlayFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _initPersonChannelFlag() async {
+    await PersonChannelFlag.instance.init();
+    _onFlagChanged();
+  }
+
+  /// Indeks osoba se dohvaća SAMO kad je flag upaljen — bez njega je to
+  /// nepotreban mrežni poziv na endpoint koji do F2 ionako vraća 404.
+  void _onFlagChanged() {
+    if (!mounted) return;
+    final on = PersonChannelFlag.instance.isOn;
+    if (on != _vkOn) setState(() => _vkOn = on);
+    if (on && !_personIndexCache.loaded) {
+      unawaited(_personIndexCache.loadIndex());
+    }
+  }
+
+  void _onPersonIndexUpdate() {
+    if (mounted) setState(() {});
   }
 
   void _onCacheUpdate() {
@@ -144,6 +182,12 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     context.go('/c/$slug');
   }
 
+  /// Person slug ide DOSLOVNO (bez `-`↔`_` transformacije koju rade kanali).
+  void _openPerson(PersonSummary person) {
+    log('TvHome: navigate ${person.routePath}');
+    context.go(person.routePath);
+  }
+
   bool _loggedDimensions = false;
 
   @override
@@ -193,26 +237,34 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               SingleActivator(LogicalKeyboardKey.arrowRight):
                   DirectionalFocusIntent(TraversalDirection.right),
             },
-            child: FutureBuilder<ChannelIndex>(
-              future: _indexFuture,
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return _buildLoading(theme, metrics);
-                }
-                if (snap.hasError) {
-                  return _buildError(theme, l, snap.error);
-                }
-                // Index ucitan — kick off per-channel prefetch.
-                final channels = snap.data!.channels;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _channelCache.prefetchAll(channels);
-                  _maybeBootstrapFeatured();
-                });
-                // Tips karousel ostaje vidljiv sve dok featured nije picked
-                // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
-                if (!_bootReady) return _buildLoading(theme, metrics);
-                return _buildContent(theme, l, metrics, channels);
-              },
+            // Retkovna D-pad politika: GORE/DOLJE uvijek ide na susjedni rail
+            // (bez nje se lane s malo kartica uz lijevi rub — „Osobe" — nikad
+            // ne dosegne kad se silazi iz sredine šireg raila). LIJEVO/DESNO
+            // ostaje default, pa kretanje unutar railova i mreže kanala nije
+            // dirano. Vidi widgets/tv_row_traversal.dart.
+            child: FocusTraversalGroup(
+              policy: TvRowTraversalPolicy(),
+              child: FutureBuilder<ChannelIndex>(
+                future: _indexFuture,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return _buildLoading(theme, metrics);
+                  }
+                  if (snap.hasError) {
+                    return _buildError(theme, l, snap.error);
+                  }
+                  // Index ucitan — kick off per-channel prefetch.
+                  final channels = snap.data!.channels;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _channelCache.prefetchAll(channels);
+                    _maybeBootstrapFeatured();
+                  });
+                  // Tips karousel ostaje vidljiv sve dok featured nije picked
+                  // I thumbnail preloadan — vidi `_maybeBootstrapFeatured`.
+                  if (!_bootReady) return _buildLoading(theme, metrics);
+                  return _buildContent(theme, l, metrics, channels);
+                },
+              ),
             ),
           ),
         ),
@@ -254,6 +306,10 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     List<ChannelSummary> channels,
   ) {
     final allVids = _channelCache.allVideos;
+    // Lane "Osobe": samo osobe koje backend proglasi virtualnim kanalom (prag
+    // + opt-out); prazno dok je flag ugašen ili indeks nije stigao.
+    final persons =
+        _vkOn ? _personIndexCache.virtualChannels : const <PersonSummary>[];
     // Cekamo full prefetch prije nego pick-amo featured — bez ovoga
     // HomeFeed.pickFeatured se rebuilda na svakom channel cache update-u
     // (30% threshold pa onda done), pa korisnik vidi flash izmedju kandidata
@@ -338,6 +394,29 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             _buildRailSkeleton(theme, metrics, l.tvRailLatestEpisodes),
 
           SizedBox(height: metrics.sectionGap),
+
+          // Lane "Osobe" — virtualni kanali (osoba koja gostuje kroz tuđe
+          // kanale). Prazan dok flag nije upaljen ILI dok backend nema
+          // /api/persons; tada se sekcija jednostavno ne crta.
+          if (persons.isNotEmpty) ...[
+            TvRail(
+              eyebrow: l.tvRailPersons,
+              height: metrics.channelRailHeight,
+              cardSpacing: metrics.cardSpacing,
+              horizontalPadding: EdgeInsets.symmetric(
+                horizontal: metrics.pagePadH,
+              ),
+              cards: [
+                for (final p in persons)
+                  _TvPersonCard(
+                    person: p,
+                    size: metrics.channelCardSize,
+                    onTap: () => _openPerson(p),
+                  ),
+              ],
+            ),
+            SizedBox(height: metrics.sectionGap),
+          ],
 
           if (channels.isNotEmpty)
             _buildChannelsSection(theme, l, metrics, channels),
@@ -758,6 +837,70 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 }
 
 enum _ChannelSort { shuffle, alpha, countDesc, countAsc }
+
+/// Kartica osobe u laneu "Osobe" — vizualno blizanac [TvChannelCard] (isti
+/// kvadrat, ista tipografija), jer osoba mora stajati ravnopravno uz kanal.
+///
+/// Razlika: avatar je [PersonMonogram] (osoba nema cover — odluka O5 u
+/// `docs/plans/virtualni-kanali.md`), a to da je riječ o osobi nosi eyebrow
+/// naslov rail-a. Meta redak ostaje broj epizoda kao kod kanala — puni
+/// „Osoba · N ep · Xh Ym" ne stane u širinu TV kartice bez odsijecanja.
+class _TvPersonCard extends StatelessWidget {
+  final PersonSummary person;
+  final double size;
+  final VoidCallback onTap;
+
+  const _TvPersonCard({
+    required this.person,
+    required this.size,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+
+    return TvFocusable(
+      onActivate: onTap,
+      builder: (context, focused) => SizedBox(
+        width: size,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PersonMonogram(
+              name: person.name,
+              avatarUrl: person.avatarUrl,
+              size: size,
+              radius: 0,
+            ),
+            const SizedBox(height: 8),
+            // Do 3 reda imena bez ellipsis-a — isto pravilo kao TvChannelCard
+            // (duga imena se prelijevaju, ne odsijecaju).
+            Text(
+              person.name,
+              maxLines: 3,
+              softWrap: true,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l.tvEpisodeCountPlural(person.episodeCount),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SkeletonBar extends StatelessWidget {
   final double width;

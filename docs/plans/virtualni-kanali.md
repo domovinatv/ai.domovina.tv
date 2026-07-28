@@ -585,6 +585,11 @@ do tada testiraju samo s `?vk=1`.
 3. **Prije nego MSR kanal ode javno** — šalje li se nacrt poruke iz
    `MSR-OBRADENI-VIDEI.md` i čeka odgovor, ili kanal ide javno odmah po F1?
    Blokira javnu vidljivost, ne sam ETL run.
+   **Dopuna iz reviewa r3:** prije nego F2 počne isporučivati `avatar_url`,
+   TV putanja `PersonMonogram`-a mora prijeći na `CachedThumbnail` (danas
+   `Image.network`, mrtva putanja dok je avatar null). Uz to, rubni slučaj:
+   gašenje flaga dok je aktivan filter „Osobe" u `/channels` ostavlja praznu
+   listu do reloada — reset `_filter` na `all` u `_onFlagChanged`.
 4. **Avatar** — smijemo li koristiti kadar iz videa (postojeći screenshot s CDN-a)
    kao avatar osobe, ili samo monogram dok osoba ne pošalje sliku? Blokira T3/T7
    vizualno, ne funkcionalno.
@@ -685,7 +690,9 @@ do tada testiraju samo s `?vk=1`.
   `lib/screens/home/person_card.dart` (novi),
   `lib/screens/home/persons_rail.dart` (novi),
   `lib/screens/home/home_screen.dart`,
-  `lib/screens/search/meili_search_screen.dart`
+  `lib/screens/home/search_overlay.dart` *(ispravak iz reviewa r3: plan je
+  krivo naveo `meili_search_screen.dart` — to je lokalni Meilisearch PoC;
+  command palette iz O6 živi u `search_overlay.dart`)*
 - **Opis**: filter chipovi Sve/Kanali/Osobe u `AllChannelsView` (lista ostaje lazy
   `SliverList`, osobe ulaze samo s `isVirtualChannel`). `PersonCard` je **novi**
   fajl koji reproducira SQUARE layout `ChannelCard`-a — `channel_card.dart` se

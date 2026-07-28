@@ -22,6 +22,7 @@ import 'footer.dart';
 import 'home_app_bar.dart';
 import 'home_feed.dart';
 import 'hero_carousel.dart';
+import 'persons_rail.dart';
 import 'search_overlay.dart';
 import 'skeletons.dart';
 import 'sort_mode.dart';
@@ -476,6 +477,11 @@ class _ChannelGridView extends StatelessWidget {
                           .toList(),
                     ),
                   ),
+
+                // Rail "Osobe" — virtualni kanali (osobe). Sam se sakrije kad je
+                // PersonChannelFlag ugašen ili indeks nije dostupan, pa home
+                // bez flaga izgleda točno kao prije. Vidi persons_rail.dart.
+                SliverToBoxAdapter(child: PersonsRail(isMobile: isMobile)),
 
                 // Puni popis kanala je premjesten s home-a na zaseban surface
                 // (lazy lista + filter) radi scroll-perf-a — na home-u sad samo

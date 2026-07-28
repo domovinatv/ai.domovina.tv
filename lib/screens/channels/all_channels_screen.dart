@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -6,9 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/channel_index.dart';
+import '../../models/person_hub.dart';
 import '../../services/channel_cache.dart';
+import '../../services/person_channel_flag.dart';
+import '../../services/person_index_cache.dart';
+import '../../theme/app_theme.dart';
 import '../../utils/text_search.dart';
 import '../home/channel_card.dart';
+import '../home/person_card.dart';
 import '../home/sort_mode.dart';
 
 /// Standalone "Svi kanali" ekran — odvojen od home-a (scroll-perf).
@@ -50,9 +56,22 @@ class AllChannelsScreen extends StatelessWidget {
   }
 }
 
-/// Sadrzaj surface-a: search bar + sort red + lazy lista kanala.
+/// Filter kataloga — kanali i osobe (virtualni kanali) žive u ISTOJ lazy listi
+/// (odluka O9 u `docs/plans/virtualni-kanali.md`); chip samo suzava prikaz.
+/// Vidljiv je tek kad je `PersonChannelFlag` upaljen I indeks osoba ima barem
+/// jednu osobu — bez toga katalog izgleda točno kao prije.
+enum _CatalogFilter { all, channels, persons }
+
+/// Jedan redak kataloga: ILI kanal ILI osoba (nikad oboje). Namjerno nije
+/// zajednički model — `ChannelSummary` nosi `UC…` id, cover dimenzije i
+/// ownership/pinka reference koje osoba nema, pa bi zajednički tip značio
+/// null-guardove kroz cijeli lanac (odbačena opcija (a) u O1).
+typedef _CatalogEntry = ({ChannelSummary? channel, PersonSummary? person});
+
+/// Sadrzaj surface-a: search bar + filter chipovi + sort red + lazy lista
+/// kanala i osoba.
 ///
-/// Self-contained — ucita index + sort sam.
+/// Self-contained — ucita index kanala, indeks osoba i sort sam.
 class AllChannelsView extends StatefulWidget {
   const AllChannelsView({super.key});
 
@@ -71,6 +90,11 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   List<String>? _customOrder;
   bool _ready = false;
 
+  // Osobe kao virtualni kanali — prazno dok flag ne stigne ili dok backend
+  // nema `/api/persons` (F2). Oba slučaja daju današnji katalog.
+  _CatalogFilter _filter = _CatalogFilter.all;
+  bool _flagOn = false;
+
   @override
   void initState() {
     super.initState();
@@ -79,7 +103,29 @@ class _AllChannelsViewState extends State<AllChannelsView> {
         setState(() => _query = _searchCtrl.text);
       }
     });
+    // Flag/indeks se čitaju IZVAN build faze: prvo čitanje `isOn` pokreće
+    // `_load()`, koji u `?vk=1` grani zove `notifyListeners()` sinkrono — iz
+    // build()-a bi to srušilo frame. Zato microtask + lokalno stanje.
+    PersonChannelFlag.instance.addListener(_onFlagChanged);
+    personIndexCache.addListener(_onIndexChanged);
+    unawaited(Future.microtask(_initPersonChannels));
     _init();
+  }
+
+  Future<void> _initPersonChannels() async {
+    unawaited(personIndexCache.loadIndex());
+    await PersonChannelFlag.instance.init();
+    _onFlagChanged();
+  }
+
+  void _onFlagChanged() {
+    final on = PersonChannelFlag.instance.isOn;
+    if (!mounted || on == _flagOn) return;
+    setState(() => _flagOn = on);
+  }
+
+  void _onIndexChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _init() async {
@@ -102,6 +148,8 @@ class _AllChannelsViewState extends State<AllChannelsView> {
 
   @override
   void dispose() {
+    PersonChannelFlag.instance.removeListener(_onFlagChanged);
+    personIndexCache.removeListener(_onIndexChanged);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -109,16 +157,50 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   List<ChannelSummary> get _ordered =>
       applySortMode(_channels, _sortMode, customOrder: _customOrder);
 
-  /// Vidljiva lista nakon filtera. Prazan upit → puni (sortirani) popis;
-  /// inace dijakritik-neosjetljiv match na imenu, najbolji rezultat prvi.
-  List<ChannelSummary> get _visible {
-    final ordered = _ordered;
+  /// Osobe koje smiju stajati uz kanale — backend je već primijenio prag i
+  /// opt-out (`is_virtual_channel`), frontend ne preračunava. Najviše nastupa
+  /// prvo; sort modovi kanala se na osobe ne primjenjuju (rade nad
+  /// `ChannelSummary` poljima koja osoba nema).
+  List<PersonSummary> get _persons {
+    final list =
+        List<PersonSummary>.from(personIndexCache.virtualChannels);
+    list.sort((a, b) => b.episodeCount.compareTo(a.episodeCount));
+    return list;
+  }
+
+  /// Ima li se uopće što filtrirati — chipovi i osobe se pojave samo tada.
+  bool get _personsEnabled =>
+      _flagOn && personIndexCache.virtualChannels.isNotEmpty;
+
+  bool get _showsPersons =>
+      _personsEnabled && _filter != _CatalogFilter.channels;
+
+  /// Vidljiva lista nakon filtera. Prazan upit → puni (sortirani) popis
+  /// kanala pa osobe; inace dijakritik-neosjetljiv match na imenu preko OBA
+  /// tipa, najbolji rezultat prvi (pa "sarolic" i "šarolić" nađu osobu i kad
+  /// je katalog pun kanala).
+  List<_CatalogEntry> get _visible {
+    final channels = _filter == _CatalogFilter.persons
+        ? const <ChannelSummary>[]
+        : _ordered;
+    final persons = _showsPersons ? _persons : const <PersonSummary>[];
     final q = _query.trim();
-    if (q.isEmpty) return ordered;
-    final scored = <(double, ChannelSummary)>[];
-    for (final c in ordered) {
+
+    if (q.isEmpty) {
+      return [
+        for (final c in channels) (channel: c, person: null),
+        for (final p in persons) (channel: null, person: p),
+      ];
+    }
+
+    final scored = <(double, _CatalogEntry)>[];
+    for (final c in channels) {
       final s = localMatchScore(q, c.name);
-      if (s > 0) scored.add((s, c));
+      if (s > 0) scored.add((s, (channel: c, person: null)));
+    }
+    for (final p in persons) {
+      final s = localMatchScore(q, p.name);
+      if (s > 0) scored.add((s, (channel: null, person: p)));
     }
     scored.sort((a, b) => b.$1.compareTo(a.$1));
     return scored.map((e) => e.$2).toList();
@@ -147,6 +229,9 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     context.go('/c/$slug');
   }
 
+  /// Person slug ide DOSLOVNO (bez `-`↔`_` pretvorbe koju rade kanali).
+  void _openPerson(PersonSummary person) => context.go(person.routePath);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -154,6 +239,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _searchBar(theme),
+        if (_personsEnabled) _filterChips(theme),
         _toolbar(theme),
         Expanded(
           child: !_ready
@@ -196,6 +282,52 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     );
   }
 
+  /// Sve / Kanali / Osobe. Chipovi stanu u red i na uskom mobitelu (tri kratke
+  /// riječi), pa nema scrollabla — a time ni pravila o paddingu unutar liste.
+  Widget _filterChips(ThemeData theme) {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Row(
+        children: [
+          _filterChip(theme,
+              label: l.channelsFilterAll, value: _CatalogFilter.all),
+          const SizedBox(width: 8),
+          _filterChip(theme,
+              label: l.channelsFilterChannels, value: _CatalogFilter.channels),
+          const SizedBox(width: 8),
+          _filterChip(theme,
+              label: l.channelsFilterPersons,
+              value: _CatalogFilter.persons,
+              identifier: 'channels-filter-persons'),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(ThemeData theme,
+      {required String label,
+      required _CatalogFilter value,
+      String? identifier}) {
+    final selected = _filter == value;
+    // Brand-fill je navy (AppTheme.croBlue) + brandRim — NE cs.primary, koji
+    // M3 dark shema izblijedi.
+    final chip = ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => setState(() => _filter = value),
+      labelStyle: theme.textTheme.labelMedium?.copyWith(
+        color: selected ? Colors.white : theme.colorScheme.onSurfaceVariant,
+      ),
+      selectedColor: AppTheme.croBlue,
+      side: selected ? AppTheme.brandRim(theme.brightness) : BorderSide.none,
+      showCheckmark: false,
+      visualDensity: VisualDensity.compact,
+    );
+    if (identifier == null) return chip;
+    return Semantics(identifier: identifier, container: true, child: chip);
+  }
+
   Widget _toolbar(ThemeData theme) {
     final l = AppLocalizations.of(context);
     final count = _visible.length;
@@ -204,9 +336,11 @@ class _AllChannelsViewState extends State<AllChannelsView> {
       child: Row(
         children: [
           Text(
-            _query.trim().isEmpty
-                ? l.channelChannelsCount(count)
-                : l.channelResultsCount(count),
+            // "X kanala" bi lagalo čim su u listi i osobe — tada brojimo
+            // rezultate.
+            _query.trim().isNotEmpty || _showsPersons
+                ? l.channelResultsCount(count)
+                : l.channelChannelsCount(count),
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -280,10 +414,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
                           if (i > start) const SizedBox(width: 16),
                           SizedBox(
                             width: cardWidth,
-                            child: ChannelCard(
-                              channel: items[i],
-                              onTap: () => _openChannel(items[i]),
-                            ),
+                            child: _card(items[i]),
                           ),
                         ],
                       ],
@@ -298,6 +429,19 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     );
   }
 
+  /// Kartica kanala ili osobe — obje SQUARE forme, pa red drži prirodne visine
+  /// i bez posebnog slučaja.
+  Widget _card(_CatalogEntry entry) {
+    final person = entry.person;
+    if (person != null) {
+      return PersonCard(person: person, onTap: () => _openPerson(person));
+    }
+    final channel = entry.channel!;
+    return ChannelCard(
+      channel: channel,
+      onTap: () => _openChannel(channel),
+    );
+  }
 }
 
 /// Sort selektor za kanale — PopupMenuButton sa svim sort opcijama + shuffle.

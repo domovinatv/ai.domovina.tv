@@ -11,10 +11,13 @@ import '../../models/channel_detail.dart';
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/entitlement_service.dart';
+import '../../services/person_channel_flag.dart';
+import '../../services/person_index_cache.dart';
 import '../../services/search_service.dart';
 import '../../utils/text_search.dart';
 import '../../widgets/episode_age.dart';
 import '../../widgets/highlight_text.dart';
+import '../../widgets/person_monogram.dart';
 
 import '../../theme/typography.dart';
 import '../../l10n/app_localizations.dart';
@@ -104,10 +107,18 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   final _leftScroll = ScrollController();
   final _rightScroll = ScrollController();
   final _selectedKey = GlobalKey();
+  List<PersonSummary> _visiblePersons = const [];
   List<ChannelSummary> _visibleChannels = const [];
   List<_VideoHit> _visibleVideos = const [];
 
-  int get _leftCount => _visibleChannels.length + _visibleVideos.length;
+  /// Osobe (virtualni kanali) iza `PersonChannelFlag`-a. Lokalni match nad
+  /// `PersonIndexCache`-om — `/api/search` se NE dira (odluka O6 u
+  /// `docs/plans/virtualni-kanali.md`): osobe su egzaktan lookup po imenu, a
+  /// lokalni match je brži, jeftiniji i radi offline.
+  bool _flagOn = false;
+
+  int get _leftCount =>
+      _visiblePersons.length + _visibleChannels.length + _visibleVideos.length;
   int get _rightCount => _semanticResults.length;
   int get _activeCount => _activePane == 0 ? _leftCount : _rightCount;
 
@@ -120,10 +131,34 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
     });
+    // Flag i indeks osoba se čitaju IZVAN build faze: prvo čitanje
+    // `PersonChannelFlag.isOn` pokreće `_load()`, koji u `?vk=1` grani zove
+    // `notifyListeners()` sinkrono — iz build()-a bi to srušilo frame.
+    PersonChannelFlag.instance.addListener(_onFlagChanged);
+    personIndexCache.addListener(_onPersonIndexChanged);
+    unawaited(Future.microtask(_initPersons));
+  }
+
+  Future<void> _initPersons() async {
+    unawaited(personIndexCache.loadIndex());
+    await PersonChannelFlag.instance.init();
+    _onFlagChanged();
+  }
+
+  void _onFlagChanged() {
+    final on = PersonChannelFlag.instance.isOn;
+    if (!mounted || on == _flagOn) return;
+    setState(() => _flagOn = on);
+  }
+
+  void _onPersonIndexChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    PersonChannelFlag.instance.removeListener(_onFlagChanged);
+    personIndexCache.removeListener(_onPersonIndexChanged);
     _debounce?.cancel();
     _semanticDebounce?.cancel();
     _leftScroll.dispose();
@@ -270,14 +305,19 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     if (_activated) return;
     if (_activeCount == 0) return;
     _activated = true;
+    // Router se uzima PRIJE pop-a — nakon njega ovaj context više nije u stablu.
+    final router = GoRouter.of(context);
     Navigator.of(context).pop();
     if (_activePane == 0) {
+      final p = _visiblePersons.length;
       final c = _visibleChannels.length;
       final i = _leftSel.clamp(0, _leftCount - 1);
-      if (i < c) {
-        widget.onSelectChannel(_visibleChannels[i]);
+      if (i < p) {
+        router.go(_visiblePersons[i].routePath);
+      } else if (i < p + c) {
+        widget.onSelectChannel(_visibleChannels[i - p]);
       } else {
-        widget.onSelectVideo(_visibleVideos[i - c].video.id);
+        widget.onSelectVideo(_visibleVideos[i - p - c].video.id);
       }
     } else {
       final r = _semanticResults[_rightSel.clamp(0, _rightCount - 1)];
@@ -290,6 +330,20 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   }
 
   // ── Tier 0 scoring ────────────────────────────────────────────
+  /// Osobe koje smiju izgledati kao kanal, dijakritik-neosjetljivo po imenu
+  /// („sarolic" i „šarolić" daju isti pogodak). Prazno kad je flag ugašen ili
+  /// backend još nema `/api/persons`.
+  List<PersonSummary> _localPersons(String q) {
+    if (!_flagOn) return const [];
+    final scored = <(double, PersonSummary)>[];
+    for (final p in personIndexCache.virtualChannels) {
+      final s = localMatchScore(q, p.name);
+      if (s > 0) scored.add((s, p));
+    }
+    scored.sort((a, b) => b.$1.compareTo(a.$1));
+    return scored.take(5).map((e) => e.$2).toList();
+  }
+
   List<ChannelSummary> _localChannels(String q) {
     final scored = <(double, ChannelSummary)>[];
     for (final ch in widget.channels) {
@@ -425,6 +479,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 
   Widget _resultsBody(ThemeData theme, bool twoCol) {
     if (_query.isEmpty) {
+      _visiblePersons = const [];
       _visibleChannels = const [];
       _visibleVideos = const [];
       return _emptyState(theme);
@@ -432,6 +487,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 
     // Izračunaj i spremi vidljive lokalne rezultate (dijele redoslijed s key
     // handlerom).
+    _visiblePersons = _localPersons(_query);
     _visibleChannels = _localChannels(_query);
     _visibleVideos =
         channelCache.allVideos.isNotEmpty ? _localVideos(_query) : const [];
@@ -487,25 +543,35 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     );
   }
 
-  // Lijevi stupac — kanali + epizode (PO NASLOVU). [] ako nema lokalnih.
+  // Lijevi stupac — osobe + kanali + epizode (PO NASLOVU). [] ako nema
+  // lokalnih. Osobe idu PRVE (odluka O6): tko traži ime, traži osobu.
   List<Widget> _leftChildren(ThemeData theme) {
     final l = AppLocalizations.of(context);
+    final p = _visiblePersons.length;
     final c = _visibleChannels.length;
     final v = _visibleVideos.length;
-    if (c == 0 && v == 0) return const [];
+    if (p == 0 && c == 0 && v == 0) return const [];
     return [
+      if (p > 0) ...[
+        _sectionLabel(theme, l.searchSectionPeople),
+        for (var i = 0; i < p; i++)
+          _selectableRow(
+              pane: 0, index: i, child: _personRow(theme, _visiblePersons[i])),
+      ],
       if (c > 0) ...[
         _sectionLabel(theme, l.homeSearchSectionChannels),
         for (var i = 0; i < c; i++)
           _selectableRow(
-              pane: 0, index: i, child: _channelRow(theme, _visibleChannels[i])),
+              pane: 0,
+              index: p + i,
+              child: _channelRow(theme, _visibleChannels[i])),
       ],
       if (v > 0) ...[
         _sectionLabel(theme, l.homeSearchSectionEpisodes),
         for (var i = 0; i < v; i++)
           _selectableRow(
               pane: 0,
-              index: c + i,
+              index: p + c + i,
               child: _videoRow(theme, _visibleVideos[i])),
       ],
     ];
@@ -677,6 +743,59 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Redak osobe — monogram, ime (highlightano), „Osoba · N ep · Xh Ym".
+  /// Vodi na `/p/<slug>`; slug ide DOSLOVNO iz indeksa.
+  Widget _personRow(ThemeData theme, PersonSummary p) {
+    return Semantics(
+      identifier: 'person-card-${p.slug}',
+      container: true,
+      child: InkWell(
+        onTap: () {
+          final router = GoRouter.of(context);
+          Navigator.of(context).pop();
+          router.go(p.routePath);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              PersonMonogram(
+                name: p.name,
+                avatarUrl: p.avatarUrl,
+                size: 40,
+                radius: 8,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    QueryHighlightText(
+                      p.name,
+                      query: _query,
+                      style: theme.textTheme.titleSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      AppLocalizations.of(context)
+                          .personCardMeta(p.episodeCount, p.durationDisplay),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 18, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
       ),
     );
   }
