@@ -3298,4 +3298,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaSeekUndoTooltip => 'Undo the jump';
+
+  @override
+  String personCardMeta(int count, String duration) {
+    return 'Person · $count ep · $duration';
+  }
+
+  @override
+  String personVirtualChannelSubtitle(
+    int episodes,
+    int channels,
+    String fromYear,
+    String toYear,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      episodes,
+      locale: localeName,
+      other: '$episodes episodes',
+      one: '$episodes episode',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      channels,
+      locale: localeName,
+      other: '$channels channels',
+      one: '$channels channel',
+    );
+    return 'Guest in $_temp0 across $_temp1, $fromYear–$toYear.';
+  }
+
+  @override
+  String personVirtualChannelSubtitleOneYear(
+    int episodes,
+    int channels,
+    String year,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      episodes,
+      locale: localeName,
+      other: '$episodes episodes',
+      one: '$episodes episode',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      channels,
+      locale: localeName,
+      other: '$channels channels',
+      one: '$channels channel',
+    );
+    return 'Guest in $_temp0 across $_temp1, $year.';
+  }
+
+  @override
+  String get personSectionEpisodes => 'Episodes';
+
+  @override
+  String get personSectionCameo => 'Short appearances';
+
+  @override
+  String get personSectionCameoHint =>
+      'Episodes where they speak only briefly — part of a wider conversation rather than the main guest.';
+
+  @override
+  String get personSourceChannelUntracked =>
+      'We don\'t cover this channel yet, so it has no page here.';
+
+  @override
+  String get personReportError => 'Report an error';
+
+  @override
+  String get personReportErrorThanks =>
+      'Thanks for the tip — we\'ll check this episode.';
+
+  @override
+  String get personOptedOut =>
+      'At this person\'s request we no longer show the list of their appearances. The episodes remain available on their own pages.';
+
+  @override
+  String get personFollow => 'Follow';
+
+  @override
+  String get personFollowing => 'Following';
+
+  @override
+  String get channelFollow => 'Follow';
+
+  @override
+  String get channelFollowing => 'Following';
+
+  @override
+  String get channelsFilterAll => 'All';
+
+  @override
+  String get channelsFilterChannels => 'Channels';
+
+  @override
+  String get channelsFilterPersons => 'People';
+
+  @override
+  String get homePersonsRailTitle => 'People';
+
+  @override
+  String get homeFollowedRailTitle => 'New from your follows';
+
+  @override
+  String get searchSectionPeople => 'People';
+
+  @override
+  String get tvRailPersons => 'People';
 }

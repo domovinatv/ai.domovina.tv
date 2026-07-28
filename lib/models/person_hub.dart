@@ -31,12 +31,107 @@ String personSlug(String name) {
   return s;
 }
 
+/// Koliko udjela trajanja epizode osoba mora govoriti da nastup bude "glavni".
+/// Odluka O3 u `docs/plans/virtualni-kanali.md`. Granica je INKLUZIVNA.
+const double kPersonPrimaryShareThreshold = 0.15;
+
+/// Apsolutni prag govora (sekunde) koji sam po sebi čini nastup glavnim, bez
+/// obzira na udio — brani kratke samostalne nastupe u dugim panelima.
+/// Granica je INKLUZIVNA.
+const int kPersonPrimarySpeakingSeconds = 300;
+
+/// Razina nastupa osobe u epizodi (odluka O3).
+///
+/// [primary] ulazi u `episode_count` na kartici i u glavni popis epizoda;
+/// [cameo] živi u zasebnoj sekciji "Kratki nastupi" — ne skriva se, ali ne
+/// napuhuje brojku.
+enum PersonEpisodeTier {
+  primary,
+  cameo;
+
+  static PersonEpisodeTier? tryParse(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'primary':
+        return PersonEpisodeTier.primary;
+      case 'cameo':
+        return PersonEpisodeTier.cameo;
+      default:
+        return null;
+    }
+  }
+}
+
+/// Klijentska klasifikacija nastupa kad backend NE pošalje `tier` (stari
+/// odgovor ili epizoda kojoj `speaking_seconds` nije izmjeren).
+///
+/// Pravilo O3: `primary` ako je udio ≥ [kPersonPrimaryShareThreshold] ILI je
+/// govor ≥ [kPersonPrimarySpeakingSeconds]. Bez ijednog mjerenja govora vraća
+/// [PersonEpisodeTier.primary] — graceful degradacija na današnje ponašanje
+/// (sve epizode u jednom popisu), jer bi `cameo` tiho sakrio sadržaj.
+PersonEpisodeTier classifyPersonEpisodeTier({
+  int? speakingSeconds,
+  int? durationSeconds,
+  double? speakingShare,
+}) {
+  if (speakingSeconds == null && speakingShare == null) {
+    return PersonEpisodeTier.primary;
+  }
+  if (speakingSeconds != null && speakingSeconds >= kPersonPrimarySpeakingSeconds) {
+    return PersonEpisodeTier.primary;
+  }
+  final share = speakingShare ??
+      ((durationSeconds != null && durationSeconds > 0 && speakingSeconds != null)
+          ? speakingSeconds / durationSeconds
+          : null);
+  if (share != null && share >= kPersonPrimaryShareThreshold) {
+    return PersonEpisodeTier.primary;
+  }
+  return PersonEpisodeTier.cameo;
+}
+
+/// "13h 39m" iz sekundi — isti oblik kao `ChannelSummary.durationDisplay`, da
+/// kartica osobe i kartica kanala čitaju jednako.
+String personDurationDisplay(int seconds) {
+  final s = seconds < 0 ? 0 : seconds;
+  return '${s ~/ 3600}h ${(s % 3600) ~/ 60}m';
+}
+
 /// Jedna epizoda u kojoj osoba govori.
 class PersonEpisode {
   final String youtubeId;
   final String? title;
+
+  /// Naš interni slug izvornog kanala (`n1`, `slijedi_svoj_poziv_2`).
   final String channel;
   final String uploadDate;
+
+  /// Ime izvornog kanala za prikaz ("N1", "Lider"). Null na starom backendu →
+  /// UI pada na [channel].
+  final String? channelName;
+
+  /// YouTube `UC…` id izvornog kanala. Informativno; ne koristi se za rutanje.
+  final String? channelYoutubeId;
+
+  /// True samo kad izvorni kanal ima svoju `/c/` stranicu u aplikaciji.
+  /// Ad-hoc izvori (N1, Lider, TEDxZagreb…) nisu praćeni kanali → chip NE
+  /// smije biti klikabilan (odluka O4).
+  final bool channelTracked;
+
+  /// Trajanje cijele epizode; null dok ga backend ne pošalje.
+  final int? durationSeconds;
+
+  /// Koliko sekundi osoba govori u toj epizodi (mjeri F2); null ako nije
+  /// izmjereno.
+  final int? speakingSeconds;
+
+  /// [speakingSeconds] / [durationSeconds] kako ga je izračunao backend.
+  final double? speakingShare;
+
+  /// Razina nastupa — s backenda ako je poslana, inače [classifyPersonEpisodeTier].
+  final PersonEpisodeTier tier;
+
+  /// Magisterium ocjena epizode (0–100); null ako epizoda nema obradu.
+  final int? magisteriumScore;
 
   /// Najranija sekunda u kojoj osoba govori u toj epizodi.
   final int firstTs;
@@ -51,7 +146,30 @@ class PersonEpisode {
     required this.uploadDate,
     required this.firstTs,
     required this.deepLink,
+    this.channelName,
+    this.channelYoutubeId,
+    this.channelTracked = false,
+    this.durationSeconds,
+    this.speakingSeconds,
+    this.speakingShare,
+    this.tier = PersonEpisodeTier.primary,
+    this.magisteriumScore,
   });
+
+  bool get isCameo => tier == PersonEpisodeTier.cameo;
+
+  /// Ime kanala za prikaz — pada na interni slug kad backend ne pošalje ime.
+  String get channelDisplayName =>
+      (channelName != null && channelName!.trim().isNotEmpty)
+          ? channelName!
+          : channel;
+
+  /// Ruta `/c/:slug` izvornog kanala — **samo** kad je [channelTracked].
+  /// Null znači "kanal nema stranicu", pa chip ostaje neklikabilan.
+  String? get channelRoutePath {
+    if (!channelTracked || channel.isEmpty) return null;
+    return '/c/${channel.replaceAll('_', '-')}';
+  }
 
   /// In-app ruta iz [deepLink] (path bez sheme/hosta), npr.
   /// `https://domovina.ai/v/ID/t/6` → `/v/ID/t/6`. Fallback na `/v/:id` ako
@@ -66,11 +184,27 @@ class PersonEpisode {
   }
 
   factory PersonEpisode.fromJson(Map<String, dynamic> json) {
+    final durationSeconds = (json['duration_seconds'] as num?)?.toInt();
+    final speakingSeconds = (json['speaking_seconds'] as num?)?.toInt();
+    final speakingShare = (json['speaking_share'] as num?)?.toDouble();
     return PersonEpisode(
       youtubeId: json['youtube_id'] as String? ?? '',
       title: json['title'] as String?,
       channel: json['channel'] as String? ?? '',
       uploadDate: json['upload_date'] as String? ?? '',
+      channelName: json['channel_name'] as String?,
+      channelYoutubeId: json['channel_youtube_id'] as String?,
+      channelTracked: json['channel_tracked'] as bool? ?? false,
+      durationSeconds: durationSeconds,
+      speakingSeconds: speakingSeconds,
+      speakingShare: speakingShare,
+      tier: PersonEpisodeTier.tryParse(json['tier'] as String?) ??
+          classifyPersonEpisodeTier(
+            speakingSeconds: speakingSeconds,
+            durationSeconds: durationSeconds,
+            speakingShare: speakingShare,
+          ),
+      magisteriumScore: (json['magisterium_score'] as num?)?.round(),
       firstTs: (json['first_ts'] as num?)?.toInt() ?? 0,
       deepLink: json['deep_link'] as String? ?? '',
     );
@@ -137,8 +271,58 @@ class PersonHub {
   final List<PersonChannelCount> mentionChannels;
   final List<PersonMonthCount> mentionTimeline;
 
+  /// Epizode s `tier == cameo` koje backend šalje u zasebnom `cameo_episodes[]`.
+  /// Sekcija "Kratki nastupi" na profilu; ne broje se u [episodeCount].
+  final List<PersonEpisode> cameoEpisodes;
+
+  /// `cameo_episode_count` s backenda; fallback na duljinu [cameoAppearances].
+  final int cameoEpisodeCount;
+
+  /// Ukupno trajanje `primary` epizoda. Fallback: zbroj poznatih trajanja.
+  final int totalDurationSeconds;
+
+  /// Prosjek Magisterium ocjena epizoda koje je imaju; null ako nijedna nema.
+  final int? avgMagisteriumScore;
+
+  /// Godina prvog i zadnjeg nastupa (za deterministički podnaslov).
+  final int? firstYear;
+  final int? lastYear;
+
+  /// Osoba je zatražila uklanjanje (O8) — profil ostaje kao MINIMALNI (ime +
+  /// poruka), nikad 404, da već podijeljeni linkovi ne puknu.
+  final bool optout;
+
+  /// Jedan slug pokriva više različitih osoba (kolizija ASCII-folda). Tada se
+  /// kanal-forma NE aktivira — vidi rizik "Kolizija slugova" u planu.
+  final bool ambiguous;
+
+  final bool _isVirtualChannel;
+
+  /// Osoba se prikazuje kao virtualni kanal. Backend računa prag (≥ 3 `primary`
+  /// epizode i bez opt-outa); frontend dodatno gasi formu na [ambiguous], jer
+  /// bi spojena dva identiteta bila kanal koji ne pripada nikome.
+  ///
+  /// Stari backend ne šalje `is_virtual_channel` → false → današnji izgled.
+  bool get isVirtualChannel => _isVirtualChannel && !ambiguous && !optout;
+
   /// Osoba postoji u korpusu samo kroz spomene — nikad nije bila gost.
   bool get isMentionOnly => episodes.isEmpty && mentions.isNotEmpty;
+
+  /// Glavni nastupi iz [episodes]. Backend već šalje samo `primary` u
+  /// `episodes[]`, ali filtriramo i ovdje da klijentska klasifikacija (stari
+  /// odgovor s `speaking_seconds`, bez `tier`) ne propusti cameo u glavni popis.
+  List<PersonEpisode> get primaryEpisodes =>
+      episodes.where((e) => !e.isCameo).toList(growable: false);
+
+  /// Svi kratki nastupi — `cameo_episodes[]` plus ono što je u `episodes[]`
+  /// klasificirano kao cameo.
+  List<PersonEpisode> get cameoAppearances => [
+        ...episodes.where((e) => e.isCameo),
+        ...cameoEpisodes,
+      ];
+
+  /// "13h 39m" — hero/kartica virtualnog kanala.
+  String get durationDisplay => personDurationDisplay(totalDurationSeconds);
 
   const PersonHub({
     required this.name,
@@ -153,7 +337,16 @@ class PersonHub {
     this.mentionCount = 0,
     this.mentionChannels = const [],
     this.mentionTimeline = const [],
-  });
+    this.cameoEpisodes = const [],
+    this.cameoEpisodeCount = 0,
+    this.totalDurationSeconds = 0,
+    this.avgMagisteriumScore,
+    this.firstYear,
+    this.lastYear,
+    this.optout = false,
+    this.ambiguous = false,
+    bool isVirtualChannel = false,
+  }) : _isVirtualChannel = isVirtualChannel;
 
   factory PersonHub.fromJson(Map<String, dynamic> json) {
     final rawChannels = json['channels'] as List<dynamic>? ?? const [];
@@ -164,6 +357,43 @@ class PersonHub {
         json['mention_channels'] as List<dynamic>? ?? const [];
     final rawMentionTimeline =
         json['mention_timeline'] as List<dynamic>? ?? const [];
+    final rawCameo = json['cameo_episodes'] as List<dynamic>? ?? const [];
+
+    final episodes = rawEpisodes
+        .map((e) => PersonEpisode.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final cameoEpisodes = rawCameo
+        .map((e) => PersonEpisode.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final primary = episodes.where((e) => !e.isCameo);
+
+    // Sva agregatna polja imaju izračunat fallback: stari backend ih ne šalje,
+    // a hero/kartica ih traže. Izračun nikad ne izmišlja podatak — zbroji se
+    // samo ono što je stvarno stiglo.
+    final totalDuration = (json['total_duration_seconds'] as num?)?.toInt() ??
+        primary.fold<int>(0, (sum, e) => sum + (e.durationSeconds ?? 0));
+
+    final rawAvg = (json['avg_magisterium_score'] as num?)?.round();
+    final scores = episodes
+        .map((e) => e.magisteriumScore)
+        .whereType<int>()
+        .toList(growable: false);
+    final avgScore = rawAvg ??
+        (scores.isEmpty
+            ? null
+            : (scores.reduce((a, b) => a + b) / scores.length).round());
+
+    final years = episodes
+        .map((e) => int.tryParse(e.uploadDate.split('-').first))
+        .whereType<int>()
+        .where((y) => y > 1900)
+        .toList(growable: false)
+      ..sort();
+    final firstYear = (json['first_year'] as num?)?.toInt() ??
+        (years.isEmpty ? null : years.first);
+    final lastYear =
+        (json['last_year'] as num?)?.toInt() ?? (years.isEmpty ? null : years.last);
+
     return PersonHub(
       name: json['name'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
@@ -173,9 +403,7 @@ class PersonHub {
       channels: rawChannels
           .map((e) => PersonChannelCount.fromJson(e as Map<String, dynamic>))
           .toList(),
-      episodes: rawEpisodes
-          .map((e) => PersonEpisode.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      episodes: episodes,
       timeline: rawTimeline
           .map((e) => PersonMonthCount.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -190,6 +418,156 @@ class PersonHub {
       mentionTimeline: rawMentionTimeline
           .map((e) => PersonMonthCount.fromJson(e as Map<String, dynamic>))
           .toList(),
+      cameoEpisodes: cameoEpisodes,
+      cameoEpisodeCount: (json['cameo_episode_count'] as num?)?.toInt() ??
+          (cameoEpisodes.length + episodes.where((e) => e.isCameo).length),
+      totalDurationSeconds: totalDuration,
+      avgMagisteriumScore: avgScore,
+      firstYear: firstYear,
+      lastYear: lastYear,
+      optout: json['optout'] as bool? ?? false,
+      ambiguous: json['ambiguous'] as bool? ?? false,
+      isVirtualChannel: json['is_virtual_channel'] as bool? ?? false,
+    );
+  }
+}
+
+/// Jedna osoba u indeksu virtualnih kanala (`GET /api/persons`, §4.1 plana).
+///
+/// Namjerno je ODVOJEN model od [PersonHub]: index je popis za katalog/rail/
+/// pretragu (bez epizoda), hub je puni profil. Polje `latest_episode` je
+/// pandan `ChannelSummary.latestVideo`.
+class PersonSummary {
+  final String slug;
+  final String name;
+  final String? avatarUrl;
+
+  /// Broj `primary` epizoda — ista brojka koju hero i kartica prikazuju.
+  final int episodeCount;
+  final int channelCount;
+  final int totalDurationSeconds;
+  final int? avgMagisteriumScore;
+  final int? firstYear;
+  final int? lastYear;
+
+  /// Backend već primjenjuje prag i opt-out; frontend ovo NE preračunava.
+  final bool isVirtualChannel;
+  final PersonLatestEpisode? latestEpisode;
+
+  const PersonSummary({
+    required this.slug,
+    required this.name,
+    this.avatarUrl,
+    this.episodeCount = 0,
+    this.channelCount = 0,
+    this.totalDurationSeconds = 0,
+    this.avgMagisteriumScore,
+    this.firstYear,
+    this.lastYear,
+    this.isVirtualChannel = false,
+    this.latestEpisode,
+  });
+
+  /// "13h 39m" — isti oblik kao na kartici kanala.
+  String get durationDisplay => personDurationDisplay(totalDurationSeconds);
+
+  /// In-app ruta profila. Person slug se koristi DOSLOVNO (bez `-`↔`_`).
+  String get routePath => '/p/$slug';
+
+  /// Inicijali za monogram avatar (T3) — najviše dva slova.
+  String get initials {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty && RegExp(r'^\p{L}', unicode: true).hasMatch(w))
+        .toList();
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  factory PersonSummary.fromJson(Map<String, dynamic> json) {
+    final latest = json['latest_episode'];
+    return PersonSummary(
+      slug: json['slug'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      avatarUrl: json['avatar_url'] as String?,
+      episodeCount: (json['episode_count'] as num?)?.toInt() ?? 0,
+      channelCount: (json['channel_count'] as num?)?.toInt() ?? 0,
+      totalDurationSeconds:
+          (json['total_duration_seconds'] as num?)?.toInt() ?? 0,
+      avgMagisteriumScore: (json['avg_magisterium_score'] as num?)?.round(),
+      firstYear: (json['first_year'] as num?)?.toInt(),
+      lastYear: (json['last_year'] as num?)?.toInt(),
+      isVirtualChannel: json['is_virtual_channel'] as bool? ?? false,
+      latestEpisode: latest is Map<String, dynamic>
+          ? PersonLatestEpisode.fromJson(latest)
+          : null,
+    );
+  }
+}
+
+/// Zadnja epizoda osobe — izvor za rail "Novo od praćenih" (T5).
+class PersonLatestEpisode {
+  final String youtubeId;
+  final String date;
+  final String title;
+
+  const PersonLatestEpisode({
+    required this.youtubeId,
+    required this.date,
+    required this.title,
+  });
+
+  String get routePath => '/v/$youtubeId';
+
+  factory PersonLatestEpisode.fromJson(Map<String, dynamic> json) {
+    return PersonLatestEpisode(
+      youtubeId: json['youtube_id'] as String? ?? '',
+      date: json['date'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+    );
+  }
+}
+
+/// Indeks osoba — pandan [ChannelIndex] za virtualne kanale.
+class PersonIndex {
+  final String version;
+  final int personCount;
+  final List<PersonSummary> persons;
+
+  const PersonIndex({
+    this.version = '1.0',
+    this.personCount = 0,
+    this.persons = const [],
+  });
+
+  /// Prazan indeks — backend bez `/api/persons` (404) ili greška u mreži.
+  static const PersonIndex empty = PersonIndex();
+
+  /// Samo osobe koje smiju izgledati kao kanal (katalog, rail, TV lane).
+  List<PersonSummary> get virtualChannels =>
+      persons.where((p) => p.isVirtualChannel).toList(growable: false);
+
+  PersonSummary? bySlug(String slug) {
+    for (final p in persons) {
+      if (p.slug == slug) return p;
+    }
+    return null;
+  }
+
+  factory PersonIndex.fromJson(Map<String, dynamic> json) {
+    final raw = json['persons'] as List<dynamic>? ?? const [];
+    final persons = raw
+        .whereType<Map<String, dynamic>>()
+        .map(PersonSummary.fromJson)
+        .where((p) => p.slug.isNotEmpty)
+        .toList();
+    return PersonIndex(
+      version: json['version'] as String? ?? '1.0',
+      personCount: (json['person_count'] as num?)?.toInt() ?? persons.length,
+      persons: persons,
     );
   }
 }

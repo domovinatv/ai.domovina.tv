@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "person_count": 3,
+  "persons": [
+    {
+      "slug": "marijana-sarolic-robic",
+      "name": "Marijana Šarolić Robić",
+      "avatar_url": null,
+      "episode_count": 17,
+      "channel_count": 17,
+      "total_duration_seconds": 49151,
+      "avg_magisterium_score": null,
+      "first_year": 2020,
+      "last_year": 2026,
+      "is_virtual_channel": true,
+      "latest_episode": {
+        "youtube_id": "bkp-0X4aG9E",
+        "date": "2026-06-24",
+        "title": "AI revolucija: Tko će biti građani drugog reda? | Marijana Šarolić Robić x Fintech Talks14"
+      }
+    },
+    {
+      "slug": "tomislav-belavic",
+      "name": "Tomislav Belavić",
+      "avatar_url": null,
+      "episode_count": 6,
+      "channel_count": 6,
+      "total_duration_seconds": 0,
+      "avg_magisterium_score": null,
+      "first_year": 2024,
+      "last_year": 2026,
+      "is_virtual_channel": true,
+      "latest_episode": {
+        "youtube_id": "uixJ3kMd0XA",
+        "date": "2026-06-18",
+        "title": "Željka Markić & Narod.hr #156 - Tomislav Belavić"
+      }
+    },
+    {
+      "slug": "don-tomislav-lukac",
+      "name": "don Tomislav Lukač",
+      "avatar_url": "https://cdn.domovina.ai/persons/images/don-tomislav-lukac/avatar_square.png",
+      "episode_count": 2,
+      "channel_count": 1,
+      "total_duration_seconds": 7412,
+      "avg_magisterium_score": 81,
+      "first_year": 2025,
+      "last_year": 2025,
+      "is_virtual_channel": false,
+      "latest_episode": {
+        "youtube_id": "itkHwGmV2e4",
+        "date": "2025-10-04",
+        "title": "PODCAST MREŽNICA"
+      }
+    }
+  ]
+}
