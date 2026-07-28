@@ -25,6 +25,13 @@ const SITE = 'https://domovina.ai';
 // GET .../api/person/<slug> → { name, slug, avatar_url, channel_count, episode_count, ... }.
 // Vidi lib/services/person_service.dart + lib/models/person_hub.dart.
 const PERSON_API = 'https://mcp.domovina.ai/api/person';
+// Enumerabilan popis osoba za sitemap (virtualni kanali). Isporučuje ga F2 u
+// domovina-rag; dok ga nema, fetchJson vrati null i /p/ unosi jednostavno
+// izostanu iz sitemapa. Vidi docs/plans/virtualni-kanali.md §4.1.
+const PERSONS_API = 'https://mcp.domovina.ai/api/persons';
+// Kvadratni avatar osobe na CDN-u (900×900 PNG); produkcija slike je posao
+// fetch.domovina.tv — worker ga samo koristi ako postoji (HEAD provjera).
+const personAvatarUrl = (slug) => `${CDN}/persons/images/${slug}/avatar_square.png`;
 
 // --- Cal.com booking ("15 min DOMOVINA.ai", stepanic/15min) ---------------
 // eventTypeId je stabilan (dohvaćen iz /v2/event-types). Ključ dolazi SAMO iz
@@ -232,6 +239,11 @@ export default {
     if (path === '/.well-known/apple-app-site-association') return wellKnownResponse(AASA_JSON);
     if (path === '/.well-known/webauthn') return wellKnownResponse(WEBAUTHN_JSON);
 
+    // Sitemap — MORA biti prije ASSETS grane ispod: `/sitemap.xml` ima
+    // ekstenziju pa bi ga `/\.\w{1,8}$/` poslao u env.ASSETS.fetch() i dobio
+    // 404 (fajl ne postoji u web/). Jedna ruta, jedan urlset.
+    if (path === '/sitemap.xml') return handleSitemap();
+
     // Cal.com booking proxy — drži CAL_API_KEY server-side (env secret), NIKAD
     // u web bundleu. Slotovi su javni (reflektiraju Google Calendar kolizije),
     // booking POST traži ključ. Flutter app zove same-origin /api/cal/*.
@@ -349,10 +361,16 @@ export default {
     const pMatch = path.match(/^\/p\/([a-z0-9-]{2,80})$/);
     if (pMatch) {
       const slug = pMatch[1];
-      const person = await fetchJson(`${PERSON_API}/${encodeURIComponent(slug)}`);
+      // Avatar provjeravamo paralelno s profilom — HEAD je jeftin i edge-cachiran
+      // (cacheTtl 3600), a inače bi og:image za osobe bez `avatar_url` uvijek
+      // padao na generički brend banner.
+      const [person, hasCdnAvatar] = await Promise.all([
+        fetchJson(`${PERSON_API}/${encodeURIComponent(slug)}`),
+        headOk(personAvatarUrl(slug)),
+      ]);
       if (person && person.name) {
         const indexHtml = await (await indexPromise).text();
-        return htmlResponse(injectPersonTags(indexHtml, slug, person), 'public, max-age=3600, s-maxage=3600');
+        return htmlResponse(injectPersonTags(indexHtml, slug, person, hasCdnAvatar), 'public, max-age=3600, s-maxage=3600');
       }
       // Slug ne postoji (404) ili API nedostupan — Flutter pokaže prazno stanje.
       return htmlResponse(await (await indexPromise).text(), 'no-store');
@@ -421,6 +439,241 @@ async function headOk(url) {
   } catch (_) {
     return false;
   }
+}
+
+// --- Sitemap ---------------------------------------------------------------
+//
+// JEDAN urlset na `/sitemap.xml`: `/`, `/channels`, sve `/c/<slug>`, sve
+// `/p/<slug>` iz `/api/persons` i sve `/v/<id>` epizode (danas 3153). Dinamički
+// jer bi statički fajl zastario između deployeva — novi videi stižu na CDN bez
+// rebuilda appa.
+//
+// Zamka koju build mora zaobići: popis epizoda postoji SAMO u per-kanal
+// JSON-ovima (`channels/data/<id>.json`, ~160 KB × 48 ≈ 7 MB). Naivan build bi
+// po SVAKOM zahtjevu tražio 50 subrequestova i parsanje 7 MB — račun je na
+// Workers Paid (1000 subrequestova, 30 s CPU) pa to nije zid, ali je nepotrebna
+// cijena na svaki dohvat sitemapa. Zato build ide kroz Cache API u dva sloja
+// (`caches.default` NE troši subrequest budžet):
+//
+//   1. gotov XML — `__cache/sitemap.xml`, 1 h → pogodak = 0 subrequestova i
+//      0 parsanja; tom putanjom ide praktički svaki zahtjev
+//   2. per-kanal fragment `<url>` blokova — `__cache/sitemap-frag/<id>/<datum>`,
+//      7 dana; ključ nosi datum zadnjeg videa pa kanal koji je dobio novi video
+//      prirodno promaši i jedini se ponovno dohvaća. Satni rebuild zato košta
+//      2 + (broj promijenjenih kanala) subrequestova, tipično 2–5.
+//
+// Jedna invokacija dohvaća najviše SITEMAP_MAX_CHANNEL_FETCH kanala — gornja
+// granica posla po zahtjevu, s puno rezerve do limita. Ako nakon
+// toga fragmenti nisu svi topli (prazan cache: prvi zahtjev nakon deploya, jer
+// `purge_everything` u deploy skripti briše i Cache API), servira se zadnji
+// POTPUN build (`__cache/sitemap-last.xml`, 24 h); ako ni njega nema, servira se
+// djelomičan XML s eksplicitnim XML komentarom i taj se NE sprema kao potpun.
+// Sljedeći zahtjev nastavlja gdje je stao — nema tihog capa.
+const SITEMAP_CACHE_URL = `${SITE}/__cache/sitemap.xml`;
+const SITEMAP_LAST_CACHE_URL = `${SITE}/__cache/sitemap-last.xml`;
+const sitemapFragmentUrl = (channelId, stamp) =>
+  `${SITE}/__cache/sitemap-frag/${channelId}/${stamp}`;
+// Koliko kanala smije dohvatiti JEDNA invokacija: 40 → 42 subrequesta (od 1000
+// na Workers Paid) i ~6,5 MB parsanja u najgorem slučaju (30 s CPU budžeta).
+// Prazan cache se time zagrije u 2 zahtjeva umjesto 6. Ako broj kanala naraste
+// preko ~100, spusti ovu brojku umjesto da dižeš cijenu jedne invokacije.
+const SITEMAP_MAX_CHANNEL_FETCH = 40;
+const SITEMAP_TTL = 3600;
+const SITEMAP_LAST_TTL = 86400;
+const SITEMAP_FRAGMENT_TTL = 604800;
+
+/** `caches.default` ako runtime ima Cache API (nema ga u Node unit harnessu). */
+function edgeCache() {
+  try {
+    return (typeof caches !== 'undefined' && caches.default) ? caches.default : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function cacheGetText(cache, key) {
+  if (!cache) return null;
+  try {
+    const hit = await cache.match(new Request(key));
+    return hit ? await hit.text() : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function cachePutText(cache, key, text, maxAge) {
+  if (!cache) return;
+  try {
+    await cache.put(new Request(key), new Response(text, {
+      headers: {
+        'Content-Type': 'application/xml; charset=UTF-8',
+        'Cache-Control': `public, max-age=${maxAge}`,
+      },
+    }));
+  } catch (_) {}
+}
+
+/** GET /sitemap.xml — cache-first, build tek na promašaj. */
+async function handleSitemap() {
+  const cache = edgeCache();
+  const cached = await cacheGetText(cache, SITEMAP_CACHE_URL);
+  if (cached) return xmlResponse(cached);
+  return buildSitemap(cache);
+}
+
+/** Channel id (`slijedi_svoj_poziv_2`) → /c/ slug (`slijedi-svoj-poziv-2`). */
+function channelSlug(id) {
+  return String(id || '').replace(/_/g, '-');
+}
+
+/** W3C datum (YYYY-MM-DD) za <lastmod>; null ako oblik nije prepoznat. */
+function lastmodDate(value) {
+  if (typeof value !== 'string') return null;
+  const m = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+
+async function buildSitemap(cache) {
+  const [index, personIndex] = await Promise.all([
+    fetchJson(`${CDN}/channels/data/index.json?${channelCacheBuster()}`),
+    fetchJson(PERSONS_API),
+  ]);
+
+  const generated = lastmodDate(index?.generated_at);
+  // Filtriramo na oblik id-a koji /c/ ruta uopće može poslužiti.
+  const channels = (Array.isArray(index?.channels) ? index.channels : [])
+    .filter((ch) => /^[a-z0-9_]{2,80}$/.test(String(ch?.id ?? '')));
+  const persons = Array.isArray(personIndex?.persons)
+    ? personIndex.persons
+    : (Array.isArray(personIndex) ? personIndex : []);
+
+  const urls = [
+    { loc: `${SITE}/`, lastmod: generated, changefreq: 'daily', priority: '1.0' },
+    { loc: `${SITE}/channels`, lastmod: generated, changefreq: 'daily', priority: '0.8' },
+  ];
+
+  for (const ch of channels) {
+    urls.push({
+      loc: `${SITE}/c/${channelSlug(ch.id)}`,
+      lastmod: lastmodDate(ch?.latest_video?.date) || generated,
+      changefreq: 'weekly',
+      priority: '0.7',
+    });
+  }
+
+  for (const p of persons) {
+    const slug = typeof p?.slug === 'string' ? p.slug : '';
+    // Isti oblik sluga koji hvata /p/ ruta; opt-out osoba (tombstone u
+    // domovina-rag) ne smije u sitemap — profil ostaje živ, ali neindeksiran.
+    if (!/^[a-z0-9-]{2,80}$/.test(slug)) continue;
+    if (p?.optout === true) continue;
+    urls.push({
+      loc: `${SITE}/p/${slug}`,
+      lastmod: lastmodDate(p?.latest_episode?.date),
+      changefreq: 'weekly',
+      priority: '0.6',
+    });
+  }
+
+  // Epizode: prvo sve iz fragment cachea (bez ijednog subrequesta), pa dohvat
+  // najviše SITEMAP_MAX_CHANNEL_FETCH kanala koji fale.
+  const stamps = channels.map(
+    (ch) => lastmodDate(ch?.latest_video?.date) || generated || 'none',
+  );
+  const fragments = await Promise.all(
+    channels.map((ch, i) => cacheGetText(cache, sitemapFragmentUrl(ch.id, stamps[i]))),
+  );
+  const pending = [];
+  fragments.forEach((f, i) => { if (f === null) pending.push(i); });
+  await Promise.all(pending.slice(0, SITEMAP_MAX_CHANNEL_FETCH).map(async (i) => {
+    const frag = await channelEpisodeFragment(channels[i].id);
+    if (frag === null) return; // CDN promašaj → ostaje rupa, build nije potpun
+    fragments[i] = frag;
+    await cachePutText(
+      cache, sitemapFragmentUrl(channels[i].id, stamps[i]), frag, SITEMAP_FRAGMENT_TTL,
+    );
+  }));
+
+  const holes = fragments.filter((f) => f === null).length;
+  const body = [urls.map(urlXml).join('\n'), ...fragments.filter(Boolean)].join('\n');
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + (holes > 0
+      ? `  <!-- djelomican build: ${holes} kanal(a) jos nije u cacheu; `
+        + 'sljedeci zahtjev nastavlja -->\n'
+      : '')
+    + `${body}\n</urlset>\n`;
+
+  if (holes > 0) {
+    // Radije zadnji POTPUN build (stariji, ali cjelovit) nego djelomičan.
+    const last = await cacheGetText(cache, SITEMAP_LAST_CACHE_URL);
+    return xmlResponse(last || xml);
+  }
+
+  await cachePutText(cache, SITEMAP_CACHE_URL, xml, SITEMAP_TTL);
+  await cachePutText(cache, SITEMAP_LAST_CACHE_URL, xml, SITEMAP_LAST_TTL);
+  return xmlResponse(xml);
+}
+
+/**
+ * `<url>` blokovi svih epizoda jednog kanala; null kad listing nije dostupan
+ * (razlikuje se od "kanal bez videa", koji vrati prazan string).
+ */
+async function channelEpisodeFragment(channelId) {
+  const channel = await fetchJson(
+    `${CDN}/channels/data/${channelId}.json?${channelCacheBuster()}`,
+  );
+  if (!channel || !Array.isArray(channel.videos)) return null;
+
+  const seen = new Set();
+  const urls = [];
+  for (const v of channel.videos) {
+    const id = typeof v?.id === 'string' ? v.id : '';
+    // Isti oblik ID-a koji hvata /v/ ruta gore.
+    if (!/^[A-Za-z0-9_-]{6,20}$/.test(id) || seen.has(id)) continue;
+    seen.add(id);
+    urls.push({
+      loc: `${SITE}/v/${id}`,
+      lastmod: lastmodDate(v?.date),
+      changefreq: 'monthly',
+      priority: '0.5',
+    });
+  }
+  return urls.map(urlXml).join('\n');
+}
+
+function urlXml(u) {
+  return `  <url>\n    <loc>${xmlEscape(u.loc)}</loc>`
+    + (u.lastmod ? `\n    <lastmod>${xmlEscape(u.lastmod)}</lastmod>` : '')
+    + (u.changefreq ? `\n    <changefreq>${u.changefreq}</changefreq>` : '')
+    + (u.priority ? `\n    <priority>${u.priority}</priority>` : '')
+    + '\n  </url>';
+}
+
+function xmlResponse(body) {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      'Cache-Control': `public, max-age=${SITEMAP_TTL}, s-maxage=${SITEMAP_TTL}`,
+    },
+  });
+}
+
+/**
+ * XML escape — obavezan jer u sitemap ulaze slugovi/ID-evi iz vanjskih izvora
+ * (CDN listing, /api/persons). Uz 5 predefiniranih entiteta uklanjamo i
+ * kontrolne znakove koje XML 1.0 uopće ne dopušta (parser bi pukao, ne samo
+ * krivo prikazao).
+ */
+function xmlEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
 }
 
 /**
@@ -689,7 +942,7 @@ function croPlural(n, one, few, many) {
  * Cilj: kad se link dijeli na WhatsApp/Facebook, preview pokaže IME osobe i
  * broj epizoda/kanala — ne generički domovina.ai opis.
  */
-function injectPersonTags(indexHtml, slug, person) {
+function injectPersonTags(indexHtml, slug, person, hasCdnAvatar) {
   const name = (person.name || '').trim() || 'Govornik';
   const epCount = Number(person.episode_count) || (Array.isArray(person.episodes) ? person.episodes.length : 0);
   const chCount = Number(person.channel_count) || (Array.isArray(person.channels) ? person.channels.length : 0);
@@ -718,10 +971,16 @@ function injectPersonTags(indexHtml, slug, person) {
 
   const canonical = `${SITE}/p/${slug}`;
 
-  // og:image — avatar osobe ako postoji (kvadratni headshot), inače brend slika.
+  // og:image prioritet:
+  //   1. person.avatar_url — eksplicitno postavljena slika iz domovina-rag
+  //   2. CDN persons/images/<slug>/avatar_square.png — kad ju je pipeline
+  //      producirao (HEAD provjera u ruti gore)
+  //   3. brend og-image.png
   // WhatsApp voli 1200×630; za kvadratni avatar padamo na summary karticu.
-  const hasAvatar = typeof person.avatar_url === 'string' && person.avatar_url.startsWith('http');
-  const image = hasAvatar ? person.avatar_url : `${SITE}/og-image.png`;
+  const explicitAvatar = typeof person.avatar_url === 'string' && person.avatar_url.startsWith('http');
+  const hasAvatar = explicitAvatar || hasCdnAvatar === true;
+  const avatar = explicitAvatar ? person.avatar_url : personAvatarUrl(slug);
+  const image = hasAvatar ? avatar : `${SITE}/og-image.png`;
   const twitterCard = hasAvatar ? 'summary' : 'summary_large_image';
 
   // Split imena za og profile:first_name/last_name (best-effort).
@@ -736,7 +995,7 @@ function injectPersonTags(indexHtml, slug, person) {
       '@type': 'Person',
       name,
       url: canonical,
-      ...(hasAvatar ? { image: person.avatar_url } : {}),
+      ...(hasAvatar ? { image: avatar } : {}),
       subjectOf: mentionOnly
         ? {
           '@type': 'ItemList',

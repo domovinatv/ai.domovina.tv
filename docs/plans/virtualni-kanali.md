@@ -590,7 +590,10 @@ do tada testiraju samo s `?vk=1`.
    vizualno, ne funkcionalno.
 5. **Tko piše `person_channel_overrides`** — admin UI u `pipeline.domovina.ai`
    (već ima Basic Auth admin) ili ručni SQL zasad? Ne blokira F2, blokira
-   operativno korištenje.
+   operativno korištenje. **Dopuna iz reviewa r2 (28.07.2026.):** „Prijavi
+   grešku" u T3 trenutno završava samo u `log()` + snackbar — dojava ne stiže
+   do nas. Mora dobiti odredište **prije nego flag ode ON** (vezano uz ovo
+   pitanje); do tada je mitigacija iz tablice rizika neaktivna.
 
 ---
 

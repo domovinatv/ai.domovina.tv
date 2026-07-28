@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../main.dart' show log;
 import '../../models/person_hub.dart';
 import '../../services/cdn_config.dart';
 import '../../services/page_meta.dart';
+import '../../services/person_channel_flag.dart';
 import '../../services/person_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/typography.dart';
+import '../../widgets/person_monogram.dart';
 
 /// Javni profil osobe ("person hub") — /p/:slug.
 ///
@@ -23,6 +29,14 @@ import '../../theme/app_theme.dart';
 ///
 /// Slug se prosljeđuje DOSLOVNO iz rute (bez `-`↔`_` transformacije koju rade
 /// kanali) — on je primarni ključ u bazi.
+///
+/// **Kanal-forma (T3, `docs/plans/virtualni-kanali.md`)**: kad je osoba
+/// virtualni kanal ([PersonHub.isVirtualChannel]) i [PersonChannelFlag] je
+/// upaljen (`?vk=1`), hero se prebacuje u kanal-oblik (monogram, eyebrow
+/// „OSOBA · N EP · Xh Ym", deterministički podnaslov), a popis govor-epizoda
+/// se dijeli na „Epizode" (`primary`) i „Kratki nastupi" (`cameo`). Sekcija
+/// „Spominje se u" ostaje nepromijenjena u OBA prikaza — spomen je sadržaj
+/// *o* osobi i namjerno ne ulazi u kanal (odluka O3).
 class PersonScreen extends StatefulWidget {
   final String slug;
 
@@ -39,6 +53,11 @@ class _PersonScreenState extends State<PersonScreen> {
   void initState() {
     super.initState();
     _future = _fetchWithMeta();
+    // Flag se učitava IZVAN build faze: `_load()` u override grani (`?vk=1`)
+    // zove notifyListeners() sinkrono, pa bi poziv iz build()/initState-a
+    // srušio frame ("markNeedsBuild during build"). Mreža je ionako sporija od
+    // ovog microtaska, pa profil nikad ne bljesne u krivom obliku.
+    unawaited(Future.microtask(PersonChannelFlag.instance.init));
   }
 
   @override
@@ -115,18 +134,33 @@ class _PersonScreenState extends State<PersonScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilder<PersonHub?>(
-                future: _future,
-                builder: (context, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final hub = snap.data;
-                  if (hub == null) {
-                    return _NotFound(slug: widget.slug);
-                  }
-                  return _PersonContent(hub: hub);
-                },
+              child: ListenableBuilder(
+                listenable: PersonChannelFlag.instance,
+                builder: (context, _) => FutureBuilder<PersonHub?>(
+                  future: _future,
+                  builder: (context, snap) {
+                    if (snap.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final hub = snap.data;
+                    if (hub == null) {
+                      return _NotFound(slug: widget.slug);
+                    }
+                    // Opt-out (O8) NIJE iza feature flaga: to je zahtjev osobe
+                    // za uklanjanjem, ne prezentacijska varijanta. 404 bi
+                    // razbio već podijeljene linkove, pa ostaje minimalni
+                    // profil. Stari backend ne šalje `optout` → false → ništa
+                    // se ne mijenja.
+                    if (hub.optout) {
+                      return _OptedOutProfile(hub: hub);
+                    }
+                    return _PersonContent(
+                      hub: hub,
+                      channelForm:
+                          hub.isVirtualChannel && PersonChannelFlag.instance.isOn,
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -193,6 +227,49 @@ class _NotFound extends StatelessWidget {
   }
 }
 
+/// Minimalni profil nakon opt-outa (O8): ime + objašnjenje, bez ijednog
+/// nastupa. Namjerno NIJE 404 — linkovi podijeljeni prije zahtjeva moraju i
+/// dalje voditi na smislenu stranicu.
+class _OptedOutProfile extends StatelessWidget {
+  final PersonHub hub;
+
+  const _OptedOutProfile({required this.hub});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PersonMonogram(name: hub.name, size: 88, radius: 44),
+              const SizedBox(height: 16),
+              Text(
+                hub.name,
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l.personOptedOut,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Sadržaj profila
 // ---------------------------------------------------------------------------
@@ -200,7 +277,10 @@ class _NotFound extends StatelessWidget {
 class _PersonContent extends StatelessWidget {
   final PersonHub hub;
 
-  const _PersonContent({required this.hub});
+  /// Osoba se prikazuje kao virtualni kanal (flag upaljen + backend potvrdio).
+  final bool channelForm;
+
+  const _PersonContent({required this.hub, this.channelForm = false});
 
   /// Iznad ove širine → dvostupčani layout (lijevo fiksni info, desno scroll
   /// epizode). Ispod → jedan stupac (mobitel).
@@ -211,9 +291,9 @@ class _PersonContent extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < _twoColBreakpoint) {
-          return _SingleColumn(hub: hub);
+          return _SingleColumn(hub: hub, channelForm: channelForm);
         }
-        return _TwoColumn(hub: hub);
+        return _TwoColumn(hub: hub, channelForm: channelForm);
       },
     );
   }
@@ -222,8 +302,9 @@ class _PersonContent extends StatelessWidget {
 /// Mobitel / usko — sve u jednom scroll stupcu.
 class _SingleColumn extends StatelessWidget {
   final PersonHub hub;
+  final bool channelForm;
 
-  const _SingleColumn({required this.hub});
+  const _SingleColumn({required this.hub, this.channelForm = false});
 
   @override
   Widget build(BuildContext context) {
@@ -233,13 +314,21 @@ class _SingleColumn extends StatelessWidget {
     final mentionOnly = hub.isMentionOnly;
     final channels = mentionOnly ? hub.mentionChannels : hub.channels;
     final timeline = mentionOnly ? hub.mentionTimeline : hub.timeline;
+    // Bez kanal-forme popis ostaje JEDAN (današnje ponašanje) — cameo se ne
+    // izdvaja, da profil bez flaga izgleda točno kao prije.
+    final primary = channelForm ? hub.primaryEpisodes : hub.episodes;
+    final cameo =
+        channelForm ? hub.cameoAppearances : const <PersonEpisode>[];
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
-            _Header(hub: hub),
+            if (channelForm)
+              _ChannelHero(hub: hub)
+            else
+              _Header(hub: hub),
             if (mentionOnly) ...[
               const SizedBox(height: 14),
               _MentionOnlyNote(text: l.personMentionOnlyNote),
@@ -249,18 +338,35 @@ class _SingleColumn extends StatelessWidget {
               _ChannelsSection(
                 channels: channels,
                 title: mentionOnly ? l.personMentionedOn : l.personAppearsOn,
+                facts: channelForm ? _channelFactsFrom(hub) : const {},
               ),
             ],
             if (timeline.length > 1) ...[
               const SizedBox(height: 28),
               _TimelineSection(timeline: timeline),
             ],
-            if (hub.episodes.isNotEmpty) ...[
+            if (primary.isNotEmpty) ...[
               const SizedBox(height: 28),
               _EpisodesSection(
-                title: l.personEpisodesHeading,
-                episodes: hub.episodes,
+                title: channelForm
+                    ? l.personSectionEpisodes
+                    : l.personEpisodesHeading,
+                episodes: primary,
                 personSlug: hub.slug,
+                channelForm: channelForm,
+                semanticsIdentifier:
+                    channelForm ? 'person-episodes-primary' : null,
+              ),
+            ],
+            if (cameo.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              _EpisodesSection(
+                title: l.personSectionCameo,
+                hint: l.personSectionCameoHint,
+                episodes: cameo,
+                personSlug: hub.slug,
+                channelForm: true,
+                semanticsIdentifier: 'person-episodes-cameo',
               ),
             ],
             if (hub.mentions.isNotEmpty) ...[
@@ -283,8 +389,9 @@ class _SingleColumn extends StatelessWidget {
 /// desno neovisno scrollabilna lista epizoda.
 class _TwoColumn extends StatelessWidget {
   final PersonHub hub;
+  final bool channelForm;
 
-  const _TwoColumn({required this.hub});
+  const _TwoColumn({required this.hub, this.channelForm = false});
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +400,9 @@ class _TwoColumn extends StatelessWidget {
     final mentionOnly = hub.isMentionOnly;
     final channels = mentionOnly ? hub.mentionChannels : hub.channels;
     final timeline = mentionOnly ? hub.mentionTimeline : hub.timeline;
+    final primary = channelForm ? hub.primaryEpisodes : hub.episodes;
+    final cameo =
+        channelForm ? hub.cameoAppearances : const <PersonEpisode>[];
     // Treći stupac („Spominje se u") traži više širine da sve tri kolone dišu.
     // Bez gostovanja su stupca samo dva → uža, gušća kompozicija.
     final maxWidth = hasMentions && !mentionOnly ? 1440.0 : 1180.0;
@@ -311,7 +421,7 @@ class _TwoColumn extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _Header(hub: hub),
+                    if (channelForm) _ChannelHero(hub: hub) else _Header(hub: hub),
                     if (mentionOnly) ...[
                       const SizedBox(height: 14),
                       _MentionOnlyNote(text: l.personMentionOnlyNote),
@@ -322,6 +432,7 @@ class _TwoColumn extends StatelessWidget {
                         channels: channels,
                         title:
                             mentionOnly ? l.personMentionedOn : l.personAppearsOn,
+                        facts: channelForm ? _channelFactsFrom(hub) : const {},
                       ),
                     ],
                     if (timeline.length > 1) ...[
@@ -332,21 +443,31 @@ class _TwoColumn extends StatelessWidget {
                 ),
               ),
             ),
-            // Srednji stupac — „Govori u" (epizode), neovisan scroll.
-            if (hub.episodes.isNotEmpty)
+            // Srednji stupac — „Govori u" (epizode), neovisan scroll. U
+            // kanal-formi isti stupac nosi i „Kratke nastupe" ispod glavnog
+            // popisa (jedan scroll, dvije sekcije).
+            if (primary.isNotEmpty || cameo.isNotEmpty)
               Expanded(
                 flex: 3,
                 child: _EpisodeListColumn(
-                  title: l.personEpisodesHeading,
-                  episodes: hub.episodes,
+                  title: channelForm
+                      ? l.personSectionEpisodes
+                      : l.personEpisodesHeading,
+                  episodes: primary,
                   personSlug: hub.slug,
+                  channelForm: channelForm,
+                  semanticsIdentifier:
+                      channelForm ? 'person-episodes-primary' : null,
+                  cameoTitle: l.personSectionCameo,
+                  cameoHint: l.personSectionCameoHint,
+                  cameoEpisodes: cameo,
                 ),
               ),
             // Desni stupac — „Spominje se u" (spomeni), zaseban scroll. Tanka
             // vertikalna linija razdvaja ga od „Govori u" radi preglednosti —
             // samo kad taj stupac postoji (osoba bez gostovanja ga nema).
             if (hasMentions) ...[
-              if (hub.episodes.isNotEmpty)
+              if (primary.isNotEmpty || cameo.isNotEmpty)
                 const VerticalDivider(width: 1, thickness: 1),
               Expanded(
                 flex: 2,
@@ -425,6 +546,95 @@ class _Header extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Hero u **kanal-formi**: monogram + eyebrow („OSOBA · 17 EP · 13H 39M") +
+/// ime + deterministički podnaslov. Namjerno je vizualno blizak kartici kanala
+/// (isti eyebrow stil, isti gradijent avatara) — razlika je jedino riječ
+/// „Osoba" u eyebrowu (odluka O9), jer virtualni kanal NIJE kanal koji netko
+/// uređuje, ali mora stajati ravnopravno uz kanale.
+class _ChannelHero extends StatelessWidget {
+  final PersonHub hub;
+
+  const _ChannelHero({required this.hub});
+
+  /// „Gostuje u 17 epizoda na 17 kanala, 2020.–2026." Godine idu kao String
+  /// placeholderi (int bi kroz `NumberFormat` postao „2.026").
+  static String? _subtitle(AppLocalizations l, PersonHub hub, int episodes) {
+    final channels =
+        hub.channelCount > 0 ? hub.channelCount : hub.channels.length;
+    if (episodes == 0 || channels == 0) return null;
+    final from = hub.firstYear ?? hub.lastYear;
+    final to = hub.lastYear ?? hub.firstYear;
+    if (from == null || to == null) return null;
+    if (from == to) {
+      return l.personVirtualChannelSubtitleOneYear(episodes, channels, '$from');
+    }
+    return l.personVirtualChannelSubtitle(episodes, channels, '$from', '$to');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    // `episode_count` s backenda broji samo `primary`; kad ga stari odgovor ne
+    // pošalje, brojimo klijentski klasificirane glavne nastupe.
+    final episodes =
+        hub.episodeCount > 0 ? hub.episodeCount : hub.primaryEpisodes.length;
+    final subtitle = _subtitle(l, hub, episodes);
+
+    return Semantics(
+      identifier: 'person-hero',
+      container: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PersonMonogram(name: hub.name, avatarUrl: hub.avatarUrl, size: 96),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  identifier: 'person-episode-count',
+                  child: Text(
+                    l
+                        .personCardMeta(episodes, hub.durationDisplay)
+                        .toUpperCase(),
+                    style: AppTypography.eyebrowStyle(theme.colorScheme),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  hub.name,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontFamily: 'Playfair Display',
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+                if (hub.mentions.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _StatPill(
+                    icon: Icons.format_quote,
+                    label: l.personMentionsCount(hub.mentionCount),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -555,13 +765,48 @@ class _StatPill extends StatelessWidget {
 // "Gostuje na" — raspodjela po kanalima
 // ---------------------------------------------------------------------------
 
+/// Što o izvornom kanalu znamo IZ EPIZODA (raspodjela „Gostuje na" sama nosi
+/// samo slug i broj): ime za prikaz i je li kanal praćen.
+class _ChannelFacts {
+  final String? name;
+  final bool tracked;
+
+  const _ChannelFacts({this.name, this.tracked = false});
+}
+
+/// Slug → [_ChannelFacts] iz svih govor-epizoda (glavnih i cameo). Koristi se
+/// SAMO u kanal-formi: na starom odgovoru `channel_tracked` ne postoji (uvijek
+/// false), pa bi ovo pogasilo linkove koji danas rade.
+Map<String, _ChannelFacts> _channelFactsFrom(PersonHub hub) {
+  final out = <String, _ChannelFacts>{};
+  for (final e in [...hub.episodes, ...hub.cameoEpisodes]) {
+    if (e.channel.isEmpty) continue;
+    final prev = out[e.channel];
+    out[e.channel] = _ChannelFacts(
+      name: e.channelName?.trim().isNotEmpty == true
+          ? e.channelName
+          : prev?.name,
+      // Dovoljna je JEDNA epizoda koja tvrdi da je kanal praćen.
+      tracked: (prev?.tracked ?? false) || e.channelTracked,
+    );
+  }
+  return out;
+}
+
 class _ChannelsSection extends StatelessWidget {
   final List<PersonChannelCount> channels;
 
   /// „Gostuje na" (govor) ili „Spominje se na" (osoba bez gostovanja).
   final String title;
 
-  const _ChannelsSection({required this.channels, required this.title});
+  /// Prazno izvan kanal-forme → svi čipovi ostaju klikabilni kao danas.
+  final Map<String, _ChannelFacts> facts;
+
+  const _ChannelsSection({
+    required this.channels,
+    required this.title,
+    this.facts = const {},
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -574,7 +819,7 @@ class _ChannelsSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: channels
-              .map((c) => _ChannelChip(channel: c))
+              .map((c) => _ChannelChip(channel: c, facts: facts[c.channel]))
               .toList(growable: false),
         ),
       ],
@@ -585,19 +830,21 @@ class _ChannelsSection extends StatelessWidget {
 class _ChannelChip extends StatelessWidget {
   final PersonChannelCount channel;
 
-  const _ChannelChip({required this.channel});
+  /// `null` → ne znamo ništa (izvan kanal-forme ili kanal dolazi samo iz
+  /// spomena) → ponašanje kao danas: klikabilno, ime iz sluga.
+  final _ChannelFacts? facts;
+
+  const _ChannelChip({required this.channel, this.facts});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final name = channel.channel.replaceAll('_', ' ');
-    return Material(
-      color: theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => context.go('/c/${channel.channelRouteSlug}'),
-        child: Padding(
+    final l = AppLocalizations.of(context);
+    final name = facts?.name ?? channel.channel.replaceAll('_', ' ');
+    // Nepraćen kanal nema `/c/` stranicu — link bi vodio na 404 (odluka O4),
+    // pa čip ostaje statičan uz tooltip koji to objasni.
+    final untracked = facts != null && !facts!.tracked;
+    final body = Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -630,7 +877,25 @@ class _ChannelChip extends StatelessWidget {
               ),
             ],
           ),
+        );
+
+    if (untracked) {
+      return Tooltip(
+        message: l.personSourceChannelUntracked,
+        child: Material(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          child: body,
         ),
+      );
+    }
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.go('/c/${channel.channelRouteSlug}'),
+        child: body,
       ),
     );
   }
@@ -756,6 +1021,9 @@ List<PersonMonthCount> _expandMonths(List<PersonMonthCount> input) {
 
 class _EpisodesSection extends StatelessWidget {
   final String title;
+
+  /// Jedna rečenica ispod naslova (npr. objašnjenje „Kratkih nastupa").
+  final String? hint;
   final List<PersonEpisode> episodes;
 
   /// Slug osobe — prosljeđuje se kao `?p=` na episode deep-link da episode
@@ -765,11 +1033,20 @@ class _EpisodesSection extends StatelessWidget {
   /// Popis spomena (ne gostovanja) → kartice nose oznaku trenutka.
   final bool isMention;
 
+  /// Kartice u kanal-formi (chip izvornog kanala + „Prijavi grešku").
+  final bool channelForm;
+
+  /// e2e/a11y sidro na naslovu sekcije (`flt-semantics-identifier`).
+  final String? semanticsIdentifier;
+
   const _EpisodesSection({
     required this.title,
     required this.episodes,
     required this.personSlug,
+    this.hint,
     this.isMention = false,
+    this.channelForm = false,
+    this.semanticsIdentifier,
   });
 
   @override
@@ -777,13 +1054,18 @@ class _EpisodesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(title: title),
+        _SectionTitle(
+          title: title,
+          hint: hint,
+          semanticsIdentifier: semanticsIdentifier,
+        ),
         const SizedBox(height: 10),
         for (final e in episodes)
           _EpisodeCard(
             episode: e,
             personSlug: personSlug,
             isMention: isMention,
+            channelForm: channelForm,
           ),
       ],
     );
@@ -802,33 +1084,95 @@ class _EpisodeListColumn extends StatelessWidget {
   /// Popis spomena (ne gostovanja) → kartice nose oznaku trenutka.
   final bool isMention;
 
+  /// Kartice u kanal-formi (chip izvornog kanala + „Prijavi grešku").
+  final bool channelForm;
+
+  /// e2e/a11y sidro na naslovu glavne sekcije.
+  final String? semanticsIdentifier;
+
+  /// Druga sekcija u ISTOM scrollu — „Kratki nastupi" (`cameo`). Prazno kad
+  /// kanal-forma nije aktivna.
+  final String? cameoTitle;
+  final String? cameoHint;
+  final List<PersonEpisode> cameoEpisodes;
+
   const _EpisodeListColumn({
     required this.title,
     required this.episodes,
     required this.personSlug,
     this.isMention = false,
+    this.channelForm = false,
+    this.semanticsIdentifier,
+    this.cameoTitle,
+    this.cameoHint,
+    this.cameoEpisodes = const [],
   });
+
+  /// Splošti naslove i kartice u JEDAN popis redaka da lista ostane
+  /// `ListView.builder` (lazy) — dvije sekcije u dva ugniježđena scrolla bi
+  /// razbile jedinstveni scroll stupca.
+  List<_ColumnRow> _rows() {
+    final rows = <_ColumnRow>[];
+    if (episodes.isNotEmpty) {
+      rows.add(_ColumnRow.header(title, null, semanticsIdentifier));
+      rows.addAll(episodes.map(_ColumnRow.episode));
+    }
+    if (cameoEpisodes.isNotEmpty && cameoTitle != null) {
+      rows.add(_ColumnRow.header(
+          cameoTitle!, cameoHint, 'person-episodes-cameo',
+          topGap: episodes.isNotEmpty));
+      rows.addAll(cameoEpisodes.map(_ColumnRow.episode));
+    }
+    return rows;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final rows = _rows();
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-      itemCount: episodes.length + 1,
+      itemCount: rows.length,
       itemBuilder: (context, i) {
-        if (i == 0) {
+        final row = rows[i];
+        final episode = row.episode;
+        if (episode == null) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _SectionTitle(title: title),
+            padding: EdgeInsets.only(top: row.topGap ? 24 : 0, bottom: 10),
+            child: _SectionTitle(
+              title: row.title!,
+              hint: row.hint,
+              semanticsIdentifier: row.identifier,
+            ),
           );
         }
         return _EpisodeCard(
-          episode: episodes[i - 1],
+          episode: episode,
           personSlug: personSlug,
           isMention: isMention,
+          channelForm: channelForm,
         );
       },
     );
   }
+}
+
+/// Jedan redak u [_EpisodeListColumn] — ili naslov sekcije, ili kartica.
+class _ColumnRow {
+  final String? title;
+  final String? hint;
+  final String? identifier;
+  final bool topGap;
+  final PersonEpisode? episode;
+
+  const _ColumnRow.header(this.title, this.hint, this.identifier,
+      {this.topGap = false})
+      : episode = null;
+
+  const _ColumnRow.episode(this.episode)
+      : title = null,
+        hint = null,
+        identifier = null,
+        topGap = false;
 }
 
 class _EpisodeCard extends StatelessWidget {
@@ -843,11 +1187,31 @@ class _EpisodeCard extends StatelessWidget {
   /// Kod govor-epizoda razlika ne postoji — `first_ts` je uvijek stvaran.
   final bool isMention;
 
+  /// Kanal-forma: chip izvornog kanala (klikabilan SAMO za praćene kanale) i
+  /// akcija „Prijavi grešku" za krivo pripisanog govornika.
+  final bool channelForm;
+
   const _EpisodeCard({
     required this.episode,
     required this.personSlug,
     this.isMention = false,
+    this.channelForm = false,
   });
+
+  /// Dojava krivo pripisanog govornika. Backend ručke još nema (override se
+  /// upisuje ručno u `person_channel_overrides`, F2/plan §O3), pa je ovdje
+  /// samo trag u konzoli + potvrda korisniku — SnackBar je dopušten jer
+  /// potvrđuje korisnikovu radnju, ne prekida reprodukciju.
+  void _reportError(BuildContext context) {
+    log('person.report_error slug=$personSlug video=${episode.youtubeId}');
+    final l = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l.personReportErrorThanks),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   /// Sekunde → "16:45" / "1:05:30" (sat samo kad postoji).
   static String _clock(int seconds) {
@@ -921,13 +1285,35 @@ class _EpisodeCard extends StatelessWidget {
                                     _clock(episode.firstTs))
                                 : l.personMentionWholeEpisode,
                           ),
-                        _MetaChip(icon: Icons.tv, text: channelName),
+                        if (channelForm)
+                          _SourceChannelChip(episode: episode)
+                        else
+                          _MetaChip(icon: Icons.tv, text: channelName),
                         if (episode.uploadDate.isNotEmpty)
                           _MetaChip(
                               icon: Icons.calendar_today,
                               text: episode.uploadDate),
                       ],
                     ),
+                    if (channelForm) ...[
+                      const SizedBox(height: 2),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: () => _reportError(context),
+                          icon: const Icon(Icons.flag_outlined, size: 14),
+                          label: Text(l.personReportError),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            minimumSize: const Size(0, 28),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                            textStyle: theme.textTheme.labelSmall,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -985,25 +1371,78 @@ class _MentionMomentChip extends StatelessWidget {
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  final IconData icon;
-  final String text;
+/// Izvorni kanal epizode u kanal-formi.
+///
+/// Klikabilan je **samo** kad kanal ima svoju `/c/` stranicu
+/// ([PersonEpisode.channelTracked]). Ad-hoc izvori (N1, Lider, TEDxZagreb…)
+/// nisu praćeni kanali — link bi vodio na 404, a i lažno bi sugerirao da je
+/// riječ o kanalu u našem katalogu (odluka O4). Umjesto toga: prigušen tekst s
+/// tooltipom koji to objasni.
+class _SourceChannelChip extends StatelessWidget {
+  final PersonEpisode episode;
 
-  const _MetaChip({required this.icon, required this.text});
+  const _SourceChannelChip({required this.episode});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final label = episode.channelDisplayName.replaceAll('_', ' ');
+    final route = episode.channelRoutePath;
+
+    if (route == null) {
+      return Tooltip(
+        message: l.personSourceChannelUntracked,
+        child: _MetaChip(icon: Icons.tv, text: label),
+      );
+    }
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: () => context.go(route),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+        child: _MetaChip(
+          icon: Icons.tv,
+          text: label,
+          color: theme.colorScheme.primary,
+          bold: true,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  /// Boja ikone i teksta; `null` → prigušeno (`onSurfaceVariant`).
+  final Color? color;
+  final bool bold;
+
+  const _MetaChip({
+    required this.icon,
+    required this.text,
+    this.color,
+    this.bold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = color ?? theme.colorScheme.onSurfaceVariant;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        Icon(icon, size: 12, color: fg),
         const SizedBox(width: 3),
         Flexible(
           child: Text(
             text,
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: bold ? FontWeight.w700 : null,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -1015,14 +1454,47 @@ class _MetaChip extends StatelessWidget {
 class _SectionTitle extends StatelessWidget {
   final String title;
 
-  const _SectionTitle({required this.title});
+  /// Jedna rečenica objašnjenja ispod naslova (npr. što je „Kratki nastup").
+  final String? hint;
+
+  /// e2e/a11y sidro (`flt-semantics-identifier` uz `?a11y=1`). Stoji na
+  /// naslovu, ne na listi, jer se u dvostupčanom layoutu obje sekcije crtaju
+  /// kroz JEDAN lazy `ListView.builder` pa lista nema vlastiti čvor.
+  final String? semanticsIdentifier;
+
+  const _SectionTitle({
+    required this.title,
+    this.hint,
+    this.semanticsIdentifier,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      title,
-      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style:
+              theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        if (hint != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            hint!,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ],
+    );
+    if (semanticsIdentifier == null) return content;
+    return Semantics(
+      identifier: semanticsIdentifier,
+      container: true,
+      child: content,
     );
   }
 }
