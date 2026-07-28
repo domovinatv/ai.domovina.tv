@@ -386,6 +386,31 @@ komponente, sekcije nose svoj h-padding (primjer: `founder_booking.dart`).
 Iznimka: bordered card/panel/dialog gdje je padding chrome kartice.
 Sweep 2026-07-23 poravnao cijeli codebase na ovaj pattern.
 
+**Rule (auto-scroll unutar ugniježđenog scrolla)**: `Scrollable.ensureVisible`
+scrolla **sve** nadređene scrollable-ove, ne samo najbliži. U horizontalnoj
+traci unutar vertikalne stranice to povuče i stranicu — vlastiti
+`ScrollController` + ručni izračun offseta (primjer: `PeopleRail` u
+`widgets/entities_section.dart`, koji bi inače poništio `_scrollToPersonAnchor`
+u `episode_screen.dart`).
+
+### Person hub — osoba postoji i bez gostovanja
+
+`/p/:slug` agregira DVA disjunktna izvora: `episodes[]` (osoba GOVORI,
+diarizirano) i `mentions[]` (osoba se SPOMINJE). Identitet je disjunkcija —
+povijesna/pokojna figura (bl. Ivan Merz) ima valjan profil samo iz spomena;
+404 tek kad nema ni jedno ni drugo. Backend živi u `domovina-rag`
+(`docs/person-hub.md`), ne ovdje.
+
+**Rule**: spomen ima ILI razriješen `first_ts` (tap seeka na sekundu) ILI ga
+nema (~40% — tap otvara epizodu od početka). Te dvije stvari se NE smiju
+prikazivati isto: `_MentionMomentChip` u `person_screen.dart` je puna brand
+crvena vs prigušena obrubljena.
+
+**Rule**: dolazak na epizodu s `?p=<slug>` mora raditi i BEZ `/t/<sec>` —
+sidro se tada traži po sadržaju (prva sekcija koja referencira osobu), članak
+se doscrolla onamo, ali se video NE seeka (znamo sekciju, ne sekundu). Pill
+bez ciljne sekunde nikad ne tvrdi „govori ovdje", nego „ovdje se spominje".
+
 ### Routing
 
 `main.dart` uses `onGenerateRoute` with `PageRouteBuilder(transitionDuration: Duration.zero)` for instant navigation. The initial route uses `home: const HomeScreen()` — do NOT replace with `initialRoute` or `onGenerateInitialRoutes` as both crash on web.
