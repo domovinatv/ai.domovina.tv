@@ -8,11 +8,13 @@ import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/person_hub.dart';
 import '../../services/cdn_config.dart';
+import '../../services/follow_service.dart';
 import '../../services/page_meta.dart';
 import '../../services/person_channel_flag.dart';
 import '../../services/person_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/typography.dart';
+import '../../widgets/follow_button.dart';
 import '../../widgets/person_monogram.dart';
 
 /// Javni profil osobe ("person hub") — /p/:slug.
@@ -123,12 +125,34 @@ class _PersonScreenState extends State<PersonScreen> {
                   const Spacer(),
                   FutureBuilder<PersonHub?>(
                     future: _future,
-                    builder: (context, snap) => IconButton(
-                      icon: const Icon(Icons.ios_share),
-                      tooltip: l.personShareTooltip,
-                      // Aktivan tek kad profil postoji — nema smisla dijeliti 404.
-                      onPressed: snap.data != null ? _shareProfile : null,
-                    ),
+                    builder: (context, snap) {
+                      final hub = snap.data;
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Praćenje ima smisla samo za postojeći profil; nakon
+                          // opt-outa (O8) osoba je zatražila uklanjanje, pa joj
+                          // ne nudimo ni gumb. Sam gumb se dodatno sakrije dok
+                          // je PersonChannelFlag ugašen.
+                          if (hub != null && !hub.optout) ...[
+                            FollowButton(
+                              followKey: personFollowKey(widget.slug),
+                              followLabel: l.personFollow,
+                              followingLabel: l.personFollowing,
+                              semanticsIdentifier: 'person-follow-button',
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          IconButton(
+                            icon: const Icon(Icons.ios_share),
+                            tooltip: l.personShareTooltip,
+                            // Aktivan tek kad profil postoji — nema smisla
+                            // dijeliti 404.
+                            onPressed: hub != null ? _shareProfile : null,
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

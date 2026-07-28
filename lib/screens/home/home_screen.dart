@@ -18,6 +18,7 @@ import '../../widgets/founder_booking.dart';
 import '../../l10n/app_localizations.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
+import 'followed_rail.dart';
 import 'footer.dart';
 import 'home_app_bar.dart';
 import 'home_feed.dart';
@@ -422,6 +423,17 @@ class _ChannelGridView extends StatelessWidget {
                           .toList(),
                     ),
                   ),
+
+                // Rail "Novo od praćenih" — po jedna neviđena epizoda za svaki
+                // praćeni kanal/osobu. Osobni je pa stoji uz "Nastavi slušati",
+                // iznad uredničkih railova. Sam se sakrije bez flaga, bez
+                // praćenja ili kad nema ničeg novog. Vidi followed_rail.dart.
+                SliverToBoxAdapter(
+                  child: FollowedRail(
+                    isMobile: isMobile,
+                    onVideoTap: onVideoTap,
+                  ),
+                ),
 
                 // "Najnovije epizode" rail — cross-channel po datumu desc.
                 // CDN URL eksplicitno (`fv.video.thumbnail` moze biti ytimg
