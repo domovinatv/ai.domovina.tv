@@ -1,15 +1,23 @@
 # iOS pozadinska reprodukcija i Dynamic Island — istraga
 
-**Status: PRIPREMLJENO, ČEKA PROMATRAČA.** Analiza koda je gotova, build je na
-uređaju, mjerni instrumenti rade. Matrica je i dalje prazna jer svaka njena
-ćelija traži ljudsku radnju (zaključati zaslon, prebaciti app) i ljudsko oko
-(Dynamic Island, lock screen) — ništa od toga se ne da pročitati iz koda ni s
-kabela. Nijedna ćelija nije popunjena pretpostavkom: ako piše „čeka
-promatrača", to znači da to nitko nije izmjerio.
+**Status: PREKINUTO — MATRICA NIJE IZMJERENA.** Analiza koda je gotova, mjerno
+okruženje je bilo postavljeno i provjereno (build na uređaju, hvatanje device
+logova, testne epizode, produkcija s T1–T4), ali je rad prekinut **prije nego
+je ijedna ćelija matrice izmjerena**. Nijedan blok protokola (A–G) nije
+izveden.
+
+**Pravilo čitanja ovog dokumenta:** sve što piše **NEIZMJERENO** doslovno znači
+da to nitko nije izmjerio — ni približno, ni djelomično, ni „vjerojatno".
+Nijedna ćelija nije popunjena pretpostavkom ni izvedena iz koda. Ono što **jest**
+utvrđeno stoji u §6.1 (mjerenja bez čovjeka) i §7 (opažanja usput).
+
+Protokol u §2.1 je namjerno ostavljen cijel i upotrebljiv — tko god nastavi,
+kreće od njega, uz kratko dizanje instrumenata po §8.3.
 
 Task: T5 iz `docs/plans/2026-07-27-playback-overhaul.md`.
 Datum analize koda: 2026-07-27 (nakon T1–T4).
 Datum pripreme mjerenja: 2026-07-27.
+Datum prekida: 2026-07-28 — instrumenti ugašeni (§8).
 
 ---
 
@@ -44,15 +52,23 @@ xcrun devicectl device process launch --device … --terminate-existing ai.domov
 Ako sljedeći put nije, override iz plana i dalje vrijedi.
 
 Instalirani build je **v2.0.117 (+139), zatečeni HEAD `01e2d2e`** — dakle sadrži
-T1–T4, a popravak iz §4.3 **nije** primijenjen. To je namjerno: matrica se mjeri
-na zatečenom stanju.
+T1–T4, a popravak iz §4.3 **nije** primijenjen. To je bilo namjerno — matrica se
+trebala izmjeriti na zatečenom stanju. **Do mjerenja nije došlo.**
+
+> **Nakon deploya v2.0.118 (§1.4): build na uređaju NIJE zastario.** Jedina
+> izmjena u `lib/` između `01e2d2e` i deployanog stanja je verzijski string u
+> `lib/main.dart` (`2.0.117` → `2.0.118`) — provjereno `git diff --stat`.
+> Native stupac matrice i web stupci mjere **isti kod**; razlikuje ih samo broj
+> koji app ispisuje u logu. Ako se do kraja mjerenja pojavi ikakva izmjena u
+> `lib/`, build na uređaju treba ponoviti prije nastavka.
 
 **Statička provjera native strane** — `UIBackgroundModes = ["audio"]` u
 `ios/Runner/Info.plist` je prisutan, `audio_service` se inicijalizira u
-`BackgroundAudio.init()`. Preduvjeti za pozadinski zvuk postoje; drži li ih iOS
-stvarno, mjeri matrica.
+`BackgroundAudio.init()`. Preduvjeti za pozadinski zvuk **postoje u kodu i
+konfiguraciji** — to je jedino što je ovdje utvrđeno. Ponaša li se iOS stvarno
+tako u pozadini ostalo je **NEIZMJERENO**.
 
-### 1.3 Mjerni instrumenti koji rade
+### 1.3 Mjerni instrumenti (radili su; ugašeni pri prekidu — §8)
 
 **Device log** (potvrđeno — hvata naše `log()` linije iz release builda):
 
@@ -81,17 +97,26 @@ potvrditi samo čovjek**, nema programatske provjere. Vidi i §7.1.
 
 | Okruženje | URL | Kod | Siguran kontekst | SW |
 |---|---|---|---|---|
-| **produkcija** | `https://domovina.ai` | **pre-T1** | da | da |
+| **produkcija** | `https://domovina.ai` | **T1–T4** (v2.0.118) | da | da |
 | **LAN dev server** | `http://192.168.1.102:5173` | T1–T4 | **ne** | **ne** |
 | **diag stranica** | `http://192.168.1.102:5174` | — | ne | ne |
 
-Produkcija **nema T1–T4**, iako `version.json` prijavljuje isti `2.0.117` kao
-lokalni repo (zadnji deploy `2f45f0c` prethodi T1–T4, a taskovi ne bumpaju
-verziju). Dokaz nije verzija nego sadržaj bundlea: `curl https://domovina.ai/main.dart.js`
-**ne sadrži** string `Brzina reprodukcije` (T2), lokalni `build/web/main.dart.js`
-ga sadrži. **Verzija ovdje ne razlikuje buildove — ne oslanjati se na nju.**
+**Promjena 2026-07-27: deploy v2.0.118 (+140) je objavio T3 i T4 na produkciju.**
+Time je produkcija postala jedino okruženje koje ima **i** naš novi kod **i**
+siguran kontekst — dakle mjerodavno mjesto za sva web mjerenja. LAN server je
+od tada bio samo fallback, a pri prekidu je ugašen (§8).
 
-LAN server (per uputi: **bez deploya**):
+Provjereno istom metodom kao i prije, jer **verzija sama po sebi ne dokazuje
+sadržaj**: `https://domovina.ai/main.dart.js` **i** `main.dart.wasm` sada oba
+sadrže `Brzina reprodukcije`, `Natrag na` i `Reprodukcija u pozadini`, a
+`flutter_service_worker.js` vraća 200.
+
+> Trajna pouka iz prethodnog stanja: prije ovog deploya produkcija je bila
+> pre-T1 **iako je `version.json` prijavljivao isti `2.0.117`** kao lokalni
+> repo (taskovi ne bumpaju verziju, deploy je bumpa). Kad ubuduće provjeravaš
+> što je vani, gledaj **sadržaj bundlea**, ne broj verzije.
+
+LAN server (fallback; digao se dok deploya još nije bilo):
 
 ```bash
 flutter run -d web-server --release --web-hostname 0.0.0.0 --web-port 5173 \
@@ -111,14 +136,15 @@ Provjereno u Chromeu nad `http://192.168.1.102:5173`:
 | Ograničenje | Status | Posljedica za matricu |
 |---|---|---|
 | **Service Worker** | **nedostupan** (dokazano) | Cijeli SW sloj iz `web/index.html` otpada. Ono što memo „web background audio" pripisuje sprezi Media Session + SW/PWA ne može se reproducirati. |
-| **Media Session** | u Chromeu **postoji** i na nesigurnom origin-u; za WebKit **neizmjereno** | Ako iOS Safari gate-a po sigurnom kontekstu, LAN mjerenje weba mjeri „nema sesije", ne naš kod. **Prvi korak protokola to razrješava.** |
+| **Media Session** | u Chromeu **postoji** i na nesigurnom origin-u; za WebKit **neizmjereno** | Ako iOS Safari gate-a po sigurnom kontekstu, LAN mjerenje weba mjeri „nema sesije", ne naš kod. Trebao je razriješiti Blok F — **NEIZMJERENO**. |
 | **PWA install** | „Dodaj na početni zaslon" na iOS-u vjerojatno napravi ikonu (manifest se servira), ali **bez SW-a to nije naša PWA** | Ćelija „PWA" nad LAN-om **nije** valjana zamjena za produkcijsku PWA. Označiti kao indikativno. |
 | **Renderer** | LAN server servira **dart2js**, produkcija servira **wasm** (`main.dart.wasm`) s JS fallbackom | Različita putanja izvođenja; za audio nije očekivano bitno, ali nije isto. |
 
-**Zaključak koji iz ovoga slijedi:** LAN server je dobar za ono što traži
-**T1–T4 kod** (gumb za brzinu, Undo pilula, rotacijski fullscreen), a loš za
-ono što traži **sigurni kontekst** (Media Session + SW = pozadinski zvuk).
-Zato je matrica dolje podijeljena po okruženju, a ne slijepo mjerena na jednom.
+**Zaključak nakon deploya v2.0.118:** ova ograničenja su i dalje točna, ali su
+**prestala biti bitna** — produkcija sada ima i T1–T4 i siguran kontekst, pa
+sva web mjerenja idu onamo; LAN server je pri prekidu ugašen (§8). Tablica gore
+ostaje zapisana jer objašnjava **zašto** se prije deploya nije smjelo mjeriti
+na LAN-u — i vrijedit će ponovno svaki put kad se testira nedeployan kod.
 
 ---
 
@@ -134,27 +160,37 @@ Za svaku ćeliju bilježimo tri stvari:
 
 | | native iOS app | iOS Safari | iOS Chrome | PWA s home screena |
 |---|---|---|---|---|
-| **zaključan zaslon** | ⏳ čeka promatrača | ⏳ čeka promatrača (prod) | ⏳ čeka promatrača (prod) | ⏳ čeka promatrača (prod) |
-| **druga aplikacija u prvom planu** | ⏳ čeka promatrača | ⏳ čeka promatrača (prod) | ⏳ čeka promatrača (prod) | ⏳ čeka promatrača (prod) |
-| **brzina 1,5× u pozadini** | ⏳ čeka promatrača | 🚫 blokirano do deploya | 🚫 blokirano do deploya | 🚫 blokirano do deploya |
+| **zaključan zaslon** | **NEIZMJERENO** | **NEIZMJERENO** | **NEIZMJERENO** | **NEIZMJERENO** |
+| **druga aplikacija u prvom planu** | **NEIZMJERENO** | **NEIZMJERENO** | **NEIZMJERENO** | **NEIZMJERENO** |
+| **brzina 1,5× u pozadini** | **NEIZMJERENO** | **NEIZMJERENO** | **NEIZMJERENO** | **NEIZMJERENO** |
 
-**Gdje se koja ćelija mjeri i zašto:**
+**Svih 12 ćelija je neizmjereno.** Rad je prekinut prije izvođenja protokola;
+uređaj je bio spojen i spreman, ali nijedno mjerenje nije pokrenuto. Ne izvoditi
+zaključke iz ove tablice — ona ne sadrži nijedan podatak.
 
-- **native app** — na instaliranom buildu (§1.2). Sadrži T1–T4, pa i red
-  brzine ide odmah.
-- **web, redovi 1–2** — na **produkciji** `https://domovina.ai`, ne na LAN
-  serveru. Produkcija je pre-T1, ali ta dva reda mjere **mehanizam držanja
-  zvuka u pozadini (Media Session + SW)**, a T1–T4 ga nisu dirali: jedina
-  izmjena u tom sloju je `setPositionState(playbackRate:)` iz T3, koja mijenja
-  *prijavljenu brzinu*, ne to hoće li zvuk svirati. Mjerenje je zato valjano.
-- **web, red brzine** — 🚫 **blokirano.** Traži istovremeno T3 kod **i** siguran
-  kontekst, a to danas ne postoji nigdje: produkcija je sigurna ali bez T3, LAN
-  ima T3 ali nije siguran (§1.5). Ovaj red se popunjava **nakon prvog deploya**;
-  bilo koja brojka izmjerena prije toga ne bi bila mjerenje ovog koda.
-  Rezultat kroz diag stranicu (§2.1, Blok F) je zamjena samo za pitanje „drži li browser
-  audio uopće", ne za „prijavljuje li naš kod ispravnu brzinu".
+**Gdje bi se koja ćelija mjerila (za onoga tko nastavi):**
 
-### 2.1 Protokol za promatrača
+- **native app** — na instaliranom buildu (§1.2), koji sadrži T1–T4.
+- **sve web ćelije** — na **produkciji** `https://domovina.ai`, **v2.0.118**.
+  Nakon deploya (§1.4) produkcija ima i naš novi kod i siguran kontekst, pa
+  nema više razloga za dijeljenje mjerenja po okruženjima.
+- **web, red brzine** — ✅ **odblokiran deployem v2.0.118.** Prije njega je bio
+  nemjerljiv jer je tražio T3 kod **i** siguran kontekst istovremeno, a to nije
+  postojalo nigdje. Sada se mjeri normalno, kao i ostala dva reda.
+- Diag stranica (§2.1, Blok F) i dalje ima svrhu, ali **užu**: odgovara na
+  „drži li browser web audio u pozadini uopće", bez našeg koda — dakle
+  razdvaja „browser ne može" od „naš kod ne valja". Nije zamjena za mjerenje
+  brzine na produkciji.
+
+### 2.1 Protokol za promatrača — NIJE IZVEDEN
+
+> **Status: NIJEDAN BLOK (A–G) NIJE IZVEDEN.** Rad je prekinut 2026-07-28 prije
+> početka mjerenja. Ništa dolje nije odrađeno ni djelomično; nema parcijalnih
+> rezultata koje bi trebalo tumačiti.
+>
+> Protokol je namjerno ostavljen netaknut i upotrebljiv. Okruženje je bilo
+> provjereno i radilo je (§1.2–§1.5, §6.1), pa tko nastavi ne mora ništa
+> ponovno postavljati osim onoga što je ugašeno u §8.
 
 Sve što slijedi traži čovjeka uz uređaj. Koraci su numerirani i namjerno
 doslovni; za svaki treba **jedna rečenica odgovora**. Gdje nešto ne možeš ili
@@ -174,7 +210,7 @@ uključeno) osim u koraku P3.
 
 ---
 
-#### Blok A — native aplikacija (ikona DOMOVINA.ai, već instalirana)
+#### Blok A — native aplikacija (ikona DOMOVINA.ai, već instalirana) — **NEIZMJERENO**
 
 **A1.** Otvori aplikaciju, otvori epizodu `nOCD7LosCxc`, pusti reprodukciju i
 pusti je da prijeđe 10 s.
@@ -202,30 +238,50 @@ zaslon na 60 s: svira li, i pokazuje li lock screen naslov i sliku?
 > opažanje ide i zapis s uređaja. Korak A5 (prebacivanje u drugu aplikaciju)
 > mogu i skriptirati umjesto tebe.
 
-#### Blok B — iOS Safari (produkcija)
+> **Svi web blokovi (B, C, D) idu na produkciju `https://domovina.ai`,
+> v2.0.118** — ondje su od 2026-07-27 i T3 i T4 (§1.4). Prije prvog otvaranja
+> **hard-refresh** (ili zatvori sve kartice), da stari service worker ne servira
+> zastarjeli bundle — vidi zamku o SW staleness u `docs/web-delivery-and-rendering.md`.
+> Da si na novom kodu prepoznaješ po tome što u kontrolama playera **postoji
+> gumb brzine** (`1×`).
+
+#### Blok B — iOS Safari (produkcija) — **NEIZMJERENO**
 
 **B1.** Safari → `https://domovina.ai/m/nOCD7LosCxc`, pusti reprodukciju, 10 s.
 **B2.** Power tipka, štoperica 60 s → odgovori a)–d) kao u A3.
 **B3.** Vrati se, pa ponovi s prebacivanjem u **Poruke** umjesto zaključavanja.
+**B4.** *(red brzine — odblokiran deployem)* Ponovi B1, prije pozadine postavi
+brzinu na **1,5×**, pa zaključaj 60 s → a)–d) **plus** e) i f) iz A6 (je li
+prošlo ~90 s sadržaja i slaže li se scrub bar).
 
-#### Blok C — iOS Chrome (produkcija)
+#### Blok C — iOS Chrome (produkcija) — **NEIZMJERENO**
 
 **C1.** Chrome → `https://domovina.ai/m/nOCD7LosCxc`, pusti reprodukciju, 10 s.
 **C2.** Power tipka, štoperica 60 s → a)–d).
 **C3.** Vrati se, pa ponovi s prebacivanjem u **Poruke**.
+**C4.** *(red brzine)* Kao B4. Ako C2 pokaže da Chrome uopće ne drži zvuk u
+pozadini, C4 preskoči i tako i zapiši — nema smisla mjeriti brzinu zvuka kojeg
+nema.
 
 > Ovo je odlučujuće za hipotezu 1 (§3): ako A i B daju „svira", a C „ne svira",
 > to je ograničenje Chromeovog hosta, ne naš bug.
 
-#### Blok D — PWA s home screena (produkcija)
+#### Blok D — PWA s home screena (produkcija) — **NEIZMJERENO**
+
+**Napomena:** ovaj blok je nakon deploya postao vjerodostojan — PWA sada ima
+novi kod **i** živi service worker (`flutter_service_worker.js` vraća 200),
+što je upravo sprega koju memo o web pozadinskom audiju drži zaslužnom za
+lock-screen zvuk. Ako je ikona ostala od ranije, **obriši je i dodaj ponovno**,
+da ne testiraš stari keširani shell.
 
 **D1.** U Safariju na `https://domovina.ai` → Podijeli → **Dodaj na početni
 zaslon**. Otvori ikonu (mora se otvoriti bez Safarijeve adresne trake).
 **D2.** Otvori `nOCD7LosCxc`, pusti, 10 s, pa Power tipka, štoperica 60 s →
 a)–d).
 **D3.** Ponovi s prebacivanjem u **Poruke**.
+**D4.** *(red brzine)* Kao B4.
 
-#### Blok E — „mrtva stavka" (hipoteza 2, §4) — najvažniji blok
+#### Blok E — „mrtva stavka" (hipoteza 2, §4) — najvažniji blok — **NEIZMJERENO**
 
 Ovo je jedini dio koji pada na naš teren, pa ga ne preskakati. Radi ga **u
 native aplikaciji i u Safariju na produkciji** (dva prolaza).
@@ -248,7 +304,7 @@ pozadini". Pusti epizodu, pa zaključaj zaslon.
 **E5 (N5 — prijelaz epizoda, usput).** Dok jedna epizoda svira, otvori drugu.
 Pokazuje li lock screen novu epizodu, ili je stavka nestala/ostala na staroj?
 
-#### Blok F — sposobnosti okoline (brzo, 3 × 30 s)
+#### Blok F — sposobnosti okoline (brzo, 3 × 30 s) — **NEIZMJERENO**
 
 Otvori `http://192.168.1.102:5174` (Mac mora biti na istoj mreži) u **Safariju**,
 pa u **Chromeu**, pa iz **PWA ikone** ako je dodana. Stranica ispiše tablicu —
@@ -267,7 +323,7 @@ stvarnog vremena (npr. „SVIRA: 59,4 s zvuka / 60,2 s zida"). To je gruba, ali
 objektivna provjera drži li browser web audio u pozadini — **bez** našeg koda,
 pa razdvaja „browser ne može" od „naš kod ne valja".
 
-#### Blok G — rotacijski fullscreen na stvarnom iPhoneu (dug iz T4)
+#### Blok G — rotacijski fullscreen na stvarnom iPhoneu (dug iz T4) — **NEIZMJERENO**
 
 T4 u planu izrijekom kaže: „Provjera na stvarnom iPhoneu ide u T5." Nije o
 pozadinskom zvuku, ali traži isti uređaj u istoj sesiji, pa ide ovdje da se
@@ -281,8 +337,9 @@ fullscreen. Očekivano po D3: slika ide u **pravi landscape unatoč bravi**.
   - Je li se video **pauzirao** pri ulasku ili izlasku (ne smije)?
   - Izlaz: gumb i **swipe/Back gesta** — vraća li se uredno u portret?
 **G2 (putanja C — web, vizualna rotacija).** Safari →
-`http://192.168.1.102:5173/m/nOCD7LosCxc` (LAN server, jer produkcija nema T4).
-Isti tapni-fullscreen test u portretu s bravom rotacije.
+`https://domovina.ai/m/nOCD7LosCxc` — **produkcija, jer v2.0.118 sada ima T4**.
+(LAN `http://192.168.1.102:5173/m/nOCD7LosCxc` ostaje kao fallback ako
+produkcija zezne.) Isti tapni-fullscreen test u portretu s bravom rotacije.
   - Je li slika rotirana preko cijelog viewporta?
   - **Rade li kontrole na dodir** — tapni play/pause i povuci seek bar. Ovo je
     hit-testing provjera `RotatedBox`-a: ako tapovi promašuju (pogađaju krivo
@@ -568,21 +625,27 @@ promašujemo mjerljiv broj korisnika.
 
 ## 6. Otvoreno
 
-Uređaj je spojen i build je na njemu (§1.2), pa je „traži uređaj" prestalo biti
-prepreka. Ostalo je ovo:
+**Rad je prekinut 2026-07-28.** Uređaj je bio spojen i build je bio na njemu
+(§1.2), okruženje provjereno — dakle ništa dolje nije ostalo otvoreno zbog
+tehničke prepreke, nego zato što su mjerenja prekinuta prije izvođenja.
+
+Ostalo je ovo, sve **NEIZMJERENO**:
 
 - **Matrica §2, native stupac** — traži **promatrača**: Blok A (§2.1). Zvuk,
   Dynamic Island i lock screen se ne daju pročitati s kabela.
-- **Matrica §2, web stupci, redovi 1–2** — Blokovi B/C/D na produkciji.
-- **Matrica §2, red brzine za web** — 🚫 **blokirano do prvog deploya.** Traži
-  T3 kod na sigurnom origin-u; danas ni produkcija (nema T3) ni LAN (nije
-  siguran) to ne daju. Ovo nije propust mjerenja nego stvarno ograničenje.
-- **Gate Media Sessiona u WebKitu na nesigurnom origin-u** — jedina nepoznanica
-  koja odlučuje je li LAN server uopće upotrebljiv za web mjerenja. Razrješava
-  ga Blok F, 30 s po browseru.
+- **Matrica §2, svi web stupci (sva tri reda)** — Blokovi B/C/D na produkciji
+  **v2.0.118**. Red brzine je deployem **odblokiran**; nema više ćelije koja se
+  ne može izmjeriti.
+- **Gate Media Sessiona u WebKitu na nesigurnom origin-u** — Blok F. Nakon
+  deploya ovo je **prestalo blokirati** bilo što (produkcija je sigurna), pa je
+  spalo na „korisno znati" — npr. za buduće testiranje nedeployanog koda preko
+  LAN-a. Ako se žuri, F se smije preskočiti.
 - **P1/P2/P3 iz §2.3** — Blok E; najvažniji, jer jedini pada na naš teren.
 - **Popravak §4.3** — napisan, **namjerno neprimijenjen** (nalog: mjeriti na
-  zatečenom buildu). Ide odmah nakon što Blok E vrati opažanja.
+  zatečenom buildu). Kako Blok E nikad nije izveden, **i dalje ne znamo jesu li
+  N1/N3 stvarno uzrok** onoga što je korisnik prijavio. Popravak je i dalje
+  opravdan po specifikaciji (`playbackState = 'none'` je propisani signal), ali
+  ga se ne smije prodavati kao „potvrđen popravak korisnikova problema".
 - **N5 (redoslijed pri prijelazu epizoda)** — Blok E5, usput.
 - **Dug iz T4** (rotacijski fullscreen na stvarnom iPhoneu) — Blok G.
 - **Zapis u `CLAUDE.md`** — tek kad ima što zapisati; sada bi to bila
@@ -591,19 +654,29 @@ prepreka. Ostalo je ovo:
   Razlikovni test (pokretanje tapom na ikonu umjesto preko `devicectl`) je
   prvi sljedeći korak.
 
-### 6.1 Što je od ovoga bilo moguće izmjeriti bez čovjeka — i je izmjereno
+### 6.1 Što JE stvarno utvrđeno (jedini rezultati ovog kruga)
 
-Da se ne traži dvaput: sve dolje je gotovo i **ne treba** korisnika.
+Ovo je cjelovit popis onoga što je izmjereno. Sve ostalo u dokumentu je ili
+analiza koda ili neizvedeni plan.
 
 | Pitanje | Odgovor | Kako |
 |---|---|---|
 | Prolazi li iOS release build i instalacija? | da | §1.2 |
 | Radi li aplikacija na uređaju? | da, v2.0.117, `main() start` u logu | §1.3 |
-| Postoje li preduvjeti za pozadinski zvuk na nativeu? | da (`UIBackgroundModes`, `audio_service`) | §1.2 |
+| Postoje li preduvjeti za pozadinski zvuk na nativeu? | da, **u konfiguraciji** (`UIBackgroundModes`, `audio_service`) — ponašanje neizmjereno | §1.2 |
 | Da li se device log da hvatati tijekom testa? | da, `idevicesyslog` | §1.3 |
-| Ima li produkcija T1–T4? | **ne** (string T2 nedostaje u bundleu) | §1.4 |
+| Da li se snimka zaslona da uhvatiti? | **ne** na iOS-u 26 (`screenshotr` maknut s lockdownd-a) | §1.3 |
+| Ima li produkcija T1–T4? | **da** od v2.0.118 (prije deploya: ne) | §1.4 |
+| Razlikuje li `version.json` buildove? | **ne** — dokazuje samo sadržaj bundlea | §1.4 |
+| Je li build na uređaju zastario u odnosu na deploy? | **ne** — jedina razlika je verzijski string | §1.2 |
 | Ima li LAN server Service Worker? | **ne** (nesiguran kontekst) | §1.5 |
+| Izlaže li Chrome `mediaSession` na nesigurnom origin-u? | **da** (za WebKit neizmjereno) | §1.5 |
 | Postoje li testne epizode (video + audio-only)? | da, `nOCD7LosCxc` / `0475c583ce5` | §2.1 |
+
+**Čega ovdje NEMA, a pitanje je T5-a:** svira li zvuk u pozadini, na kojoj
+platformi, što pokazuju Dynamic Island i lock screen, ostaje li mrtva stavka
+nakon kraja reprodukcije, i drifta li scrub bar pri 1,5×. **Ni na jedno od tih
+pitanja ovaj krug nije odgovorio.**
 
 ---
 
@@ -611,6 +684,31 @@ Da se ne traži dvaput: sve dolje je gotovo i **ne treba** korisnika.
 
 Stvari viđene usput koje nisu dio matrice, ali ne smiju propasti. Ovdje se ne
 zaključuje — samo bilježi što je viđeno i što je provjereno da **nije** uzrok.
+
+### 7.0 Sistemski log priznaje našoj aplikaciji „Background entitlement: YES"
+
+Uhvaćeno u syslog-u pri svakom prelasku aplikacije u prvi plan (2026-07-27):
+
+```
+audiomxd(MediaExperience) -CMSessionMgr- CMSessionMgrHandleApplicationStateChange:
+  Client ai.domovina with session sid:0x6e31b, Runner(6693), 'prim' with pid '6693'
+  is now ForegroundRunning. Background entitlement: YES
+  ActiveLongFormVideoSession: NO IsLongFormVideoApp NO
+Client ai.domovina with pid '6693' is considered to stop when device locks
+```
+
+**Što ovo jest:** neovisna potvrda, sa strane sustava, da iOS našoj aplikaciji
+priznaje pravo na pozadinski audio (`Background entitlement: YES`) — dakle
+`UIBackgroundModes` iz §1.2 nije samo zapis u plistu, nego ga `audiomxd`
+stvarno vidi. Za usporedbu, u istom logu `com.apple.springboard` ima
+`Background entitlement: NO`, a `net.whatsapp.WhatsApp` `YES`.
+
+**Što ovo NIJE:** dokaz da zvuk svira u pozadini. Redak
+`is considered to stop when device locks` snimljen je dok **nije bila aktivna
+nijedna audio sesija** (ništa se nije reproduciralo) — `ActiveLongFormVideoSession: NO`.
+Očekivano je da se ta procjena promijeni čim krene reprodukcija, ali **to nije
+provjereno** jer do reprodukcije nikad nije došlo. Ne citirati ovaj redak kao
+nalaz o pozadinskom ponašanju.
 
 ### 7.1 Crni ekran u native aplikaciji nakon duže suspenzije (2026-07-27)
 
@@ -665,3 +763,36 @@ iOS-u 26** — CoreDevice je maknuo `screenshotr` s lockdownd-a, pa javlja
 „Could not start screenshotr service". Stanje ekrana se zato **ne da** provjeriti
 programatski; svaka tvrdnja o tome što se vidi traži ljudsko oko. To vrijedi i
 za cijeli protokol §2.1, ne samo za ovaj incident.
+
+---
+
+## 8. Prekid: stanje okruženja pri zatvaranju kruga (2026-07-28)
+
+### 8.1 Ugašeno
+
+| Instrument | Bio | Stanje |
+|---|---|---|
+| `idevicesyslog` (2 zahvata: široki + `-m DOMOVINA`) | hvatao device log | **ugašen** |
+| LAN dev server, port 5173 | `flutter run -d web-server --release` | **ugašen** |
+| diag stranica, port 5174 | `python3 -m http.server` | **ugašena** |
+
+### 8.2 Ostalo na uređaju / stroju (nije čišćeno — nije traženo)
+
+- **Aplikacija ostaje instalirana** na iPhoneu (`ai.domovina`, v2.0.117,
+  kontejner `B186B820…`). Tko nastavi, ne mora ponovno buildati — osim ako se
+  u međuvremenu promijenilo išta u `lib/` (vidi upozorenje u §1.2).
+- **Uhvaćeni logovi** ostali su u scratchpadu sesije, koji je privremen i
+  **neće preživjeti** — ako ikad zatrebaju, treba ih ponovno snimiti. Ništa iz
+  njih nije preneseno u repo osim onoga što je citirano u §7.
+- **`a5_background_switch.sh`** (skripta za prebacivanje u pozadinu preko
+  `devicectl`) bila je napisana i sintaktički provjerena, ali **nikad
+  pokrenuta**; živjela je u scratchpadu i nije sačuvana. Ponovna izrada je
+  trivijalna — recept je u §1.3.
+
+### 8.3 Ako se krug nastavlja
+
+1. Podigni instrumente iz §1.3 (samo `idevicesyslog` je nužan).
+2. Provjeri da `lib/` nije mijenjan od builda na uređaju; ako jest — rebuild.
+3. Kreni od **Bloka A** (§2.1). Prvo pokretanje aplikacije **tapom na ikonu**,
+   ne preko `devicectl` — to ujedno razrješava hipotezu iz §7.1.
+4. Web blokovi idu na produkciju v2.0.118; LAN server više nije potreban.

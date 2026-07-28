@@ -251,6 +251,39 @@ media_kit (2.0.1) na webu ima 4 zamke; sve ih rješava zajednički wrapper
 YouTube embed mode = službeni youtube-nocookie iframe (`lib/widgets/youtube_embed.dart`,
 web-only) — NIKAD ad-stripping ili stream extraction (YouTube ToS).
 
+### Kontrole reprodukcije — brzina, seek-undo, rotacijski fullscreen
+
+Uvedeno 2026-07-27 (plan `docs/plans/2026-07-27-playback-overhaul.md`, zaključak
+i otvoreni dug u `-zakljucak.md`). Servisi: `services/playback_speed.dart`
+(globalna brzina po uređaju, kružno kroz `kPlaybackRates`),
+`services/seek_undo.dart` (detekcija RUČNOG skoka nad `player.stream.position`),
+`services/screen_orientation.dart`. Dijeljeni widgeti:
+`widgets/playback_controls.dart`.
+
+**Rule**: nova kontrola playera ide u `playback_controls.dart` i mora se
+pojaviti na **tri** mjesta — video traka, `video_panel.dart` i `_PlayerTab` u
+`episode_simple_screen.dart`. Zadnja dva su jedina putanja za **audio-only**
+epizode, gdje `EpisodeVideo` uopće ne postoji.
+
+**Rule**: prag detekcije skoka ne spuštati ispod 1 s — `position` stream fira
+~5×/s, pa je pri brzini 2,0× prirodni pomak ~0,4 s i niži prag bi generirao
+lažne skokove. Programski seek (resume, tap na poglavlje, sam Undo) mora ići uz
+`SeekUndo.suppress()`.
+
+**Rule**: fullscreen su **tri** putanje, ne jedna — pravi landscape na nativeu
+(`SystemChrome`, probija sistemsku bravu rotacije), `screen.orientation.lock`
+na Android Chromeu, vizualna rotacija (`RotatedBox`) ondje gdje oboje padne
+(iPhone Safari/Chrome). Desktop široki viewport ostaje na media_kitovoj ruti.
+Naša ruta jednako re-parenta `<video>` → koristi postojeći
+`_resumeAfterTransition`, ne piši novi.
+
+**Poznato, nepopravljeno**: `MediaSession.clear()` na webu ne postavlja
+`playbackState = 'none'`, pa iOS ostavlja *mrtvu* stavku u Dynamic Islandu
+(vidljiva, tap ne radi ništa). Dizajniran popravak i zamke re-registracije:
+`docs/ios-background-playback.md` §4.3. Tap na Dynamic Island koji otvara
+aplikaciju je namjerno iOS ponašanje — to nije bug i ne može se isključiti dok
+želimo pozadinski zvuk.
+
 ### Thumbnail caching — cached_network_image (TV)
 
 TV thumbnail-i koriste `CachedThumbnail` widget (`lib/widgets/cached_thumbnail.dart`)
