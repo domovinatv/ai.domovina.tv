@@ -1312,9 +1312,13 @@ class _ChaptersTab extends StatelessWidget {
         final isActive = i == activeIndex;
 
         return ListTile(
+          // Razmak među redovima — chip se rasteže na visinu retka pa bez
+          // ovoga vizualno "lijepi" za divider iznad/ispod.
+          minVerticalPadding: 10,
           leading: Container(
             width: timeChipWidth,
             alignment: Alignment.center,
+            margin: const EdgeInsets.symmetric(vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: BoxDecoration(
               color: isActive
