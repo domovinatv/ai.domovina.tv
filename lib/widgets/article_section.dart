@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/markdown_brand.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/podcast_article.dart';
@@ -560,9 +561,9 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
           // Article content — markdown (+ opcijski person-needle inline syntax)
           MarkdownBody(
             data: content,
-            styleSheet: MarkdownStyleSheet.fromTheme(
-              theme,
-            ).copyWith(p: theme.textTheme.bodyMedium?.copyWith(height: 1.65)),
+            styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                .copyWith(p: theme.textTheme.bodyMedium?.copyWith(height: 1.65))
+                .withBrandBlockquote(theme),
             inlineSyntaxes:
                 needle != null && needle.isNotEmpty ? [PersonMarkSyntax()] : null,
             builders: needle != null && needle.isNotEmpty
@@ -641,9 +642,9 @@ class _MagisteriumEnrichment extends StatelessWidget {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final color = MagisteriumSection.scoreColor(mag.score);
-    final mdStyle = MarkdownStyleSheet.fromTheme(
-      theme,
-    ).copyWith(p: theme.textTheme.bodySmall?.copyWith(height: 1.5));
+    final mdStyle = MarkdownStyleSheet.fromTheme(theme)
+        .copyWith(p: theme.textTheme.bodySmall?.copyWith(height: 1.5))
+        .withBrandBlockquote(theme);
     final lang = EpisodeLanguageScope.of(context);
     final assessment = pickLang(lang, mag.assessment, mag.assessmentEn);
     final enrichment = pickLang(lang, mag.enrichment, mag.enrichmentEn);

@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
 import '../services/open_url.dart';
+import '../theme/markdown_brand.dart';
 
 /// Cleans cited_text: strips markdown footnote refs, dividers, excess whitespace.
 String cleanCitedText(String raw) {
@@ -135,7 +136,7 @@ void showCitationSheet(BuildContext context, MagisteriumCitation citation) {
                       fontWeight: FontWeight.bold,
                       height: 1.7,
                     ),
-                  ),
+                  ).withBrandBlockquote(theme),
                   onTapLink: (text, href, title) {
                     if (href != null) openUrl(href);
                   },

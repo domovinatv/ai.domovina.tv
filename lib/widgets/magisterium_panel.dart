@@ -5,6 +5,7 @@ import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
 import '../services/locale_service.dart';
 import '../services/open_url.dart';
+import '../theme/markdown_brand.dart';
 import 'citation_helpers.dart';
 import 'magisterium_section.dart';
 import 'magisterium_article_section.dart';
@@ -619,7 +620,7 @@ class _MarkdownContent extends StatelessWidget {
             fontFamily: 'monospace',
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
           ),
-        ),
+        ).withBrandBlockquote(theme),
       ),
     );
   }

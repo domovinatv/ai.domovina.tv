@@ -14,6 +14,7 @@ import '../../models/podcast_article.dart';
 import '../../services/cdn_config.dart';
 import '../../services/data_service.dart';
 import '../../services/watch_progress_service.dart';
+import '../../theme/markdown_brand.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
 
@@ -1211,13 +1212,14 @@ class _MagisteriumOverlay extends StatelessWidget {
                           theme.colorScheme.tertiary),
                       MarkdownBody(
                         data: magisterium.assessment,
-                        styleSheet:
-                            MarkdownStyleSheet.fromTheme(theme).copyWith(
-                          p: theme.textTheme.bodyLarge?.copyWith(
-                            height: 1.6,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
+                        styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                            .copyWith(
+                              p: theme.textTheme.bodyLarge?.copyWith(
+                                height: 1.6,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            )
+                            .withBrandBlockquote(theme),
                       ),
                       if (magisterium.concerns.isNotEmpty) ...[
                         const SizedBox(height: 22),
@@ -1248,13 +1250,14 @@ class _MagisteriumOverlay extends StatelessWidget {
                             theme.colorScheme.tertiary),
                         MarkdownBody(
                           data: magisterium.enrichment,
-                          styleSheet:
-                              MarkdownStyleSheet.fromTheme(theme).copyWith(
-                            p: theme.textTheme.bodyLarge?.copyWith(
-                              height: 1.6,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
+                          styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                              .copyWith(
+                                p: theme.textTheme.bodyLarge?.copyWith(
+                                  height: 1.6,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              )
+                              .withBrandBlockquote(theme),
                         ),
                       ],
                       if (magisterium.citations.isNotEmpty) ...[

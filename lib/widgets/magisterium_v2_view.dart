@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../models/magisterium_full_v2_data.dart';
 import '../services/episode_language.dart';
+import '../theme/markdown_brand.dart';
 
 /// Renders MagisteriumFullV2Data: score badge + evaluation markdown + lista
 /// citata s expansion tiles.
@@ -59,7 +60,7 @@ class MagisteriumV2View extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
             listBullet: theme.textTheme.bodyMedium,
-          ),
+          ).withBrandBlockquote(theme),
         ),
         if (data.citations.isNotEmpty) ...[
           const SizedBox(height: 24),

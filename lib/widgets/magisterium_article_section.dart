@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
+import '../theme/markdown_brand.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/magisterium_data.dart';
 import '../services/episode_language.dart';
@@ -396,9 +397,11 @@ class _MagisteriumSectionAnalysisState
               // Assessment — markdown
               MarkdownBody(
                 data: assessmentText,
-                styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                  p: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
-                ),
+                styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                    .copyWith(
+                      p: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                    )
+                    .withBrandBlockquote(theme),
                 onTapLink: (text, href, title) {
                   if (href != null) openUrl(href);
                 },
@@ -418,13 +421,15 @@ class _MagisteriumSectionAnalysisState
                   ),
                   child: MarkdownBody(
                     data: enrichmentText,
-                    styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                      p: theme.textTheme.bodySmall?.copyWith(
-                        height: 1.6,
-                        fontStyle: FontStyle.italic,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                    styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                        .copyWith(
+                          p: theme.textTheme.bodySmall?.copyWith(
+                            height: 1.6,
+                            fontStyle: FontStyle.italic,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                        .withBrandBlockquote(theme),
                     onTapLink: (text, href, title) {
                       if (href != null) openUrl(href);
                     },
