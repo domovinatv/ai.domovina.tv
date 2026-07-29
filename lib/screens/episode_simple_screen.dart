@@ -1290,6 +1290,14 @@ class _ChaptersTab extends StatelessWidget {
       );
     }
 
+    // Uniformna širina timestamp chipa za CIJELU listu — mm:ss i h:mm:ss
+    // redovi dijele istu širinu pa naslovi poglavlja ostaju poravnati, a
+    // h:mm:ss se nikad ne prelama u dva reda (chapters su sortirani pa je
+    // zadnji ujedno i najdulji format).
+    final hasHours =
+        chapters.isNotEmpty && chapters.last.totalSeconds >= 3600;
+    final timeChipWidth = hasHours ? 68.0 : 56.0;
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: chapters.length,
@@ -1305,7 +1313,7 @@ class _ChaptersTab extends StatelessWidget {
 
         return ListTile(
           leading: Container(
-            width: 56,
+            width: timeChipWidth,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: BoxDecoration(
@@ -1314,14 +1322,21 @@ class _ChaptersTab extends StatelessWidget {
                   : theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              _formatTime(ch.totalSeconds),
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurfaceVariant,
+            // FittedBox: i kad OS font-scaling povisi tekst preko širine
+            // chipa, timestamp se smanji umjesto da se prelomi u dva reda.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _formatTime(ch.totalSeconds),
+                maxLines: 1,
+                softWrap: false,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontFamily: 'monospace',
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isActive
+                      ? theme.colorScheme.onPrimaryContainer
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),
