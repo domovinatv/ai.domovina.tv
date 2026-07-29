@@ -332,6 +332,12 @@ izvornim kanalima.
 **Dodirnute datoteke:** `domovina-rag/services/etl/etl/sources.py`,
 `services/etl/etl/load.py`, `services/etl/tests/`.
 
+> **Provjereno 29.07.2026.: `_unlisted` NIJE ni na jednom montiranom disku.**
+> `fetch_domovina_tv_output` na oba diska ima 34 + 14 = 48 direktorija, točno
+> praćeni kanali. Pretpostavka „ETL samo nije pušten" ne stoji — prvi korak F1
+> je **locirati izvor** (druga mašina? samo CDN?) ili čitati `info.json` s
+> CDN-a. Detalji: `domovina-rag/docs/person-data-gaps.md` §3.
+
 **Ključni zahtjev:** kanal se **NE smije** zapisati kao `_unlisted`. Za svaku
 epizodu iz `_unlisted` mapira se iz `info.json`: `channel_name = info.channel`,
 `channel_youtube_id = info.channel_id`, `channel = slug(info.channel)` (ASCII-fold
@@ -354,6 +360,13 @@ Novo: `GET /api/persons` (shema §4.1, `Cache-Control: public, max-age=900`);
 `/api/person/:slug` proširen aditivnim poljima (§4.2); `speaking_seconds` po
 epizodi iz ClickHouse `rag_chunks`; tablice `person_channel_overrides` i
 `person_optouts` (§4.3) primijenjene u agregaciji.
+
+> **Mjerna zamka prije nego se `speaking_seconds` uopće izračuna**: `speaker` u
+> `rag_chunks` je comma-joined, pa naivni `sum(end_ts - start_ts)` broji isti
+> chunk punim trajanjem svakom govorniku i napuhuje udio u panelima — točno ono
+> na što je prag od 15 % osjetljiv. `duration_seconds` nema izvor: lokalni
+> `episodes.duration_sec` je 0/2960, a cloud PG tablicu `episodes` uopće nema.
+> Mjere i što provjeriti: `domovina-rag/docs/person-data-gaps.md` §2.
 
 **Deploy:** `services/mcp/deploy.sh` (Coolify REST — nema push-webhooka).
 
@@ -519,6 +532,7 @@ Obje su **tombstone** tablice — moraju preživjeti ETL rerun.
 | **Scroll-perf `/channels`** | 48 kanala + N osoba u istoj listi; home je već jednom morao izbaciti eager renderiranje zbog janka na skwasmu | Lista je već lazy `SliverList`; osobe ulaze tek s ≥ 3 epizode; ako broj osoba prijeđe ~50, filter chip postaje default „Kanali". **Izmjeriti** na web buildu prije mergea T4. |
 | **Service worker / cache** | SW je aktivan (iOS PWA background audio); novi bundle + nove rute | `./scripts/deploy.sh` radi purge; `/api/persons` ide preko `mcp.domovina.ai` (izvan SW scopea). Nakon ETL reruna profil se ne osvježi do **900 s** — za demo hard refresh. |
 | **Kolizija slugova** | Dvije osobe s istim ASCII-folded imenom danas tiho dijele profil | F2 vraća `ambiguous: true` kad jedan slug pokriva > 1 `canonical_name`; tada se kanal-forma **ne** aktivira. Frontend to mora poštovati (T2). |
+| **Fragmentacija po prezimenu** (obrnuti smjer od kolizije: jedna osoba → više slugova) | `andrej-plenkovic` 149 vs `plenkovic` 113; `zoran-milanovic` 111 vs `milanovic` 78; 4 488 od 17 117 slugova je jednočlano. Osoba uđe u katalog dvaput, ili nijednom ako se prag od 3 epizode razdijeli | **Nema mitigacije u ovom planu** — `person_mentions` nema alias mehanizam kakav `speakers` ima (`speaker_aliases.csv`). Mjere i predloženi opseg: `domovina-rag/docs/person-data-gaps.md` §1. Riješiti PRIJE T4 (katalog), inače katalog nasljeđuje duplikate. |
 | **ASCII-fold mismatch** | ASR piše „Mić" umjesto „Mič" → epizoda ne uđe ili uđe kriva | Postojeći `speakers.aliases[]` mehanizam se nasljeđuje; greška sad ima veću cijenu (tuđa epizoda u nečijem kanalu) → `exclude` override + vidljiv „Prijavi grešku" na svakoj epizodi u kanalu (T3). |
 | **Lažno pripisivanje govornika** | Loša diarizacija stavi tuđu epizodu u nečiji kanal — reputacijski problem | Tier prag ne pomaže kod krive atribucije; obrana je `exclude` override + ručni pregled prvih virtualnih kanala prije javne objave. |
 | **Pravni (O8, opt-out)** | Profil se gradi od tuđih snimki, javno po defaultu | Obavijest prije objave; tombstone opt-out; nikad tvrdnja „službeni kanal"; nikad private/YT-unlisted izvori; izvršenje zahtjeva ≤ 7 dana. |
