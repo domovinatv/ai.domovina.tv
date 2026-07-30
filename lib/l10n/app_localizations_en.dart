@@ -42,6 +42,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonRetry => 'Try again';
 
   @override
+  String get commonSeeAll => 'See all';
+
+  @override
+  String get commonUndo => 'Undo';
+
+  @override
   String get commonCopy => 'Copy';
 
   @override
@@ -1287,6 +1293,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeRailLatest => 'Latest episodes';
+
+  @override
+  String get homeRailFavorites => 'Your saved episodes';
+
+  @override
+  String get favoritesTitle => 'Saved episodes';
+
+  @override
+  String favoritesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count episodes',
+      one: '$count episode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favoritesEmptyTitle => 'Nothing saved yet';
+
+  @override
+  String get favoritesEmptyBody =>
+      'Tap the heart on an episode and you\'ll find it here — newest first.';
+
+  @override
+  String get favoritesBrowse => 'Browse episodes';
+
+  @override
+  String get favoritesSaved => 'Saved';
+
+  @override
+  String get favoritesRemoved => 'Removed from saved';
+
+  @override
+  String get favoritesAccountSubtitle => 'The full list, newest first';
+
+  @override
+  String get authSectionLibrary => 'My library';
 
   @override
   String get homeRailFreshlyArrived => 'Just arrived';

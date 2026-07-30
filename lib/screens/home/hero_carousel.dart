@@ -19,14 +19,12 @@ class HeroCarousel extends StatefulWidget {
   final List<FeaturedPick> picks;
   final bool isMobile;
   final void Function(String videoId) onPlay;
-  final VoidCallback onSave;
 
   const HeroCarousel({
     super.key,
     required this.picks,
     required this.isMobile,
     required this.onPlay,
-    required this.onSave,
   });
 
   @override
@@ -103,7 +101,6 @@ class _HeroCarouselState extends State<HeroCarousel> {
       featured: pick,
       isMobile: widget.isMobile,
       onPlay: () => widget.onPlay(pick.video.video.id),
-      onSave: widget.onSave,
       outerPadding: padding ?? const EdgeInsets.fromLTRB(16, 8, 16, 24),
     );
   }

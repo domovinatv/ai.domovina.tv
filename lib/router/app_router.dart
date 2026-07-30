@@ -6,6 +6,7 @@ import '../screens/channels/all_channels_screen.dart';
 import '../screens/channel/channel_screen.dart';
 import '../screens/person/person_screen.dart';
 import '../screens/episode_screen.dart';
+import '../screens/favorites/favorites_screen.dart';
 import '../screens/episode_simple_screen.dart';
 import '../screens/legal/privacy_screen.dart';
 import '../screens/legal/terms_screen.dart';
@@ -392,6 +393,15 @@ GoRouter createRouter() {
             ),
           );
         },
+      ),
+      // Spremljene (lajkane) epizode — puni popis, najnovija prvo. Isječak je
+      // rail na naslovnici (vidi screens/home/favorites_rail.dart).
+      GoRoute(
+        path: '/favorites',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('favorites'),
+          child: FavoritesScreen(),
+        ),
       ),
       // Moj račun — account management (identiteti, passkeyji, brisanje)
       GoRoute(

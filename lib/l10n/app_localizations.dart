@@ -164,6 +164,18 @@ abstract class AppLocalizations {
   /// **'Pokušaj ponovno'**
   String get commonRetry;
 
+  /// Akcija uz naslov raila koja otvara puni popis.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikaži sve'**
+  String get commonSeeAll;
+
+  /// Akcija u SnackBaru koja vraća upravo poništenu radnju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poništi'**
+  String get commonUndo;
+
   /// Kopiraj u međuspremnik.
   ///
   /// In hr, this message translates to:
@@ -2221,6 +2233,66 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Najnovije epizode'**
   String get homeRailLatest;
+
+  /// Eyebrow title (uppercased in UI) of the saved/liked episodes rail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoje spremljeno'**
+  String get homeRailFavorites;
+
+  /// Naslov ekrana s punim popisom spremljenih (favorit) epizoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremljene epizode'**
+  String get favoritesTitle;
+
+  /// Broj spremljenih epizoda iznad popisa.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}'**
+  String favoritesCount(int count);
+
+  /// Naslov praznog stanja na ekranu spremljenih epizoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nemaš spremljenih epizoda'**
+  String get favoritesEmptyTitle;
+
+  /// Objašnjenje praznog stanja na ekranu spremljenih epizoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodirni srce na epizodi i naći ćeš je ovdje — najnovije prvo.'**
+  String get favoritesEmptyBody;
+
+  /// Gumb iz praznog stanja koji vodi na naslovnicu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Istraži epizode'**
+  String get favoritesBrowse;
+
+  /// Stanje gumba i potvrda nakon što je epizoda spremljena među favorite.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremljeno'**
+  String get favoritesSaved;
+
+  /// SnackBar potvrda nakon uklanjanja epizode s popisa spremljenih.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uklonjeno iz spremljenih'**
+  String get favoritesRemoved;
+
+  /// Podnaslov stavke na ekranu računa koja vodi na spremljene epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Cijeli popis, najnovije prvo'**
+  String get favoritesAccountSubtitle;
+
+  /// Naslov sekcije na ekranu računa koja skuplja korisnikov spremljeni sadržaj.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moja knjižnica'**
+  String get authSectionLibrary;
 
   /// Eyebrow title (uppercased in UI) of the freshly-arrived rail.
   ///

@@ -20,6 +20,7 @@ import '../../services/auth_service.dart';
 import '../../services/background_playback.dart';
 import '../../services/entitlement_service.dart';
 import '../../services/episode_language.dart';
+import '../../services/favorites_service.dart';
 import '../../services/locale_service.dart';
 import '../../services/passkey_service.dart';
 import '../../theme/app_theme.dart';
@@ -159,6 +160,14 @@ class _AccountScreenState extends State<AccountScreen> {
                 onPressed: () => openPaywall(context, UpgradeTrigger.generic),
               ),
               const SizedBox(height: 28),
+              // Favoriti su offline-first (localStorage) pa i gost ima svoju
+              // policu — prijava ih samo sinkronizira preko uređaja.
+              SizedBox(
+                width: double.infinity,
+                child: _sectionLabel(theme, l.authSectionLibrary),
+              ),
+              _favoritesCard(theme),
+              const SizedBox(height: 16),
               // Postavka je lokalna (uređaj/preglednik) i ne ovisi o prijavi —
               // isti prekidač kao u _signedInBody.
               SizedBox(
@@ -192,6 +201,9 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(height: 16),
               _sectionLabel(theme, l.authSectionSubscription),
               _plusCard(theme),
+              const SizedBox(height: 16),
+              _sectionLabel(theme, l.authSectionLibrary),
+              _favoritesCard(theme),
               const SizedBox(height: 16),
               _sectionLabel(theme, l.authSectionSignInMethods),
               _identitiesCard(theme),
@@ -282,6 +294,40 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         );
       },
+    );
+  }
+
+  /// Ulaz u puni popis spremljenih (lajkanih) epizoda — `/favorites`.
+  /// Broj se čita iz [FavoritesService] (lokalni cache), pa je točan i offline.
+  Widget _favoritesCard(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+    return ListenableBuilder(
+      listenable: FavoritesService.instance,
+      builder: (context, _) => FutureBuilder<List<FavoriteEntry>>(
+        future: FavoritesService.instance.entries(),
+        builder: (context, snap) {
+          final count = snap.data?.length;
+          return _card(
+            theme,
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+              leading: Icon(Icons.favorite_outline, color: cs.primary),
+              title: Text(l.favoritesTitle),
+              subtitle: Text(
+                count == null || count == 0
+                    ? l.favoritesAccountSubtitle
+                    : '${l.favoritesCount(count)} · ${l.favoritesAccountSubtitle}',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: cs.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/favorites'),
+            ),
+          );
+        },
+      ),
     );
   }
 

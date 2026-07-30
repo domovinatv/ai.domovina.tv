@@ -666,7 +666,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                 ),
               ),
             ),
-            FavoriteButton(episodeId: data.youtubeId),
+            FavoriteButton(
+              episodeId: data.youtubeId,
+              episodeTitle: data.displayTitle,
+              channelName: data.info.channel,
+            ),
             if (data.hasTranslationEn)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),

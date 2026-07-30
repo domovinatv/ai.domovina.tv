@@ -42,6 +42,12 @@ class AppLocalizationsHr extends AppLocalizations {
   String get commonRetry => 'Pokušaj ponovno';
 
   @override
+  String get commonSeeAll => 'Prikaži sve';
+
+  @override
+  String get commonUndo => 'Poništi';
+
+  @override
   String get commonCopy => 'Kopiraj';
 
   @override
@@ -1299,6 +1305,46 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get homeRailLatest => 'Najnovije epizode';
+
+  @override
+  String get homeRailFavorites => 'Tvoje spremljeno';
+
+  @override
+  String get favoritesTitle => 'Spremljene epizode';
+
+  @override
+  String favoritesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizoda',
+      few: '$count epizode',
+      one: '$count epizoda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favoritesEmptyTitle => 'Još nemaš spremljenih epizoda';
+
+  @override
+  String get favoritesEmptyBody =>
+      'Dodirni srce na epizodi i naći ćeš je ovdje — najnovije prvo.';
+
+  @override
+  String get favoritesBrowse => 'Istraži epizode';
+
+  @override
+  String get favoritesSaved => 'Spremljeno';
+
+  @override
+  String get favoritesRemoved => 'Uklonjeno iz spremljenih';
+
+  @override
+  String get favoritesAccountSubtitle => 'Cijeli popis, najnovije prvo';
+
+  @override
+  String get authSectionLibrary => 'Moja knjižnica';
 
   @override
   String get homeRailFreshlyArrived => 'Upravo stiglo';

@@ -12,11 +12,19 @@ class FavoriteButton extends StatefulWidget {
   final double iconSize;
   final Color? activeColor;
 
+  /// Denorm naslov/kanal spremljeni uz favorit — lista spremljenih ih koristi
+  /// dok se katalog (`channelCache`) ne učita, ili ako epizode više nema u
+  /// njemu. Proslijedi ih kad ih ekran ionako ima.
+  final String? episodeTitle;
+  final String? channelName;
+
   const FavoriteButton({
     super.key,
     required this.episodeId,
     this.iconSize = 24,
     this.activeColor,
+    this.episodeTitle,
+    this.channelName,
   });
 
   @override
@@ -53,8 +61,11 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   }
 
   Future<void> _toggle() async {
-    final wasAdded =
-        await FavoritesService.instance.toggle(widget.episodeId);
+    final wasAdded = await FavoritesService.instance.toggle(
+      widget.episodeId,
+      title: widget.episodeTitle,
+      channelName: widget.channelName,
+    );
     if (!mounted) return;
     if (wasAdded) {
       await maybeShowM3OnFavorite(context);

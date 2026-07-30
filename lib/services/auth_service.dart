@@ -242,7 +242,11 @@ class AuthService extends ChangeNotifier {
     WatchProgressService.instance
         .migrateToSupabase(userId)
         .then((_) => WatchProgressService.instance.hydrateFromSupabase());
-    FavoritesService.instance.migrateToSupabase(userId);
+    // Isti obrazac za favorite: backfill pa hidratacija, da favorit spremljen
+    // na drugom uređaju stigne u lokalni cache (jedini izvor za rail/listu).
+    FavoritesService.instance
+        .migrateToSupabase(userId)
+        .then((_) => FavoritesService.instance.hydrateFromSupabase());
   }
 
   /// Anon UUID je spremljen u localStorage prije OAuth redirecta (vidi

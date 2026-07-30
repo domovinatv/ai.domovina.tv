@@ -1452,7 +1452,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
             ),
           ),
         ),
-        FavoriteButton(episodeId: data.youtubeId),
+        FavoriteButton(
+          episodeId: data.youtubeId,
+          episodeTitle: data.displayTitle,
+          channelName: data.info.channel,
+        ),
         if (data.hasTranslationEn)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1771,7 +1775,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   ),
                 ),
               ),
-              FavoriteButton(episodeId: data.youtubeId),
+              FavoriteButton(
+          episodeId: data.youtubeId,
+          episodeTitle: data.displayTitle,
+          channelName: data.info.channel,
+        ),
               ViewModeToggleButton(
                 toSimple: true,
                 onPressed: () async {
@@ -2190,7 +2198,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 ),
               ),
             ),
-            FavoriteButton(episodeId: data.youtubeId),
+            FavoriteButton(
+          episodeId: data.youtubeId,
+          episodeTitle: data.displayTitle,
+          channelName: data.info.channel,
+        ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: l.episodeCopyMomentLink,

@@ -14,12 +14,19 @@ class EpisodesRail extends StatefulWidget {
   final bool isMobile;
   final Color? eyebrowAccentColor;
 
+  /// Opcionalna akcija desno od naslova ("Prikaži sve") — za railove koji su
+  /// isječak dulje liste (npr. spremljene epizode → `/favorites`).
+  final VoidCallback? onSeeAll;
+  final String? seeAllLabel;
+
   const EpisodesRail({
     super.key,
     required this.eyebrow,
     required this.cards,
     required this.isMobile,
     this.eyebrowAccentColor,
+    this.onSeeAll,
+    this.seeAllLabel,
   });
 
   @override
@@ -108,12 +115,34 @@ class _EpisodesRailState extends State<EpisodesRail> {
               children: [
                 Container(width: 24, height: 2, color: accent),
                 const SizedBox(width: 10),
-                Text(
-                  widget.eyebrow.toUpperCase(),
-                  style: AppTypography.eyebrowStyle(theme.colorScheme).copyWith(
-                    color: theme.colorScheme.onSurface,
+                Expanded(
+                  child: Text(
+                    widget.eyebrow.toUpperCase(),
+                    style:
+                        AppTypography.eyebrowStyle(theme.colorScheme).copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (widget.onSeeAll != null && widget.seeAllLabel != null)
+                  TextButton(
+                    onPressed: widget.onSeeAll,
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      widget.seeAllLabel!,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

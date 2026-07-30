@@ -2,22 +2,92 @@
 /// `domovina_ai.favorites` za signed-in usere. Anonymous korisnici ostaju
 /// samo lokalno (trigger ne kreira personal account dok ne urade
 /// linkIdentity → tek tada mogu pisati u favorites tablicu).
+///
+/// Zapis nosi **vrijeme spremanja** i denormalizirani naslov/kanal, da rail na
+/// naslovnici i `/favorites` ekran mogu odmah crtati (najnoviji prvi) i bez
+/// učitanog `channelCache`-a. Kanonski izvor metapodataka i dalje je katalog —
+/// denorm je samo fallback.
 library;
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show ChangeNotifier, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show ChangeNotifier, kIsWeb, visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../main.dart' show log;
 import 'local_prefs.dart';
 
-const _kKey = 'favorites_v1';
+/// v1 = gola JSON lista episode ID-eva (bez vremena). Čita se samo pri migraciji.
+const _kKeyV1 = 'favorites_v1';
+
+/// v2 = JSON lista objekata `{id, addedAt?, title?, channel?}`.
+const _kKey = 'favorites_v2';
+
+/// Jedan spremljeni favorit.
+///
+/// [addedAt] je null za zapise migrirane iz v1 formata (nikad nisu imali
+/// vrijeme) — takvi idu na kraj liste, iza svega s poznatim vremenom.
+class FavoriteEntry {
+  final String episodeId;
+  final DateTime? addedAt;
+
+  /// Denorm cache — vrijedi samo dok katalog nema svježiji podatak.
+  final String? title;
+  final String? channelName;
+
+  const FavoriteEntry({
+    required this.episodeId,
+    this.addedAt,
+    this.title,
+    this.channelName,
+  });
+
+  FavoriteEntry copyWith({
+    DateTime? addedAt,
+    String? title,
+    String? channelName,
+  }) =>
+      FavoriteEntry(
+        episodeId: episodeId,
+        addedAt: addedAt ?? this.addedAt,
+        title: title ?? this.title,
+        channelName: channelName ?? this.channelName,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': episodeId,
+        if (addedAt != null) 'addedAt': addedAt!.toIso8601String(),
+        if (title != null) 'title': title,
+        if (channelName != null) 'channel': channelName,
+      };
+
+  static FavoriteEntry? fromJson(dynamic raw) {
+    // v1 zapis je goli string — podnosimo ga i unutar v2 liste.
+    if (raw is String) {
+      return raw.isEmpty ? null : FavoriteEntry(episodeId: raw);
+    }
+    if (raw is! Map) return null;
+    final id = raw['id'];
+    if (id is! String || id.isEmpty) return null;
+    DateTime? added;
+    final ts = raw['addedAt'];
+    if (ts is String) added = DateTime.tryParse(ts);
+    return FavoriteEntry(
+      episodeId: id,
+      addedAt: added,
+      title: raw['title'] as String?,
+      channelName: raw['channel'] as String?,
+    );
+  }
+}
 
 class FavoritesService extends ChangeNotifier {
   static final FavoritesService instance = FavoritesService._();
   FavoritesService._();
 
-  final Set<String> _set = {};
+  /// Insertion-ordered (LinkedHashMap je Dart default) — čuva redoslijed
+  /// legacy zapisa bez vremena.
+  final Map<String, FavoriteEntry> _byId = {};
   bool _loaded = false;
 
   /// Cache personal account ID — lookup je eager pri prvom remote pisanju,
@@ -26,33 +96,87 @@ class FavoritesService extends ChangeNotifier {
 
   Future<void> _ensureLoaded() async {
     if (_loaded) return;
-    final raw = await _read();
+    final raw = await _read(_kKey) ?? await _read(_kKeyV1);
     if (raw != null && raw.isNotEmpty) {
       try {
         final list = jsonDecode(raw) as List;
-        _set.addAll(list.cast<String>());
+        for (final item in list) {
+          final entry = FavoriteEntry.fromJson(item);
+          if (entry != null) _byId[entry.episodeId] = entry;
+        }
       } catch (_) {}
     }
     _loaded = true;
   }
 
+  /// Pozovi jednom iz `main.dart` prije `runApp` ako želiš sinkroni pristup.
+  Future<void> init() => _ensureLoaded();
+
   Future<bool> isFavorite(String episodeId) async {
     await _ensureLoaded();
-    return _set.contains(episodeId);
+    return _byId.containsKey(episodeId);
   }
+
+  /// Sinkroni lookup — vrijedi tek nakon [init]/prvog `await`-anog poziva.
+  bool isFavoriteSync(String episodeId) => _byId.containsKey(episodeId);
 
   Future<List<String>> all() async {
     await _ensureLoaded();
-    return _set.toList();
+    return _byId.keys.toList();
   }
 
-  Future<bool> toggle(String episodeId) async {
+  /// Svi favoriti, **najnoviji prvi**. Zapisi bez vremena (v1 migracija) idu
+  /// na kraj, u izvornom redoslijedu spremanja.
+  Future<List<FavoriteEntry>> entries() async {
     await _ensureLoaded();
-    final wasAdded = !_set.contains(episodeId);
+    return entriesSync();
+  }
+
+  /// Sinkrona varijanta [entries] — za widgete koji su već pozvali [init]
+  /// (ili su se probudili na `notifyListeners`).
+  List<FavoriteEntry> entriesSync() {
+    final list = _byId.values.toList();
+    final index = {
+      for (var i = 0; i < list.length; i++) list[i].episodeId: i,
+    };
+    // List.sort nije stabilan → eksplicitni tie-break po insertion indexu.
+    list.sort((a, b) {
+      final at = a.addedAt;
+      final bt = b.addedAt;
+      if (at != null && bt != null) {
+        final cmp = bt.compareTo(at);
+        if (cmp != 0) return cmp;
+      } else if (at != null) {
+        return -1;
+      } else if (bt != null) {
+        return 1;
+      }
+      return index[a.episodeId]!.compareTo(index[b.episodeId]!);
+    });
+    return list;
+  }
+
+  int get count => _byId.length;
+
+  /// Toggle favorita. [title]/[channelName] su opcionalni denorm podaci —
+  /// proslijedi ih kad ih ekran ionako ima (episode screen), da lista
+  /// spremljenih radi i prije nego se katalog učita.
+  Future<bool> toggle(
+    String episodeId, {
+    String? title,
+    String? channelName,
+  }) async {
+    await _ensureLoaded();
+    final wasAdded = !_byId.containsKey(episodeId);
     if (wasAdded) {
-      _set.add(episodeId);
+      _byId[episodeId] = FavoriteEntry(
+        episodeId: episodeId,
+        addedAt: DateTime.now(),
+        title: title,
+        channelName: channelName,
+      );
     } else {
-      _set.remove(episodeId);
+      _byId.remove(episodeId);
     }
     await _persist();
     notifyListeners();
@@ -60,6 +184,16 @@ class FavoritesService extends ChangeNotifier {
     // Fire-and-forget remote sync — UI ne čeka. Anonymous korisnici ne pišu.
     unawaited(_syncRemote(episodeId, wasAdded));
     return wasAdded;
+  }
+
+  /// Ukloni favorit (idempotentno) — za listu spremljenih, gdje je akcija
+  /// „makni", ne „prebaci".
+  Future<void> remove(String episodeId) async {
+    await _ensureLoaded();
+    if (_byId.remove(episodeId) == null) return;
+    await _persist();
+    notifyListeners();
+    unawaited(_syncRemote(episodeId, false));
   }
 
   Future<void> _syncRemote(String episodeId, bool isFavorite) async {
@@ -127,7 +261,7 @@ class FavoritesService extends ChangeNotifier {
     if (await _readFlag(flagKey)) return;
 
     await _ensureLoaded();
-    final episodeIds = _set.toList();
+    final episodeIds = _byId.keys.toList();
     if (episodeIds.isEmpty) {
       await _writeFlag(flagKey);
       return;
@@ -143,11 +277,17 @@ class FavoritesService extends ChangeNotifier {
         return;
       }
 
-      final rows = episodeIds.map((id) => {
-            'owner_id': ownerId,
-            'episode_id': id,
-            'created_by': userId,
-          }).toList();
+      final rows = episodeIds.map((id) {
+        final added = _byId[id]?.addedAt;
+        return {
+          'owner_id': ownerId,
+          'episode_id': id,
+          'created_by': userId,
+          // Vrijeme spremanja s uređaja — bez njega bi backfill sve favorite
+          // stisnuo na isti `now()` i uništio redoslijed „najnoviji prvi".
+          if (added != null) 'created_at': added.toUtc().toIso8601String(),
+        };
+      }).toList();
 
       await sb.Supabase.instance.client
           .schema('domovina_ai')
@@ -158,6 +298,47 @@ class FavoritesService extends ChangeNotifier {
       log('favorites: migrated ${episodeIds.length} local entries for $userId');
     } catch (e) {
       log('favorites migrate failed (will retry next session): $e');
+    }
+  }
+
+  /// Povuci favorite s računa u lokalni cache — favorit spremljen na drugom
+  /// uređaju inače nikad ne dođe natrag (lokalni zapis je jedini izvor za UI).
+  /// Zove se nakon [migrateToSupabase], da se lokalno prvo gurne gore.
+  ///
+  /// Merge politika: remote se dodaje ako ga lokalno nema; ako ga ima bez
+  /// vremena (v1 migracija), preuzima se `created_at` s računa. Lokalno
+  /// brisanje se NE poništava jer toggle odmah briše i remote red.
+  Future<void> hydrateFromSupabase() async {
+    await _ensureLoaded();
+    try {
+      final client = sb.Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user == null || user.isAnonymous) return;
+      final rows = await client
+          .schema('domovina_ai')
+          .from('favorites')
+          .select('episode_id, created_at');
+      var changed = false;
+      for (final r in rows) {
+        final id = r['episode_id'] as String?;
+        if (id == null || id.isEmpty) continue;
+        final created = DateTime.tryParse((r['created_at'] as String?) ?? '');
+        final local = _byId[id];
+        if (local == null) {
+          _byId[id] = FavoriteEntry(episodeId: id, addedAt: created);
+          changed = true;
+        } else if (local.addedAt == null && created != null) {
+          _byId[id] = local.copyWith(addedAt: created);
+          changed = true;
+        }
+      }
+      if (changed) {
+        await _persist();
+        notifyListeners();
+        log('favorites: hydrated ${rows.length} remote rows');
+      }
+    } catch (e) {
+      log('favorites hydrate failed: $e');
     }
   }
 
@@ -177,7 +358,7 @@ class FavoritesService extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
-    final raw = jsonEncode(_set.toList());
+    final raw = jsonEncode(_byId.values.map((e) => e.toJson()).toList());
     if (kIsWeb) {
       setLocalStorageString(_kKey, raw);
       return;
@@ -186,10 +367,18 @@ class FavoritesService extends ChangeNotifier {
     await prefs.setString(_kKey, raw);
   }
 
-  Future<String?> _read() async {
-    if (kIsWeb) return getLocalStorageString(_kKey);
+  Future<String?> _read(String key) async {
+    if (kIsWeb) return getLocalStorageString(key);
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kKey);
+    return prefs.getString(key);
+  }
+
+  /// Test hook: vrati servis u početno stanje.
+  @visibleForTesting
+  void debugReset() {
+    _byId.clear();
+    _loaded = false;
+    _personalAccountId = null;
   }
 }
 

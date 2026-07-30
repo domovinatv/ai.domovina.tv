@@ -18,6 +18,7 @@ import '../../widgets/founder_booking.dart';
 import '../../l10n/app_localizations.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
+import 'favorites_rail.dart';
 import 'followed_rail.dart';
 import 'footer.dart';
 import 'home_app_bar.dart';
@@ -46,17 +47,6 @@ List<String>? _loadOrderWeb() {
 
 void _saveOrderWeb(List<String> ids) {
   setLocalStorageString(_channelOrderKey, ids.join(','));
-}
-
-/// Privremeni placeholder za feature-e koji jos nisu spojeni (npr. "Spremi"
-/// gumb na hero kartici). Cijela favoriti integracija stize u sljedecem koraku.
-void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(AppLocalizations.of(context).homeComingSoonSnack),
-      duration: const Duration(seconds: 2),
-    ),
-  );
 }
 
 /// Home screen — channel grid + search + manual YouTube ID input.
@@ -390,7 +380,6 @@ class _ChannelGridView extends StatelessWidget {
                       picks: featuredPicks,
                       isMobile: isMobile,
                       onPlay: (id) => onVideoTap(id),
-                      onSave: () => _showComingSoon(context),
                     ),
                   )
                 else if (!hasMinData)
@@ -494,6 +483,17 @@ class _ChannelGridView extends StatelessWidget {
                 // PersonChannelFlag ugašen ili indeks nije dostupan, pa home
                 // bez flaga izgleda točno kao prije. Vidi persons_rail.dart.
                 SliverToBoxAdapter(child: PersonsRail(isMobile: isMobile)),
+
+                // Rail „Tvoje spremljeno" — lajkane epizode, najnovija prvo.
+                // Stoji pri dnu (podsjetnik na vlastitu policu, ne urednički
+                // izbor) i sam se sakrije kad nema nijednog favorita. „Prikaži
+                // sve" vodi na /favorites. Vidi favorites_rail.dart.
+                SliverToBoxAdapter(
+                  child: FavoritesRail(
+                    isMobile: isMobile,
+                    onVideoTap: onVideoTap,
+                  ),
+                ),
 
                 // Puni popis kanala je premjesten s home-a na zaseban surface
                 // (lazy lista + filter) radi scroll-perf-a — na home-u sad samo

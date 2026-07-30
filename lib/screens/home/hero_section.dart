@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/cdn_config.dart';
 import '../../l10n/app_localizations.dart';
 
+import '../../services/favorites_service.dart';
 import '../../theme/typography.dart';
 import 'home_feed.dart';
 
@@ -34,7 +36,6 @@ import 'home_feed.dart';
 class HeroSection extends StatelessWidget {
   final FeaturedPick featured;
   final VoidCallback onPlay;
-  final VoidCallback onSave;
   final bool isMobile;
 
   /// Vanjski razmak oko kartice. Default ostavlja zracni prostor ispod hero-a;
@@ -46,7 +47,6 @@ class HeroSection extends StatelessWidget {
     super.key,
     required this.featured,
     required this.onPlay,
-    required this.onSave,
     required this.isMobile,
     this.outerPadding = const EdgeInsets.fromLTRB(16, 8, 16, 24),
   });
@@ -244,10 +244,9 @@ class HeroSection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            OutlinedButton.icon(
-              onPressed: onSave,
-              icon: const Icon(Icons.bookmark_border, size: 18),
-              label: Text(l.commonSave),
+            _SaveButton(
+              video: featured.video,
+              textColor: textColor,
               style: OutlinedButton.styleFrom(
                 foregroundColor: textColor,
                 side: BorderSide(
@@ -587,5 +586,93 @@ class _WhyDialog extends StatelessWidget {
     if (days < 30) return l.homeAgoWeeks((days / 7).floor());
     if (days < 365) return l.homeAgoMonths((days / 30).floor());
     return l.homeAgoYears((days / 365).floor());
+  }
+}
+
+/// „Spremi" na hero kartici — pravi favorit, ne placeholder.
+///
+/// Vlastiti state jer se ikona/labela mijenjaju odmah nakon tapa, a hero je
+/// inače stateless. Sluša [FavoritesService] pa se osvježi i kad se favorit
+/// makne drugdje (rail, `/favorites`, ekran epizode).
+class _SaveButton extends StatefulWidget {
+  final FeedVideo video;
+  final Color textColor;
+  final ButtonStyle style;
+
+  const _SaveButton({
+    required this.video,
+    required this.textColor,
+    required this.style,
+  });
+
+  @override
+  State<_SaveButton> createState() => _SaveButtonState();
+}
+
+class _SaveButtonState extends State<_SaveButton> {
+  bool _saved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    FavoritesService.instance.addListener(_load);
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SaveButton old) {
+    super.didUpdateWidget(old);
+    if (old.video.video.id != widget.video.video.id) _load();
+  }
+
+  @override
+  void dispose() {
+    FavoritesService.instance.removeListener(_load);
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final v = await FavoritesService.instance.isFavorite(widget.video.video.id);
+    if (mounted) setState(() => _saved = v);
+  }
+
+  Future<void> _toggle() async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final added = await FavoritesService.instance.toggle(
+      widget.video.video.id,
+      title: widget.video.video.displayTitle,
+      channelName: widget.video.channelName,
+    );
+    if (!mounted) return;
+    // SnackBar samo kao potvrda korisnikove radnje (vidi CLAUDE.md — nudge).
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(added ? l.favoritesSaved : l.favoritesRemoved),
+        duration: const Duration(seconds: 2),
+        action: added
+            ? SnackBarAction(
+                label: l.commonSeeAll,
+                onPressed: () => context.go('/favorites'),
+              )
+            : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return OutlinedButton.icon(
+      onPressed: _toggle,
+      icon: Icon(
+        _saved ? Icons.favorite : Icons.favorite_border,
+        size: 18,
+        color: _saved ? AppTheme.croRed : widget.textColor,
+      ),
+      label: Text(_saved ? l.favoritesSaved : l.commonSave),
+      style: widget.style,
+    );
   }
 }

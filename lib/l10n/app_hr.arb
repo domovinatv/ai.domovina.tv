@@ -44,6 +44,14 @@
   "@commonRetry": {
     "description": "Ponovi neuspjelu radnju."
   },
+  "commonSeeAll": "Prikaži sve",
+  "@commonSeeAll": {
+    "description": "Akcija uz naslov raila koja otvara puni popis."
+  },
+  "commonUndo": "Poništi",
+  "@commonUndo": {
+    "description": "Akcija u SnackBaru koja vraća upravo poništenu radnju."
+  },
   "commonCopy": "Kopiraj",
   "@commonCopy": {
     "description": "Kopiraj u međuspremnik."
@@ -1617,6 +1625,51 @@
   "homeRailLatest": "Najnovije epizode",
   "@homeRailLatest": {
     "description": "Eyebrow title (uppercased in UI) of the latest-episodes rail."
+  },
+  "homeRailFavorites": "Tvoje spremljeno",
+  "@homeRailFavorites": {
+    "description": "Eyebrow title (uppercased in UI) of the saved/liked episodes rail."
+  },
+  "favoritesTitle": "Spremljene epizode",
+  "@favoritesTitle": {
+    "description": "Naslov ekrana s punim popisom spremljenih (favorit) epizoda."
+  },
+  "favoritesCount": "{count, plural, one{{count} epizoda} few{{count} epizode} other{{count} epizoda}}",
+  "@favoritesCount": {
+    "description": "Broj spremljenih epizoda iznad popisa.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favoritesEmptyTitle": "Još nemaš spremljenih epizoda",
+  "@favoritesEmptyTitle": {
+    "description": "Naslov praznog stanja na ekranu spremljenih epizoda."
+  },
+  "favoritesEmptyBody": "Dodirni srce na epizodi i naći ćeš je ovdje — najnovije prvo.",
+  "@favoritesEmptyBody": {
+    "description": "Objašnjenje praznog stanja na ekranu spremljenih epizoda."
+  },
+  "favoritesBrowse": "Istraži epizode",
+  "@favoritesBrowse": {
+    "description": "Gumb iz praznog stanja koji vodi na naslovnicu."
+  },
+  "favoritesSaved": "Spremljeno",
+  "@favoritesSaved": {
+    "description": "Stanje gumba i potvrda nakon što je epizoda spremljena među favorite."
+  },
+  "favoritesRemoved": "Uklonjeno iz spremljenih",
+  "@favoritesRemoved": {
+    "description": "SnackBar potvrda nakon uklanjanja epizode s popisa spremljenih."
+  },
+  "favoritesAccountSubtitle": "Cijeli popis, najnovije prvo",
+  "@favoritesAccountSubtitle": {
+    "description": "Podnaslov stavke na ekranu računa koja vodi na spremljene epizode."
+  },
+  "authSectionLibrary": "Moja knjižnica",
+  "@authSectionLibrary": {
+    "description": "Naslov sekcije na ekranu računa koja skuplja korisnikov spremljeni sadržaj."
   },
   "homeRailFreshlyArrived": "Upravo stiglo",
   "@homeRailFreshlyArrived": {
