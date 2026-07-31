@@ -206,13 +206,18 @@ Cijene po `pricing-and-tiers.md`: 4,99 / 39,99 / 99,99 €, bazni teritorij HR.
 
 | Proizvod | App Store | Play Store |
 |---|---|---|
-| Mjesečno | ✅ grupa „DOMOVINA Plus", 69 teritorija, cijene equalizirane na sve | ✅ base plan `monthly`, P1M, ACTIVE |
-| Godišnje | ✅ ista grupa, ~38 teritorija, equalize pokrenut | ✅ base plan `yearly`, P1Y, ACTIVE |
-| Doživotno | ✅ IAP, ~16 teritorija, cijena HR | ✅ ručno kreiran, purchase option `buy`, **ACTIVE**, 173 regije |
+| Mjesečno | ✅ **Ready to Submit** — grupa „DOMOVINA Plus", cijene equalizirane na svih ~175 | ✅ **Published** — base plan `monthly`, P1M, 21 zemlja eurozone, 4,99 € |
+| Godišnje | ✅ **Ready to Submit** — ista grupa, equalizirano | ✅ **Published** — base plan `yearly`, P1Y, 21 zemlja eurozone, 39,99 € |
+| Doživotno | ✅ **Ready to Submit** — IAP, 35 teritorija, cijene auto-izračunate iz HR | ✅ **Published** — purchase option `buy`, 173 regije, kupac plaća 99,99 € |
 
-Svi Apple proizvodi su u `MISSING_METADATA` dok se ne dovrši pokrivenost
-teritorija i dok prvi ne ode uz novu verziju appa (vidi §5). Play pretplate su
-odmah `ACTIVE`.
+Stanje na kraju 2026-07-31: **sva tri Apple proizvoda su `READY_TO_SUBMIT`,
+sva tri Play proizvoda `Published`.** To je maksimum bez novog builda — prvi
+Appleov proizvod ide u review tek uz novu verziju appa (vidi §5).
+
+> **`MISSING_METADATA` na Apple pretplatama** rješava se lokalizacijom
+> **subscription grupe** (`subscription_group_localizations`), ne samog
+> proizvoda. Proizvod je imao hr + en-US lokalizacije i pun cjenik, a i dalje
+> je bio nepotpun dok grupa nije dobila naziv po jeziku.
 
 ### Zamke otkrivene pri kreiranju
 
@@ -233,14 +238,19 @@ odmah `ACTIVE`.
 - **Play je znatno pouzdaniji**: sve je prošlo iz prve, a
   `other_regions_config` s `eur_price`/`usd_price` pokriva sve regije odjednom
   (nema ekvivalenta Appleovom teritorij-po-teritorij poslu).
-- **⚠️ Play cijene se unose BEZ poreza, Appleove SU s porezom.** Ovo je
-  najskuplja zamka. Uneseš li u Play 99,99 €, kupac u Hrvatskoj plaća
-  **124,99 €** (PDV 25 % povrh), dok na App Storeu 99,99 € znači točno toliko.
-  Za paritet s Appleom i s tekstom na paywallu bazna cijena u Playu mora biti
-  `željeno / (1 + stopa PDV-a)` — za HR: 99,99 / 1,25 = **79,99 €**. Posljedica:
-  u ostalim EU zemljama iznos malo varira (Austrija 20 % → 94,99 €), jer Play
-  računa po lokalnoj stopi. Odluka vlasnika 2026-07-31: baza 79,99 €, tj.
-  hrvatski kupac plaća 99,99 € kao i na iPhoneu.
+- **⚠️ Porez: API vs konzola nisu isto.** Ovo je najskuplja zamka i lako se
+  krivo zapamti:
+  - **Vrijednost koju pohranjuje API JEST konačna cijena za kupca** (kao i kod
+    Applea). Postaviš li 4,99 € preko `set-product-store-state`, kupac plaća
+    4,99 €.
+  - **Bulk dijalog u Play Consoleu („Set prices" → „Bulk edit pricing") tvoj
+    unos tretira kao osnovicu BEZ poreza** i sam izračuna konačnu. Upišeš li
+    ondje 99,99 €, pohranit će se i naplatiti 124,99 € (PDV 25 % za HR).
+  - Dokaz: doživotni je kroz dijalog dobio unos 79,99 € → pohranjeno i
+    prikazano 99,99 €. Pretplate su kroz API dobile 4,99 / 39,99 € → pohranjeno
+    i prikazano isto toliko.
+  - Praktično pravilo: **preko API-ja upisuj cijenu koju kupac treba platiti;
+    u konzolnom bulk dijalogu upisuj cijenu bez poreza.**
 - **Play jednokratni proizvodi NISU podržani** u RC store-state API-ju:
   `Invalid parameter product_id: Play Store catalog apply currently supports
   subscriptions only`. `domovina_plus_lifetime` treba ručno kreirati u Play

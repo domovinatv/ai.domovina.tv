@@ -14,9 +14,9 @@ odraditi**.
 - Play kredencijali u RC + **RTDN radi** (dokazano testnom notifikacijom)
 - **Apple App Store Server Notifications** — Production i Sandbox URL upisani
   (RC gumb „Apply in App Store Connect", ne ručno)
-- **Store proizvodi**:
-  - Apple: mjesečni (sve teritorije, cijene equalizirane), godišnji, doživotni
-  - Play: mjesečni, godišnji, doživotni — svi **ACTIVE**
+- **Store proizvodi — svi na cilju**:
+  - Apple: sva tri **Ready to Submit** (cjenik equaliziran, grupa lokalizirana)
+  - Play: sva tri **Published** (eurozona, 4,99 / 39,99 / 99,99 € za kupca)
 - Plan za pošten paywall napisan i predan timu
 
 ---
@@ -44,20 +44,18 @@ Plan: `docs/plans/2026-07-31-plus-posteni-paywall.md`, predan timu preko
    `~/.config/play-publisher/`.
 5. **Offsite backup** neregenerabilnih ključeva: oba `.p8` + Android upload
    keystore. Gubitak = nema više updatea pod istim identitetom.
+6. **Ne-euro tržišta na Playu** — Play pretplate su trenutno dostupne samo u
+   **21 zemlji eurozone**, jer Play traži eksplicitnu cijenu po zemlji i ne
+   prihvaća fallback. Za GB, CH, SE, NO, DK, PL, CZ, HU, RO, US, CA, AU i ostale
+   treba odlučiti cijenu u lokalnoj valuti. Nisam ih izmišljao. Apple to nema —
+   ondje `equalize` sam izračuna iz hrvatske cijene.
 
 ---
 
 ## 🤖 Moje (reci i odradim)
 
-1. **Apple: proširiti teritorije** za godišnji (~38 od 175) i doživotni (~16),
-   pa `equalize-subscription-prices`. Mjesečni je već pun. Apple je 31. 7.
-   vraćao povremene 500-ke, pa to treba u serijama od ≤30 i s ponavljanjem.
-2. **Trial** na godišnjem, ako odlučiš da ide.
-3. **Cjenovna dosljednost u EU**: trenutno je Play baza 79,99 € da hrvatski
-   kupac plati 99,99 € kao na iPhoneu. U ostalim EU zemljama iznos varira po
-   lokalnoj stopi PDV-a (Austrija ~94,99 €). Ako želiš točno 99,99 € svugdje,
-   mogu postaviti cijenu po zemlji — traži prolazak kroz desetke zemalja.
-4. **Build + upload** na TestFlight i Play Internal — čim paywall bude usklađen.
+1. **Trial** na godišnjem, ako odlučiš da ide.
+2. **Build + upload** na TestFlight i Play Internal — čim paywall bude usklađen.
 
 ---
 
