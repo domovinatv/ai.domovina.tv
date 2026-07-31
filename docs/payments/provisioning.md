@@ -3,6 +3,11 @@
 What must exist in RevenueCat and in each store before code can transact. Split into
 **what the RevenueCat MCP / AI Toolkit can automate** and the **manual gaps no API covers**.
 
+> **Ovo je plan.** Stvarno stanje — konkretni ID-evi, kredencijali, što je
+> verificirano i kojeg datuma, plus zamke otkrivene pri izvedbi — živi u
+> [`provisioning-state.md`](provisioning-state.md). Prije bilo kakvog rada na
+> naplati pročitaj taj dokument.
+
 > Install once (already done globally on the dev machine): the RevenueCat AI Toolkit
 > (`claude plugin marketplace add RevenueCat/ai-toolkit` → install `RevenueCat`) which
 > bundles the hosted MCP at `https://mcp.revenuecat.ai/mcp`. Authenticate it via `/mcp`
