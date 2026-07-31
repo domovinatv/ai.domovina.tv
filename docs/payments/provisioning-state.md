@@ -199,6 +199,46 @@ Za IAM promjene koristiti getIamPolicy → izmjena → setIamPolicy **s etagom**
 
 ---
 
+## 5a. Store proizvodi — kreirani 2026-07-31
+
+Kreirani preko RC `set-product-store-state` (piše izravno u ASC i Play).
+Cijene po `pricing-and-tiers.md`: 4,99 / 39,99 / 99,99 €, bazni teritorij HR.
+
+| Proizvod | App Store | Play Store |
+|---|---|---|
+| Mjesečno | ✅ grupa „DOMOVINA Plus", 69 teritorija, cijene equalizirane na sve | ✅ base plan `monthly`, P1M, ACTIVE |
+| Godišnje | ✅ ista grupa, ~38 teritorija, equalize pokrenut | ✅ base plan `yearly`, P1Y, ACTIVE |
+| Doživotno | ✅ IAP, ~16 teritorija, cijena HR | ❌ **mora ručno u Play Consoleu** |
+
+Svi Apple proizvodi su u `MISSING_METADATA` dok se ne dovrši pokrivenost
+teritorija i dok prvi ne ode uz novu verziju appa (vidi §5). Play pretplate su
+odmah `ACTIVE`.
+
+### Zamke otkrivene pri kreiranju
+
+- **Apple traži dostupnost PRIJE cijene.** Prvi pokušaj pao je s
+  `Cannot apply common.pricing.territory_prices because this product has no
+  availability in App Store Connect`. Redoslijed: kreiraj → `availability.territories`
+  → `pricing` → `equalize`.
+- **Apple API vraća povremene 500-ke na bulk pisanju.** Jedan request sa 69
+  teritorija pao je na `/v1/subscriptionAvailabilities`; isti popis u serijama
+  od ≤30 prošao je bez problema. Isto i za `/v1/subscriptionPrices` i
+  `/v1/inAppPurchaseAvailabilities`. Retry je siguran — endpoint ima patch
+  semantiku, pa se ponovno slanje samo dopuni.
+- **Djelomičan zapis je moguć**: kad availability padne, proizvod je već
+  kreiran u ASC-u. Ne kreirati ga ponovno, nego nastaviti patchevima.
+- **`equalize-subscription-prices`** popunjava svih ~175 teritorija iz baznog
+  (`HR`). Zna pasti na Appleovoj 500-ci na pola posla (kod nas: 59/175) —
+  jednostavno pozvati ponovno, nastavlja gdje je stao.
+- **Play je znatno pouzdaniji**: sve je prošlo iz prve, a
+  `other_regions_config` s `eur_price`/`usd_price` pokriva sve regije odjednom
+  (nema ekvivalenta Appleovom teritorij-po-teritorij poslu).
+- **Play jednokratni proizvodi NISU podržani** u RC store-state API-ju:
+  `Invalid parameter product_id: Play Store catalog apply currently supports
+  subscriptions only`. `domovina_plus_lifetime` treba ručno kreirati u Play
+  Console → Monetize → Products → One-time products, SKU točno
+  `domovina_plus_lifetime`, cijena 99,99 €.
+
 ## 6. Preostalo
 
 1. **Apple App Store Server Notifications** — ASC → app → App Information →
@@ -206,10 +246,12 @@ Za IAM promjene koristiti getIamPolicy → izmjena → setIamPolicy **s etagom**
    kopira iz RC iOS app stranice („Apple Server to Server notification
    settings"). Trenutno neposta­vljeno; RC javlja „No notifications received".
    Ovo je Appleov pandan Play RTDN-u.
-2. **Pravi store proizvodi s cijenama** — ne postoje ni u ASC-u ni u Play
-   Consoleu. Kreiranje ide preko RC `set-product-store-state` (+ Appleovo
-   ograničenje za prvi proizvod iz §5). Prijedlog cijena i trial: vidi
-   `pricing-and-tiers.md`.
+2. **Dovršetak store proizvoda** (vidi §5a za kreirano):
+   - Apple godišnji i doživotni — proširiti teritorije do pune pokrivenosti i
+     pustiti `equalize-subscription-prices` (godišnji je pokrenut 31. 7.).
+   - **Play doživotni — ručno u konzoli** (API ne podržava jednokratne).
+   - Trial (npr. 7 dana na godišnjem) nije postavljen — svjesno, čeka odluku.
+   - Prvi Appleov proizvod mora u review uz novu verziju appa.
 3. **Web Billing (Stripe)** — nije dirano.
 4. **Higijena**: radne kopije ključeva na Desktopu i u Downloadsu
    (`AuthKey_25KYCN22QD.p8`, `SubscriptionKey_9H7HMZ4M53.p8`,
