@@ -208,7 +208,7 @@ Cijene po `pricing-and-tiers.md`: 4,99 / 39,99 / 99,99 €, bazni teritorij HR.
 |---|---|---|
 | Mjesečno | ✅ grupa „DOMOVINA Plus", 69 teritorija, cijene equalizirane na sve | ✅ base plan `monthly`, P1M, ACTIVE |
 | Godišnje | ✅ ista grupa, ~38 teritorija, equalize pokrenut | ✅ base plan `yearly`, P1Y, ACTIVE |
-| Doživotno | ✅ IAP, ~16 teritorija, cijena HR | ❌ **mora ručno u Play Consoleu** |
+| Doživotno | ✅ IAP, ~16 teritorija, cijena HR | ✅ ručno kreiran, purchase option `buy`, **ACTIVE**, 173 regije |
 
 Svi Apple proizvodi su u `MISSING_METADATA` dok se ne dovrši pokrivenost
 teritorija i dok prvi ne ode uz novu verziju appa (vidi §5). Play pretplate su
@@ -233,6 +233,14 @@ odmah `ACTIVE`.
 - **Play je znatno pouzdaniji**: sve je prošlo iz prve, a
   `other_regions_config` s `eur_price`/`usd_price` pokriva sve regije odjednom
   (nema ekvivalenta Appleovom teritorij-po-teritorij poslu).
+- **⚠️ Play cijene se unose BEZ poreza, Appleove SU s porezom.** Ovo je
+  najskuplja zamka. Uneseš li u Play 99,99 €, kupac u Hrvatskoj plaća
+  **124,99 €** (PDV 25 % povrh), dok na App Storeu 99,99 € znači točno toliko.
+  Za paritet s Appleom i s tekstom na paywallu bazna cijena u Playu mora biti
+  `željeno / (1 + stopa PDV-a)` — za HR: 99,99 / 1,25 = **79,99 €**. Posljedica:
+  u ostalim EU zemljama iznos malo varira (Austrija 20 % → 94,99 €), jer Play
+  računa po lokalnoj stopi. Odluka vlasnika 2026-07-31: baza 79,99 €, tj.
+  hrvatski kupac plaća 99,99 € kao i na iPhoneu.
 - **Play jednokratni proizvodi NISU podržani** u RC store-state API-ju:
   `Invalid parameter product_id: Play Store catalog apply currently supports
   subscriptions only`. `domovina_plus_lifetime` treba ručno kreirati u Play
@@ -241,15 +249,14 @@ odmah `ACTIVE`.
 
 ## 6. Preostalo
 
-1. **Apple App Store Server Notifications** — ASC → app → App Information →
-   „App Store Server Notifications" → Production i Sandbox „Set Up URL". URL se
-   kopira iz RC iOS app stranice („Apple Server to Server notification
-   settings"). Trenutno neposta­vljeno; RC javlja „No notifications received".
-   Ovo je Appleov pandan Play RTDN-u.
+1. ~~Apple App Store Server Notifications~~ — **gotovo 31. 7. 2026.** Nije
+   trebalo ručno: RC ima gumb **„Apply in App Store Connect"** na iOS app
+   stranici koji preko ASC API ključa sam upiše i Production i Sandbox URL.
+   Provjereno u ASC-u — oba polja popunjena.
 2. **Dovršetak store proizvoda** (vidi §5a za kreirano):
    - Apple godišnji i doživotni — proširiti teritorije do pune pokrivenosti i
      pustiti `equalize-subscription-prices` (godišnji je pokrenut 31. 7.).
-   - **Play doživotni — ručno u konzoli** (API ne podržava jednokratne).
+   - ~~Play doživotni~~ — ručno kreiran i aktiviran 31. 7. 2026.
    - Trial (npr. 7 dana na godišnjem) nije postavljen — svjesno, čeka odluku.
    - Prvi Appleov proizvod mora u review uz novu verziju appa.
 3. **Web Billing (Stripe)** — nije dirano.
