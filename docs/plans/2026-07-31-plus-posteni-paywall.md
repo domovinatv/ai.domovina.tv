@@ -75,8 +75,11 @@ Cijene u `_indicativePlans` (4,99 / 39,99 / 99,99 €) **odgovaraju**
        „Downloading episodes for offline listening"
      - `plusRoadmapExport`: „Izvoz transkripata i sažetaka" /
        „Exporting transcripts and summaries"
-     - `plusRoadmapSemanticSearch`: „Semantička pretraga kroz cijelu arhivu" /
-       „Semantic search across the whole archive"
+     - ~~`plusRoadmapSemanticSearch`: „Semantička pretraga kroz cijelu arhivu"~~
+       **OBRISANO u doradi r1 (2026-07-31)**: semantička pretraga već postoji i
+       besplatna je za sve (`search_overlay.dart` → `/api/search`); Plus mijenja
+       samo limit 12→30. Stavka bi na istom ekranu proturječila
+       `channelBenefitSearch`. Roadmap ima dvije stavke: offline i izvoz.
   5. `upgrade_trigger.dart`: svedi `enum UpgradeTrigger` na ono što postoji —
      `generic`, `search`, `badge`. Obriši `sync`, `offline`, `export`,
      `enFirst`, `magisterium` iz enuma, iz `headline()`/`subtitle()` switcheva

@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// Popis pogodnosti DOMOVINA Plus pretplate.
   ///
   /// In hr, this message translates to:
-  /// **'Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.'**
+  /// **'Šira pretraga, bedž podupiratelja i podrška arhivi.'**
   String get authPlusBenefits;
 
   /// Rezervno ime kad korisnik nema postavljeno ime ni e-mail.
@@ -1148,77 +1148,17 @@ abstract class AppLocalizations {
   /// **'Podrži hrvatsku arhivu i otključaj sve pogodnosti.'**
   String get channelTriggerGenericSubtitle;
 
-  /// Paywall headline for the sync upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Sinkronizacija na svim uređajima'**
-  String get channelTriggerSyncHeadline;
-
-  /// Paywall subtitle for the sync upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Tvoji favoriti i mjesto na kojem si stao prate te s telefona na web i natrag.'**
-  String get channelTriggerSyncSubtitle;
-
-  /// Paywall headline for the offline upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Slušaj i bez interneta'**
-  String get channelTriggerOfflineHeadline;
-
-  /// Paywall subtitle for the offline upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Preuzmi epizode i poslušaj ih u avionu, autu ili na putu.'**
-  String get channelTriggerOfflineSubtitle;
-
-  /// Paywall headline for the export upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Izvezi transkripte i sažetke'**
-  String get channelTriggerExportHeadline;
-
-  /// Paywall subtitle for the export upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Spremi transkript, sažetak ili članak kao PDF, Markdown ili DOCX.'**
-  String get channelTriggerExportSubtitle;
-
   /// Paywall headline for the search upgrade trigger.
   ///
   /// In hr, this message translates to:
-  /// **'Pretraga bez ograničenja'**
+  /// **'Šira pretraga'**
   String get channelTriggerSearchHeadline;
 
   /// Paywall subtitle for the search upgrade trigger.
   ///
   /// In hr, this message translates to:
-  /// **'Neograničena semantička pretraga i više rezultata.'**
+  /// **'Do 30 rezultata pretrage umjesto 12.'**
   String get channelTriggerSearchSubtitle;
-
-  /// Paywall headline for the English-first upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Engleski uvijek prvi'**
-  String get channelTriggerEnFirstHeadline;
-
-  /// Paywall subtitle for the English-first upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Engleski prijevodi prikazuju se odmah, prije općeg objavljivanja.'**
-  String get channelTriggerEnFirstSubtitle;
-
-  /// Paywall headline for the Magisterium upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Potpuna Magisterium AI analiza'**
-  String get channelTriggerMagisteriumHeadline;
-
-  /// Paywall subtitle for the Magisterium upgrade trigger.
-  ///
-  /// In hr, this message translates to:
-  /// **'Detaljan Magisterium AI pregled uz uvid u izvore i upite.'**
-  String get channelTriggerMagisteriumSubtitle;
 
   /// Paywall headline for the supporter-badge upgrade trigger.
   ///
@@ -1229,7 +1169,7 @@ abstract class AppLocalizations {
   /// Paywall subtitle for the supporter-badge upgrade trigger.
   ///
   /// In hr, this message translates to:
-  /// **'Bedž podupiratelja i tvoje ime na zidu zahvale.'**
+  /// **'Bedž podupiratelja na tvom računu.'**
   String get channelTriggerBadgeSubtitle;
 
   /// Name of the annual subscription plan.
@@ -1280,47 +1220,47 @@ abstract class AppLocalizations {
   /// **'Osnivač'**
   String get channelPlanFounderBadge;
 
-  /// Plus benefit: cross-device sync.
+  /// Plus benefit: broader search result limit.
   ///
   /// In hr, this message translates to:
-  /// **'Sinkronizacija favorita i napretka na svim uređajima'**
-  String get channelBenefitSync;
+  /// **'Šira pretraga — do 30 rezultata umjesto 12'**
+  String get channelBenefitSearch;
 
-  /// Plus benefit: offline downloads.
+  /// Plus benefit: supporter badge.
+  ///
+  /// In hr, this message translates to:
+  /// **'Bedž podupiratelja na tvom računu'**
+  String get channelBenefitBadge;
+
+  /// Plus benefit: supporting the archive's development and running costs.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podržavaš razvoj i troškove arhive'**
+  String get channelBenefitSupport;
+
+  /// Title of the paywall roadmap section listing planned, not-yet-built directions.
+  ///
+  /// In hr, this message translates to:
+  /// **'U planu'**
+  String get plusRoadmapTitle;
+
+  /// Disclaimer stating the roadmap is not part of the purchase and has no timeline.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovo su smjerovi razvoja, a ne dio onoga što danas kupuješ. Bez rokova — ako i kad stignu, bit će uključeni u Plus bez doplate.'**
+  String get plusRoadmapDisclaimer;
+
+  /// Roadmap item: offline downloads.
   ///
   /// In hr, this message translates to:
   /// **'Preuzimanje epizoda za slušanje bez interneta'**
-  String get channelBenefitOffline;
+  String get plusRoadmapOffline;
 
-  /// Plus benefit: export.
+  /// Roadmap item: exporting transcripts and summaries.
   ///
   /// In hr, this message translates to:
-  /// **'Izvoz transkripata i sažetaka (PDF, Markdown, DOCX)'**
-  String get channelBenefitExport;
-
-  /// Plus benefit: unlimited semantic search.
-  ///
-  /// In hr, this message translates to:
-  /// **'Neograničena semantička pretraga'**
-  String get channelBenefitSearch;
-
-  /// Plus benefit: English translations prioritised.
-  ///
-  /// In hr, this message translates to:
-  /// **'Engleski prijevodi prikazani prvi'**
-  String get channelBenefitEnglishFirst;
-
-  /// Plus benefit: full Magisterium AI analysis.
-  ///
-  /// In hr, this message translates to:
-  /// **'Potpuna Magisterium AI analiza s izvorima'**
-  String get channelBenefitMagisterium;
-
-  /// Plus benefit: supporter badge and recognition.
-  ///
-  /// In hr, this message translates to:
-  /// **'Bedž podupiratelja i ime na zidu zahvale'**
-  String get channelBenefitBadge;
+  /// **'Izvoz transkripata i sažetaka'**
+  String get plusRoadmapExport;
 
   /// Auth sheet headline shown before a purchase so it attaches to an account.
   ///

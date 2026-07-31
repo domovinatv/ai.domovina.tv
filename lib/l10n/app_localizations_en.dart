@@ -124,7 +124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authPlusBenefits =>
-      'Sync, export, unlimited search, and support for the archive.';
+      'Broader search, a supporter badge, and support for the archive.';
 
   @override
   String get authUserFallback => 'User';
@@ -618,54 +618,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Support the Croatian archive and unlock every benefit.';
 
   @override
-  String get channelTriggerSyncHeadline => 'Sync across all your devices';
-
-  @override
-  String get channelTriggerSyncSubtitle =>
-      'Your favourites and your place follow you from phone to web and back.';
-
-  @override
-  String get channelTriggerOfflineHeadline => 'Listen offline too';
-
-  @override
-  String get channelTriggerOfflineSubtitle =>
-      'Download episodes and listen on a plane, in the car or on the go.';
-
-  @override
-  String get channelTriggerExportHeadline => 'Export transcripts and summaries';
-
-  @override
-  String get channelTriggerExportSubtitle =>
-      'Save a transcript, summary or article as PDF, Markdown or DOCX.';
-
-  @override
-  String get channelTriggerSearchHeadline => 'Search without limits';
+  String get channelTriggerSearchHeadline => 'Broader search';
 
   @override
   String get channelTriggerSearchSubtitle =>
-      'Unlimited semantic search and more results.';
-
-  @override
-  String get channelTriggerEnFirstHeadline => 'English always first';
-
-  @override
-  String get channelTriggerEnFirstSubtitle =>
-      'English translations appear right away, before general release.';
-
-  @override
-  String get channelTriggerMagisteriumHeadline =>
-      'Full Magisterium AI analysis';
-
-  @override
-  String get channelTriggerMagisteriumSubtitle =>
-      'A detailed Magisterium AI review with sources and prompts revealed.';
+      'Up to 30 search results instead of 12.';
 
   @override
   String get channelTriggerBadgeHeadline => 'Become an archive supporter';
 
   @override
   String get channelTriggerBadgeSubtitle =>
-      'A supporter badge and your name on the wall of thanks.';
+      'A supporter badge on your account.';
 
   @override
   String get channelPlanAnnual => 'Annual';
@@ -692,29 +656,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelPlanFounderBadge => 'Founder';
 
   @override
-  String get channelBenefitSync =>
-      'Favourites and progress synced across all your devices';
+  String get channelBenefitSearch =>
+      'Broader search — up to 30 results instead of 12';
 
   @override
-  String get channelBenefitOffline => 'Download episodes to listen offline';
+  String get channelBenefitBadge => 'A supporter badge on your account';
 
   @override
-  String get channelBenefitExport =>
-      'Export transcripts and summaries (PDF, Markdown, DOCX)';
+  String get channelBenefitSupport =>
+      'You support the archive\'s development and running costs';
 
   @override
-  String get channelBenefitSearch => 'Unlimited semantic search';
+  String get plusRoadmapTitle => 'On the roadmap';
 
   @override
-  String get channelBenefitEnglishFirst => 'English translations shown first';
+  String get plusRoadmapDisclaimer =>
+      'These are directions we\'re exploring, not part of what you\'re buying today. No timelines — if and when they arrive, they\'ll be included in Plus at no extra cost.';
 
   @override
-  String get channelBenefitMagisterium =>
-      'Full Magisterium AI analysis with sources';
+  String get plusRoadmapOffline => 'Downloading episodes for offline listening';
 
   @override
-  String get channelBenefitBadge =>
-      'Supporter badge and your name on the wall of thanks';
+  String get plusRoadmapExport => 'Exporting transcripts and summaries';
 
   @override
   String get channelSignInToContinue => 'Sign in to continue';

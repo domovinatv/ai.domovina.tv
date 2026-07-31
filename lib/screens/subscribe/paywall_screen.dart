@@ -56,18 +56,30 @@ List<_IndicativePlan> _indicativePlans(AppLocalizations l) => [
       l.channelPlanOneTime, l.channelPlanFounderBadge),
 ];
 
+/// What Plus actually unlocks TODAY. Every line here is a purchase claim, so it
+/// may only list behaviour that exists in the shipped app (search limit 12→30 in
+/// `search_overlay.dart`, the badge in `plus_badge.dart`, plus the support
+/// itself). Planned work belongs in [_roadmap], never here.
 List<(IconData, String)> _plusBenefits(AppLocalizations l) => [
-  (Icons.sync, l.channelBenefitSync),
-  (Icons.download_for_offline, l.channelBenefitOffline),
-  (Icons.description_outlined, l.channelBenefitExport),
   (Icons.search, l.channelBenefitSearch),
-  (Icons.translate, l.channelBenefitEnglishFirst),
-  (Icons.church_outlined, l.channelBenefitMagisterium),
   (Icons.favorite, l.channelBenefitBadge),
+  (Icons.volunteer_activism, l.channelBenefitSupport),
+];
+
+/// Directions we're exploring — explicitly NOT part of the purchase. Rendered
+/// below the prices, muted and non-interactive (see [_roadmap]).
+///
+/// An item may only go here if it does NOT exist yet. Semantic search was
+/// listed and removed 2026-07-31: it already ships, free for everyone
+/// (`search_overlay.dart` `_runSemantic()`) — Plus only widens the result
+/// limit, which is a benefit above, so listing it here contradicted that line.
+List<String> _plusRoadmap(AppLocalizations l) => [
+  l.plusRoadmapOffline,
+  l.plusRoadmapExport,
 ];
 
 /// Open the contextual paywall for a gated feature. Use from any feature gate:
-/// `openPaywall(context, UpgradeTrigger.offline)`.
+/// `openPaywall(context, UpgradeTrigger.search)`.
 void openPaywall(BuildContext context, [UpgradeTrigger trigger = UpgradeTrigger.generic]) {
   context.push('/subscribe?from=${trigger.slug}');
 }
@@ -222,6 +234,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         const SizedBox(height: 16),
                         _legal(cs),
                       ],
+                      _roadmap(cs),
                     ],
                   ),
                 ),
@@ -530,6 +543,52 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ),
         ),
       );
+  }
+
+  /// „U planu" — roadmap, not an offer. Sits BELOW the prices (and below the
+  /// already-Plus card), visually detached, muted, with plain dot markers and
+  /// zero interactive elements: an App Store reviewer must read it as a note
+  /// about the future, not as a shipped-but-broken feature (guideline 2.1).
+  Widget _roadmap(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(color: cs.outlineVariant),
+          const SizedBox(height: 16),
+          Text(l.plusRoadmapTitle,
+              style: textTheme.titleSmall?.copyWith(
+                  color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          for (final item in _plusRoadmap(l))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Icon(Icons.circle_outlined,
+                        size: 10, color: cs.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(item,
+                        style: textTheme.bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant)),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 12),
+          Text(l.plusRoadmapDisclaimer,
+              style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+        ],
+      ),
+    );
   }
 
   Widget _legal(ColorScheme cs) => Padding(

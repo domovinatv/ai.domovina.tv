@@ -1,18 +1,18 @@
-/// The gated entry points that can open the paywall. Each carries the Croatian
-/// hero copy explaining why Plus unlocks that specific feature, so the paywall
-/// is contextual rather than generic. Gates pass the trigger via `/subscribe`.
+/// The gated entry points that can open the paywall. Each carries the hero copy
+/// explaining why Plus unlocks that specific feature, so the paywall is
+/// contextual rather than generic. Gates pass the trigger via `/subscribe`.
+///
+/// Only triggers backed by a feature that actually exists today may live here —
+/// a contextual headline is a purchase claim, and `/subscribe?from=<slug>` is a
+/// publicly reachable URL. Triggers for planned features (offline, export, …)
+/// were removed 2026-07-31; those links now fall back to [generic].
 library;
 
 import '../../l10n/app_localizations.dart';
 
 enum UpgradeTrigger {
   generic,
-  sync,
-  offline,
-  export,
   search,
-  enFirst,
-  magisterium,
   badge,
 }
 
@@ -29,23 +29,13 @@ extension UpgradeTriggerCopy on UpgradeTrigger {
 
   String headline(AppLocalizations l) => switch (this) {
         UpgradeTrigger.generic => l.channelTriggerGenericHeadline,
-        UpgradeTrigger.sync => l.channelTriggerSyncHeadline,
-        UpgradeTrigger.offline => l.channelTriggerOfflineHeadline,
-        UpgradeTrigger.export => l.channelTriggerExportHeadline,
         UpgradeTrigger.search => l.channelTriggerSearchHeadline,
-        UpgradeTrigger.enFirst => l.channelTriggerEnFirstHeadline,
-        UpgradeTrigger.magisterium => l.channelTriggerMagisteriumHeadline,
         UpgradeTrigger.badge => l.channelTriggerBadgeHeadline,
       };
 
   String subtitle(AppLocalizations l) => switch (this) {
         UpgradeTrigger.generic => l.channelTriggerGenericSubtitle,
-        UpgradeTrigger.sync => l.channelTriggerSyncSubtitle,
-        UpgradeTrigger.offline => l.channelTriggerOfflineSubtitle,
-        UpgradeTrigger.export => l.channelTriggerExportSubtitle,
         UpgradeTrigger.search => l.channelTriggerSearchSubtitle,
-        UpgradeTrigger.enFirst => l.channelTriggerEnFirstSubtitle,
-        UpgradeTrigger.magisterium => l.channelTriggerMagisteriumSubtitle,
         UpgradeTrigger.badge => l.channelTriggerBadgeSubtitle,
       };
 }

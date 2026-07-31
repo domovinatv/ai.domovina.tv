@@ -124,7 +124,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get authPlusBenefits =>
-      'Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.';
+      'Šira pretraga, bedž podupiratelja i podrška arhivi.';
 
   @override
   String get authUserFallback => 'Korisnik';
@@ -623,54 +623,18 @@ class AppLocalizationsHr extends AppLocalizations {
       'Podrži hrvatsku arhivu i otključaj sve pogodnosti.';
 
   @override
-  String get channelTriggerSyncHeadline => 'Sinkronizacija na svim uređajima';
-
-  @override
-  String get channelTriggerSyncSubtitle =>
-      'Tvoji favoriti i mjesto na kojem si stao prate te s telefona na web i natrag.';
-
-  @override
-  String get channelTriggerOfflineHeadline => 'Slušaj i bez interneta';
-
-  @override
-  String get channelTriggerOfflineSubtitle =>
-      'Preuzmi epizode i poslušaj ih u avionu, autu ili na putu.';
-
-  @override
-  String get channelTriggerExportHeadline => 'Izvezi transkripte i sažetke';
-
-  @override
-  String get channelTriggerExportSubtitle =>
-      'Spremi transkript, sažetak ili članak kao PDF, Markdown ili DOCX.';
-
-  @override
-  String get channelTriggerSearchHeadline => 'Pretraga bez ograničenja';
+  String get channelTriggerSearchHeadline => 'Šira pretraga';
 
   @override
   String get channelTriggerSearchSubtitle =>
-      'Neograničena semantička pretraga i više rezultata.';
-
-  @override
-  String get channelTriggerEnFirstHeadline => 'Engleski uvijek prvi';
-
-  @override
-  String get channelTriggerEnFirstSubtitle =>
-      'Engleski prijevodi prikazuju se odmah, prije općeg objavljivanja.';
-
-  @override
-  String get channelTriggerMagisteriumHeadline =>
-      'Potpuna Magisterium AI analiza';
-
-  @override
-  String get channelTriggerMagisteriumSubtitle =>
-      'Detaljan Magisterium AI pregled uz uvid u izvore i upite.';
+      'Do 30 rezultata pretrage umjesto 12.';
 
   @override
   String get channelTriggerBadgeHeadline => 'Postani podupiratelj arhive';
 
   @override
   String get channelTriggerBadgeSubtitle =>
-      'Bedž podupiratelja i tvoje ime na zidu zahvale.';
+      'Bedž podupiratelja na tvom računu.';
 
   @override
   String get channelPlanAnnual => 'Godišnje';
@@ -697,29 +661,28 @@ class AppLocalizationsHr extends AppLocalizations {
   String get channelPlanFounderBadge => 'Osnivač';
 
   @override
-  String get channelBenefitSync =>
-      'Sinkronizacija favorita i napretka na svim uređajima';
+  String get channelBenefitSearch =>
+      'Šira pretraga — do 30 rezultata umjesto 12';
 
   @override
-  String get channelBenefitOffline =>
+  String get channelBenefitBadge => 'Bedž podupiratelja na tvom računu';
+
+  @override
+  String get channelBenefitSupport => 'Podržavaš razvoj i troškove arhive';
+
+  @override
+  String get plusRoadmapTitle => 'U planu';
+
+  @override
+  String get plusRoadmapDisclaimer =>
+      'Ovo su smjerovi razvoja, a ne dio onoga što danas kupuješ. Bez rokova — ako i kad stignu, bit će uključeni u Plus bez doplate.';
+
+  @override
+  String get plusRoadmapOffline =>
       'Preuzimanje epizoda za slušanje bez interneta';
 
   @override
-  String get channelBenefitExport =>
-      'Izvoz transkripata i sažetaka (PDF, Markdown, DOCX)';
-
-  @override
-  String get channelBenefitSearch => 'Neograničena semantička pretraga';
-
-  @override
-  String get channelBenefitEnglishFirst => 'Engleski prijevodi prikazani prvi';
-
-  @override
-  String get channelBenefitMagisterium =>
-      'Potpuna Magisterium AI analiza s izvorima';
-
-  @override
-  String get channelBenefitBadge => 'Bedž podupiratelja i ime na zidu zahvale';
+  String get plusRoadmapExport => 'Izvoz transkripata i sažetaka';
 
   @override
   String get channelSignInToContinue => 'Prijavi se za nastavak';

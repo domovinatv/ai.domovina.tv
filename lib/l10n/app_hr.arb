@@ -153,7 +153,7 @@
   "@authBecomePlus": {
     "description": "Naslov kartice s pozivom na pretplatu."
   },
-  "authPlusBenefits": "Sinkronizacija, izvoz, neograničena pretraga i podrška arhivi.",
+  "authPlusBenefits": "Šira pretraga, bedž podupiratelja i podrška arhivi.",
   "@authPlusBenefits": {
     "description": "Popis pogodnosti DOMOVINA Plus pretplate."
   },
@@ -788,59 +788,19 @@
   "@channelTriggerGenericSubtitle": {
     "description": "Paywall subtitle for the generic upgrade trigger."
   },
-  "channelTriggerSyncHeadline": "Sinkronizacija na svim uređajima",
-  "@channelTriggerSyncHeadline": {
-    "description": "Paywall headline for the sync upgrade trigger."
-  },
-  "channelTriggerSyncSubtitle": "Tvoji favoriti i mjesto na kojem si stao prate te s telefona na web i natrag.",
-  "@channelTriggerSyncSubtitle": {
-    "description": "Paywall subtitle for the sync upgrade trigger."
-  },
-  "channelTriggerOfflineHeadline": "Slušaj i bez interneta",
-  "@channelTriggerOfflineHeadline": {
-    "description": "Paywall headline for the offline upgrade trigger."
-  },
-  "channelTriggerOfflineSubtitle": "Preuzmi epizode i poslušaj ih u avionu, autu ili na putu.",
-  "@channelTriggerOfflineSubtitle": {
-    "description": "Paywall subtitle for the offline upgrade trigger."
-  },
-  "channelTriggerExportHeadline": "Izvezi transkripte i sažetke",
-  "@channelTriggerExportHeadline": {
-    "description": "Paywall headline for the export upgrade trigger."
-  },
-  "channelTriggerExportSubtitle": "Spremi transkript, sažetak ili članak kao PDF, Markdown ili DOCX.",
-  "@channelTriggerExportSubtitle": {
-    "description": "Paywall subtitle for the export upgrade trigger."
-  },
-  "channelTriggerSearchHeadline": "Pretraga bez ograničenja",
+  "channelTriggerSearchHeadline": "Šira pretraga",
   "@channelTriggerSearchHeadline": {
     "description": "Paywall headline for the search upgrade trigger."
   },
-  "channelTriggerSearchSubtitle": "Neograničena semantička pretraga i više rezultata.",
+  "channelTriggerSearchSubtitle": "Do 30 rezultata pretrage umjesto 12.",
   "@channelTriggerSearchSubtitle": {
     "description": "Paywall subtitle for the search upgrade trigger."
-  },
-  "channelTriggerEnFirstHeadline": "Engleski uvijek prvi",
-  "@channelTriggerEnFirstHeadline": {
-    "description": "Paywall headline for the English-first upgrade trigger."
-  },
-  "channelTriggerEnFirstSubtitle": "Engleski prijevodi prikazuju se odmah, prije općeg objavljivanja.",
-  "@channelTriggerEnFirstSubtitle": {
-    "description": "Paywall subtitle for the English-first upgrade trigger."
-  },
-  "channelTriggerMagisteriumHeadline": "Potpuna Magisterium AI analiza",
-  "@channelTriggerMagisteriumHeadline": {
-    "description": "Paywall headline for the Magisterium upgrade trigger."
-  },
-  "channelTriggerMagisteriumSubtitle": "Detaljan Magisterium AI pregled uz uvid u izvore i upite.",
-  "@channelTriggerMagisteriumSubtitle": {
-    "description": "Paywall subtitle for the Magisterium upgrade trigger."
   },
   "channelTriggerBadgeHeadline": "Postani podupiratelj arhive",
   "@channelTriggerBadgeHeadline": {
     "description": "Paywall headline for the supporter-badge upgrade trigger."
   },
-  "channelTriggerBadgeSubtitle": "Bedž podupiratelja i tvoje ime na zidu zahvale.",
+  "channelTriggerBadgeSubtitle": "Bedž podupiratelja na tvom računu.",
   "@channelTriggerBadgeSubtitle": {
     "description": "Paywall subtitle for the supporter-badge upgrade trigger."
   },
@@ -876,33 +836,33 @@
   "@channelPlanFounderBadge": {
     "description": "Badge on the lifetime plan marking early supporters."
   },
-  "channelBenefitSync": "Sinkronizacija favorita i napretka na svim uređajima",
-  "@channelBenefitSync": {
-    "description": "Plus benefit: cross-device sync."
-  },
-  "channelBenefitOffline": "Preuzimanje epizoda za slušanje bez interneta",
-  "@channelBenefitOffline": {
-    "description": "Plus benefit: offline downloads."
-  },
-  "channelBenefitExport": "Izvoz transkripata i sažetaka (PDF, Markdown, DOCX)",
-  "@channelBenefitExport": {
-    "description": "Plus benefit: export."
-  },
-  "channelBenefitSearch": "Neograničena semantička pretraga",
+  "channelBenefitSearch": "Šira pretraga — do 30 rezultata umjesto 12",
   "@channelBenefitSearch": {
-    "description": "Plus benefit: unlimited semantic search."
+    "description": "Plus benefit: broader search result limit."
   },
-  "channelBenefitEnglishFirst": "Engleski prijevodi prikazani prvi",
-  "@channelBenefitEnglishFirst": {
-    "description": "Plus benefit: English translations prioritised."
-  },
-  "channelBenefitMagisterium": "Potpuna Magisterium AI analiza s izvorima",
-  "@channelBenefitMagisterium": {
-    "description": "Plus benefit: full Magisterium AI analysis."
-  },
-  "channelBenefitBadge": "Bedž podupiratelja i ime na zidu zahvale",
+  "channelBenefitBadge": "Bedž podupiratelja na tvom računu",
   "@channelBenefitBadge": {
-    "description": "Plus benefit: supporter badge and recognition."
+    "description": "Plus benefit: supporter badge."
+  },
+  "channelBenefitSupport": "Podržavaš razvoj i troškove arhive",
+  "@channelBenefitSupport": {
+    "description": "Plus benefit: supporting the archive's development and running costs."
+  },
+  "plusRoadmapTitle": "U planu",
+  "@plusRoadmapTitle": {
+    "description": "Title of the paywall roadmap section listing planned, not-yet-built directions."
+  },
+  "plusRoadmapDisclaimer": "Ovo su smjerovi razvoja, a ne dio onoga što danas kupuješ. Bez rokova — ako i kad stignu, bit će uključeni u Plus bez doplate.",
+  "@plusRoadmapDisclaimer": {
+    "description": "Disclaimer stating the roadmap is not part of the purchase and has no timeline."
+  },
+  "plusRoadmapOffline": "Preuzimanje epizoda za slušanje bez interneta",
+  "@plusRoadmapOffline": {
+    "description": "Roadmap item: offline downloads."
+  },
+  "plusRoadmapExport": "Izvoz transkripata i sažetaka",
+  "@plusRoadmapExport": {
+    "description": "Roadmap item: exporting transcripts and summaries."
   },
   "channelSignInToContinue": "Prijavi se za nastavak",
   "@channelSignInToContinue": {
