@@ -60,6 +60,12 @@ platformi, pa test putanja i dalje radi.
 > **Play format**: `store_identifier` za pretplate MORA biti
 > `productId:basePlanId`. Za jednokratne proizvode ide goli SKU.
 
+> **Imenovanje odstupa od `pricing-and-tiers.md`**, koji predlaže
+> `domovina_plus_monthly/annual/lifetime` za sve platforme. Stvarno je
+> izvedeno: iOS reverse-DNS (`ai.domovina.plus.*`), Play `domovina_plus_*` s
+> `yearly` umjesto `annual`. Kanonsko je ovo ovdje; pri kreiranju store
+> proizvoda držati se ovih identifikatora.
+
 ### Public SDK ključevi
 
 Client-embeddable (završe u binaryju), pa nisu tajna. Žive u `.env`, a
