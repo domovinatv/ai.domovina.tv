@@ -1568,6 +1568,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get mediaBoostVolume => 'Uključi zvuk';
 
   @override
+  String get mediaMute => 'Isključi zvuk (M)';
+
+  @override
   String get mediaPause => 'Pauziraj';
 
   @override

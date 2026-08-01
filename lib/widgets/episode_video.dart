@@ -31,6 +31,7 @@ import '../l10n/app_localizations.dart';
 import '../models/podcast_summary.dart';
 import '../models/speaker_timeline.dart';
 import '../services/browser_fullscreen.dart';
+import '../services/player_mute.dart';
 import '../services/screen_orientation.dart';
 import '../services/seek_undo.dart';
 import '../services/subtitle_prefs.dart';
@@ -101,9 +102,6 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   final ValueNotifier<bool> _subtitlesOn = ValueNotifier<bool>(false);
 
   void Function()? _removeFsListener;
-
-  /// Glasnoća prije mute-a (M kratica) za restore.
-  double _volumeBeforeMute = 100;
 
   /// Zatvarač naše rotacijske rute dok je otvorena (null = nije otvorena).
   VoidCallback? _closeRotated;
@@ -344,15 +342,10 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
     widget.player.setVolume(volume);
   }
 
-  void _toggleMute() {
-    final current = widget.player.state.volume;
-    if (current > 0) {
-      _volumeBeforeMute = current;
-      widget.player.setVolume(0);
-    } else {
-      widget.player.setVolume(_volumeBeforeMute > 0 ? _volumeBeforeMute : 100);
-    }
-  }
+  /// M kratica ide kroz isti singleton kao gumbi — inače bi tipkovnica i traka
+  /// pokazivale različito stanje, a na webu bi `setVolume` još i skinuo `muted`
+  /// flag (vidi `services/media_element_mute_web.dart`).
+  void _toggleMute() => PlayerMute.instance.toggle();
 
   void _toggleSubtitles() {
     _subtitlesOn.value = !_subtitlesOn.value;
@@ -446,6 +439,10 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
     final backgroundButton = compactSlot(
       const BackgroundPlaybackButton(onVideo: true),
     );
+    // SAMO u mobilnoj traci: desktop varijanta već ima
+    // `MaterialDesktopVolumeButton` (klizač), a osmi gumb bi joj razbio
+    // širinski budžet od 328 dp — vidi `test/playback_bar_layout_test.dart`.
+    final muteButton = compactSlot(const MuteToggleButton(onVideo: true));
 
     // Gumb za fullscreen je NAŠ jer bira putanju A/B/C (T4) — media_kitov
     // `Material*FullscreenButton` zove njihov `toggleFullscreen` bez hooka.
@@ -471,6 +468,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
 
     final mobileBottomBar = <Widget>[
       positionSlot(const MaterialPositionIndicator()),
+      muteButton,
       speedButton,
       backgroundButton,
       ?ytButton,
@@ -535,6 +533,16 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
                   ),
                 ),
               AdaptiveVideoControls(state),
+              // „Uključi zvuk" preko slike dok traje muted autoplay. Iznad
+              // kontrola jer mora primiti tap prije `playAndPauseOnTap`; kroz
+              // `controls:` builder pa postoji i u fullscreen ruti.
+              Positioned.fill(
+                child: UnmuteOverlay(
+                  onUnmuted: () {
+                    if (!widget.player.state.playing) widget.player.play();
+                  },
+                ),
+              ),
               // Iznad kontrola u Z-osi jer mora primiti tap — media_kitov
               // control layer inače proguta klik (playAndPauseOnTap).
               // Kroz `controls:` builder pa pilula postoji i u fullscreen ruti.

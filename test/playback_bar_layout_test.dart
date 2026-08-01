@@ -67,6 +67,10 @@ Widget _speed() => _compactSlot(const SpeedCycleButton(onVideo: true));
 Widget _background() =>
     _compactSlot(const BackgroundPlaybackButton(onVideo: true));
 
+/// Gumb za zvuk postoji SAMO u mobilnoj traci — desktop varijanta već ima
+/// media_kitov volume klizač, a osmi slot bi joj probio budžet.
+Widget _mute() => _compactSlot(const MuteToggleButton(onVideo: true));
+
 /// media_kitovi gumbi — svi završe na 48 dp (IconButton minimum), bez obzira
 /// na `iconSize`.
 Widget _mkButton(double iconSize) => IconButton(
@@ -102,6 +106,7 @@ void main() {
     await tester.pumpWidget(
       _bar(_phoneWidth, [
         _positionSlot(_longestClock),
+        _mute(),
         _speed(),
         _background(),
         _mkButton(24), // YouTube embed

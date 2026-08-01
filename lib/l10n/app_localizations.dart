@@ -2588,11 +2588,17 @@ abstract class AppLocalizations {
   /// **'Titlovi (C)'**
   String get mediaSubtitlesOn;
 
-  /// CTA preko videa pri muted autoplayu (browser politika) — klik uključuje zvuk.
+  /// CTA preko videa pri muted autoplayu (browser politika) — klik uključuje zvuk. Isti tekst nosi i tooltip gumba za zvuk dok je mutirano.
   ///
   /// In hr, this message translates to:
   /// **'Uključi zvuk'**
   String get mediaBoostVolume;
+
+  /// Tooltip na gumbu za zvuk dok zvuk svira; (M) je tipkovnička kratica.
+  ///
+  /// In hr, this message translates to:
+  /// **'Isključi zvuk (M)'**
+  String get mediaMute;
 
   /// Tooltip na središnjem play/pause gumbu kad video svira.
   ///

@@ -18,7 +18,9 @@ import 'package:intl/intl.dart' show NumberFormat;
 import '../l10n/app_localizations.dart';
 import '../services/background_playback.dart';
 import '../services/playback_speed.dart';
+import '../services/player_mute.dart';
 import '../services/seek_undo.dart';
+import '../theme/app_theme.dart';
 
 /// Kontrole žive i preko videa (media_kit control bar, tamni scrim neovisan o
 /// temi) i u običnom panelu na površini teme. Boja se bira ovim flagom umjesto
@@ -125,6 +127,127 @@ class SpeedCycleButton extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Zvuk (mute / unmute)
+// ---------------------------------------------------------------------------
+
+/// Prekidač zvuka — jedini izlaz iz muted autoplaya na dodirnim uređajima.
+///
+/// media_kitova **mobilna** traka namjerno nema volume gumb (na telefonu
+/// glasnoću drže fizičke tipke), a `MaterialDesktopVolumeButton` postoji samo
+/// u desktop varijanti. Kad browser padne na muted autoplay, na mobitelu je
+/// zato prije ovoga postojao mrtav player: slika se vrti, zvuka nema, a ništa
+/// u UI-ju ne nudi unmute. Vidi [PlayerMute].
+///
+/// Kad je mute nametnuo browser ([PlayerMute.autoplayBlocked]), gumb dobiva
+/// popunjeni brand tretman — nije to običan toggle nego jedina radnja koja
+/// epizodi vraća zvuk.
+class MuteToggleButton extends StatelessWidget {
+  const MuteToggleButton({super.key, this.onVideo = false});
+
+  /// Renderira se preko videa (bijela boja) umjesto na površini teme.
+  final bool onVideo;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+
+    return ListenableBuilder(
+      listenable: PlayerMute.instance,
+      builder: (context, _) {
+        final mute = PlayerMute.instance;
+        final muted = mute.muted;
+        final highlight = mute.autoplayBlocked;
+        return IconButton(
+          icon: Icon(muted ? Icons.volume_off : Icons.volume_up),
+          tooltip: muted ? l.mediaBoostVolume : l.mediaMute,
+          style: highlight
+              ? IconButton.styleFrom(
+                  backgroundColor: AppTheme.croBlue,
+                  foregroundColor: Colors.white,
+                  side: AppTheme.brandRim(theme.brightness),
+                )
+              : IconButton.styleFrom(
+                  foregroundColor: _controlColor(context, onVideo),
+                ),
+          onPressed: () => mute.setMuted(!muted),
+        );
+      },
+    );
+  }
+}
+
+/// Puni „Uključi zvuk" CTA preko slike, vidljiv samo dok traje muted autoplay.
+///
+/// Ide u `Positioned.fill` iznad video površine u `Stack`-u; sam se ukloni čim
+/// korisnik uključi zvuk (ili ga sam ugasi gumbom — tada je
+/// [PlayerMute.autoplayBlocked] već obrisan pa se CTA ne vraća). Dok je
+/// nevidljiv ne hvata dodire (prazan `SizedBox` ne sudjeluje u hit testu), pa
+/// tap na video i dalje pauzira kao inače.
+class UnmuteOverlay extends StatelessWidget {
+  const UnmuteOverlay({super.key, this.onUnmuted});
+
+  /// Zove se nakon uključivanja zvuka — ekran tu obično osigura da svira
+  /// (tap je ujedno i user gesture koji browser traži).
+  final VoidCallback? onUnmuted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+
+    return ListenableBuilder(
+      listenable: PlayerMute.instance,
+      builder: (context, _) {
+        if (!PlayerMute.instance.autoplayBlocked) {
+          return const SizedBox.shrink();
+        }
+        return GestureDetector(
+          onTap: () async {
+            await PlayerMute.instance.setMuted(false);
+            onUnmuted?.call();
+          },
+          child: Container(
+            color: Colors.black54,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppTheme.croBlue,
+                      shape: BoxShape.circle,
+                      border: Border.fromBorderSide(
+                        AppTheme.brandRim(theme.brightness),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.volume_up,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l.mediaBoostVolume,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

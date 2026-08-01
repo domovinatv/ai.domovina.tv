@@ -25,6 +25,7 @@ import '../services/page_meta.dart';
 import '../services/person_service.dart';
 import '../services/playback_intent.dart';
 import '../services/playback_speed.dart';
+import '../services/player_mute.dart';
 import '../services/seek_undo.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
@@ -448,9 +449,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
   DateTime? _seekLock;
   static const _seekLockDuration = Duration(milliseconds: 2100);
 
-  /// Web muted autoplay — video igra ali je mutiran, korisnik mora kliknuti za zvuk.
-  bool _mutedAutoplay = false;
-
   /// Kratki lock koji sprjecava scroll listener da overridea scrollTimestamp
   /// dok traje programatski scroll (auto-scroll iz video playbacka).
   DateTime? _scrollLock;
@@ -729,7 +727,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
     MediaSession.clear();
     _playbackIntent?.dispose();
     _seekUndo?.dispose();
-    _player?.dispose();
+    final player = _player;
+    if (player != null) {
+      PlayerMute.instance.detach(player);
+      player.dispose();
+    }
     super.dispose();
   }
 
@@ -947,16 +949,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
       _seekUndo!.suppress(window: const Duration(seconds: 8));
 
       // Otvori + pouzdano resume-seek (čeka duration prije seeka — inače libmpv
-      // na iOS odbaci seek pa video kreće od 0). Web vraća false ako je browser
-      // odbio unmuted autoplay → muted fallback.
-      final unmuted = await openAndResume(
-        player,
-        uri: videoUri,
-        startAtSeconds: startAt,
-      );
-      if (kIsWeb && !unmuted) {
-        _mutedAutoplay = true;
-      }
+      // na iOS odbaci seek pa video kreće od 0). Ako je browser odbio unmuted
+      // autoplay, helper padne na muted fallback i to zapiše u `PlayerMute`
+      // singleton — odatle ga čitaju gumb za zvuk i „Uključi zvuk" CTA.
+      await openAndResume(player, uri: videoUri, startAtSeconds: startAt);
       if (mounted) {
         // Otvaranje je gotovo → skrati prozor natrag na normalnu duljinu.
         _seekUndo?.suppress();
@@ -1885,8 +1881,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
               totalDurationSeconds: data.info.duration,
               speakerTimeline: data.speakerTimeline,
               speakers: summaryForUi.summary.speakers,
-              mutedAutoplay: _mutedAutoplay,
-              onUnmute: () => setState(() => _mutedAutoplay = false),
             ),
         ],
       );
@@ -1918,8 +1912,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: summaryForUi.summary.speakers,
-            mutedAutoplay: _mutedAutoplay,
-            onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
         ],
       );
@@ -1967,8 +1959,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: summaryForUi.summary.speakers,
-            mutedAutoplay: _mutedAutoplay,
-            onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
         ],
       );
@@ -2135,21 +2125,46 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             onTap: () => setState(() => _mobileTab = 1),
                           ),
                         ],
-                        _BottomBarButton(
-                          icon: Icons.ondemand_video,
-                          label: l.episodeVideo,
-                          isActive: false,
-                          onTap: _videoReady
-                              ? () {
-                                  final s = _scaffoldKey.currentState;
-                                  if (s == null) return;
-                                  if (s.isEndDrawerOpen) {
-                                    s.closeEndDrawer();
-                                  } else {
-                                    s.openEndDrawer();
-                                  }
-                                }
-                              : null,
+                        // Na mobitelu player živi u `endDraweru`, pa je ovo
+                        // jedina površina koju korisnik vidi kad hladno otvori
+                        // share link. Ako je browser nametnuo muted autoplay,
+                        // gumb preuzima ulogu unmutea: tap je user gesture koji
+                        // browser traži, pa zvuk pali ODMAH (i usput otvara
+                        // player). Bez toga je epizoda u mrtvoj točki — vrti se
+                        // bez zvuka i nema se gdje kliknuti.
+                        ListenableBuilder(
+                          listenable: PlayerMute.instance,
+                          builder: (context, _) {
+                            final blocked =
+                                PlayerMute.instance.autoplayBlocked;
+                            return _BottomBarButton(
+                              icon: blocked
+                                  ? Icons.volume_off
+                                  : Icons.ondemand_video,
+                              label: blocked
+                                  ? l.mediaBoostVolume
+                                  : l.episodeVideo,
+                              isActive: blocked,
+                              onTap: _videoReady
+                                  ? () {
+                                      if (blocked) {
+                                        PlayerMute.instance.setMuted(false);
+                                        if (!(_player?.state.playing ??
+                                            true)) {
+                                          _player?.play();
+                                        }
+                                      }
+                                      final s = _scaffoldKey.currentState;
+                                      if (s == null) return;
+                                      if (s.isEndDrawerOpen) {
+                                        s.closeEndDrawer();
+                                      } else {
+                                        s.openEndDrawer();
+                                      }
+                                    }
+                                  : null,
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -2369,8 +2384,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
             onSeek: _onVideoSeek,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
-            mutedAutoplay: _mutedAutoplay,
-            onUnmute: () => setState(() => _mutedAutoplay = false),
           ),
         ],
       );

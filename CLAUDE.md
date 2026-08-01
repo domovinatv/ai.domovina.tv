@@ -265,6 +265,38 @@ pojaviti na **tri** mjesta — video traka, `video_panel.dart` i `_PlayerTab` u
 `episode_simple_screen.dart`. Zadnja dva su jedina putanja za **audio-only**
 epizode, gdje `EpisodeVideo` uopće ne postoji.
 
+**Rule (stanje kontrole ide kroz singleton, ne kroz propove)**: iste kontrole
+crtaju tri odvojena stabla, a na mobitelu je player u `endDraweru` — prop
+drilling se tu neizbježno negdje ispusti. `PlaybackSpeed`, `BackgroundPlayback`
+i `PlayerMute` su zato singletoni; `VideoPanel` nema parametre za njih.
+(Povijest: `mutedAutoplay`/`onUnmute` su bili propovi i **nedostajali su na
+obje mobilne pozivne točke** — unmute na mobitelu nije postojao.)
+
+### Muted autoplay — browserska politika, ne naš bug
+
+Autoplay **sa zvukom** dopušten je samo uz prethodni gesture: Chromium traži
+klik/tap po domeni u toj sesiji (ili MEI prag na desktopu / PWA na home
+screenu), WebKit traži `muted` element ili audio-less stream i **pauzira
+reprodukciju ako se element odmuta bez gesturea**. Hladno otvoren share link
+(`/v/<id>/t/<sec>`) nema ništa od toga → `openAndResume` pada na muted
+autoplay i to zapiše u `PlayerMute` singleton.
+
+Iz tog se stanja izlazi ISKLJUČIVO korisnikovim tapom. Zato UI mora ponuditi
+tri izlaza: `UnmuteOverlay` preko slike, `MuteToggleButton` u trakama, i (na
+mobitelu) gumb „Video" u donjoj traci koji se pretvori u „Uključi zvuk" — jer
+je on jedina površina koju korisnik vidi dok je player u zatvorenom draweru.
+
+**Rule (mute na webu = `muted` property, NIKAD `volume`)**: na iOS-u
+`HTMLMediaElement.volume` nije zapisiv (setter je no-op, getter uvijek 1), a
+media_kitov `setVolume` usput **skida** `muted` flag — pa `setVolume(0)` na
+iPhoneu ne mutira ništa i autoplay ostane odbijen. Mute na webu ide preko
+`services/media_element_mute_web.dart` (`<video>.muted`); `player.setVolume`
+je samo native putanja i fallback.
+
+**Rule (širinski budžet trake)**: `MuteToggleButton` ide SAMO u mobilnu
+media_kit traku — desktop varijanta već ima `MaterialDesktopVolumeButton`, a
+osmi slot bi joj probio 328 dp (`test/playback_bar_layout_test.dart`).
+
 **Rule**: prag detekcije skoka ne spuštati ispod 1 s — `position` stream fira
 ~5×/s, pa je pri brzini 2,0× prirodni pomak ~0,4 s i niži prag bi generirao
 lažne skokove. Programski seek (resume, tap na poglavlje, sam Undo) mora ići uz

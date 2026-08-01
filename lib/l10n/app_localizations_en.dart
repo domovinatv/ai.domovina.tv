@@ -1549,6 +1549,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mediaBoostVolume => 'Turn on sound';
 
   @override
+  String get mediaMute => 'Mute (M)';
+
+  @override
   String get mediaPause => 'Pause';
 
   @override

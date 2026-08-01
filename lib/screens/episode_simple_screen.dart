@@ -21,6 +21,7 @@ import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/playback_intent.dart';
 import '../services/playback_speed.dart';
+import '../services/player_mute.dart';
 import '../services/player_resume.dart';
 import '../services/page_meta.dart';
 import '../services/seek_undo.dart';
@@ -273,7 +274,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     MediaSession.clear();
     _intent?.dispose();
     _seekUndo?.dispose();
-    _player?.dispose();
+    final player = _player;
+    if (player != null) {
+      PlayerMute.instance.detach(player);
+      player.dispose();
+    }
     super.dispose();
   }
 
@@ -999,7 +1004,21 @@ class _PlayerTab extends StatelessWidget {
           AspectRatio(
             aspectRatio: 16 / 9,
             child: audioOnly
-                ? AudioPoster(artUrl: posterUrl)
+                // Unmute CTA samo ovdje — kod videa ga crta `EpisodeVideo`
+                // kroz `controls:` builder, pa bi se udvostručio.
+                ? Stack(
+                    children: [
+                      Positioned.fill(child: AudioPoster(artUrl: posterUrl)),
+                      Positioned.fill(
+                        child: UnmuteOverlay(
+                          onUnmuted: () {
+                            final p = player;
+                            if (p != null && !p.state.playing) p.play();
+                          },
+                        ),
+                      ),
+                    ],
+                  )
                 : ytMode
                 ? YouTubeEmbed(
                     videoId: data.youtubeId,
@@ -1155,6 +1174,8 @@ class _PlayerTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
                 SpeedCycleButton(),
+                SizedBox(width: 8),
+                MuteToggleButton(),
                 SizedBox(width: 8),
                 BackgroundPlaybackButton(),
               ],

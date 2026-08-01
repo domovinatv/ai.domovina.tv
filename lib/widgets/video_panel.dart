@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../theme/app_theme.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
@@ -40,8 +38,6 @@ class VideoPanel extends StatefulWidget {
   final List<SummarySpeaker> speakers;
   final double? width;
   final void Function(Duration position)? onSeek;
-  final bool mutedAutoplay;
-  final VoidCallback? onUnmute;
 
   /// YouTube ID epizode — omogućuje in-app YouTube embed mode (web).
   final String? youtubeId;
@@ -71,8 +67,6 @@ class VideoPanel extends StatefulWidget {
     this.speakers = const [],
     this.width = 360,
     this.onSeek,
-    this.mutedAutoplay = false,
-    this.onUnmute,
     this.youtubeId,
     this.audioOnly = false,
     this.posterUrl,
@@ -232,51 +226,20 @@ class _VideoPanelState extends State<VideoPanel> {
                               : null,
                         ),
                 ),
-                // Web overlay: unmute CTA za muted autoplay (browser policy).
+                // Unmute CTA za muted autoplay (browser politika) — SAMO na
+                // audio-only putanji: kod videa isti overlay već crta
+                // `EpisodeVideo` kroz `controls:` builder (i u fullscreenu),
+                // pa bi se ovdje udvostručio. Stanje ide kroz `PlayerMute`
+                // singleton, ne kroz parametre — prošla izvedba ga je
+                // provlačila propovima i ispustila baš na mobilnim pozivima.
                 // Paused overlay je uklonjen — klik na video sad toggle-a
                 // play/pause (playAndPauseOnTap u EpisodeVideo).
-                if (kIsWeb && widget.mutedAutoplay && !_ytMode)
+                if (widget.audioOnly)
                   Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () {
-                        widget.player.setVolume(100);
-                        widget.onUnmute?.call();
+                    child: UnmuteOverlay(
+                      onUnmuted: () {
                         if (!_playing) widget.player.play();
                       },
-                      child: Container(
-                        color: Colors.black54,
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.croBlue,
-                                  shape: BoxShape.circle,
-                                  border: Border.fromBorderSide(
-                                    AppTheme.brandRim(theme.brightness),
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.volume_up,
-                                  color: Colors.white,
-                                  size: 36,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                l.mediaBoostVolume,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ),
                   ),
               ],
@@ -366,14 +329,16 @@ class _VideoPanelState extends State<VideoPanel> {
                   ],
                 ),
 
-                // Play/Pause + skip + brzina + „u pozadini".
+                // Play/Pause + skip + brzina + zvuk + „u pozadini".
                 // media_kitov control bar preko slike se sam sakriva (i ne
                 // postoji na audio-only putanji), pa je ovo uvijek vidljivi
-                // ulaz u iste dvije postavke.
+                // ulaz u iste postavke — uključujući jedini unmute na
+                // audio-only epizodama.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     const SpeedCycleButton(),
+                    const MuteToggleButton(),
                     IconButton(
                       icon: const Icon(Icons.replay_10),
                       onPressed: () => widget.player.seek(

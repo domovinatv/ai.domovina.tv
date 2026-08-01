@@ -11,15 +11,21 @@ library;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:media_kit/media_kit.dart';
 
+import 'player_mute.dart';
+
 /// Otvara [uri] i, ako je [startAtSeconds] zadan, pouzdano seeka na tu poziciju
 /// prije play-a. Vraća `true` ako je unmuted autoplay uspio; `false` ako je
 /// browser odbio pa smo pali na muted autoplay (samo web — na native uvijek
 /// `true`).
+///
+/// Stanje muteanja se NE vraća pozivatelju kroz parametre nego živi u
+/// [PlayerMute] singletonu — vidi tamošnji doc zašto.
 Future<bool> openAndResume(
   Player player, {
   required String uri,
   int? startAtSeconds,
 }) async {
+  PlayerMute.instance.attach(player);
   await player.open(Media(uri), play: false);
 
   if (startAtSeconds != null && startAtSeconds > 0) {
@@ -34,12 +40,14 @@ Future<bool> openAndResume(
     await player.seek(Duration(seconds: startAtSeconds));
   }
 
-  // Pokušaj unmuted autoplay. Na webu browser može odbiti bez MEI score-a za
-  // domenu → fallback na muted autoplay.
+  // Pokušaj unmuted autoplay. Browser ga smije odbiti — Chromium traži da je
+  // korisnik već kliknuo/tapnuo po domeni u toj sesiji (ili MEI prag na
+  // desktopu), WebKit traži `muted` element. Hladno otvoren share link nema ni
+  // jedno ni drugo → fallback na muted autoplay.
   try {
     await player.play();
   } catch (_) {
-    await player.setVolume(0);
+    await PlayerMute.instance.muteForAutoplay();
     await player.play();
     return false;
   }
@@ -48,7 +56,7 @@ Future<bool> openAndResume(
     // Tihi fail bez exceptiona — provjeri playing state nakon kratke pauze.
     await Future<void>.delayed(const Duration(milliseconds: 200));
     if (!player.state.playing) {
-      await player.setVolume(0);
+      await PlayerMute.instance.muteForAutoplay();
       await player.play();
       return false;
     }
