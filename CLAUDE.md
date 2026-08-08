@@ -29,13 +29,18 @@ Petlja, helperi (`tim-send.sh`/`tim-read.sh`/`tim-status.sh`) i zamke:
 `docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`,
 kickoff `/pocni` (skripta ga sama pošalje planneru; `TIM_AUTOSTART=0` gasi).
 
-`./scripts/tim-open.sh '<prompt>'` (skill `/digni`) otvara **novi maksimiziran
-iTerm2 prozor**, diže tim u njemu i posije planneru prvi zadatak. Višelinijski
-prompt ide u `.tim/kickoff-prompt.md`, a planneru se šalje samo putanja — TUI
-svaki `\n` čita kao submit. Ako session već postoji, prozor se samo attacha i
-prompt se NE šalje (ondje korisnik tipka). iTerm zamke su u headeru skripte;
-najvažnija: `create window … command` vraća `missing value`, a `current window`
-odmah nakon `create window` pokaže krivi prozor.
+`./scripts/tim-open.sh [--fresh] '<prompt>'` (skill `/digni`) diže tim
+**headless**, posije planneru prvi zadatak, pa otvori novi maksimiziran iTerm2
+prozor koji se samo `tmux attach`-a. Redoslijed je bitan: prozor je udobnost,
+tim je posao — ako iTerm padne, tim je gore. Bez `--fresh` se attacha na
+postojeći session i prompt se NE šalje (ondje korisnik tipka); `--fresh` gasi
+stari tim. Višelinijski prompt ide u `.tim/kickoff-prompt.md`, planneru se
+šalje samo putanja — TUI svaki `\n` čita kao submit.
+
+**Rule**: nikad ne stavljaj `osascript` na kritični put dizanja tima. iTermov
+AppleScript se blokira (`AppleEvent timed out -1712`) kad session na koji su
+prozori attachani upravo umre — izmjereno 8.8.2026., kill je prošao a tim
+ostao mrtav. Ostale iTerm zamke su u headeru skripte.
 
 Session se zove `tim-<repo-slug>` (`tim-domovina-ai`) da timovi za različite
 projekte na istom stroju ne kolidiraju. **Rule**: tmux radi prefix matching na

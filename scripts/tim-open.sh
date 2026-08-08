@@ -95,7 +95,10 @@ fi
 # kroz send-keys. Zapišemo ga u fajl i pošaljemo jednu liniju s putanjom —
 # isto pravilo kao u .claude/commands/delegiraj.md ("šalješ putanju, ne sadržaj").
 KICKOFF=".tim/kickoff-prompt.md"
-if [ -n "$PROMPT" ]; then
+if [ -n "$PROMPT" ] && [ "$DRY" -eq 1 ]; then
+  # Dry-run ne smije pregaziti kickoff koji možda još čeka na čitanje.
+  echo "[dry-run] kickoff → $KICKOFF (ne pišem)"
+elif [ -n "$PROMPT" ]; then
   mkdir -p .tim
   cat > "$KICKOFF" <<EOF
 # Kickoff za planner — $(date '+%Y-%m-%d %H:%M')
@@ -110,15 +113,17 @@ EOF
   echo "kickoff → $KICKOFF"
 fi
 
-# ----- AppleScript ----------------------------------------------------------
-# Komanda koja se utipka u novi prozor. TIM_AUTOSTART=0 kad imamo vlastiti
-# prompt: inače bi tim.sh poslao /pocni i naša poruka bi mu upala u red čekanja
-# usred odgovora. Orijentacija je tada dio kickoff fajla (vidi gore).
-if [ -n "$PROMPT" ] && [ "$RESUME" -eq 0 ]; then
-  LAUNCH="cd ${ROOT} && TIM_AUTOSTART=0 ./scripts/tim.sh"
-else
-  LAUNCH="cd ${ROOT} && ./scripts/tim.sh"
-fi
+# ----- redoslijed: tim PRVO, prozor POSLIJE ---------------------------------
+# Prozor je udobnost, tim je posao. Zato tim.sh diže session HEADLESS (bez
+# TTY-ja se ne attacha nego samo javi ime sessiona), prompt se pošalje
+# deterministički, a iTerm prozor na kraju samo `tmux attach`.
+#
+# Zašto ne obrnuto (prozor pa tim.sh u njemu, kako je bilo prvo): kad --fresh
+# ubije session na koji su zatečeni prozori attachani, njihov `tmux attach`
+# izađe u istoj sekundi i iTermov AppleScript se zablokira — `create window`
+# vrati `AppleEvent timed out (-1712)` i tim se NIKAD ne digne. Izmjereno
+# 8.8.2026.: kill je prošao, prozor nije, tim je ostao mrtav.
+LAUNCH="tmux attach -t ${TARGET}"
 
 # AppleScript literal: escapaj \ pa " (redoslijed je bitan).
 as_escape() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
@@ -126,64 +131,80 @@ LAUNCH_AS=$(as_escape "$LAUNCH")
 
 if [ "$DRY" -eq 1 ]; then
   echo "[dry-run] session:  $SESSION (resume=$RESUME)"
-  echo "[dry-run] iTerm:    novi prozor, bounds = cijeli desktop (macOS podreže)"
-  echo "[dry-run] komanda:  $LAUNCH"
+  [ "$RESUME" -eq 0 ] && echo "[dry-run] tim:      TIM_AUTOSTART=$([ -n "$PROMPT" ] && echo 0 || echo 1) ./scripts/tim.sh </dev/null  (headless)"
   if [ -n "$PROMPT" ] && [ "$RESUME" -eq 0 ]; then
     echo "[dry-run] planner:  tim-send.sh --force planner 'Pročitaj $KICKOFF pa izvrši.'"
   elif [ -n "$PROMPT" ]; then
     echo "[dry-run] planner:  PRESKAČEM slanje (session već postoji — vidi napomenu gore)"
   fi
+  echo "[dry-run] iTerm:    novi prozor, maksimiziran, komanda: $LAUNCH"
   exit 0
 fi
 
-osascript <<APPLESCRIPT >/dev/null
-tell application "Finder" to set d to bounds of window of desktop
-tell application "iTerm"
-	activate
-	set nw to (create window with default profile)
-	set bounds of nw to {item 1 of d, item 2 of d, item 3 of d, item 4 of d}
-	set s to current session of nw
-	tell s
-		write text "${LAUNCH_AS}"
-	end tell
-end tell
-APPLESCRIPT
-echo "iTerm prozor otvoren, tim se diže…"
+# ----- 1. tim (headless) ----------------------------------------------------
+if [ "$RESUME" -eq 0 ]; then
+  # TIM_AUTOSTART=0 kad imamo vlastiti prompt: inače bi tim.sh poslao /pocni i
+  # naša poruka bi mu upala u red usred odgovora. Orijentacija je tada dio
+  # kickoff fajla (vidi gore).
+  if [ -n "$PROMPT" ]; then
+    TIM_AUTOSTART=0 ./scripts/tim.sh < /dev/null
+  else
+    ./scripts/tim.sh < /dev/null
+  fi
+  for _ in $(seq 60); do
+    tmux has-session -t "$TARGET" 2>/dev/null && break
+    sleep 0.5
+  done
+  tmux has-session -t "$TARGET" 2>/dev/null \
+    || die "session '$SESSION' se nije podigao za 30 s."
+fi
 
-# ----- sijanje prompta ------------------------------------------------------
-[ -n "$PROMPT" ] || exit 0
-
-if [ "$RESUME" -eq 1 ]; then
-  echo
+# ----- 2. prompt ------------------------------------------------------------
+if [ -n "$PROMPT" ] && [ "$RESUME" -eq 0 ]; then
+  # Čekaj da planner TUI proradi — isti detektor kao u tim.sh (footer s
+  # permission modom). Bez ovoga poruka ode u prazno.
+  PLAN=$(tim_pane planner)
+  [ -n "$PLAN" ] || die "planner pane nije registriran u sessionu '$SESSION'."
+  READY=0
+  for _ in $(seq 60); do
+    if tmux capture-pane -p -t "$PLAN" -S -20 2>/dev/null | grep -qi 'bypass permissions'; then
+      READY=1; break
+    fi
+    sleep 0.5
+  done
+  [ "$READY" -eq 1 ] || die "planner TUI se nije javio za 30 s — pošalji prompt ručno:
+  ./scripts/tim-send.sh --force planner 'Pročitaj $KICKOFF pa izvrši.'"
+  # --force: panel je nov i prazan — jedini trenutak kad je pisanje u planner
+  # dopušteno (isto obrazloženje kao autostart /pocni u tim.sh).
+  sleep 1
+  ./scripts/tim-send.sh --force planner "Pročitaj $KICKOFF pa izvrši."
+elif [ -n "$PROMPT" ]; then
   echo "Prompt NIJE poslan — session je već postojao, pa ne znam tipkaš li u planneru."
   echo "Pošalji ga sam kad je panel prazan:"
   echo "  ./scripts/tim-send.sh --force planner 'Pročitaj $KICKOFF pa izvrši.'"
-  exit 0
 fi
 
-# 1. čekaj da tim.sh stvori session (pet Claude procesa, ~2-5 s)
-for _ in $(seq 60); do
-  tmux has-session -t "$TARGET" 2>/dev/null && break
-  sleep 0.5
-done
-tmux has-session -t "$TARGET" 2>/dev/null \
-  || die "session '$SESSION' se nije podigao za 30 s — pogledaj novi iTerm prozor."
-
-# 2. čekaj da planner TUI proradi — isti detektor kao u tim.sh (footer s
-#    permission modom). Bez ovoga poruka ode u prazno.
-PLAN=$(tim_pane planner)
-[ -n "$PLAN" ] || die "planner pane nije registriran u sessionu '$SESSION'."
-READY=0
-for _ in $(seq 60); do
-  if tmux capture-pane -p -t "$PLAN" -S -20 2>/dev/null | grep -qi 'bypass permissions'; then
-    READY=1; break
-  fi
-  sleep 0.5
-done
-[ "$READY" -eq 1 ] || die "planner TUI se nije javio za 30 s — pošalji prompt ručno (vidi ispod)."
-
-# 3. jedna linija, s putanjom umjesto sadržaja. --force jer je panel nov i
-#    prazan — jedini trenutak kad je pisanje u planner dopušteno (isto
-#    obrazloženje kao autostart /pocni u tim.sh).
-sleep 1
-./scripts/tim-send.sh --force planner "Pročitaj $KICKOFF pa izvrši."
+# ----- 3. prozor (nije kritičan) --------------------------------------------
+# `with timeout` jer se iTermov AppleScript zna zablokirati (modal, session koji
+# je upravo izašao) i bez toga osascript visi minutama. Ako padne, tim je GORE —
+# samo se attachaj ručno.
+if ! osascript <<APPLESCRIPT >/dev/null 2>&1
+tell application "Finder" to set d to bounds of window of desktop
+with timeout of 15 seconds
+	tell application "iTerm"
+		set nw to (create window with default profile)
+		set bounds of nw to {item 1 of d, item 2 of d, item 3 of d, item 4 of d}
+		tell current session of nw
+			write text "${LAUNCH_AS}"
+		end tell
+	end tell
+end timeout
+APPLESCRIPT
+then
+  echo
+  echo "UPOZORENJE: iTerm nije otvorio prozor (AppleScript blokiran ili timeout)."
+  echo "            TIM JE GORE i radi — attachaj se ručno u bilo kojem terminalu:"
+  echo "              tmux attach -t $TARGET"
+  exit 0
+fi
+echo "iTerm prozor otvoren i attachan na '$SESSION'."
