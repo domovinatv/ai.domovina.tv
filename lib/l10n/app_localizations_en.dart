@@ -3415,4 +3415,297 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tvRailPersons => 'People';
+
+  @override
+  String get votingTitle => 'Election day';
+
+  @override
+  String votingElectionDay(String date) {
+    return 'Election day · $date';
+  }
+
+  @override
+  String votingRoundLabel(int number) {
+    return 'Round $number';
+  }
+
+  @override
+  String votingRoundDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days left',
+      one: '$count day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingRoundLastDay => 'last day of the round';
+
+  @override
+  String votingRoundVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes this round',
+      one: '$count vote this round',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingRoundVoters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count voters',
+      one: '$count voter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingStreakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count-day streak',
+      one: '$count-day streak',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingStreakNone => 'No streak yet';
+
+  @override
+  String get votingFlagsTooltip =>
+      'A flag automatically saves a missed election day. You can hold two at most.';
+
+  @override
+  String votingFlagsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count flags',
+      one: '$count flag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingGuestTitle => 'The leaderboard is public, the vote is not.';
+
+  @override
+  String get votingGuestBody =>
+      'An election day runs from midnight to midnight, Croatian time.';
+
+  @override
+  String get votingHaveVote => 'You have 1 vote. Use it before midnight.';
+
+  @override
+  String votingLossAversion(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your streak is $count days — vote today so it doesn\'t break.',
+      one: 'Your streak is $count day — vote today so it doesn\'t break.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingVotedToday => 'Today\'s vote is in.';
+
+  @override
+  String get votingComeBackTomorrow =>
+      'Come back tomorrow at 00:00 Croatian time.';
+
+  @override
+  String get votingYourVoteToday => 'Your vote today';
+
+  @override
+  String votingAtRiskTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'A flag is guarding your streak — $count days.',
+      one: 'A flag is guarding your streak — $count day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingAtRiskBody => 'Vote today and the streak carries on.';
+
+  @override
+  String votingAtRiskBurn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Vote today and $count flags are spent to carry the streak on.',
+      one: 'Vote today and $count flag is spent to carry the streak on.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingBrokenTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The streak stopped at $count days.',
+      one: 'The streak stopped at $count day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingBrokenTitleUnknown => 'The streak has stopped.';
+
+  @override
+  String votingBrokenLongest(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your longest stays $count days.',
+      one: 'Your longest stays $count day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingBrokenCta => 'Start over';
+
+  @override
+  String get votingVerifyBarTitle => 'Verify with your eID and vote';
+
+  @override
+  String get votingVerifyBarBody => 'One person, one vote every 24 hours.';
+
+  @override
+  String get votingVerifyCta => 'Verify';
+
+  @override
+  String get votingSortLeaderboard => 'Leaderboard';
+
+  @override
+  String get votingSortRandom => 'Random';
+
+  @override
+  String get votingSortLeastVotes => 'Fewest votes';
+
+  @override
+  String get votingSearchHint => 'Search candidates…';
+
+  @override
+  String get votingTagAll => 'All topics';
+
+  @override
+  String get votingEmpty => 'No candidates match this selection.';
+
+  @override
+  String get votingEmptyClear => 'Clear filters';
+
+  @override
+  String get votingLoadFailed => 'The leaderboard failed to load.';
+
+  @override
+  String get votingVoteUp => 'Vote up';
+
+  @override
+  String get votingVoteDown => 'Vote down';
+
+  @override
+  String votingNetLabel(int value) {
+    return 'Net score $value';
+  }
+
+  @override
+  String votingVotesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '$count vote',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingSubscribers(String value) {
+    return '$value subscribers';
+  }
+
+  @override
+  String get votingSubscribersLabel => 'Subscribers';
+
+  @override
+  String get votingEpisodesLabel => 'Episodes (estimate)';
+
+  @override
+  String get votingHosts => 'Hosts';
+
+  @override
+  String votingCountThousands(String value) {
+    return '${value}K';
+  }
+
+  @override
+  String votingCountMillions(String value) {
+    return '${value}M';
+  }
+
+  @override
+  String get votingStatusWinner => 'Winner';
+
+  @override
+  String get votingStatusOnboarding => 'Processing';
+
+  @override
+  String get votingStatusOnboarded => 'Already in the app';
+
+  @override
+  String get votingStatusWithdrawn => 'Withdrawn';
+
+  @override
+  String get votingConsentTitle => 'This is not a secret ballot';
+
+  @override
+  String get votingConsentBody =>
+      'Your vote is tied to your verified identity in our database. We never publish individual votes — only totals are public. A vote for a channel with a political or religious leaning can indirectly reveal your beliefs, so we tell you before your first vote.';
+
+  @override
+  String get votingConsentAccept => 'Understood, vote';
+
+  @override
+  String get votingAlreadyVoted => 'Today\'s vote is already used.';
+
+  @override
+  String get votingVoteRecorded => 'Vote recorded.';
+
+  @override
+  String votingStreakSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count flags saved your streak.',
+      one: '$count flag saved your streak.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingErrorNotVerified => 'Voting requires eID verification.';
+
+  @override
+  String get votingErrorCandidateGone =>
+      'This candidate is no longer in the running.';
+
+  @override
+  String get votingErrorRoundClosed => 'The round has closed in the meantime.';
+
+  @override
+  String get votingErrorGeneric => 'The vote was not recorded. Try again.';
 }

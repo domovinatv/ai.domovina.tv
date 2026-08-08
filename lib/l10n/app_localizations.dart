@@ -5500,6 +5500,366 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Osobe'**
   String get tvRailPersons;
+
+  /// Naslov ekrana /glasanje — glasanje o sljedećem kanalu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izborni dan'**
+  String get votingTitle;
+
+  /// Zaglavlje glasanja: današnji izborni dan (datum je već formatiran, npr. 8.8.2026.).
+  ///
+  /// In hr, this message translates to:
+  /// **'Izborni dan · {date}'**
+  String votingElectionDay(String date);
+
+  /// Redni broj kola glasanja (kolo traje 14 dana).
+  ///
+  /// In hr, this message translates to:
+  /// **'Kolo {number}'**
+  String votingRoundLabel(int number);
+
+  /// Koliko izbornih dana kolo još traje.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{još {count} dan} few{još {count} dana} other{još {count} dana}}'**
+  String votingRoundDaysLeft(int count);
+
+  /// Kolo završava danas — glas još ulazi u ovo kolo.
+  ///
+  /// In hr, this message translates to:
+  /// **'posljednji dan kola'**
+  String get votingRoundLastDay;
+
+  /// Ukupan broj glasova u tekućem kolu (agregat, nikad pojedinačni glasovi).
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} glas u kolu} few{{count} glasa u kolu} other{{count} glasova u kolu}}'**
+  String votingRoundVotes(int count);
+
+  /// Broj različitih glasača u tekućem kolu.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} glasač} few{{count} glasača} other{{count} glasača}}'**
+  String votingRoundVoters(int count);
+
+  /// Duljina niza uzastopnih izbornih dana u kojima je korisnik glasao.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Niz {count} dan} few{Niz {count} dana} other{Niz {count} dana}}'**
+  String votingStreakDays(int count);
+
+  /// Prikaz kad je niz nula — poziv, ne nula.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nemaš niz'**
+  String get votingStreakNone;
+
+  /// Tooltip iznad reda zastavica u zaglavlju glasanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zastavica sama spašava propušteni izborni dan. Možeš imati najviše dvije.'**
+  String get votingFlagsTooltip;
+
+  /// Koliko zastavica korisnik trenutno ima.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} zastavica} few{{count} zastavice} other{{count} zastavica}}'**
+  String votingFlagsLeft(int count);
+
+  /// Zaglavlje za gosta / neverificiranog korisnika na /glasanje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ljestvica je javna, glas nije.'**
+  String get votingGuestTitle;
+
+  /// Objašnjenje granice izbornog dana; ista rečenica vrijedi i za dijasporu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izborni dan traje od ponoći do ponoći po hrvatskom vremenu.'**
+  String get votingGuestBody;
+
+  /// Zaglavlje kad je korisnik verificiran i danas još nije glasao.
+  ///
+  /// In hr, this message translates to:
+  /// **'Imaš 1 glas. Potroši ga do ponoći.'**
+  String get votingHaveVote;
+
+  /// Podsjetnik što se gubi ako korisnik danas ne glasa.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Tvoj niz je {count} dan — glasaj danas da ne pukne.} few{Tvoj niz je {count} dana — glasaj danas da ne pukne.} other{Tvoj niz je {count} dana — glasaj danas da ne pukne.}}'**
+  String votingLossAversion(int count);
+
+  /// Zaglavlje nakon što je korisnik potrošio današnji glas.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glas za danas je zabilježen.'**
+  String get votingVotedToday;
+
+  /// Kad korisnik ponovno dobiva glas.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrati se sutra u 00:00 po hrvatskom vremenu.'**
+  String get votingComeBackTomorrow;
+
+  /// Oznaka na kartici kandidata za kojeg je današnji glas otišao.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj glas danas'**
+  String get votingYourVoteToday;
+
+  /// Zaglavlje stanja „niz visi": zastavice ga danas još mogu obraniti.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Zastavica brani tvoj niz — {count} dan.} few{Zastavica brani tvoj niz — {count} dana.} other{Zastavica brani tvoj niz — {count} dana.}}'**
+  String votingAtRiskTitle(int count);
+
+  /// Uputa uz stanje „niz visi" kad se nijedna zastavica ne troši.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj danas i niz ide dalje.'**
+  String get votingAtRiskBody;
+
+  /// Koliko će zastavica izgorjeti ako korisnik danas glasa.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Glasaš li danas, troši se {count} zastavica i niz ide dalje.} few{Glasaš li danas, troše se {count} zastavice i niz ide dalje.} other{Glasaš li danas, troši se {count} zastavica i niz ide dalje.}}'**
+  String votingAtRiskBurn(int count);
+
+  /// Jednokratna poruka kad niz pukne — bez prijekora.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Niz je stao na {count} dan.} few{Niz je stao na {count} dana.} other{Niz je stao na {count} dana.}}'**
+  String votingBrokenTitle(int count);
+
+  /// Niz je pukao, ali broj dana prije pucanja nije poznat (server vraća prikazni niz 0).
+  ///
+  /// In hr, this message translates to:
+  /// **'Niz je stao.'**
+  String get votingBrokenTitleUnknown;
+
+  /// Najduži niz ostaje zapisan i nakon pucanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Najduži ostaje {count} dan.} few{Najduži ostaje {count} dana.} other{Najduži ostaje {count} dana.}}'**
+  String votingBrokenLongest(int count);
+
+  /// Gumb koji zatvara poruku o puknutom nizu i vraća na glasanje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kreni ispočetka'**
+  String get votingBrokenCta;
+
+  /// Trajna traka na dnu /glasanje za neverificirane korisnike.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi se e-Osobnom i glasaj'**
+  String get votingVerifyBarTitle;
+
+  /// Podnaslov trajne trake za potvrdu identiteta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jedna osoba, jedan glas svakih 24 sata.'**
+  String get votingVerifyBarBody;
+
+  /// Gumb koji pokreće potvrdu identiteta e-Osobnom (Certilia).
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi se'**
+  String get votingVerifyCta;
+
+  /// Sort čip: neto rezultat silazno.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ljestvica'**
+  String get votingSortLeaderboard;
+
+  /// Sort čip: nasumično promiješani kandidati.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nasumično'**
+  String get votingSortRandom;
+
+  /// Sort čip: kandidati s najmanje glasova (rep ljestvice).
+  ///
+  /// In hr, this message translates to:
+  /// **'Najmanje glasova'**
+  String get votingSortLeastVotes;
+
+  /// Placeholder u polju za pretragu kandidata.
+  ///
+  /// In hr, this message translates to:
+  /// **'Traži kandidata…'**
+  String get votingSearchHint;
+
+  /// Čip koji miče filter po temi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sve teme'**
+  String get votingTagAll;
+
+  /// Prazna ljestvica nakon filtriranja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema kandidata za ovaj odabir.'**
+  String get votingEmpty;
+
+  /// Akcija koja miče pretragu i filter po temi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Očisti filtre'**
+  String get votingEmptyClear;
+
+  /// Greška pri dohvatu ljestvice kola.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ljestvica se nije učitala.'**
+  String get votingLoadFailed;
+
+  /// Gumb 👍 na kartici kandidata.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj za'**
+  String get votingVoteUp;
+
+  /// Gumb 👎 na kartici kandidata.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj protiv'**
+  String get votingVoteDown;
+
+  /// Semantička oznaka neto rezultata (glasovi za minus glasovi protiv).
+  ///
+  /// In hr, this message translates to:
+  /// **'Neto rezultat {value}'**
+  String votingNetLabel(int value);
+
+  /// Ukupan broj glasova na kandidatu u kolu.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} glas} few{{count} glasa} other{{count} glasova}}'**
+  String votingVotesCount(int count);
+
+  /// Broj pretplatnika kanala u skraćenom zapisu (npr. 400 tis.).
+  ///
+  /// In hr, this message translates to:
+  /// **'{value} pretplatnika'**
+  String votingSubscribers(String value);
+
+  /// Naziv retka u detalju kandidata.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretplatnici'**
+  String get votingSubscribersLabel;
+
+  /// Naziv retka u detalju kandidata: procijenjen broj epizoda.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda (procjena)'**
+  String get votingEpisodesLabel;
+
+  /// Naziv retka u detalju kandidata: voditelji podcasta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Voditelji'**
+  String get votingHosts;
+
+  /// Skraćeni zapis tisuća (npr. 400 tis.).
+  ///
+  /// In hr, this message translates to:
+  /// **'{value} tis.'**
+  String votingCountThousands(String value);
+
+  /// Skraćeni zapis milijuna (npr. 1,2 mil.).
+  ///
+  /// In hr, this message translates to:
+  /// **'{value} mil.'**
+  String votingCountMillions(String value);
+
+  /// Oznaka kandidata koji je pobijedio kolo.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pobjednik'**
+  String get votingStatusWinner;
+
+  /// Oznaka kandidata kojeg pipeline upravo obrađuje.
+  ///
+  /// In hr, this message translates to:
+  /// **'U obradi'**
+  String get votingStatusOnboarding;
+
+  /// Oznaka kandidata koji je gotov i dostupan u aplikaciji.
+  ///
+  /// In hr, this message translates to:
+  /// **'Već u aplikaciji'**
+  String get votingStatusOnboarded;
+
+  /// Oznaka kandidata koji je izašao iz igre.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povučen'**
+  String get votingStatusWithdrawn;
+
+  /// Naslov jednokratne privole prije prvog glasa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovo nije tajno glasovanje'**
+  String get votingConsentTitle;
+
+  /// Tekst privole iz plana §4.3 (GDPR čl. 9, posebne kategorije podataka).
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoj je glas u bazi vezan uz potvrđeni identitet. Pojedinačne glasove nikad ne objavljujemo — javni su samo zbrojevi. Glas za kanal s političkim ili vjerskim predznakom može posredno otkriti tvoje uvjerenje, pa ti to kažemo prije prvog glasa.'**
+  String get votingConsentBody;
+
+  /// Gumb koji prihvaća privolu i nastavlja s glasom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razumijem, glasaj'**
+  String get votingConsentAccept;
+
+  /// Tiho poravnanje stanja kad je glas već zabilježen (druga kartica, drugi uređaj).
+  ///
+  /// In hr, this message translates to:
+  /// **'Glas za danas je već potrošen.'**
+  String get votingAlreadyVoted;
+
+  /// Potvrda korisnikove radnje nakon uspješnog glasa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glas je zabilježen.'**
+  String get votingVoteRecorded;
+
+  /// Potvrda da su zastavice pokrile propuštene izborne dane.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} zastavica spasila je tvoj niz.} few{{count} zastavice spasile su tvoj niz.} other{{count} zastavica spasilo je tvoj niz.}}'**
+  String votingStreakSaved(int count);
+
+  /// Greška: korisnik nije verificiran.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za glasanje treba potvrda e-Osobnom.'**
+  String get votingErrorNotVerified;
+
+  /// Greška: kandidat je u međuvremenu povučen ili je pobijedio.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj kandidat više nije u igri.'**
+  String get votingErrorCandidateGone;
+
+  /// Greška: kolo se zatvorilo dok je ekran bio otvoren.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kolo je u međuvremenu zatvoreno.'**
+  String get votingErrorRoundClosed;
+
+  /// Neočekivana greška pri glasanju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glas nije zabilježen. Pokušaj ponovno.'**
+  String get votingErrorGeneric;
 }
 
 class _AppLocalizationsDelegate

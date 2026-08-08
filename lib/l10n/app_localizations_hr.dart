@@ -3444,4 +3444,308 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get tvRailPersons => 'Osobe';
+
+  @override
+  String get votingTitle => 'Izborni dan';
+
+  @override
+  String votingElectionDay(String date) {
+    return 'Izborni dan · $date';
+  }
+
+  @override
+  String votingRoundLabel(int number) {
+    return 'Kolo $number';
+  }
+
+  @override
+  String votingRoundDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'još $count dana',
+      few: 'još $count dana',
+      one: 'još $count dan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingRoundLastDay => 'posljednji dan kola';
+
+  @override
+  String votingRoundVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count glasova u kolu',
+      few: '$count glasa u kolu',
+      one: '$count glas u kolu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingRoundVoters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count glasača',
+      few: '$count glasača',
+      one: '$count glasač',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingStreakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Niz $count dana',
+      few: 'Niz $count dana',
+      one: 'Niz $count dan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingStreakNone => 'Još nemaš niz';
+
+  @override
+  String get votingFlagsTooltip =>
+      'Zastavica sama spašava propušteni izborni dan. Možeš imati najviše dvije.';
+
+  @override
+  String votingFlagsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zastavica',
+      few: '$count zastavice',
+      one: '$count zastavica',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingGuestTitle => 'Ljestvica je javna, glas nije.';
+
+  @override
+  String get votingGuestBody =>
+      'Izborni dan traje od ponoći do ponoći po hrvatskom vremenu.';
+
+  @override
+  String get votingHaveVote => 'Imaš 1 glas. Potroši ga do ponoći.';
+
+  @override
+  String votingLossAversion(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tvoj niz je $count dana — glasaj danas da ne pukne.',
+      few: 'Tvoj niz je $count dana — glasaj danas da ne pukne.',
+      one: 'Tvoj niz je $count dan — glasaj danas da ne pukne.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingVotedToday => 'Glas za danas je zabilježen.';
+
+  @override
+  String get votingComeBackTomorrow =>
+      'Vrati se sutra u 00:00 po hrvatskom vremenu.';
+
+  @override
+  String get votingYourVoteToday => 'Tvoj glas danas';
+
+  @override
+  String votingAtRiskTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Zastavica brani tvoj niz — $count dana.',
+      few: 'Zastavica brani tvoj niz — $count dana.',
+      one: 'Zastavica brani tvoj niz — $count dan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingAtRiskBody => 'Glasaj danas i niz ide dalje.';
+
+  @override
+  String votingAtRiskBurn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Glasaš li danas, troši se $count zastavica i niz ide dalje.',
+      few: 'Glasaš li danas, troše se $count zastavice i niz ide dalje.',
+      one: 'Glasaš li danas, troši se $count zastavica i niz ide dalje.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingBrokenTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Niz je stao na $count dana.',
+      few: 'Niz je stao na $count dana.',
+      one: 'Niz je stao na $count dan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingBrokenTitleUnknown => 'Niz je stao.';
+
+  @override
+  String votingBrokenLongest(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Najduži ostaje $count dana.',
+      few: 'Najduži ostaje $count dana.',
+      one: 'Najduži ostaje $count dan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingBrokenCta => 'Kreni ispočetka';
+
+  @override
+  String get votingVerifyBarTitle => 'Potvrdi se e-Osobnom i glasaj';
+
+  @override
+  String get votingVerifyBarBody => 'Jedna osoba, jedan glas svakih 24 sata.';
+
+  @override
+  String get votingVerifyCta => 'Potvrdi se';
+
+  @override
+  String get votingSortLeaderboard => 'Ljestvica';
+
+  @override
+  String get votingSortRandom => 'Nasumično';
+
+  @override
+  String get votingSortLeastVotes => 'Najmanje glasova';
+
+  @override
+  String get votingSearchHint => 'Traži kandidata…';
+
+  @override
+  String get votingTagAll => 'Sve teme';
+
+  @override
+  String get votingEmpty => 'Nema kandidata za ovaj odabir.';
+
+  @override
+  String get votingEmptyClear => 'Očisti filtre';
+
+  @override
+  String get votingLoadFailed => 'Ljestvica se nije učitala.';
+
+  @override
+  String get votingVoteUp => 'Glasaj za';
+
+  @override
+  String get votingVoteDown => 'Glasaj protiv';
+
+  @override
+  String votingNetLabel(int value) {
+    return 'Neto rezultat $value';
+  }
+
+  @override
+  String votingVotesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count glasova',
+      few: '$count glasa',
+      one: '$count glas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingSubscribers(String value) {
+    return '$value pretplatnika';
+  }
+
+  @override
+  String get votingSubscribersLabel => 'Pretplatnici';
+
+  @override
+  String get votingEpisodesLabel => 'Epizoda (procjena)';
+
+  @override
+  String get votingHosts => 'Voditelji';
+
+  @override
+  String votingCountThousands(String value) {
+    return '$value tis.';
+  }
+
+  @override
+  String votingCountMillions(String value) {
+    return '$value mil.';
+  }
+
+  @override
+  String get votingStatusWinner => 'Pobjednik';
+
+  @override
+  String get votingStatusOnboarding => 'U obradi';
+
+  @override
+  String get votingStatusOnboarded => 'Već u aplikaciji';
+
+  @override
+  String get votingStatusWithdrawn => 'Povučen';
+
+  @override
+  String get votingConsentTitle => 'Ovo nije tajno glasovanje';
+
+  @override
+  String get votingConsentBody =>
+      'Tvoj je glas u bazi vezan uz potvrđeni identitet. Pojedinačne glasove nikad ne objavljujemo — javni su samo zbrojevi. Glas za kanal s političkim ili vjerskim predznakom može posredno otkriti tvoje uvjerenje, pa ti to kažemo prije prvog glasa.';
+
+  @override
+  String get votingConsentAccept => 'Razumijem, glasaj';
+
+  @override
+  String get votingAlreadyVoted => 'Glas za danas je već potrošen.';
+
+  @override
+  String get votingVoteRecorded => 'Glas je zabilježen.';
+
+  @override
+  String votingStreakSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zastavica spasilo je tvoj niz.',
+      few: '$count zastavice spasile su tvoj niz.',
+      one: '$count zastavica spasila je tvoj niz.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingErrorNotVerified => 'Za glasanje treba potvrda e-Osobnom.';
+
+  @override
+  String get votingErrorCandidateGone => 'Ovaj kandidat više nije u igri.';
+
+  @override
+  String get votingErrorRoundClosed => 'Kolo je u međuvremenu zatvoreno.';
+
+  @override
+  String get votingErrorGeneric => 'Glas nije zabilježen. Pokušaj ponovno.';
 }

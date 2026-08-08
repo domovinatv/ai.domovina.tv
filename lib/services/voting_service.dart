@@ -148,6 +148,8 @@ class VotingService extends ChangeNotifier {
   String? _tag;
   String? _query;
 
+  List<String> _tags = const [];
+
   bool _loadingState = false;
   bool _loadingCandidates = false;
   bool _cacheRead = false;
@@ -167,6 +169,18 @@ class VotingService extends ChangeNotifier {
   VoteSort get sort => _sort;
   String? get tag => _tag;
   String? get query => _query;
+
+  /// Teme za filter chipove, izvedene iz **nefiltriranog** dohvata ljestvice.
+  ///
+  /// Živi u servisu, ne u ekranu: `ensureLoaded()` na drugom ulasku vraća već
+  /// dovršeni Future i **ne notifira**, pa bi popis izračunat u `State`-u ostao
+  /// prazan i cijeli red chipova bi nestao. Ovdje preživljava ekran.
+  ///
+  /// Računa se jednom — da se osvježavao pri svakoj promjeni filtera, odabir
+  /// taga bi pojeo sve ostale chipove (lista tada nosi samo taj tag) i korisnik
+  /// se ne bi imao čime vratiti; a promjena sorta bi im preslagala redoslijed
+  /// pod prstom.
+  List<String> get tags => _tags;
 
   /// Serverov današnji izborni dan — iz stanja glasača, pa iz kola. Klijent ga
   /// nikad ne izmišlja iz vlastitog sata (§6.2).
@@ -266,6 +280,7 @@ class VotingService extends ChangeNotifier {
             .whereType<Map>()
             .map((e) => VoteCandidate.fromJson(e.cast<String, dynamic>()))
             .toList(growable: false);
+        _rebuildTags();
         _lastError = null;
       }
     } catch (e) {
@@ -275,6 +290,28 @@ class VotingService extends ChangeNotifier {
       _loadingCandidates = false;
       notifyListeners();
     }
+  }
+
+  /// Najčešće teme iz trenutne (nefiltrirane) ljestvice, silazno po učestalosti.
+  ///
+  /// Filtriran dohvat se preskače: kad je tag postavljen, lista nosi samo taj
+  /// tag i popis bi se sveo na jedan chip bez povratka.
+  void _rebuildTags({int limit = 14}) {
+    if (_tags.isNotEmpty) return;
+    if (_tag != null || (_query ?? '').isNotEmpty) return;
+    if (_candidates.isEmpty) return;
+    final brojac = <String, int>{};
+    for (final c in _candidates) {
+      for (final t in c.tags) {
+        brojac[t] = (brojac[t] ?? 0) + 1;
+      }
+    }
+    final sortirani = brojac.keys.toList()
+      ..sort((a, b) {
+        final razlika = brojac[b]!.compareTo(brojac[a]!);
+        return razlika != 0 ? razlika : a.compareTo(b);
+      });
+    _tags = sortirani.take(limit).toList(growable: false);
   }
 
   // ---------------------------------------------------------------------------
@@ -507,6 +544,7 @@ class VotingService extends ChangeNotifier {
     _sort = VoteSort.leaderboard;
     _tag = null;
     _query = null;
+    _tags = const [];
     _lastError = null;
     _cacheRead = false;
     _loading = null;

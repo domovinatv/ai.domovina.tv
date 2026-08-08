@@ -25,6 +25,7 @@ import '../screens/tv/tv_episode_reader_screen.dart';
 import '../screens/tv/tv_episode_screen.dart';
 import '../screens/tv/tv_home_screen.dart';
 import '../screens/tv/tv_person_screen.dart';
+import '../screens/voting/voting_screen.dart';
 import '../services/tv_mode.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
@@ -402,6 +403,30 @@ GoRouter createRouter() {
           key: ValueKey('favorites'),
           child: FavoritesScreen(),
         ),
+      ),
+      // „Izborni dan" — glasanje o sljedećem kanalu koji ulazi u pipeline.
+      // Ruta je JAVNA i dijeljiva: ljestvicu vidi svatko, glasa samo građanin
+      // potvrđen e-Osobnom. `/glasanje/:slug` je deep-link na detalj kandidata
+      // (isti ekran + sheet), pa share link ne otvara prazan ekran.
+      // Plan: docs/plans/2026-08-08-glasanje-o-kanalima.md §8.1.
+      GoRoute(
+        path: '/glasanje',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          key: ValueKey('voting'),
+          child: VotingScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/glasanje/:slug',
+        pageBuilder: (context, state) {
+          // Registry slug ide DOSLOVNO (primarni ključ u bazi) — nikad
+          // `-`↔`_` transformacija kao kod /c/:slug.
+          final slug = state.pathParameters['slug']!;
+          return NoTransitionPage(
+            key: ValueKey('voting-$slug'),
+            child: VotingScreen(focusSlug: slug),
+          );
+        },
       ),
       // Moj račun — account management (identiteti, passkeyji, brisanje)
       GoRoute(
