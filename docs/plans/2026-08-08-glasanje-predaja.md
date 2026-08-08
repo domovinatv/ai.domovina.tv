@@ -366,3 +366,93 @@ Specifično što reviewer mora provjeriti, a lako se previdi:
 - `candidate_follows` UI (⚑ Prati) — tablica se stvara u T1, UI dolazi kasnije.
 - Rive animacije zastavica — v1 je `AnimatedSwitcher`.
 - Bilo kakva izmjena postojećeg Certilia flowa.
+
+## Zapisnik deploya (2026-08-08)
+
+Pisano za tim koji NIJE bio u ovom razgovoru. Deploy je izvršen isti dan
+nakon kruga 2, redom: migracije → sync kandidata → web deploy → social-tags.
+Aplikacija je live kao **v2.0.130+152** (`domovina.ai` commit `403f6cb`).
+
+### 1. Što je stvarno otišlo na produkcijsku bazu
+
+Migracije se na prod NE guraju sa `supabase db push` nego s
+**`domovina-api/scripts/db-migrate.sh`** (SSH na dom-001 → `docker exec psql`,
+transakcija + pg_dump backup + tracking tablica
+`supabase_migrations.schema_migrations`). Skripta primjenjuje SVE pending
+migracije **linearno, bez cherry-picka** — zato su uz tri voting migracije
+(`20260808120000/120100/120200_channel_voting*`) otišle i **dvije starije
+events/Stripe migracije** koje su bile na mainu ali ne i na produkciji:
+
+- `20260803120000_events_stripe_rail.sql`
+- `20260803130000_events_stripe_refund.sql`
+
+Posljedica: events/Stripe **shema postoji na produkciji, ali backend koji je
+koristi nije deployan u ovom krugu** (edge funkcije/worker za taj tok nisu
+dirani). Tablice su aditivne i inertne — ali tko bude debugirao prod bazu neka
+se ne iznenadi što postoje; a tko bude deployao events backend, neka zna da mu
+je shema već tamo.
+
+### 2. Pravilo za migracije OD SADA (i kako prepoznati kršenje)
+
+Povijest migracija je na produkciji → **svaka daljnja izmjena bilo koje
+migracije ide kao NOVI fajl s novim timestampom, nikad in-place.**
+(In-place izmjena `…120200` s `total_votes` bila je legitimna SAMO zato što se
+dogodila prije prvog produkcijskog pusha — ta iznimka više ne postoji.)
+
+Kako se kršenje prepozna: `db-migrate.sh` preskače verzije koje su već u
+tracking tablici, pa in-place izmjena **tiho nikad ne stigne na prod** —
+lokalna baza (nakon `supabase db reset`) i produkcija se raziđu bez ijedne
+greške. Provjera sumnje:
+`git log -p --follow supabase/migrations/<fajl>.sql` (izmjene NAKON
+2026-08-08 = kršenje) i usporedba definicije funkcije na produkciji
+(`\sf domovina_ai.<fn>` kroz `scripts/db-psql.sh`) s lokalnim fajlom.
+
+### 3. Coolify API token vraća 403
+
+- Pokušano: `domovina-api/scripts/coolify-env-get.sh SERVICE_ROLE_KEY`
+  (i iz repo roota) → `HTTP 403 {"message":"You are not allowed to access
+  the API."}`. Token u envu skripte je nevažeći ili mu fali read scope.
+- Zaobiđeno: SSH na dom-001
+  (`ssh -i ~/.ssh/dom-001-oracle-ssh-key-2026-04-20.key ubuntu@89.168.100.120`),
+  `SUPABASE_SERVICE_KEY` pročitan iz env-a containera
+  `supabase-kong-cv887vonujh1swebndh4x4iu`, korišten isključivo kroz procesni
+  env (`SUPABASE_SERVICE_ROLE_KEY=... node sync…`), privremeni fajl obrisan.
+  Ključ NIJE upisan ni u jedan `.env`.
+- **Prije sljedećeg ops posla**: popraviti/rotirati Coolify API token
+  (treba read+write — vidi memory `feedback_coolify_ops`), inače svi
+  `coolify-*.sh` alati stoje. `fetch.domovina.tv/.env` i dalje NEMA
+  `SUPABASE_SERVICE_ROLE_KEY` — to je namjerno.
+
+### 4. Otvoreno / neizvršeno
+
+- **Ručna provjera `/glasanje` u pravom browseru NIJE izvršena** (bila je
+  utipkana u panel orkestratora, ali tim se gasi). Verificirano jest: OG/HTML
+  kroz `node scripts/test-social-tags.mjs` (164/164, obje /glasanje rute),
+  REST count 181 kandidata, jedan avatar HTTP 200. NIJE verificirano: Flutter
+  UI kao gost/verificiran korisnik na produkciji, niti ijedan pravi
+  `cast_vote` na produkciji (na prod bazi još nema verificiranih glasača).
+  Napomena za provjeru: automation browser slika /v/ rute tek nakon 30–60 s
+  (memory `feedback_automation_browser_slow_paint`) — vrijedi i tu.
+- **Prvo kolo se otvara lijeno** na prvi poziv `current_round()` (prvi posjet
+  /glasanje) — u trenutku pisanja NIJE potvrđeno da je otvoreno. Tko prvi
+  provjerava, neka očekuje da sam otvorio kolo svojim posjetom.
+- **Sljedeći krug: fulfillment petlja** — `promote_winner` tok (dizajn §9),
+  arhiva kola, `candidate_follows` UI. Plus follow-upovi popisani u
+  „Ishod kruga 1" (sync robusnost) i „Ishod kruga 2" (home rail „Izborni
+  dan", sitemap, zastarjeli komentari o v1.1, JSON-LD escape, itd.).
+
+### 5. Sitnice koje bi sljedeći tim krivo pretpostavio
+
+- **Dva kandidata nemaju avatar** (`iza-okvira`, `povijest-cetvrtkom`) — mrtvi
+  `@handle` URL-ovi u registru (yt-dlp 404). To je podatak u
+  `fetch.domovina.tv/data/podcasts_registry.json`, ne bug u syncu; UI ima
+  monogram fallback. Popraviti handle u registru → ponoviti sync.
+- **Lokalna** Supabase baza je ostavljena sa 181 kandidatom i kolom
+  otvorenim tijekom testiranja (id 2, 8.–21.8.); test korisnici su obrisani.
+  `glasac@test.hr` iz starijih zapisa NE postoji.
+- Produkcijski sync se pokreće iz `fetch.domovina.tv` korijena:
+  `SUPABASE_SERVICE_ROLE_KEY=… node sync_voting_candidates.mjs --commit`
+  (env inače iz `.env`; `--dry-run` je default i ništa ne piše). Re-run je
+  idempotentan; `withdrawn` dobivaju samo kandidati koji ispadnu iz registra.
+- `registry/avatars/2pogled-povijest.jpg` na CDN-u NIJE anomalija — bio je
+  test ključ iz T4, sada je legitiman dio potpunog seta (179 avatara).
