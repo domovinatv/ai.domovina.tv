@@ -94,6 +94,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   static const _presetsCents = [100, 200, 500, 1000, 2000];
   static const _nameMax = 60;
   static const _msgMax = 280;
+  static const _linkMax = 200;
 
   _Mode _mode = _Mode.sepa;
   _Phase _phase = _Phase.idle;
@@ -103,6 +104,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   final _customCtrl = TextEditingController();
   final _customFocus = FocusNode();
   final _nameCtrl = TextEditingController();
+  final _linkCtrl = TextEditingController();
   final _msgCtrl = TextEditingController();
   bool _anonymous = false;
 
@@ -128,6 +130,33 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     final n = _nameCtrl.text.trim();
     return n.isEmpty ? null : n;
   }
+
+  /// Poveznica kako ide backendu — null za anonimne, prazno ili nevaljano
+  /// polje. Ista normalizacija koju vidi i živi pregled.
+  String? get _publicLinkUrl =>
+      _anonymous ? null : _normalizeLink(_linkCtrl.text);
+
+  /// Poruka koja ide backendu. **Privremeni most**: `pinka-webhook` vadi OG
+  /// preview isključivo iz `message` (`link_url` još nije izvor istine — task
+  /// B), pa poveznicu dopisujemo na kraj poruke. Bez toga bi novo polje bilo
+  /// regresija: danas ljudi zalijepe URL u poruku i dobiju preview. Kad
+  /// webhook počne čitati `link_url`, ovaj append se briše.
+  String? get _messageWithLink {
+    if (_anonymous) return null;
+    final msg = _msgCtrl.text.trim();
+    final link = _publicLinkUrl;
+    final fallback = msg.isEmpty ? null : msg;
+    if (link == null) return fallback;
+    final typed = _linkCtrl.text.trim();
+    if (msg.contains(link) || msg.contains(typed)) return msg;
+    final joined = msg.isEmpty ? link : '$msg $link';
+    // Ako ne stane u polje poruke, poveznica ide SAMO kao `link_url`.
+    return joined.length <= _msgMax ? joined : fallback;
+  }
+
+  /// Upisano, ali ne parsira kao `https://…` → blokira slanje.
+  bool get _linkIsInvalid =>
+      _linkCtrl.text.trim().isNotEmpty && _normalizeLink(_linkCtrl.text) == null;
 
   /// Donja granica iznosa: minimum kampanje, a uz odabrano mjesto i njegova
   /// cijena (server odbija manjak s `amount_below_slot_price`).
@@ -213,6 +242,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     _customFocus.dispose();
     _customCtrl.dispose();
     _nameCtrl.dispose();
+    _linkCtrl.dispose();
     _msgCtrl.dispose();
     super.dispose();
   }
@@ -239,6 +269,21 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     return false;
   }
 
+  /// Nevaljana poveznica ne smije doći do backenda (worker ima `safeUrl`, ali
+  /// donator zaslužuje reći ODMAH, prije QR-a). Vraća `true` kad je u redu.
+  bool _validateLink({required bool onchain}) {
+    if (!_linkIsInvalid) return true;
+    final msg = appStrings.pinkaLinkInvalid;
+    setState(() {
+      if (onchain) {
+        _walletNote = msg;
+      } else {
+        _error = msg;
+      }
+    });
+    return false;
+  }
+
   /// Kreira pending doprinos (+ rezervira mjesto ako je odabrano). Vraća
   /// `null` kad je mjesto preoteto — panel je tada već prikazao poruku i
   /// javio hostu da osvježi mapu.
@@ -248,7 +293,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         campaignId: _c.id,
         amountCents: _amountCents,
         displayName: _anonymous ? null : _nameCtrl.text,
-        message: _anonymous ? null : _msgCtrl.text,
+        message: _messageWithLink,
+        linkUrl: _publicLinkUrl,
         anonymous: _anonymous,
         slotKeys: widget.selectedSlotKey == null
             ? null
@@ -270,6 +316,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   // ── SEPA ───────────────────────────────────────────────────────────────
   Future<void> _submitSepa() async {
     if (!_validateAmount(onchain: false)) return;
+    if (!_validateLink(onchain: false)) return;
     setState(() {
       _phase = _Phase.creating;
       _error = null;
@@ -339,6 +386,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     final dest = _c.destinationAddress;
     if (dest == null) return;
     if (!_validateAmount(onchain: true)) return;
+    // Uz odabrano mjesto i on-chain putanja inserta doprinos (s porukom i
+    // poveznicom), pa validacija vrijedi i ovdje.
+    if (_hasSlot && !_validateLink(onchain: true)) return;
     setState(() {
       _walletNote = null;
       _walletPhase = _WalletPhase.connecting;
@@ -449,6 +499,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         if (!onchain) ...[
           const SizedBox(height: 12),
           _identityFields(theme),
+          const SizedBox(height: 14),
+          _previewSection(theme),
         ],
         if (_error != null && !onchain) ...[
           const SizedBox(height: 10),
@@ -605,11 +657,16 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 controller: _nameCtrl,
                 enabled: !_anonymous,
                 maxLength: _nameMax,
+                // `labelText` (ne `hintText`): oznaka mora ostati vidljiva i
+                // NAKON prvog utipkanog znaka — inače su polja neraspoznatljiva.
                 decoration: InputDecoration(
                   isDense: true,
                   counterText: '',
-                  hintText: l.pinkaNameHint,
+                  labelText: l.pinkaNameLabel,
+                  helperText: l.pinkaNameHelper,
+                  helperMaxLines: 2,
                 ),
+                onChanged: (_) => setState(() {}), // živi pregled kartice
               ),
             ),
             if (canSignIn) ...[
@@ -626,7 +683,22 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
             ],
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _linkCtrl,
+          enabled: !_anonymous,
+          maxLength: _linkMax,
+          keyboardType: TextInputType.url,
+          decoration: InputDecoration(
+            isDense: true,
+            counterText: '',
+            labelText: l.pinkaLinkLabel,
+            helperText: l.pinkaLinkHelper,
+            helperMaxLines: 2,
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 12),
         TextField(
           controller: _msgCtrl,
           enabled: !_anonymous,
@@ -635,8 +707,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           minLines: 1,
           decoration: InputDecoration(
             isDense: true,
-            hintText: l.pinkaMessageHint,
+            labelText: l.pinkaMessageLabel,
           ),
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 4),
         InkWell(
@@ -657,6 +730,34 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Živi pregled: donator vidi TOČAN ishod (kako će biti potpisan, s kojim
+  /// iznosom, porukom i poveznicom) prije nego što plati.
+  Widget _previewSection(ThemeData theme) {
+    final l = AppLocalizations.of(context);
+    final link = _publicLinkUrl;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l.pinkaPreviewHeading,
+          style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 6),
+        _ContributionPreviewCard(
+          key: const Key('pinka-preview-card'),
+          name: _anonymous ? l.pinkaAnonymous : _publicDisplayName,
+          namePlaceholder: l.pinkaPreviewNamePlaceholder,
+          amountCents: _amountCents,
+          message: _anonymous ? null : _msgCtrl.text.trim(),
+          messagePlaceholder: l.pinkaPreviewMessagePlaceholder,
+          linkHost: link == null ? null : Uri.parse(link).host,
         ),
       ],
     );
@@ -1145,6 +1246,113 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       ),
     );
   }
+}
+
+/// Pregled kartice zida DOK korisnik tipka. Namjerno vlastiti render, a ne
+/// `PinkaWallList` — zid se paralelno prepisuje (staggered mreža); objedinjavanje
+/// u jedan widget je upisano kao dug za sljedeći krug.
+class _ContributionPreviewCard extends StatelessWidget {
+  /// `null` → prigušeni [namePlaceholder] (prazno polje, bez lažnog sadržaja).
+  final String? name;
+  final String namePlaceholder;
+  final int amountCents;
+  final String? message;
+  final String messagePlaceholder;
+
+  /// Host poveznice ("domovina.ai"), ne cijeli URL — kartica zida ga tako i
+  /// pokazuje.
+  final String? linkHost;
+
+  const _ContributionPreviewCard({
+    super.key,
+    required this.name,
+    required this.namePlaceholder,
+    required this.amountCents,
+    required this.message,
+    required this.messagePlaceholder,
+    required this.linkHost,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final hasName = name != null && name!.isNotEmpty;
+    final hasMessage = message != null && message!.isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  hasName ? name! : namePlaceholder,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: hasName ? cs.onSurface : cs.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '${fmtEur(amountCents)} €',
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w700, color: cs.tertiary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            hasMessage ? message! : messagePlaceholder,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontStyle: hasMessage ? null : FontStyle.italic,
+            ),
+          ),
+          if (linkHost != null && linkHost!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.link, size: 14, color: cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    linkHost!,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Korisnički unos poveznice → `https://…` ili `null` (prazno ILI nevaljano).
+/// Bez sheme se dopisuje `https://` (nitko ne tipka shemu), a `http`/ostale
+/// sheme se odbijaju — jedina dodatna obrana je `safeUrl` u workeru.
+String? _normalizeLink(String raw) {
+  final t = raw.trim();
+  if (t.isEmpty) return null;
+  final u = Uri.tryParse(t.contains('://') ? t : 'https://$t');
+  if (u == null || u.scheme != 'https' || u.host.isEmpty) return null;
+  // Host bez točke nije domena ("https://moja stranica" → host "moja").
+  if (!u.host.contains('.')) return null;
+  return u.toString();
 }
 
 /// H:MM:SS za holdove duže od sata (SEPA intent živi 24 h), inače MM:SS.

@@ -182,12 +182,20 @@ class PinkaClient {
   }
 
   /// Kreira pending doprinos + payment intent na rail-u; vraća SEPA/EPC podatke.
-  /// Ime/poruka se šalju samo kad NIJE anonimno (zid skriva anonimne).
+  /// Ime/poruka/poveznica se šalju samo kad NIJE anonimno (zid skriva anonimne).
+  ///
+  /// [linkUrl] je MOST prema zasebnom stupcu `contributions.link_url`: edge
+  /// funkcija `pinka-contribute` čita samo imenovane ključeve iz body-ja i
+  /// nepoznati ključ tiho ignorira, pa je slanje danas bezopasno i postaje
+  /// funkcionalno kad backend doda stupac. Dok to ne bude, poveznica mora
+  /// stići i kroz `message` (`pinka-webhook` OG preview vadi isključivo
+  /// odande) — to radi panel, ne klijent.
   Future<PinkaContributionIntent> contribute({
     required String campaignId,
     required int amountCents,
     String? displayName,
     String? message,
+    String? linkUrl,
     bool anonymous = false,
     List<String>? slotKeys,
   }) async {
@@ -203,6 +211,8 @@ class PinkaClient {
           'display_name': displayName.trim(),
         if (!anonymous && message != null && message.trim().isNotEmpty)
           'message': message.trim(),
+        if (!anonymous && linkUrl != null && linkUrl.trim().isNotEmpty)
+          'link_url': linkUrl.trim(),
       },
     );
     final data = (res.data as Map).cast<String, dynamic>();
