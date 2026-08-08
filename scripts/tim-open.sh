@@ -2,9 +2,14 @@
 # tim-open.sh [prompt…] — otvori NOVI maksimiziran iTerm2 prozor, digni tim u
 # njemu i (ako je dan prompt) posij ga u planner panel.
 #
-#   ./scripts/tim-open.sh
+#   ./scripts/tim-open.sh                       # attach na postojeći tim (ako radi)
+#   ./scripts/tim-open.sh --fresh '<prompt>'    # ugasi stari tim pa digni ČIST
 #   ./scripts/tim-open.sh 'Predaj timu redizajn Zida podrške. Plan: docs/plans/…'
 #   ./scripts/tim-open.sh --dry-run 'test'      # ispiši što bi napravio, ne diraj ništa
+#
+# BEZ `--fresh` novi prozor se ATTACHA na postojeći session — to nije bug nego
+# jedina sigurna opcija: tim.sh po dizanju provjeri `has-session` i attacha se.
+# Drugi tim u istom repou ne postoji kao opcija (vidi komentar uz --fresh dolje).
 #
 # Zašto skripta a ne goli `osascript`: tri zamke koje su se pokazale u testu
 # (iTerm2 3.6.10, macOS 15).
@@ -34,7 +39,14 @@ SESSION=$(tim_session_name)
 TARGET=$(tim_target)
 
 DRY=0
-[ "${1:-}" = "--dry-run" ] && { DRY=1; shift; }
+FRESH=0
+while :; do
+  case "${1:-}" in
+    --dry-run) DRY=1; shift ;;
+    --fresh)   FRESH=1; shift ;;
+    *) break ;;
+  esac
+done
 PROMPT="$*"
 
 die() { echo "GREŠKA: $*" >&2; exit 1; }
@@ -51,9 +63,31 @@ command -v claude >/dev/null 2>&1 || die "'claude' CLI nije u PATH-u."
 
 RESUME=0
 if tmux has-session -t "$TARGET" 2>/dev/null; then
-  RESUME=1
-  echo "NAPOMENA: session '$SESSION' već postoji — novi prozor će se ATTACHATI na njega,"
-  echo "          neće se dizati drugi tim (tim.sh to sam radi)."
+  if [ "$FRESH" -eq 1 ]; then
+    # --fresh: ugasi stari tim pa digni čist. Namjerno NEMA varijante "digni
+    # drugi tim uz postojeći": dev1/dev2 dijele radni direktorij, a orkestrator
+    # je jedini koji commita — dva orkestratora u istom stablu neizbježno
+    # commitaju jedan drugome nedovršen rad. Izolaciju bi rješavao worktree,
+    # koji je odbačen (relativni path u pubspec.yaml + .env; vidi tim.sh header).
+    echo "--fresh: gasim '$SESSION' (kontekst svih pet panela nestaje)…"
+    if [ "$DRY" -eq 1 ]; then
+      echo "[dry-run] preskačem stvarno gašenje"
+    else
+      ./scripts/tim-kill.sh || die "tim je zauzet — ili pričekaj, ili ./scripts/tim-kill.sh -f pa ponovi."
+      for _ in $(seq 20); do
+        tmux has-session -t "$TARGET" 2>/dev/null || break
+        sleep 0.25
+      done
+      # Runtime stanje starog tima: pane mapa je mrtva, status linija laže.
+      # Verdikte reviewera NE diramo — to je zapisnik, ne runtime.
+      rm -f .tim/panes.env .tim/status.line
+    fi
+  else
+    RESUME=1
+    echo "NAPOMENA: session '$SESSION' već postoji — novi prozor će se ATTACHATI na njega,"
+    echo "          neće se dizati drugi tim (tim.sh to sam radi)."
+    echo "          Za čist tim: ./scripts/tim-open.sh --fresh '<prompt>'"
+  fi
 fi
 
 # ----- kickoff prompt -------------------------------------------------------
