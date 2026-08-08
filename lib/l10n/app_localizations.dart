@@ -3836,6 +3836,72 @@ abstract class AppLocalizations {
   /// **'Poruka uz podršku (neobavezno)'**
   String get pinkaMessageHint;
 
+  /// Oznaka (labelText) polja za ime/nadimak donatora na obrascu podrške.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ime ili nadimak'**
+  String get pinkaNameLabel;
+
+  /// Pomoćni tekst ispod polja za ime — objašnjava gdje se ime pojavljuje.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovako ćeš biti potpisan na zidu'**
+  String get pinkaNameHelper;
+
+  /// Oznaka (labelText) polja za poveznicu donatora.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica (neobavezno)'**
+  String get pinkaLinkLabel;
+
+  /// Pomoćni tekst ispod polja za poveznicu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoja stranica, projekt ili firma'**
+  String get pinkaLinkHelper;
+
+  /// Pogreška kad upisana poveznica nije valjan https URL.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjeri poveznicu — mora počinjati s https://'**
+  String get pinkaLinkInvalid;
+
+  /// Oznaka (labelText) polja za poruku uz donaciju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poruka (neobavezno)'**
+  String get pinkaMessageLabel;
+
+  /// Naslov iznad živog pregleda kartice na obrascu podrške.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovako će izgledati tvoja kartica'**
+  String get pinkaPreviewHeading;
+
+  /// Prigušeni placeholder za ime u živom pregledu kartice dok polje nije ispunjeno.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoje ime ili nadimak'**
+  String get pinkaPreviewNamePlaceholder;
+
+  /// Prigušeni placeholder za poruku u živom pregledu kartice dok polje nije ispunjeno.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoja poruka'**
+  String get pinkaPreviewMessagePlaceholder;
+
+  /// Gumb u detaljnom sheetu kartice zida koji otvara poveznicu doprinosa.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori poveznicu'**
+  String get pinkaWallOpenLink;
+
+  /// Semantics oznaka/tooltip kartice na zidu podrške — tap otvara detaljni sheet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikaži cijelu poruku'**
+  String get pinkaWallCardDetails;
+
   /// Oznaka checkboxa za anonimnu donaciju.
   ///
   /// In hr, this message translates to:

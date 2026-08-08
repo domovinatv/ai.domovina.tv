@@ -2338,6 +2338,40 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaMessageHint => 'Poruka uz podršku (neobavezno)';
 
   @override
+  String get pinkaNameLabel => 'Ime ili nadimak';
+
+  @override
+  String get pinkaNameHelper => 'Ovako ćeš biti potpisan na zidu';
+
+  @override
+  String get pinkaLinkLabel => 'Poveznica (neobavezno)';
+
+  @override
+  String get pinkaLinkHelper => 'Tvoja stranica, projekt ili firma';
+
+  @override
+  String get pinkaLinkInvalid =>
+      'Provjeri poveznicu — mora počinjati s https://';
+
+  @override
+  String get pinkaMessageLabel => 'Poruka (neobavezno)';
+
+  @override
+  String get pinkaPreviewHeading => 'Ovako će izgledati tvoja kartica';
+
+  @override
+  String get pinkaPreviewNamePlaceholder => 'Tvoje ime ili nadimak';
+
+  @override
+  String get pinkaPreviewMessagePlaceholder => 'Tvoja poruka';
+
+  @override
+  String get pinkaWallOpenLink => 'Otvori poveznicu';
+
+  @override
+  String get pinkaWallCardDetails => 'Prikaži cijelu poruku';
+
+  @override
   String get pinkaAnonymousLabel =>
       'Doniraj anonimno (ne prikazuj me na zidu podrške)';
 

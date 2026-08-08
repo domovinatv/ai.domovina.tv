@@ -2313,6 +2313,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinkaMessageHint => 'A message with your support (optional)';
 
   @override
+  String get pinkaNameLabel => 'Name or nickname';
+
+  @override
+  String get pinkaNameHelper => 'This is how you\'ll be credited on the wall';
+
+  @override
+  String get pinkaLinkLabel => 'Link (optional)';
+
+  @override
+  String get pinkaLinkHelper => 'Your site, project or company';
+
+  @override
+  String get pinkaLinkInvalid => 'Check the link — it must start with https://';
+
+  @override
+  String get pinkaMessageLabel => 'Message (optional)';
+
+  @override
+  String get pinkaPreviewHeading => 'This is how your card will look';
+
+  @override
+  String get pinkaPreviewNamePlaceholder => 'Your name or nickname';
+
+  @override
+  String get pinkaPreviewMessagePlaceholder => 'Your message';
+
+  @override
+  String get pinkaWallOpenLink => 'Open link';
+
+  @override
+  String get pinkaWallCardDetails => 'Show full message';
+
+  @override
   String get pinkaAnonymousLabel =>
       'Donate anonymously (don\'t show me on the wall of support)';
 

@@ -2888,6 +2888,50 @@
   "@pinkaMessageHint": {
     "description": "Hint u polju za poruku uz donaciju."
   },
+  "pinkaNameLabel": "Ime ili nadimak",
+  "@pinkaNameLabel": {
+    "description": "Oznaka (labelText) polja za ime/nadimak donatora na obrascu podrške."
+  },
+  "pinkaNameHelper": "Ovako ćeš biti potpisan na zidu",
+  "@pinkaNameHelper": {
+    "description": "Pomoćni tekst ispod polja za ime — objašnjava gdje se ime pojavljuje."
+  },
+  "pinkaLinkLabel": "Poveznica (neobavezno)",
+  "@pinkaLinkLabel": {
+    "description": "Oznaka (labelText) polja za poveznicu donatora."
+  },
+  "pinkaLinkHelper": "Tvoja stranica, projekt ili firma",
+  "@pinkaLinkHelper": {
+    "description": "Pomoćni tekst ispod polja za poveznicu."
+  },
+  "pinkaLinkInvalid": "Provjeri poveznicu — mora počinjati s https://",
+  "@pinkaLinkInvalid": {
+    "description": "Pogreška kad upisana poveznica nije valjan https URL."
+  },
+  "pinkaMessageLabel": "Poruka (neobavezno)",
+  "@pinkaMessageLabel": {
+    "description": "Oznaka (labelText) polja za poruku uz donaciju."
+  },
+  "pinkaPreviewHeading": "Ovako će izgledati tvoja kartica",
+  "@pinkaPreviewHeading": {
+    "description": "Naslov iznad živog pregleda kartice na obrascu podrške."
+  },
+  "pinkaPreviewNamePlaceholder": "Tvoje ime ili nadimak",
+  "@pinkaPreviewNamePlaceholder": {
+    "description": "Prigušeni placeholder za ime u živom pregledu kartice dok polje nije ispunjeno."
+  },
+  "pinkaPreviewMessagePlaceholder": "Tvoja poruka",
+  "@pinkaPreviewMessagePlaceholder": {
+    "description": "Prigušeni placeholder za poruku u živom pregledu kartice dok polje nije ispunjeno."
+  },
+  "pinkaWallOpenLink": "Otvori poveznicu",
+  "@pinkaWallOpenLink": {
+    "description": "Gumb u detaljnom sheetu kartice zida koji otvara poveznicu doprinosa."
+  },
+  "pinkaWallCardDetails": "Prikaži cijelu poruku",
+  "@pinkaWallCardDetails": {
+    "description": "Semantics oznaka/tooltip kartice na zidu podrške — tap otvara detaljni sheet."
+  },
   "pinkaAnonymousLabel": "Doniraj anonimno (ne prikazuj me na zidu podrške)",
   "@pinkaAnonymousLabel": {
     "description": "Oznaka checkboxa za anonimnu donaciju."
