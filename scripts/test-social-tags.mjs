@@ -16,6 +16,10 @@ const VIDEO_IDS = [
   'KvIhy5SESYs',
 ];
 
+// Kandidat za /glasanje/<slug> test. Slug iz registra (fetch.domovina.tv
+// data/podcasts_registry.json); test ne ovisi o tome je li već u bazi.
+const VOTING_SLUG = 'podcast-inkubator';
+
 const BASE = (process.argv[2] || 'https://domovina.ai').replace(/\/$/, '');
 
 const GREEN  = '\x1b[32m';
@@ -95,7 +99,12 @@ async function testVideo(ytId) {
   };
 
   const expectedCanonical = `https://domovina.ai/v/${ytId}`;
-  const expectedThumb = `https://cdn.domovina.ai/images/${ytId}/thumbnail.png`;
+  // Worker bira og:image po prioritetu og-t-<sec>.jpg → og-share.jpg →
+  // thumbnail.png (_worker.js, injectEpisodeTags). Za base /v/<id> prva opcija
+  // ne postoji, a og-share.jpg (1200×630 JPEG, brand overlay) pipeline danas
+  // producira za sve epizode iz VIDEO_IDS — thumbnail.png je krajnji fallback
+  // za epizode bez njega i skripta ga NE očekuje.
+  const expectedThumb = `https://cdn.domovina.ai/images/${ytId}/og-share.jpg`;
 
   const title      = extractTitle(html);
   const desc       = extractMeta(html, 'name', 'description');
@@ -122,9 +131,9 @@ async function testVideo(ytId) {
   check('og:title',          ogTitle,  (v) => v !== 'DOMOVINA.ai' && v.length > 3);
   check('og:description',    ogDesc,   (v) => v.length > 10);
   check('og:image',          ogImage,  (v) => v === expectedThumb);
-  check('og:image:width',    ogImgW,   (v) => v === '1280');
-  check('og:image:height',   ogImgH,   (v) => v === '720');
-  check('og:image:type',     ogImgType,(v) => v === 'image/png');
+  check('og:image:width',    ogImgW,   (v) => v === '1200');
+  check('og:image:height',   ogImgH,   (v) => v === '630');
+  check('og:image:type',     ogImgType,(v) => v === 'image/jpeg');
   check('og:image:alt',      ogImgAlt, (v) => v.length > 3);
   check('og:url',            ogUrl,    (v) => v === expectedCanonical);
   check('og:type',           ogType,   (v) => v === 'video.other');
@@ -341,10 +350,88 @@ async function testSimpleView(ytId) {
   return { ytId: `${ytId}/m`, passed, failed };
 }
 
+/**
+ * „Izborni dan" — /glasanje (statični OG) i /glasanje/<slug> (kandidat).
+ *
+ * Provjerava SAMO invarijante rute, ne copy koji ovisi o bazi: kandidat se
+ * razrješava iz `domovina_ai.vote_candidates` preko anon ključa, pa na okolini
+ * bez tih migracija (ili za nepostojeći slug) worker servira opći OG glasanja.
+ * Oba su ishoda ispravna — pada tek ako ruta uopće ne dobije svoje tagove.
+ */
+async function testVoting(slug) {
+  const url = slug ? `${BASE}/glasanje/${slug}` : `${BASE}/glasanje`;
+  console.log(`\n${BOLD}── GLASANJE${slug ? ` · ${slug}` : ''}${RESET}  ${url}`);
+
+  let html;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      console.log(`  ${fail(`HTTP ${res.status}`)}`);
+      return { ytId: slug ? `glasanje/${slug}` : 'glasanje', passed: 0, failed: 1 };
+    }
+    html = await res.text();
+  } catch (e) {
+    console.log(`  ${fail(`Network error: ${e.message}`)}`);
+    return { ytId: slug ? `glasanje/${slug}` : 'glasanje', passed: 0, failed: 1 };
+  }
+
+  let passed = 0;
+  let failed = 0;
+
+  const check = (label, value, expected) => {
+    const lab = label.padEnd(26);
+    if (value === null || value.trim() === '') { console.log(`  ${fail(lab)} NEDOSTAJE`); failed++; return; }
+    if (expected !== undefined && !expected(value)) {
+      const p = value.length > 70 ? value.slice(0, 67) + '…' : value;
+      console.log(`  ${fail(lab)} "${p}"`); failed++; return;
+    }
+    const p = value.length > 70 ? value.slice(0, 67) + '…' : value;
+    console.log(`  ${ok(lab)} "${p}"`); passed++;
+  };
+
+  const title     = extractTitle(html);
+  const desc      = extractMeta(html, 'name', 'description');
+  const ogTitle   = extractMeta(html, 'property', 'og:title');
+  const ogDesc    = extractMeta(html, 'property', 'og:description');
+  const ogUrl     = extractMeta(html, 'property', 'og:url');
+  const ogType    = extractMeta(html, 'property', 'og:type');
+  const ogLocale  = extractMeta(html, 'property', 'og:locale');
+  const ogImage   = extractMeta(html, 'property', 'og:image');
+  const twCard    = extractMeta(html, 'name', 'twitter:card');
+  const twTitle   = extractMeta(html, 'name', 'twitter:title');
+  const canonical = extractCanonical(html);
+
+  check('<title>',        title,   (v) => v.includes('– DOMOVINA.ai') && v.includes('Izborni dan'));
+  check('description',    desc,    (v) => v.length > 20 && v !== 'A new Flutter project.');
+  check('og:title',       ogTitle, (v) => v !== 'DOMOVINA.ai' && v.includes('Izborni dan'));
+  check('og:description', ogDesc,  (v) => v.length > 20);
+  // og:url prati share URL; canonical za nerazrješiv slug pada na /glasanje.
+  check('og:url',         ogUrl,   (v) => v === `https://domovina.ai${slug ? `/glasanje/${slug}` : '/glasanje'}`);
+  check('canonical',      canonical, (v) => v === 'https://domovina.ai/glasanje'
+    || v === `https://domovina.ai/glasanje/${slug}`);
+  check('og:type',        ogType,  (v) => v === 'website');
+  check('og:locale',      ogLocale,(v) => v === 'hr_HR');
+  check('og:image',       ogImage, (v) => v.startsWith('https://'));
+  check('twitter:card',   twCard,  (v) => v === 'summary' || v === 'summary_large_image');
+  check('twitter:title',  twTitle, (v) => v !== 'DOMOVINA.ai' && v.length > 3);
+
+  for (const [attr, val] of [['property', 'og:title'], ['name', 'twitter:card']]) {
+    const n = countMeta(html, attr, val);
+    if (n > 1) {
+      console.log(`  ${warn(`${val} (duplicat!)`)}       pronađeno ${n}x — provjeri Worker stripanje`);
+    }
+  }
+
+  return { ytId: slug ? `glasanje/${slug}` : 'glasanje', passed, failed };
+}
+
 async function main() {
   console.log(`${BOLD}DOMOVINA.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
-  console.log(`Testira: homepage + ${VIDEO_IDS.length} epizoda + timestamp shareovi\n`);
+  console.log(`Testira: homepage + ${VIDEO_IDS.length} epizoda + timestamp shareovi + /glasanje\n`);
 
   const results = [];
   results.push(await testHomepage());
@@ -357,6 +444,9 @@ async function main() {
   results.push(await testTimestamp(VIDEO_IDS[0], 60));
   // Simple view share (/m/<id>) — isti OG, canonical → /v/, og:url → /m/.
   results.push(await testSimpleView(VIDEO_IDS[0]));
+  // „Izborni dan" — javna ruta glasanja + deep-link na kandidata.
+  results.push(await testVoting(null));
+  results.push(await testVoting(VOTING_SLUG));
 
   const totalPassed = results.reduce((s, r) => s + r.passed, 0);
   const totalFailed = results.reduce((s, r) => s + r.failed, 0);
