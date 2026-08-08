@@ -293,3 +293,25 @@ iz §3 izvornog plana ili je izričito odgođena:
   zida u T3 su dva odvojena rendera iste stvari. Objedinjavanje u jedan widget
   ide u sljedeći krug, kad oba budu integrirana — sada bi značilo da dva deva
   pišu isti fajl.
+
+## Zapisnik izvedbe (8.8.2026.)
+
+Krug izveden u dva vala: T1‖T4 (review r1: OK), pa T2‖T3 (review r2: OK).
+Commitovi: plan `e58b707`, T1 `4377269`, T2/T3 vidi git log. T4 spašen na
+privatni `github.com/domovinatv/pixel-grid-v1` (HEAD `4c50d49`, 30 commita,
+klon-verifikacija prošla). Spike iz T3 koraka 1: `flutter_staggered_grid_view
+^0.7.0` **podnosi** `--wasm` build — paket ostaje, ručna putanja 3b nije trebala.
+Visine kalibrirane na 84/178 px (invarijanta `tall = 2*short + spacing`,
+testirana).
+
+Dvije svjesne devijacije od slova plana (reviewer ih u r2 ocijenio boljima;
+planner ih može poništiti u sljedećem krugu ako se ne slaže):
+
+1. Poruka u kartici zida je običan `Text`, ne linkificirana — inline linkovi bi
+   otimali tap cijeloj kartici; linkovi žive u detaljnom sheetu.
+2. Kartica bez poruke i bez previewa nije tap meta i ne nosi tooltip (sheet bi
+   samo ponovio već vidljivo).
+
+Neodrađeno iz DoD-a: vizualna provjera vlasničkog `campaign_manage_screen`
+(traži prijavu vlasnika kanala) — pokrivena analyze-om, wasm buildom i time da
+je javni API `PinkaWallList` nepromijenjen.
