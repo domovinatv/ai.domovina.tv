@@ -29,6 +29,14 @@ Petlja, helperi (`tim-send.sh`/`tim-read.sh`/`tim-status.sh`) i zamke:
 `docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`,
 kickoff `/pocni` (skripta ga sama pošalje planneru; `TIM_AUTOSTART=0` gasi).
 
+`./scripts/tim-open.sh '<prompt>'` (skill `/digni`) otvara **novi maksimiziran
+iTerm2 prozor**, diže tim u njemu i posije planneru prvi zadatak. Višelinijski
+prompt ide u `.tim/kickoff-prompt.md`, a planneru se šalje samo putanja — TUI
+svaki `\n` čita kao submit. Ako session već postoji, prozor se samo attacha i
+prompt se NE šalje (ondje korisnik tipka). iTerm zamke su u headeru skripte;
+najvažnija: `create window … command` vraća `missing value`, a `current window`
+odmah nakon `create window` pokaže krivi prozor.
+
 Session se zove `tim-<repo-slug>` (`tim-domovina-ai`) da timovi za različite
 projekte na istom stroju ne kolidiraju. **Rule**: tmux radi prefix matching na
 imenima sessiona — `kill-session`/`has-session`/`attach` uvijek s `=` prefiksom
