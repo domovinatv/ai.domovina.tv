@@ -958,5 +958,12 @@
   "votingErrorNotVerified": "Voting requires eID verification.",
   "votingErrorCandidateGone": "This candidate is no longer in the running.",
   "votingErrorRoundClosed": "The round has closed in the meantime.",
-  "votingErrorGeneric": "The vote was not recorded. Try again."
+  "votingErrorGeneric": "The vote was not recorded. Try again.",
+  "votingHomeChipTooltip": "Election Day — vote for the next channel",
+  "votingUnusedVote": "You have an unused vote.",
+  "votingLongestStreak": "{count, plural, one{Longest streak {count} day} other{Longest streak {count} days}}",
+  "votingTotalVotes": "{count, plural, one{{count} vote in total} other{{count} votes in total}}",
+  "votingChannelsBarTitle": "Missing your podcast?",
+  "votingChannelsBarBody": "Vote for the podcast that gets processed next.",
+  "votingChannelsBarCta": "Vote"
 }

@@ -5860,6 +5860,48 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Glas nije zabilježen. Pokušaj ponovno.'**
   String get votingErrorGeneric;
+
+  /// Tooltip chipa s nizom u zaglavlju početnog ekrana.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izborni dan — glasaj za sljedeći kanal'**
+  String get votingHomeChipTooltip;
+
+  /// Značenje crvene točke na chipu: današnji glas još nije potrošen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Imaš neiskorišten glas.'**
+  String get votingUnusedVote;
+
+  /// Najduži niz uzastopnih izbornih dana na ekranu računa.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Najduži niz {count} dan} few{Najduži niz {count} dana} other{Najduži niz {count} dana}}'**
+  String votingLongestStreak(int count);
+
+  /// Ukupan broj glasova koje je korisnik dosad potrošio.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} glas ukupno} few{{count} glasa ukupno} other{{count} glasova ukupno}}'**
+  String votingTotalVotes(int count);
+
+  /// Naslov trajne trake na dnu popisa kanala.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema tvog podcasta?'**
+  String get votingChannelsBarTitle;
+
+  /// Podnaslov trajne trake na dnu popisa kanala.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj koji podcast ide sljedeći u obradu.'**
+  String get votingChannelsBarBody;
+
+  /// Gumb trajne trake koji vodi na ekran glasanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj'**
+  String get votingChannelsBarCta;
 }
 
 class _AppLocalizationsDelegate

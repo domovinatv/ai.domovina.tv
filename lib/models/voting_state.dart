@@ -246,6 +246,15 @@ class VotingState {
   final TodayVote? todayVote;
   final VoteRound? round;
 
+  /// Ukupan broj glasova koje je glasač dosad potrošio (`voters.total_votes`).
+  ///
+  /// **Opcionalno jer ga ugovor v1.1 još ne šalje**: kolona u bazi postoji i
+  /// `cast_vote` je inkrementira, ali `my_voting_state()` je ne stavlja u JSON.
+  /// Dok je tako, ostaje `null` i `/account` taj redak jednostavno ne prikazuje
+  /// — nikad se ne izmišlja broj. Kad T1 doda `'total_votes', v_v.total_votes`
+  /// u `jsonb_build_object`, redak proradi bez ijedne izmjene u UI-ju.
+  final int? totalVotes;
+
   const VotingState({
     this.verified = false,
     this.consented = false,
@@ -259,6 +268,7 @@ class VotingState {
     this.lastVoteDay,
     this.todayVote,
     this.round,
+    this.totalVotes,
   });
 
   /// Smije li korisnik uopće glasati (gate prije tapa; server ponavlja provjeru).
@@ -307,6 +317,7 @@ class VotingState {
       flagsThatWillBurn: 0,
       lastVoteDay: cast.snapshot.lastVoteDay,
       todayVote: TodayVote(slug: slug, direction: direction),
+      totalVotes: totalVotes == null ? null : totalVotes! + 1,
     );
   }
 
@@ -323,6 +334,7 @@ class VotingState {
     DateTime? lastVoteDay,
     TodayVote? todayVote,
     VoteRound? round,
+    int? totalVotes,
   }) =>
       VotingState(
         verified: verified ?? this.verified,
@@ -337,6 +349,7 @@ class VotingState {
         lastVoteDay: lastVoteDay ?? this.lastVoteDay,
         todayVote: todayVote ?? this.todayVote,
         round: round ?? this.round,
+        totalVotes: totalVotes ?? this.totalVotes,
       );
 
   factory VotingState.fromJson(Map<String, dynamic> json) {
@@ -360,6 +373,11 @@ class VotingState {
       round: roundJson is Map
           ? VoteRound.fromJson(roundJson.cast<String, dynamic>())
           : null,
+      // Bez ključa ostaje null (ugovor v1.1 ga još ne šalje) — 0 bi UI-ju
+      // izgledala kao „nula glasova", što nije isto što i „ne znam".
+      totalVotes: json.containsKey('total_votes')
+          ? (json['total_votes'] == null ? null : asInt(json['total_votes']))
+          : null,
     );
   }
 
@@ -376,5 +394,6 @@ class VotingState {
         'last_vote_day': lastVoteDay == null ? null : formatVoteDay(lastVoteDay!),
         'today_vote': todayVote?.toJson(),
         'round': round?.toJson(),
+        if (totalVotes != null) 'total_votes': totalVotes,
       };
 }

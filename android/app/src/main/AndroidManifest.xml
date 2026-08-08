@@ -73,6 +73,11 @@
                 <data android:pathPrefix="/c/" />
                 <data android:pathPrefix="/p/" />
                 <data android:pathPrefix="/handoff" />
+                <!-- „Izborni dan" — javna ljestvica glasanja (/glasanje) i
+                     deep-link na kandidata (/glasanje/<slug>). Par u iOS AASA
+                     components je u web/_worker.js AASA_JSON. -->
+                <data android:path="/glasanje" />
+                <data android:pathPrefix="/glasanje/" />
             </intent-filter>
 
             <!-- Custom URL Scheme za Supabase OAuth / Magic Links -->

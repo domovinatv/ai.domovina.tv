@@ -23,10 +23,12 @@ import '../../services/episode_language.dart';
 import '../../services/favorites_service.dart';
 import '../../services/locale_service.dart';
 import '../../services/passkey_service.dart';
+import '../../services/voting_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/plus_badge.dart';
 import '../subscribe/paywall_screen.dart';
 import '../subscribe/upgrade_trigger.dart';
+import '../voting/widgets/streak_flags.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -42,11 +44,16 @@ class _AccountScreenState extends State<AccountScreen> {
   String? _passkeysError;
   bool _deleting = false;
 
+  /// Stanje glasanja je zatraženo — bez ovoga bi svaka promjena auth stanja
+  /// ispalila novi RPC.
+  bool _votingZatrazeno = false;
+
   @override
   void initState() {
     super.initState();
     AuthService.instance.addListener(_onAuthChange);
     _loadPasskeys();
+    _mozdaUcitajGlasanje();
   }
 
   @override
@@ -56,7 +63,27 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   void _onAuthChange() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    _mozdaUcitajGlasanje();
+    setState(() {});
+  }
+
+  /// Niz/zastavice za karticu „Izborni dan" — samo za verificirane, jer samo
+  /// oni uopće imaju niz.
+  ///
+  /// `refresh(withLeaderboard: false)`, ne `ensureLoaded()`: ovaj ekran ne
+  /// prikazuje ljestvicu pa nema razloga vući 181 kandidata. Microtask jer
+  /// `refresh` na pogodak lokalnog cachea notifira sinkrono.
+  void _mozdaUcitajGlasanje() {
+    if (_votingZatrazeno) return;
+    if (!(AuthService.instance.currentUser?.isVerified ?? false)) return;
+    _votingZatrazeno = true;
+    // Namjerno bez `unawaited` — `unawaited` je u ovom fajlu dvoznačan
+    // (paywall_screen ‖ favorites_service), a metoda je sinkrona pa
+    // `unawaited_futures` lint ionako ne pali.
+    Future.microtask(
+      () => VotingService.instance.refresh(withLeaderboard: false),
+    );
   }
 
   Future<void> _loadPasskeys() async {
@@ -202,6 +229,14 @@ class _AccountScreenState extends State<AccountScreen> {
               _sectionLabel(theme, l.authSectionSubscription),
               _plusCard(theme),
               const SizedBox(height: 16),
+              // „Izborni dan" — niz postoji samo za građanina potvrđenog
+              // e-Osobnom, pa se i kartica pojavljuje samo njemu (isti gate kao
+              // chip u home zaglavlju).
+              if (AuthService.instance.currentUser?.isVerified ?? false) ...[
+                _sectionLabel(theme, l.votingTitle),
+                _votingCard(theme),
+                const SizedBox(height: 16),
+              ],
               _sectionLabel(theme, l.authSectionLibrary),
               _favoritesCard(theme),
               const SizedBox(height: 16),
@@ -328,6 +363,71 @@ class _AccountScreenState extends State<AccountScreen> {
           );
         },
       ),
+    );
+  }
+
+  /// „Tvoj niz" — niz, najduži niz i ukupan broj glasova + ulaz na `/glasanje`.
+  ///
+  /// Plan: `docs/plans/2026-08-08-glasanje-o-kanalima.md` §8.6.
+  ///
+  /// Prikazani niz je **projekcija za današnji dan** (`displayFor()`), ne sirovi
+  /// `streak` iz baze: niz koji je pukao, a korisnik to još nije vidio, ovdje je
+  /// 0 — isti broj koji stoji u zaglavlju glasanja i na home chipu.
+  ///
+  /// Ukupan broj glasova se prikazuje samo kad ga server pošalje
+  /// (`total_votes`); v1.1 ugovor ga još ne nosi pa redak tada izostane.
+  Widget _votingCard(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+    return ListenableBuilder(
+      listenable: VotingService.instance,
+      builder: (context, _) {
+        final service = VotingService.instance;
+        final state = service.state;
+        final display = service.displayFor();
+        final niz = display?.displayedStreak ?? state?.streak ?? 0;
+        final ugrozen = display?.streakAtRisk ?? false;
+        final najduzi = state?.longestStreak ?? 0;
+        final ukupno = state?.totalVotes;
+
+        final dijelovi = <String>[
+          if (najduzi > 0) l.votingLongestStreak(najduzi),
+          if (ukupno != null) l.votingTotalVotes(ukupno),
+        ];
+        final podnaslov = dijelovi.isNotEmpty
+            ? dijelovi.join(' · ')
+            : (state?.canVote ?? false
+                ? l.votingHaveVote
+                : l.votingHomeChipTooltip);
+
+        return _card(
+          theme,
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            leading: Icon(
+              niz > 0 ? Icons.local_fire_department : Icons.how_to_vote_outlined,
+              color: ugrozen ? AppTheme.croRed : cs.primary,
+            ),
+            title: Text(niz > 0 ? l.votingStreakDays(niz) : l.votingStreakNone),
+            subtitle: Text(
+              podnaslov,
+              style:
+                  theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if ((state?.flags ?? 0) > 0)
+                  StreakFlags(imaZastavica: state!.flags, visina: 11),
+                const SizedBox(width: 6),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () => context.go('/glasanje'),
+          ),
+        );
+      },
     );
   }
 

@@ -3708,4 +3708,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get votingErrorGeneric => 'The vote was not recorded. Try again.';
+
+  @override
+  String get votingHomeChipTooltip =>
+      'Election Day — vote for the next channel';
+
+  @override
+  String get votingUnusedVote => 'You have an unused vote.';
+
+  @override
+  String votingLongestStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Longest streak $count days',
+      one: 'Longest streak $count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingTotalVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes in total',
+      one: '$count vote in total',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingChannelsBarTitle => 'Missing your podcast?';
+
+  @override
+  String get votingChannelsBarBody =>
+      'Vote for the podcast that gets processed next.';
+
+  @override
+  String get votingChannelsBarCta => 'Vote';
 }

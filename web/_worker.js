@@ -171,6 +171,13 @@ const AASA_JSON = JSON.stringify({
           { '/': '/auth/*', exclude: true, comment: 'web OAuth/magic-link callback ostaje u browseru' },
           { '/': '/login-callback', exclude: true, comment: 'isti AuthCallbackScreen (legacy ruta)' },
           { '/': '/youtube-claim/*', exclude: true, comment: 'Google OAuth callback za channel claim — web-only' },
+          // Javne content rute se navode EKSPLICITNO iako ih `*` ispod ionako
+          // hvata: popis je ugovor s AndroidManifest intent filterom (koji
+          // nema exclude sintaksu pa mora biti allowlist). CLAUDE.md: nova
+          // javna ruta ide u OBA popisa. Stoji NAKON exclusiona — auth rute
+          // ostaju isključene jer components matcha prvo pravilo.
+          { '/': '/glasanje', comment: 'Izborni dan — javna ljestvica glasanja' },
+          { '/': '/glasanje/*', comment: 'deep-link/share na kandidata' },
           { '/': '*' },
         ],
         // Legacy fallback za iOS < 13 (noviji iOS čita components).
@@ -409,6 +416,21 @@ export default {
       }
       // Kanal ne postoji na CDN-u ili je listing nedostupan — plain SPA.
       return htmlResponse(await (await indexPromise).text(), 'no-store');
+    }
+
+    // „Izborni dan" — /glasanje (statični OG) i /glasanje/<slug> (kandidat).
+    // Ruta je javna i dijeljiva (plan §8.1), pa crawler mora dobiti smislen
+    // preview i kad kandidat nije razrješiv (baza nedostupna, nepoznat slug,
+    // buduća /glasanje/kola arhiva) — tada se servira opći OG glasanja.
+    const gSlugMatch = path.match(/^\/glasanje\/([a-z0-9][a-z0-9-]{0,79})$/);
+    if (path === '/glasanje' || gSlugMatch) {
+      const slug = gSlugMatch ? gSlugMatch[1] : null;
+      const candidate = slug ? await fetchVoteCandidate(env, slug) : null;
+      const indexHtml = await (await indexPromise).text();
+      return htmlResponse(
+        injectVotingTags(indexHtml, slug, candidate),
+        'public, max-age=3600, s-maxage=3600',
+      );
     }
 
     // Cloudflare Pages "pretty URLs" — provjeri postoji li <path>.html.
@@ -1107,6 +1129,141 @@ async function fetchCampaign(env, refs) {
   } catch (_) {
     return null;
   }
+}
+
+/**
+ * Kandidat glasanja za /glasanje/<slug> — čita se PostgREST-om izravno iz
+ * `domovina_ai.vote_candidates`, koji je `select`-om otvoren za `anon`
+ * (domovina-api migracija 20260808120100_channel_voting_rls.sql). Nema RPC-a
+ * „daj mi jednog kandidata", a `round_leaderboard` traži kolo i vraća cijelu
+ * ljestvicu — za jedan OG naslov je to preskupo.
+ *
+ * NAMJERNO bez rezultata glasanja: `net`/`rank` se mijenjaju kroz dan, a
+ * odgovor se edge-cachira sat vremena — preview bi lagao. Opisujemo kandidata,
+ * ne trenutno stanje ljestvice (isti obrazac kao iznosi na /doniraj).
+ *
+ * Bez env-a ili na grešci → null: ruta i dalje dobije opće OG tagove glasanja.
+ */
+async function fetchVoteCandidate(env, slug) {
+  const base = (env.SUPABASE_URL || '').replace(/\/+$/, '');
+  const key = env.SUPABASE_ANON_KEY;
+  if (!base || !key) return null;
+  try {
+    const q = `${base}/rest/v1/vote_candidates`
+      + `?slug=eq.${encodeURIComponent(slug)}`
+      + '&select=slug,display_name,avatar_url,tags,voditelji,subscribers,status'
+      + '&limit=1';
+    const res = await fetch(q, {
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        // Tablica živi u domovina_ai shemi, ne u public.
+        'Accept-Profile': 'domovina_ai',
+      },
+      cf: { cacheTtl: 300, cacheEverything: true },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return row && row.display_name ? row : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * OG/JSON-LD za „Izborni dan" (/glasanje i /glasanje/<slug>).
+ *
+ * [candidate] null → opći OG ljestvice; inače kandidat-specifičan naslov.
+ * Canonical za nerazrješiv slug pada na `/glasanje` da nepostojeći kandidati ne
+ * ulaze u indeks; og:url uvijek prati stvarni share URL (isti razlog kao /m/).
+ */
+function injectVotingTags(indexHtml, slug, candidate) {
+  const ogUrl = slug ? `${SITE}/glasanje/${slug}` : `${SITE}/glasanje`;
+  const canonical = candidate ? ogUrl : `${SITE}/glasanje`;
+
+  const baseDesc = 'Ljestvica je javna: pogledaj koji se podcasti natječu za '
+    + 'sljedeće mjesto u AI obradi. Glasa se e-Osobnom — jedan čovjek, jedan '
+    + 'glas svaka 24 sata, u kolima od 14 dana.';
+
+  let title = 'Izborni dan — glasaj koji podcast ide sljedeći';
+  let desc = baseDesc;
+  if (candidate) {
+    const name = (candidate.display_name || '').trim();
+    const hosts = Array.isArray(candidate.voditelji)
+      ? candidate.voditelji.filter(Boolean).slice(0, 3).join(', ')
+      : '';
+    title = `Glasaj za ${name} — Izborni dan`;
+    desc = `${name}${hosts ? ` (${hosts})` : ''} je kandidat za sljedeći kanal `
+      + `koji ulazi u AI obradu na DOMOVINA.ai. ${baseDesc}`;
+    if (desc.length > 300) desc = desc.slice(0, 297) + '…';
+  }
+
+  // Avatar kandidata je kvadratan (CDN registry/avatars/<slug>.jpg) → twitter
+  // "summary"; bez njega brend banner 1200×630 → "summary_large_image".
+  const avatar = typeof candidate?.avatar_url === 'string'
+    && candidate.avatar_url.startsWith('https://')
+    ? candidate.avatar_url
+    : null;
+  const image = avatar || `${SITE}/og-image.png`;
+  const twitterCard = avatar ? 'summary' : 'summary_large_image';
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description: desc,
+    url: canonical,
+    inLanguage: 'hr',
+    ...(candidate ? {
+      about: {
+        '@type': 'PodcastSeries',
+        name: (candidate.display_name || '').trim(),
+        ...(avatar ? { image: avatar } : {}),
+      },
+      potentialAction: {
+        '@type': 'VoteAction',
+        name: title,
+        target: { '@type': 'EntryPoint', urlTemplate: ogUrl },
+      },
+    } : {}),
+    publisher: {
+      '@type': 'Organization',
+      name: 'DOMOVINA.ai',
+      logo: { '@type': 'ImageObject', url: `${SITE}/icons/Icon-512.png` },
+    },
+  }, null, 2);
+
+  const tags = `
+  <title>${x(title)} – DOMOVINA.ai</title>
+  <meta name="description" content="${x(desc)}">
+  <link rel="canonical" href="${canonical}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="hr_HR">
+  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:logo" content="${SITE}/og-image-square.png">
+  <meta property="og:title" content="${x(title)}">
+  <meta property="og:description" content="${x(desc)}">
+  <meta property="og:url" content="${ogUrl}">
+  <meta property="og:image" content="${x(image)}">${
+    avatar ? '' : '\n  <meta property="og:image:type" content="image/png">'
+      + '\n  <meta property="og:image:width" content="1200">'
+      + '\n  <meta property="og:image:height" content="630">'
+  }
+  <meta property="og:image:alt" content="${x(title)}">
+
+  <meta name="twitter:card" content="${twitterCard}">
+  <meta name="twitter:title" content="${x(title)}">
+  <meta name="twitter:description" content="${x(desc)}">
+  <meta name="twitter:image" content="${x(image)}">
+  <meta name="twitter:image:alt" content="${x(title)}">
+
+  <script type="application/ld+json">
+${jsonLd}
+  </script>`;
+
+  return stripHeadMeta(indexHtml).replace('</head>', `${tags}\n</head>`);
 }
 
 /**

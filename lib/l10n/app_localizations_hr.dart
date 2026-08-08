@@ -3748,4 +3748,44 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get votingErrorGeneric => 'Glas nije zabilježen. Pokušaj ponovno.';
+
+  @override
+  String get votingHomeChipTooltip => 'Izborni dan — glasaj za sljedeći kanal';
+
+  @override
+  String get votingUnusedVote => 'Imaš neiskorišten glas.';
+
+  @override
+  String votingLongestStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Najduži niz $count dana',
+      few: 'Najduži niz $count dana',
+      one: 'Najduži niz $count dan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String votingTotalVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count glasova ukupno',
+      few: '$count glasa ukupno',
+      one: '$count glas ukupno',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get votingChannelsBarTitle => 'Nema tvog podcasta?';
+
+  @override
+  String get votingChannelsBarBody =>
+      'Glasaj koji podcast ide sljedeći u obradu.';
+
+  @override
+  String get votingChannelsBarCta => 'Glasaj';
 }

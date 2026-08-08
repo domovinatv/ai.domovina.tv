@@ -4591,5 +4591,43 @@
   "votingErrorGeneric": "Glas nije zabilježen. Pokušaj ponovno.",
   "@votingErrorGeneric": {
     "description": "Neočekivana greška pri glasanju."
+  },
+  "votingHomeChipTooltip": "Izborni dan — glasaj za sljedeći kanal",
+  "@votingHomeChipTooltip": {
+    "description": "Tooltip chipa s nizom u zaglavlju početnog ekrana."
+  },
+  "votingUnusedVote": "Imaš neiskorišten glas.",
+  "@votingUnusedVote": {
+    "description": "Značenje crvene točke na chipu: današnji glas još nije potrošen."
+  },
+  "votingLongestStreak": "{count, plural, one{Najduži niz {count} dan} few{Najduži niz {count} dana} other{Najduži niz {count} dana}}",
+  "@votingLongestStreak": {
+    "description": "Najduži niz uzastopnih izbornih dana na ekranu računa.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "votingTotalVotes": "{count, plural, one{{count} glas ukupno} few{{count} glasa ukupno} other{{count} glasova ukupno}}",
+  "@votingTotalVotes": {
+    "description": "Ukupan broj glasova koje je korisnik dosad potrošio.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "votingChannelsBarTitle": "Nema tvog podcasta?",
+  "@votingChannelsBarTitle": {
+    "description": "Naslov trajne trake na dnu popisa kanala."
+  },
+  "votingChannelsBarBody": "Glasaj koji podcast ide sljedeći u obradu.",
+  "@votingChannelsBarBody": {
+    "description": "Podnaslov trajne trake na dnu popisa kanala."
+  },
+  "votingChannelsBarCta": "Glasaj",
+  "@votingChannelsBarCta": {
+    "description": "Gumb trajne trake koji vodi na ekran glasanja."
   }
 }

@@ -246,7 +246,73 @@ class _AllChannelsViewState extends State<AllChannelsView> {
               ? const Center(child: CircularProgressIndicator())
               : _list(),
         ),
+        _votingBar(theme),
       ],
+    );
+  }
+
+  /// Trajna traka na dnu kataloga — „Nema tvog podcasta? Glasaj koji ide
+  /// sljedeći." (plan §8.6).
+  ///
+  /// Traka, a ne dijalog ni snackbar: CLAUDE.md pravilo o nudge-evima traži
+  /// trajnu površinu koja ništa ne prekida. Vidljiva je **svima** — ljestvica
+  /// glasanja je javna, a poziv na potvrdu identiteta stoji tek na samom ekranu
+  /// glasanja, gdje uz sebe ima kontekst.
+  ///
+  /// Donji `SafeArea` NE ide ovdje: [AllChannelsScreen] već omata cijeli
+  /// `AllChannelsView` u jedan `SafeArea(top: false)`, pa bi drugi inset bio
+  /// dupli razmak (CLAUDE.md, slaganje donjih traka).
+  Widget _votingBar(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
+    return Material(
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+      child: InkWell(
+        onTap: () => context.go('/glasanje'),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: cs.outlineVariant.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+          child: Row(
+            children: [
+              Icon(Icons.how_to_vote_outlined, size: 20, color: cs.tertiary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l.votingChannelsBarTitle,
+                      style: theme.textTheme.labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      l.votingChannelsBarBody,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l.votingChannelsBarCta,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: cs.tertiary,
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 20, color: cs.tertiary),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
