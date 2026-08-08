@@ -29,18 +29,22 @@ Petlja, helperi (`tim-send.sh`/`tim-read.sh`/`tim-status.sh`) i zamke:
 `docs/ai-tim-tmux.md`. Uloge: `.claude/commands/{delegiraj,tim,pregled}.md`,
 kickoff `/pocni` (skripta ga sama pošalje planneru; `TIM_AUTOSTART=0` gasi).
 
-`./scripts/tim-open.sh [--fresh] '<prompt>'` (skill `/digni`) diže tim
-**headless**, posije planneru prvi zadatak, pa otvori novi maksimiziran iTerm2
-prozor koji se samo `tmux attach`-a. Redoslijed je bitan: prozor je udobnost,
-tim je posao — ako iTerm padne, tim je gore. Bez `--fresh` se attacha na
-postojeći session i prompt se NE šalje (ondje korisnik tipka); `--fresh` gasi
-stari tim. Višelinijski prompt ide u `.tim/kickoff-prompt.md`, planneru se
-šalje samo putanja — TUI svaki `\n` čita kao submit.
+`./scripts/tim-kickoff.sh [--fresh]` (skill `/digni`) gasi stari tim, diže
+novi **headless**, pošalje planneru kickoff i na kraju `exec tmux attach` u
+prozoru u kojem je pokrenuta. Višelinijski prompt ide u
+`.tim/kickoff-prompt.md`, planneru se šalje samo putanja — TUI svaki `\n` čita
+kao submit. Bez `--fresh` se attacha na postojeći tim i prompt se NE šalje.
 
-**Rule**: nikad ne stavljaj `osascript` na kritični put dizanja tima. iTermov
-AppleScript se blokira (`AppleEvent timed out -1712`) kad session na koji su
-prozori attachani upravo umre — izmjereno 8.8.2026., kill je prošao a tim
-ostao mrtav. Ostale iTerm zamke su u headeru skripte.
+**Rule (prozore otvara ČOVJEK)**: agent NIKAD ne otvara, ne resizea i ne
+zatvara iTerm prozore — ni `osascript`, ni `open -a`. Za novi posao timu agent
+napiše `.tim/kickoff-prompt.md` i **da korisniku komandu**; korisnik otvori
+prozor (⌘N) i pokrene je. Razlog je izmjeren 8.8.2026.: kad se ubije session na
+koji su prozori attachani, iTermov AppleScript se trajno zablokira
+(`AppleEvent timed out -1712`, do restarta iTerma) — stari tim je bio ubijen a
+novi se nije digao. Uz to `create window … command` vraća `missing value`, a
+`current window` odmah nakon `create window` pokaže KRIVI prozor (`set bounds`
+je otišao korisnikovom Claude prozoru). Puni popis u headeru
+`scripts/tim-kickoff.sh`.
 
 Session se zove `tim-<repo-slug>` (`tim-domovina-ai`) da timovi za različite
 projekte na istom stroju ne kolidiraju. **Rule**: tmux radi prefix matching na

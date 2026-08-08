@@ -1,67 +1,85 @@
 ---
-description: Otvori novi maksimiziran iTerm prozor, digni AI tim i posij mu kickoff prompt
+description: Pripremi kickoff za AI tim i daj korisniku komandu koju pokreće u svom iTerm prozoru
 ---
 
-Korisnik želi pokrenuti AI tim (`scripts/tim.sh`, pet Claude Code panela u
-tmuxu) u **novom iTerm prozoru**, s prvim zadatkom već poslanim planneru.
+Korisnik želi pustiti novi posao AI timu (`scripts/tim.sh`, pet Claude Code
+panela u tmuxu).
 
-Sav posao radi `scripts/tim-open.sh`. Ti si ovdje samo da proslijediš prompt i
-javiš ishod — **ne piši vlastiti AppleScript i ne pozivaj `tim.sh` izravno.**
+## ŽELJEZNO PRAVILO: prozore otvara ČOVJEK
+
+**Nikad ne otvaraj, ne resizeaj i ne zatvaraj iTerm prozore.** Ni preko
+`osascript`, ni preko `open -a`, ni na bilo koji drugi način. Odluka vlasnika,
+8.8.2026.
+
+Nije stvar ukusa — izmjereno je kako se lomi. Kad se ubije tmux session na koji
+su prozori attachani, iTermov AppleScript se **trajno zablokira**
+(`AppleEvent timed out -1712`, do restarta iTerma). U tom incidentu je stari
+tim bio ubijen a novi se nije digao, jer je `osascript` stajao na kritičnom
+putu. Puni popis zamki je u headeru `scripts/tim-kickoff.sh`.
+
+Tvoj doprinos je **kickoff fajl i komanda**. Prozor i Enter su korisnikovi.
 
 ## Postupak
 
-1. **Provjeri gdje si.** Ako je `$TMUX` postavljen, ti si već panel unutar
-   tima — tada NE pokrećeš ovo. Javi korisniku da se tim diže izvana i stani.
+1. **Provjeri gdje si.** Ako je `$TMUX` postavljen, ti si panel unutar tima —
+   ne pokrećeš ovo. Javi korisniku i stani.
 
-2. **Ako korisnik nije dao prompt** (`$ARGUMENTS` prazan), a iz razgovora je
-   jasno što treba predati timu, sastavi ga sam: putanja do plana + što
-   orkestrator mora znati prije dispatcha. Ako nije jasno, pitaj — bolje
-   jedno pitanje nego tim koji krene u krivo.
+2. **Sastavi kickoff.** Ako `$ARGUMENTS` nije prazan, to je prompt. Ako je
+   prazan a iz razgovora je jasno što ide timu, sastavi sam: putanja do plana,
+   koji taskovi idu u ovaj krug a koji NE, zamke koje moraju u definiciju
+   gotovog. Ako nije jasno — pitaj.
 
-3. **Odluči treba li čist tim.** Ako session već radi (`./scripts/tim-status.sh`),
-   bez `--fresh` se novi prozor samo attacha na njega i prompt se NE šalje.
-   Za nov posao gotovo uvijek želiš `--fresh` — ali on **gasi svih pet panela
-   i njihov kontekst**, pa prije toga provjeri da nijedan ne radi i **pitaj
-   korisnika**, osim ako je već rekao „fresh/čist/novi tim".
+3. **Zapiši ga** u `.tim/kickoff-prompt.md` (Write tool, ne skripta). Zaglavlje:
 
-4. **Pokreni**, s promptom kao JEDNIM argumentom u jednostrukim navodnicima:
+   ```markdown
+   # Kickoff za planner — YYYY-MM-DD HH:MM
 
-   ```bash
-   ./scripts/tim-open.sh --fresh 'Predaj timu … Plan: docs/plans/….md'
+   Prvo se orijentiraj po `.claude/commands/pocni.md`, zatim izvrši ovo:
+
+   ---
+
+   <prompt>
    ```
 
-   Prompt smije biti višelinijski — skripta ga zapisuje u
-   `.tim/kickoff-prompt.md` i planneru šalje samo putanju (Claude TUI svaki
-   `\n` čita kao submit, pa se sadržaj nikad ne šalje kroz `send-keys`).
+   Višelinijski je u redu — planneru se šalje samo putanja, nikad sadržaj
+   (TUI svaki `\n` čita kao submit).
 
-5. **Javi ishod** u dvije-tri rečenice: je li tim nov ili se prozor attachao na
-   postojeći, je li prompt poslan, i kako se prati napredak
-   (`./scripts/tim-status.sh`, tmux status bar dolje desno).
+4. **Provjeri stanje tima** (`./scripts/tim-status.sh`) i **javi korisniku
+   komandu**, u bloku za kopiranje:
 
-## Što skripta radi sama (ne dupliciraj)
+   ```bash
+   cd /Users/ms/git/domovinatv/domovina.ai && ./scripts/tim-kickoff.sh --fresh
+   ```
 
-- Provjeri macOS, iTerm2, `tmux`, `claude`, `scripts/tim.sh`, `$TMUX`.
-- Otvori novi iTerm prozor i **maksimizira** ga na vidljivi okvir. Puni zaslon
-  ostaje ⌘+Enter, ručno.
-- Digne tim s `TIM_AUTOSTART=0` kad ima prompt (inače bi `/pocni` i naša
-  poruka jurili jedno drugo); orijentacija je tada dio kickoff fajla.
-- Pričeka da session postoji i da planner TUI proradi, pa pošalje jednu liniju.
+   Bez `--fresh` ako se treba attachati na postojeći tim. Uz komandu reci:
+   otvori novi iTerm prozor (⌘N), zalijepi, ⌘+Enter za fullscreen.
+
+5. **Ako tim treba ugasiti a paneli rade** — upozori što se gubi (kontekst
+   orkestratora je često jedino mjesto gdje živi ops znanje) i predloži da mu
+   prvo pošalješ nalog da to zapiše u `docs/`, pa onda `--fresh`.
+
+## Što skripta radi kad je korisnik pokrene
+
+- `--fresh` → `tim-kill.sh` (odbija gasiti zauzet tim), pa čisti mrtvi
+  `.tim/panes.env` i `.tim/status.line`; verdikti u `.tim/reviews/` ostaju.
+- Digne tim **headless** (`tim.sh` bez TTY-ja se ne attacha), pričeka session.
+- Pričeka da planner TUI proradi, pa mu pošalje `Pročitaj … pa izvrši.`
+- Na kraju `exec tmux attach` u prozoru u kojem je pokrenuta.
+
+Ako `.tim/kickoff-prompt.md` postoji a prompt nije dan u argumentu, skripta
+koristi taj fajl — zato je dovoljno da ti napišeš fajl, a korisnik pokrene
+komandu bez argumenata.
 
 ## Granice
 
-- **Ako session već postoji i nema `--fresh`, skripta NE šalje prompt** — samo
-  otvori prozor koji se attacha, i ispiše komandu za ručno slanje. Tako je
-  namjerno: u planner panel korisnik tipka i poruka bi mu upala usred prompta.
-  Ne zaobilazi to s `--force` osim ako je korisnik izričito rekao da je panel
-  prazan.
 - **Drugi tim uz postojeći ne postoji kao opcija.** dev1/dev2 dijele radni
   direktorij, a orkestrator je jedini koji commita — dva orkestratora u istom
-  stablu commitaju jedan drugome nedovršen rad. Za paralelan rad na drugom
-  poslu koristi drugi REPO (session je `tim-<repo-slug>`), ne drugi tim ovdje.
-- Ovo diže tim **za repo iz kojeg se poziva** (session `tim-<repo-slug>`). Za
-  drugi projekt pokreni skriptu iz tog repoa, ne mijenjaj `TIM_SESSION`.
-- `--dry-run` kao prvi argument ispiše što bi se dogodilo bez otvaranja
-  prozora — koristi kad nisi siguran u stanje.
+  stablu commitaju jedan drugome nedovršen rad. Paralelan rad ide kroz drugi
+  REPO (session je `tim-<repo-slug>`).
+- **Ako tim već radi, prompt se NE šalje** planneru (ondje korisnik tipka).
+  Skripta ispiše komandu za ručno slanje.
+- Ti smiješ slati poruke **orkestratoru/devovima/revieweru** kroz
+  `tim-send.sh`; u planner samo `--force` i samo kad je panel dokazano prazan.
 
 ## Prompt za predaju
 
