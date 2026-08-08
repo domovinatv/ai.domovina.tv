@@ -258,6 +258,20 @@ javiti prije nego T2 krene.
   testom protiv lokalne baze, popravljena, pravilo zapisano u CLAUDE.md tog
   repoa.
 
+### Ishod kruga 1 (2026-08-08)
+
+- **r1 (T1+T2): VERDIKT OK** → commitano: `domovina-api b5e1588` (T1),
+  `domovina.ai d851b3e` (T2), plan docsi `8d23825`.
+- **r2 (T4): VERDIKT OK** → commitano: `fetch.domovina.tv a6419d2`.
+- **Follow-upovi iz r2 za sljedeći krug (fulfillment)** — ne blokiraju:
+  `registry_synced_at` se nikad ne osvježava (jedna linija u `toRow()`);
+  CDN purge vezati uz „uploadano", ne uz `--force-avatars` (negativni cache
+  nakon prvog pravog `--commit`); `patchStatus` dodati `&status=eq.…` filter
+  (mikroskopski race prema `winner`); `slug=in.(…)` batchati (8 KB URL limit);
+  kozmetika dvostrukog brojanja grešaka u statistici.
+- **Za T3/T5**: 3 kandidata (`umbrella` ×2, `disputed` ×1) mapiraju se u
+  `VoteSourceType.unknown` — bez badgea izvora, siguran fallback.
+
 ## Ovisnosti
 
 ```
