@@ -272,6 +272,46 @@ javiti prije nego T2 krene.
 - **Za T3/T5**: 3 kandidata (`umbrella` ×2, `disputed` ×1) mapiraju se u
   `VoteSourceType.unknown` — bez badgea izvora, siguran fallback.
 
+### Zapisnik T5 (2026-08-08, dev1)
+
+- **Ugovor v1.2**: `my_voting_state()` (i `cast_vote` odgovor) dobiva i
+  **`total_votes`** (int) — kolona `voters.total_votes` je postojala i
+  `cast_vote` je inkrementira, samo nije bila u projekciji. Flutter model ga
+  nosi kao `int?` i redak na `/account` izostaje kad polja nema (bez izmišljene
+  nule).
+- Verifikacija OG tagova za `/glasanje` rađena lokalnim harnessom —
+  produkcijski prolaz `test-social-tags.mjs` moguć tek nakon deploya workera
+  (van opsega kruga).
+- **Izvanplanski posao (uputa iz panela)**: očekivanja za epizode u
+  `scripts/test-social-tags.mjs` poravnata s workerom (og-share.jpg,
+  1200/630/image/jpeg) — pre-postojeći pad, nije regresija T5.
+- Home rail „Izborni dan" iz dizajn §8.6 NIJE rađen — nije na popisu fajlova
+  T5 (dirao bi home feed). Sitemap također odgođen do izlaska featurea.
+
+### Ishod kruga 2 (2026-08-08) — PLAN IZVRŠEN
+
+- **r3 (T3): DORADA** (3 nalaza u `voting_screen.dart`) → **r4: OK** →
+  commit `domovina.ai a59ce38`.
+- **r5 (T5 + ugovor v1.2 + izvanplanski social-tags): OK** → commiti
+  `domovina.ai 2f4fcc6` (T5) + `32d25ab` (social-tags), `domovina-api
+  5b67aed` (total_votes).
+- **Deploy NIJE rađen** (migracije nisu na Coolifyju, worker nije deployan)
+  — po planu. Prije objave featurea: `supabase db push`/Coolify deploy
+  migracija, produkcijski `sync_voting_candidates.mjs --commit` (uklj.
+  avatare), `./scripts/deploy.sh`, pa produkcijski `test-social-tags.mjs`
+  za `/glasanje` rute.
+- **Follow-upovi za sljedeći krug** (iz r5, ne blokiraju): home rail
+  „Izborni dan" (dizajn §8.6) + sitemap; zastarjeli komentari o v1.1 u
+  `voting_state.dart:249` i `account_screen.dart:375`; dedup dvostrukog
+  `refresh()` (home chip + account); `</script>` escape u JSON-LD injekciji
+  (zatečeni obrazac, sada prolazi i `display_name`); chip a11y
+  (`ExcludeSemantics` bez tap akcije); + raniji iz r3/r4 (compactCount
+  decimalni zarez, `_maybeOpenFocused` jednokratni pokušaj, `_NetScore`
+  semantika, drag chip redova) i r2 (sync robusnost).
+- **VAŽNO za `domovina-api`**: migracija `…120200` je uređivana in-place
+  NAKON commita `b5e1588` — legitimno samo dok migracije nisu pushane na
+  Coolify; od prvog pusha svaka izmjena = novi migracijski fajl.
+
 ## Ovisnosti
 
 ```
