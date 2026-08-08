@@ -149,6 +149,48 @@ uz upozorenje da poruka vjerojatno nije stigla.
 jednolinijska: svaki `\n` je za TUI submit. Dugi sadržaj → fajl, pa pošalji
 putanju.
 
+## Dizanje tima: `tim-kickoff.sh` (i zašto agent ne otvara prozore)
+
+```bash
+cd <repo> && ./scripts/tim-kickoff.sh --fresh      # ugasi stari tim, digni čist, attach
+cd <repo> && ./scripts/tim-kickoff.sh              # attach na postojeći
+./scripts/tim-kickoff.sh --dry-run --fresh         # ispiši što bi napravio
+```
+
+Redom: `tim-kill.sh` (odbija gasiti zauzet tim) → briše mrtvi `panes.env` i
+`status.line` (verdikti u `.tim/reviews/` **ostaju**, to je zapisnik) →
+`tim.sh` **headless** → čeka planner TUI → pošalje mu `Pročitaj
+.tim/kickoff-prompt.md pa izvrši.` → `exec tmux attach` u prozoru u kojem je
+pokrenuta.
+
+Radni tok: **agent napiše `.tim/kickoff-prompt.md`, čovjek pokrene komandu.**
+Ako prompt nije dan u argumentu a fajl postoji, skripta koristi njega — pa je
+dovoljno pokrenuti komandu bez ičega. Višelinijski prompt nikad ne ide kroz
+`send-keys`; planneru se šalje samo putanja.
+
+### Prozore otvara ČOVJEK — pravilo plaćeno incidentom (8.8.2026.)
+
+Prva verzija (`tim-open.sh`) otvarala je maksimiziran iTerm prozor sama, preko
+`osascript`. Ukinuto. Tri izmjerena kvara, redom po težini:
+
+1. **Kad `--fresh` ubije session na koji su prozori attachani, iTermov
+   AppleScript se TRAJNO zablokira.** Njihov `tmux attach` izađe u istoj
+   sekundi i svaki sljedeći `osascript` prema iTermu vraća `AppleEvent timed
+   out (-1712)` — do restarta iTerma. U incidentu je kill prošao, prozor nije,
+   i **tim je ostao mrtav** jer je `osascript` stajao na kritičnom putu.
+   Oporavak je bio ručni: `TIM_AUTOSTART=0 ./scripts/tim.sh < /dev/null` pa
+   `tim-send.sh --force planner …` — točno ono što skripta sada radi sama.
+2. `create window with default profile command "…"` vraća **`missing value`** —
+   prozor se ne može uhvatiti, pa mu se ne mogu postaviti bounds.
+3. `current window` **odmah nakon** `create window` NIJE novi prozor. U testu
+   je `set bounds` otišao zatečenom Claude prozoru korisnika.
+
+Pouka je općenitija od iTerma: **ništa što nije nužno ne smije stajati na
+kritičnom putu dizanja tima.** Prozor je udobnost, tim je posao.
+
+Agent i dalje smije: dizati tim, slati poruke panelima, čitati ih, gasiti tim.
+Ne smije: stvarati, resizeati ni zatvarati prozore.
+
 ## Runtime stanje (`.tim/`, gitignorirano)
 
 | Fajl | Što je |
@@ -287,6 +329,16 @@ Da se ne retestira svaki put:
   `TIM_SESSION` overridea izvijestio o krivom (izvedenom) sessionu.
 - Autostart čeka da se u planner panelu pojavi footer "bypass permissions"
   (do 20 s) prije nego pošalje `/pocni` — slanje prije toga TUI proguta.
+- **Input box zna držati NEPOSLAN tekst.** Panel koji izgleda mirno može imati
+  utipkanu, nesubmitanu liniju (`tim-watch.sh` to javlja kao `NEPOSLANO`).
+  `tim-send.sh` to NE provjerava — njegov `send-keys -l` se **nalijepi** na
+  zatečeni tekst i panel dobije besmislen spoj. Prije slanja u sumnjiv panel:
+  `tmux send-keys -t <pane> C-a` pa `C-k`, i tek onda poruka.
+- **`capture-pane` može vratiti USTAJALI sadržaj.** Claude Code TUI se prerenda
+  tek na promjenu, pa nakon `C-a C-k` capture i dalje pokazuje obrisani tekst —
+  izgleda kao da brisanje ne radi. Provjeri tako da pošalješ jedan znak i
+  ponovno capture-aš; tek tada vidiš pravo stanje. Zato: kod osjetljivog slanja
+  utipkaj poruku, **provjeri capture, pa tek onda pošalji `Enter`** odvojeno.
 
 ## Isti obrazac u drugim repoima
 
