@@ -2393,7 +2393,7 @@ abstract class AppLocalizations {
   /// Introductory paragraph on the privacy policy screen describing the app and noting the page is a placeholder.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije. Ova je stranica privremeni nacrt potpune politike privatnosti.'**
+  /// **'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.'**
   String get legalPrivacyIntro;
 
   /// Section heading on the privacy policy screen for the data-collection paragraph.
@@ -2405,7 +2405,7 @@ abstract class AppLocalizations {
   /// Body paragraph on the privacy policy screen explaining which user data is collected and why.
   ///
   /// In hr, this message translates to:
-  /// **'Ako se prijavite Google računom, prikupljamo adresu e-pošte i ime koje Google pošalje aplikaciji. Pohranjujemo i napredak slušanja epizoda te oznake favorita kako bismo ih sinkronizirali između uređaja.'**
+  /// **'Prilikom prijave (putem Googlea, Applea ili e-pošte) prikupljamo vašu adresu e-pošte i ime. Pohranjujemo napredak slušanja, favorite i povijest glasanja za sinkronizaciju između uređaja. Za \'Plus\' pretplate i donacije (Pinka) bilježimo status kupovine preko vanjskih servisa (Apple, Google, RevenueCat), ali ne obrađujemo podatke o karticama. Račun i sve podatke možete trajno obrisati unutar aplikacije.'**
   String get legalPrivacyDataBody;
 
   /// Contact paragraph on the privacy policy screen with the support email address.
@@ -2423,7 +2423,7 @@ abstract class AppLocalizations {
   /// Introductory paragraph on the terms of use screen stating that using the app constitutes acceptance.
   ///
   /// In hr, this message translates to:
-  /// **'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove uvjete. Ova je stranica privremeni nacrt potpunih uvjeta korištenja.'**
+  /// **'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove Uvjete korištenja.'**
   String get legalTermsIntro;
 
   /// Section heading on the terms of use screen for the content/copyright paragraph.
@@ -2435,7 +2435,7 @@ abstract class AppLocalizations {
   /// Body paragraph on the terms of use screen describing the educational use of content and copyright ownership.
   ///
   /// In hr, this message translates to:
-  /// **'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima.'**
+  /// **'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima. Određene napredne značajke dostupne su putem \'Plus\' pretplate kojom se upravlja preko vašeg Apple ili Google računa.'**
   String get legalTermsContentBody;
 
   /// Section heading on the terms of use screen for the AI-generated content disclaimer.

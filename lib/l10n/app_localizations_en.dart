@@ -1402,14 +1402,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalPrivacyIntro =>
-      'DOMOVINA.ai is an application that transcribes, summarises and analyses Croatian Catholic podcasts using artificial intelligence. This page is a placeholder for the full privacy policy.';
+      'DOMOVINA.ai is an application that transcribes, summarises and analyses Croatian Catholic podcasts using artificial intelligence.';
 
   @override
   String get legalPrivacyDataTitle => 'What data we collect';
 
   @override
   String get legalPrivacyDataBody =>
-      'If you sign in with a Google account, we collect the email address and name that Google sends to the application. We also store your episode playback progress and favourite markers so that we can sync them across your devices.';
+      'When you sign in (via Google, Apple, or email), we collect your email address and name. We store your playback progress, favourite markers, and voting history to sync them across your devices. For \'Plus\' subscriptions and support (Pinka), we record your purchase status via third-party services (Apple, Google, RevenueCat) but do not process credit card data. You can permanently delete your account and all associated data within the app at any time.';
 
   @override
   String get legalPrivacyContactBody =>
@@ -1420,14 +1420,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalTermsIntro =>
-      'By using the DOMOVINA.ai application, you accept these terms. This page is a placeholder for the full terms of use.';
+      'By using the DOMOVINA.ai application, you accept these Terms of Use.';
 
   @override
   String get legalTermsContentTitle => 'Content';
 
   @override
   String get legalTermsContentBody =>
-      'Episode content (videos, transcripts and summaries) is presented for educational purposes. Copyright in the original podcasts belongs to their respective creators and channels.';
+      'Episode content (videos, transcripts and summaries) is presented for educational purposes. Copyright in the original podcasts belongs to their respective creators and channels. Certain advanced features are available via a \'Plus\' subscription managed through your Apple or Google account.';
 
   @override
   String get legalTermsAiTitle => 'AI analysis';

@@ -1417,14 +1417,14 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get legalPrivacyIntro =>
-      'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije. Ova je stranica privremeni nacrt potpune politike privatnosti.';
+      'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.';
 
   @override
   String get legalPrivacyDataTitle => 'Koje podatke prikupljamo';
 
   @override
   String get legalPrivacyDataBody =>
-      'Ako se prijavite Google računom, prikupljamo adresu e-pošte i ime koje Google pošalje aplikaciji. Pohranjujemo i napredak slušanja epizoda te oznake favorita kako bismo ih sinkronizirali između uređaja.';
+      'Prilikom prijave (putem Googlea, Applea ili e-pošte) prikupljamo vašu adresu e-pošte i ime. Pohranjujemo napredak slušanja, favorite i povijest glasanja za sinkronizaciju između uređaja. Za \'Plus\' pretplate i donacije (Pinka) bilježimo status kupovine preko vanjskih servisa (Apple, Google, RevenueCat), ali ne obrađujemo podatke o karticama. Račun i sve podatke možete trajno obrisati unutar aplikacije.';
 
   @override
   String get legalPrivacyContactBody =>
@@ -1435,14 +1435,14 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get legalTermsIntro =>
-      'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove uvjete. Ova je stranica privremeni nacrt potpunih uvjeta korištenja.';
+      'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove Uvjete korištenja.';
 
   @override
   String get legalTermsContentTitle => 'Sadržaj';
 
   @override
   String get legalTermsContentBody =>
-      'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima.';
+      'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima. Određene napredne značajke dostupne su putem \'Plus\' pretplate kojom se upravlja preko vašeg Apple ili Google računa.';
 
   @override
   String get legalTermsAiTitle => 'AI analiza';
