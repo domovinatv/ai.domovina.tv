@@ -1771,7 +1771,7 @@
   "@legalPrivacyTitle": {
     "description": "Page title and app bar title for the privacy policy screen."
   },
-  "legalPrivacyIntro": "DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije. Ova je stranica privremeni nacrt potpune politike privatnosti.",
+  "legalPrivacyIntro": "DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.",
   "@legalPrivacyIntro": {
     "description": "Introductory paragraph on the privacy policy screen describing the app and noting the page is a placeholder."
   },
@@ -1779,7 +1779,7 @@
   "@legalPrivacyDataTitle": {
     "description": "Section heading on the privacy policy screen for the data-collection paragraph."
   },
-  "legalPrivacyDataBody": "Ako se prijavite Google računom, prikupljamo adresu e-pošte i ime koje Google pošalje aplikaciji. Pohranjujemo i napredak slušanja epizoda te oznake favorita kako bismo ih sinkronizirali između uređaja.",
+  "legalPrivacyDataBody": "Prilikom prijave (putem Googlea, Applea ili e-pošte) prikupljamo vašu adresu e-pošte i ime. Pohranjujemo napredak slušanja, favorite i povijest glasanja za sinkronizaciju između uređaja. Za 'Plus' pretplate i donacije (Pinka) bilježimo status kupovine preko vanjskih servisa (Apple, Google, RevenueCat), ali ne obrađujemo podatke o karticama. Račun i sve podatke možete trajno obrisati unutar aplikacije.",
   "@legalPrivacyDataBody": {
     "description": "Body paragraph on the privacy policy screen explaining which user data is collected and why."
   },
@@ -1791,7 +1791,7 @@
   "@legalTermsTitle": {
     "description": "Page title and app bar title for the terms of use screen."
   },
-  "legalTermsIntro": "Korištenjem aplikacije DOMOVINA.ai prihvaćate ove uvjete. Ova je stranica privremeni nacrt potpunih uvjeta korištenja.",
+  "legalTermsIntro": "Korištenjem aplikacije DOMOVINA.ai prihvaćate ove Uvjete korištenja.",
   "@legalTermsIntro": {
     "description": "Introductory paragraph on the terms of use screen stating that using the app constitutes acceptance."
   },
@@ -1799,7 +1799,7 @@
   "@legalTermsContentTitle": {
     "description": "Section heading on the terms of use screen for the content/copyright paragraph."
   },
-  "legalTermsContentBody": "Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima.",
+  "legalTermsContentBody": "Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima. Određene napredne značajke dostupne su putem 'Plus' pretplate kojom se upravlja preko vašeg Apple ili Google računa.",
   "@legalTermsContentBody": {
     "description": "Body paragraph on the terms of use screen describing the educational use of content and copyright ownership."
   },
