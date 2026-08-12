@@ -1428,7 +1428,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get legalPrivacyContactBody =>
-      'Za pitanja u vezi s privatnošću obratite se na stepanic.matija@gmail.com.';
+      'Aplikacijom upravlja ITalk d.o.o. Za pitanja u vezi s privatnošću obratite se na stepanic.matija@gmail.com.';
 
   @override
   String get legalTermsTitle => 'Uvjeti korištenja';
@@ -1453,7 +1453,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get legalTermsContactBody =>
-      'Za upite nas kontaktirajte na stepanic.matija@gmail.com.';
+      'Aplikacijom upravlja ITalk d.o.o. Za upite nas kontaktirajte na stepanic.matija@gmail.com.';
 
   @override
   String get magisteriumScoreActivelyPromotes =>

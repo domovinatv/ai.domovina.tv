@@ -1413,7 +1413,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalPrivacyContactBody =>
-      'For privacy-related enquiries, please contact us at stepanic.matija@gmail.com.';
+      'The application is operated by ITalk d.o.o. For privacy-related enquiries, please contact us at stepanic.matija@gmail.com.';
 
   @override
   String get legalTermsTitle => 'Terms of Use';
@@ -1438,7 +1438,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalTermsContactBody =>
-      'For any enquiries, please contact us at stepanic.matija@gmail.com.';
+      'The application is operated by ITalk d.o.o. For any enquiries, please contact us at stepanic.matija@gmail.com.';
 
   @override
   String get magisteriumScoreActivelyPromotes =>
