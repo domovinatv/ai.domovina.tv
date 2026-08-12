@@ -56,6 +56,12 @@ napredak ide u tmux status bar preko `scripts/tim-status.sh set "…"`. Review
 ide PRIJE commita i PRIJE `/clear`, da dorade padnu devu kojem je kontekst još
 živ.
 
+## Git & AI Co-authoring
+
+**Rule (AI Commit Trailers)**: Kako bi se očuvala zajednička memorija o tome koji je AI asistent (Claude Code, Antigravity, Codex, itd.) odradio koji zadatak, **SVI** agenti prilikom kreiranja Git commitova MORAJU dodati standardni *Git trailer* u poruku commita.
+Format mora biti: `Co-authored-by: <Ime Agenta> (<Verzija Modela>) <bot@domena>`
+Primjer: `Co-authored-by: Antigravity (Gemini 3.1 Pro) <bot@antigravity.google>` ili `Co-authored-by: Claude Code (Claude 3.7 Sonnet) <bot@anthropic.com>`.
+
 ## Known Issues & Gotchas
 
 > **Web delivery, rendering & caching** (service worker staleness, cache-busting
