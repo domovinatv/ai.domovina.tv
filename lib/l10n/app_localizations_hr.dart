@@ -1428,7 +1428,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get legalPrivacyContactBody =>
-      'Aplikacijom upravlja ITalk d.o.o. Za pitanja u vezi s privatnošću obratite se na stepanic.matija@gmail.com.';
+      'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za pitanja u vezi s privatnošću obratite se Matiji Stepaniću na ms@domovina.ai.';
 
   @override
   String get legalTermsTitle => 'Uvjeti korištenja';
@@ -1453,7 +1453,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get legalTermsContactBody =>
-      'Aplikacijom upravlja ITalk d.o.o. Za upite nas kontaktirajte na stepanic.matija@gmail.com.';
+      'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za upite kontaktirajte Matiju Stepanića na ms@domovina.ai.';
 
   @override
   String get magisteriumScoreActivelyPromotes =>

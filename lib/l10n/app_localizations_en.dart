@@ -1413,7 +1413,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalPrivacyContactBody =>
-      'The application is operated by ITalk d.o.o. For privacy-related enquiries, please contact us at stepanic.matija@gmail.com.';
+      'The application is operated by ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Croatia, VAT: 54872935051. For privacy-related enquiries, please contact Matija Stepanić at ms@domovina.ai.';
 
   @override
   String get legalTermsTitle => 'Terms of Use';
@@ -1438,7 +1438,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalTermsContactBody =>
-      'The application is operated by ITalk d.o.o. For any enquiries, please contact us at stepanic.matija@gmail.com.';
+      'The application is operated by ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Croatia, VAT: 54872935051. For any enquiries, please contact Matija Stepanić at ms@domovina.ai.';
 
   @override
   String get magisteriumScoreActivelyPromotes =>

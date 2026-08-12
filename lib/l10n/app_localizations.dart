@@ -2411,7 +2411,7 @@ abstract class AppLocalizations {
   /// Contact paragraph on the privacy policy screen with the support email address.
   ///
   /// In hr, this message translates to:
-  /// **'Aplikacijom upravlja ITalk d.o.o. Za pitanja u vezi s privatnošću obratite se na stepanic.matija@gmail.com.'**
+  /// **'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za pitanja u vezi s privatnošću obratite se Matiji Stepaniću na ms@domovina.ai.'**
   String get legalPrivacyContactBody;
 
   /// Page title and app bar title for the terms of use screen.
@@ -2453,7 +2453,7 @@ abstract class AppLocalizations {
   /// Contact paragraph on the terms of use screen with the support email address.
   ///
   /// In hr, this message translates to:
-  /// **'Aplikacijom upravlja ITalk d.o.o. Za upite nas kontaktirajte na stepanic.matija@gmail.com.'**
+  /// **'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za upite kontaktirajte Matiju Stepanića na ms@domovina.ai.'**
   String get legalTermsContactBody;
 
   /// Magisterium score band label (>=90): the analysed content actively promotes Catholic teaching. Fallback when CDN scoreInterpretation is absent.
