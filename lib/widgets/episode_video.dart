@@ -26,6 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:floating/floating.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/podcast_summary.dart';
@@ -118,6 +119,15 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       if (mounted && saved != null) _subtitlesOn.value = saved;
     });
     _removeFsListener = addFullscreenChangeListener(_onBrowserFullscreenChange);
+    _setupAutoPip();
+  }
+
+  void _setupAutoPip() async {
+    if (kIsWeb) return;
+    final floating = Floating();
+    if (await floating.isPipAvailable) {
+      floating.enable(const OnLeavePiP(aspectRatio: Rational.landscape()));
+    }
   }
 
   @override
@@ -129,6 +139,9 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
     if (_lockedOrientation) {
       _lockedOrientation = false;
       unlockOrientation();
+    }
+    if (!kIsWeb) {
+      Floating().cancelOnLeavePiP().catchError((_) {});
     }
     super.dispose();
   }
@@ -439,6 +452,9 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
     final backgroundButton = compactSlot(
       const BackgroundPlaybackButton(onVideo: true),
     );
+    final pipButton = compactSlot(
+      const PictureInPictureButton(onVideo: true),
+    );
     // SAMO u mobilnoj traci: desktop varijanta već ima
     // `MaterialDesktopVolumeButton` (klizač), a osmi gumb bi joj razbio
     // širinski budžet od 328 dp — vidi `test/playback_bar_layout_test.dart`.
@@ -461,6 +477,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       positionSlot(const MaterialDesktopPositionIndicator()),
       speedButton,
       backgroundButton,
+      pipButton,
       ?ytButton,
       if (timeline != null) _subtitleButton(),
       fullscreenButton(28),
@@ -471,6 +488,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       muteButton,
       speedButton,
       backgroundButton,
+      pipButton,
       ?ytButton,
       if (timeline != null) _subtitleButton(),
       fullscreenButton(24),
@@ -520,8 +538,15 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
           controller: widget.controller,
           onEnterFullscreen: _onEnterFullscreen,
           onExitFullscreen: _onExitFullscreen,
-          controls: (state) => Stack(
-            children: [
+          controls: (state) => StreamBuilder<PiPStatus>(
+            stream: kIsWeb ? const Stream.empty() : Floating().pipStatusStream,
+            initialData: PiPStatus.disabled,
+            builder: (context, pipSnapshot) {
+              if (pipSnapshot.data == PiPStatus.enabled) {
+                return const SizedBox.shrink();
+              }
+              return Stack(
+                children: [
               if (timeline != null)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -558,8 +583,9 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
                     ),
                   ),
                 ),
-            ],
-          ),
+              ],
+            );
+          }),
         ),
       ),
     );

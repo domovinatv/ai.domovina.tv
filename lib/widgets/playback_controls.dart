@@ -13,6 +13,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:floating/floating.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 
 import '../l10n/app_localizations.dart';
@@ -312,6 +314,59 @@ class BackgroundPlaybackButton extends StatelessWidget {
               ? l.mediaBackgroundPlaybackTooltipOn
               : l.mediaBackgroundPlaybackTooltipOff,
           onPressed: () => _toggle(context, enabled),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Picture-in-Picture
+// ---------------------------------------------------------------------------
+
+class PictureInPictureButton extends StatelessWidget {
+  const PictureInPictureButton({super.key, this.onVideo = false});
+
+  final bool onVideo;
+
+  void _toggle(BuildContext context) async {
+    if (kIsWeb) return;
+    final floating = Floating();
+    if (await floating.isPipAvailable) {
+      floating.enable(const ImmediatePiP(aspectRatio: Rational.landscape()));
+    } else {
+      if (!context.mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Picture-in-Picture nije podržan na ovom uređaju.'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) return const SizedBox.shrink();
+
+    final color = _controlColor(context, onVideo);
+
+    return FutureBuilder<bool>(
+      future: Floating().isPipAvailable,
+      builder: (context, snapshot) {
+        // Sakrij gumb ako PiP nije podržan (npr. iOS trenutno ili stari Android)
+        if (snapshot.data != true) {
+          return const SizedBox.shrink();
+        }
+        return IconButton(
+          icon: Icon(Icons.picture_in_picture_alt, color: color),
+          tooltip: 'Picture in Picture',
+          onPressed: () => _toggle(context),
         );
       },
     );

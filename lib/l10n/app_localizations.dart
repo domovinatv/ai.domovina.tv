@@ -2405,7 +2405,7 @@ abstract class AppLocalizations {
   /// Body paragraph on the privacy policy screen explaining which user data is collected and why.
   ///
   /// In hr, this message translates to:
-  /// **'Prilikom prijave (putem Googlea, Applea ili e-pošte) prikupljamo vašu adresu e-pošte i ime. Pohranjujemo napredak slušanja, favorite i povijest glasanja za sinkronizaciju između uređaja. Za \'Plus\' pretplate i donacije (Pinka) bilježimo status kupovine preko vanjskih servisa (Apple, Google, RevenueCat), ali ne obrađujemo podatke o karticama. Račun i sve podatke možete trajno obrisati unutar aplikacije.'**
+  /// **'ITalk d.o.o. za informacijske tehnologije, kao voditelj obrade, prikuplja i obrađuje vaše podatke u skladu s Općom uredbom o zaštiti podataka (GDPR).\n\nKada se prijavite (putem Certilia IDP sustava, Googlea, Applea ili e-pošte), prikupljamo osnovne identifikacijske podatke (e-mail adresu, ime i prezime, te OIB ukoliko se prijavljujete putem e-Građani/Certilia sustava) isključivo u svrhu pružanja usluge. Vaš napredak slušanja, omiljene oznake i glasovanja pohranjuju se kako bi se sinkronizirali među uređajima.\n\nZa obradu \"Plus\" pretplata koristimo vanjske izvršitelje (Apple, Google, RevenueCat) te ne pohranjujemo niti imamo pristup podacima vaših bankovnih kartica. Primjenjujemo najviše tehničke i organizacijske mjere sigurnosti (enkripcija u prijenosu i pohrani).\n\nKao korisnik, imate pravo na pristup, ispravak, ograničenje obrade, prijenos i brisanje svojih podataka (svoj račun možete trajno obrisati u aplikaciji u svakom trenutku). Za sva pitanja o privatnosti ili ostvarivanje prava obratite se na ms@domovina.ai. U slučaju sumnje na povredu podataka, imate pravo podnijeti pritužbu Agenciji za zaštitu osobnih podataka (AZOP).'**
   String get legalPrivacyDataBody;
 
   /// Contact paragraph on the privacy policy screen with the support email address.
@@ -2435,7 +2435,7 @@ abstract class AppLocalizations {
   /// Body paragraph on the terms of use screen describing the educational use of content and copyright ownership.
   ///
   /// In hr, this message translates to:
-  /// **'Sadržaj epizoda (videozapisi, transkripti i sažetci) prikazuje se u edukativne svrhe. Autorska prava na izvornim podcastima pripadaju njihovim autorima i kanalima. Određene napredne značajke dostupne su putem \'Plus\' pretplate kojom se upravlja preko vašeg Apple ili Google računa.'**
+  /// **'Svi audio i video materijali preuzimaju se iz javnih i slobodno dostupnih izvora. Aplikacija se pruža \"kakva jest\" (as-is) i bez ikakvih jamstava u pogledu neprekidne dostupnosti. ITalk d.o.o. ne odgovara za izravnu ili neizravnu štetu nastalu korištenjem aplikacije, a ukupna odgovornost ograničena je na iznos pretplate u zadnja 3 mjeseca. Pretplata na \"Plus\" opciju obnavlja se sukladno uvjetima vanjskih pružatelja (Apple/Google) te povrat sredstava reguliraju njihova pravila. Na ove uvjete primjenjuje se pravo Republike Hrvatske, a za sporove je nadležan sud u Zagrebu.'**
   String get legalTermsContentBody;
 
   /// Section heading on the terms of use screen for the AI-generated content disclaimer.

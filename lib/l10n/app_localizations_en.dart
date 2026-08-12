@@ -1409,7 +1409,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalPrivacyDataBody =>
-      'When you sign in (via Google, Apple, or email), we collect your email address and name. We store your playback progress, favourite markers, and voting history to sync them across your devices. For \'Plus\' subscriptions and support (Pinka), we record your purchase status via third-party services (Apple, Google, RevenueCat) but do not process credit card data. You can permanently delete your account and all associated data within the app at any time.';
+      'ITalk d.o.o., acting as the Data Controller, processes your personal data in compliance with the General Data Protection Regulation (GDPR - Regulation EU 2016/679).\n\nWhen you sign in (via Certilia IDP, Google, Apple, or email), we collect basic identification data (email, name, and national ID/OIB if using the e-Citizens/Certilia system) solely to provide the service. Your playback progress, favourite markers, and votes are stored for cross-device synchronisation.\n\nFor \"Plus\" subscriptions, purchase data is processed via third-party processors (Apple, Google, RevenueCat); we do not store or access your credit card details. We implement the highest technical and organisational security measures (encryption in transit and at rest).\n\nYou have the right to access, rectify, restrict, port, and erase your data (you may permanently delete your account within the app at any time). For privacy enquiries, contact ms@domovina.ai. In case of suspected data breaches, you have the right to lodge a complaint with the Croatian Personal Data Protection Agency (AZOP).';
 
   @override
   String get legalPrivacyContactBody =>
@@ -1427,14 +1427,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalTermsContentBody =>
-      'Episode content (videos, transcripts and summaries) is presented for educational purposes. Copyright in the original podcasts belongs to their respective creators and channels. Certain advanced features are available via a \'Plus\' subscription managed through your Apple or Google account.';
+      'All audio and video materials are sourced from publicly available channels. The application is provided on an \"as-is\" and \"as-available\" basis without warranties of any kind. ITalk d.o.o. shall not be liable for any direct or indirect damages arising from the use of the app, and total liability is limited to the subscription amount paid in the preceding 3 months. \"Plus\" subscriptions renew according to the terms of third-party providers (Apple/Google). These terms are governed by the laws of the Republic of Croatia, subject to the jurisdiction of courts in Zagreb.';
 
   @override
   String get legalTermsAiTitle => 'AI analysis';
 
   @override
   String get legalTermsAiBody =>
-      'Magisterium AI ratings and summaries are machine-generated and may contain errors. They do not represent the official position of the Catholic Church.';
+      'Analyses, summaries, and Magisterium ratings are generated automatically using Artificial Intelligence (AI) and may contain errors or inaccuracies (hallucinations). They do not represent the official position of the Catholic Church. The User utilises AI features at their own risk, and ITalk d.o.o. disclaims all liability for the accuracy and legal consequences of such generated content.';
 
   @override
   String get legalTermsContactBody =>
