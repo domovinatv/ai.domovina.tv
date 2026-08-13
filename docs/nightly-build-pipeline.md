@@ -70,8 +70,10 @@ javi 🎉 da ih makneš — inače baseline tiho trune i pokriva prave regresije
 
 **Verifikacija nakon uploada.** HTTP 200 na uploadu ne znači da je build dobar:
 Apple obrađuje asinkrono i ITMS-90xxx odbijenice stižu tek minutama kasnije.
-Nightly zato do 20 minuta polla `processingState` za taj build broj i tek onda
-javlja ✅ ili ⚠️. Za Play čita natrag internal track i provjeri da je
+Nightly zato do 45 minuta (`NIGHTLY_TF_POLL_MIN`) polla `processingState` za taj
+build broj i tek onda javlja ✅ ili ⚠️. Prozor je bio 20 min i to je bilo premalo —
+izmjereno 2026-08-13: build 159 se ni 25 minuta nakon uploada još nije pojavio u
+`/v1/builds`. „Još se obrađuje" NIJE greška, samo Appleov red čekanja. Za Play čita natrag internal track i provjeri da je
 `versionCode` stvarno ondje.
 
 ## Datoteke

@@ -316,8 +316,10 @@ step "Play internal upload" 20 ./scripts/play-upload.sh internal || finish_fail 
 
 # ── 8. verifikacija (upload 200 ≠ build je dobar) ────────────────────────────
 # Apple obrađuje asinkrono; ITMS odbijenice stižu tek ovdje, ne na uploadu.
+# Prozor: izmjereno 2026-08-13 da build ni 25 min nakon uploada još nije bio
+# vidljiv u /v1/builds. 20 min je davalo lažni ⚠️ gotovo svaku noć.
 IOS_STATE="PROCESSING"
-for _ in $(seq 1 20); do
+for _ in $(seq 1 "${NIGHTLY_TF_POLL_MIN:-45}"); do
   sleep 60
   IOS_STATE="$("$ROOT/scripts/store-status.rb" --json 2>/dev/null \
     | ruby -rjson -e 'd=JSON.parse(STDIN.read); b=(d.dig("ios","builds")||[]).find{|x| x["build"].to_i==ARGV[0].to_i}; puts(b ? b["processing"] : "PROCESSING")' "$BN" \
@@ -327,7 +329,7 @@ for _ in $(seq 1 20); do
 done
 case "$IOS_STATE" in
   VALID)   REPORT+=("🍏 TestFlight build ${BN}: VALID") ;;
-  PROCESSING) REPORT+=("🍏 TestFlight build ${BN}: još se obrađuje (>20 min)") ;;
+  PROCESSING) REPORT+=("🍏 TestFlight build ${BN}: Apple ga još obrađuje (>${NIGHTLY_TF_POLL_MIN:-45} min) — nije greška, provjeri ujutro sa store-status.rb") ;;
   *)       REPORT+=("🍏❌ TestFlight build ${BN}: ${IOS_STATE}") ;;
 esac
 
