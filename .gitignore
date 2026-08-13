@@ -65,3 +65,8 @@ test-results/
 
 # AI tim (scripts/tim.sh) runtime stanje — pane mapa, status linija, verdikti
 .tim/
+
+# Nightly store build (scripts/nightly-build.sh) — stanje/logovi/reportovi su
+# lokalni, ali test-baseline.txt je KONFIGURACIJA i mora biti u gitu.
+.nightly/*
+!.nightly/test-baseline.txt

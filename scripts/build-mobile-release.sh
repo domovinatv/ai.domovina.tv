@@ -34,6 +34,20 @@ fi
 
 TARGET="${1:-all}"
 
+# Nightly build (scripts/nightly-build.sh) šalje BUILD_NUMBER da izbjegne koliziju
+# s već uploadanim buildovima — Info.plist koristi $(FLUTTER_BUILD_NUMBER), a Play
+# odbija ponovljeni versionCode. Bez ovih varijabli sve radi kao prije, iz pubspeca.
+# BUILD_DERIVED_DATA drži Xcode artefakte na PREDVIDIVOJ putanji. Bez toga Xcode
+# svakoj putanji projekta radi zaseban Runner-<hash> u zajedničkom DerivedData —
+# nightly worktree bi tako svaku noć ostavljao smeće koje nitko ne čisti.
+DD_ARGS=""
+[[ -n "${BUILD_DERIVED_DATA:-}" ]] && DD_ARGS="-derivedDataPath ${BUILD_DERIVED_DATA}"
+
+VERSION_ARGS=""
+[[ -n "${BUILD_NUMBER:-}" ]] && VERSION_ARGS="${VERSION_ARGS} --build-number=${BUILD_NUMBER}"
+[[ -n "${BUILD_NAME:-}" ]]   && VERSION_ARGS="${VERSION_ARGS} --build-name=${BUILD_NAME}"
+[[ -n "$VERSION_ARGS" ]] && echo "==> verzija override:${VERSION_ARGS}"
+
 flutter pub get
 
 # iOS ide PRIJE Androida kad se builda "all": iOS flow radi `flutter clean`
@@ -53,7 +67,7 @@ if [[ "$TARGET" == "all" || "$TARGET" == "ios" ]]; then
   echo "==> iOS: flutter clean + config-only…"
   flutter clean
   flutter pub get
-  flutter build ios --config-only --release $DEFINES
+  flutter build ios --config-only --release $DEFINES $VERSION_ARGS
 
   echo "==> iOS: xcodebuild archive (ASC API key signing)…"
   xcodebuild archive \
@@ -62,6 +76,7 @@ if [[ "$TARGET" == "all" || "$TARGET" == "ios" ]]; then
     -configuration Release \
     -destination 'generic/platform=iOS' \
     -archivePath build/ios/archive/Runner.xcarchive \
+    $DD_ARGS \
     -allowProvisioningUpdates \
     -authenticationKeyPath "$ASC_KEY_PATH" \
     -authenticationKeyID "$ASC_KEY_ID" \
@@ -84,7 +99,7 @@ if [[ "$TARGET" == "all" || "$TARGET" == "android" ]]; then
     echo "GRESKA: android/key.properties ne postoji — release bi bio debug-potpisan (Play ga odbija)."; exit 1
   fi
   echo "==> Android App Bundle (AAB)…"
-  flutter build appbundle --release $DEFINES
+  flutter build appbundle --release $DEFINES $VERSION_ARGS
   echo "AAB: build/app/outputs/bundle/release/app-release.aab"
 fi
 

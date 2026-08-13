@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Montiraj APFS build kontejner pri prijavi.
+
+  Nightly se sam montira prije builda, ali ~/.gradle je simlink u ovaj volumen —
+  bez montiranja pri loginu bi INTERAKTIVNI Gradle buildovi (Android Studio) pucali
+  na slomljen simlink nakon svakog reboota.
+
+  Instalacija:
+    cp launchd/ai.domovina.build-volume.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.domovina.build-volume.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ai.domovina.build-volume</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/hdiutil</string>
+    <string>attach</string>
+    <string>-nobrowse</string>
+    <string>/Volumes/DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Vanjski disk se zna montirati nekoliko sekundi nakon logina; par pokušaja. -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai/.nightly/build-volume.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai/.nightly/build-volume.log</string>
+</dict>
+</plist>

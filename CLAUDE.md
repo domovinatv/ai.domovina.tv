@@ -62,6 +62,34 @@ ide PRIJE commita i PRIJE `/clear`, da dorade padnu devu kojem je kontekst još
 Format mora biti: `Co-authored-by: <Ime Agenta> (<Verzija Modela>) <bot@domena>`
 Primjer: `Co-authored-by: Antigravity (Gemini 3.1 Pro) <bot@antigravity.google>` ili `Co-authored-by: Claude Code (Claude 3.7 Sonnet) <bot@anthropic.com>`.
 
+## Nightly store build (launchd, 01:00)
+
+`scripts/nightly-build.sh` svaku noć — ako je HEAD drukčiji od zadnjeg uspješno
+izgrađenog — gradi iOS + Android iz **odvojenog git worktreea** i šalje ih na
+TestFlight i Play internal. Ishod ide u Telegram grupu preko
+`scripts/telegram-notify.rb`. Puna slika: `docs/nightly-build-pipeline.md`.
+
+- **Testovi su tvrda vrata** — pad → nema uploada. Poznati crveni testovi žive u
+  `.nightly/test-baseline.txt` (praćen u gitu) i izuzeti su iz vrata, ali se i
+  dalje vrte; kad prorade, nightly javi da ih makneš.
+- **Build broj se računa** (`max(ASC, Play, pubspec) + 1` → `--build-number`),
+  pubspec se NE dira i nightly ne piše u git.
+- **Rule**: sve što ide u Telegram mora kroz `telegram-notify.rb` — grupa je
+  javna, a ta skripta redigira vrijednosti iz `.env`, JWT-ove i `--dart-define`
+  parove prije slanja. Nikad `curl` izravno na Bot API.
+- **Rule**: launchd job mora biti **LaunchAgent** (`gui/$(id -u)`), ne Daemon —
+  `xcodebuild` potpisivanje traži otključan login keychain iz Aqua sesije.
+- Stanje storeova u bilo kojem trenutku: `./scripts/store-status.rb`
+  (review state, TestFlight `processingState`, Play rollout %).
+- **Rule (build artefakti NE idu izravno na `/Volumes/DOMOVINA2TB`)**: taj exFAT
+  ima alokacijski blok od **512 KB**, pa je Gradle home od 14 GB u 156 000
+  datoteka pri kopiranju narastao na **41 GB** (izmjereno 2026-08-13). Sve što
+  ima puno sitnih datoteka ide u APFS sparsebundle
+  (`domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle` → `/Volumes/DOMOVINA_BUILD`,
+  blok 4 KB). `~/.gradle` je simlink onamo; kontejner montira
+  `launchd/ai.domovina.build-volume.plist` pri prijavi, a nightly ga digne sam ako
+  treba. Ista logika kao emulatorski `DOMOVINA_ANDROID.sparsebundle`.
+
 ## Known Issues & Gotchas
 
 > **Web delivery, rendering & caching** (service worker staleness, cache-busting

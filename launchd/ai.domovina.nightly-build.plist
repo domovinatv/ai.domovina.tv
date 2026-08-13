@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Nightly store build — svaki dan u 01:00, ako ima novih commitova.
+  Instalacija (NE radi je agent, vidi docs/nightly-build-pipeline.md):
+    cp launchd/ai.domovina.nightly-build.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.domovina.nightly-build.plist
+  Ručni okidač:  launchctl kickstart -k gui/$(id -u)/ai.domovina.nightly-build
+  Deinstalacija: launchctl bootout gui/$(id -u)/ai.domovina.nightly-build
+
+  MORA biti LaunchAgent (gui/…), ne LaunchDaemon: xcodebuild potpisivanje traži
+  otključan login keychain, koji postoji samo u korisnikovoj Aqua sesiji.
+  Program je homebrew bash 5 — /bin/bash je 3.2 i nema mapfile.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ai.domovina.nightly-build</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/bash</string>
+    <string>/Users/ms/git/domovinatv/domovina.ai/scripts/nightly-build.sh</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>1</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <!-- Build zna trajati 30+ min; ne dopusti da ga sistem uspava usred arhive. -->
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <false/>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai/.nightly/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai/.nightly/launchd.err.log</string>
+</dict>
+</plist>

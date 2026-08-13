@@ -15,5 +15,12 @@
 	<!-- Upload dSYM-ova za crash symbolication. -->
 	<key>uploadSymbols</key>
 	<true/>
+	<!-- Xcode inače (default TRUE) pri exportu pita App Store Connect i SAM
+	     prepiše CFBundleVersion na "zadnji + 1" — izmjereno 2026-08-13: arhiva
+	     je imala 158, izvezena IPA 159. To je nedeterministično i razilazi se s
+	     Android versionCodeom koji dolazi iz --build-number. Broj određujemo mi
+	     (scripts/nightly-build.sh: max(ASC, Play, pubspec) + 1). -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
 </dict>
 </plist>
