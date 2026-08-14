@@ -1,6 +1,6 @@
 # Tehnički priručnik — DOMOVINA.ai / Podcasterium klijent
 
-*Verificirano protiv `main` @ 2055e6d, 14. kolovoza 2026. · verzija aplikacije 2.0.136+158*
+*Verificirano protiv `main` @ 7de73ea, 14. kolovoza 2026. · verzija aplikacije 2.0.136+158*
 
 > Prethodna datoteka na ovoj putanji imala je 186 kB i sadržavala je rečenicu
 > „This is a very detailed explanation." ponovljenu 5 000 puta, generiranu
@@ -8,7 +8,8 @@
 > putanjama i ponašanjem provjerenim u kodu.
 
 Ovaj priručnik pokriva **klijent**. Pipeline je u `../fetch.domovina.tv`
-(`docs/PIPELINE.md`, `docs/data_contract.md`), pretraga i person API u
+(`../fetch.domovina.tv/docs/PIPELINE.md`,
+`../fetch.domovina.tv/docs/data_contract.md`), pretraga i person API u
 `../domovina-rag`, baza u `../domovina-api`.
 
 ---
@@ -65,6 +66,19 @@ sklapa ad hoc drugdje.
 Tri generacije Magisterium formata žive paralelno jer starije epizode nikad
 nisu re-procesirane. Klijent podržava sve tri — to nije tehnički dug nego
 posljedica nemutabilnog CDN-a.
+
+**Jezik izlaza je uvijek hrvatski.** `article.json`, `summary.json`, `topics`
+i `suggested_name` govornika pišu se na hrvatskom bez obzira na jezik audija —
+engleski podcast (Sub Club, 178 epizoda) ima engleski zvuk i hrvatski članak,
+uz `title_hr` kao prevedeni naslov. `*.en.json` overlay je **prijevod
+hrvatskog članka**, ne izvorni engleski tekst, i postoji za 40 od 3 175
+epizoda (1,3 %). Klijent nema način da to zaobiđe — mijenja se u
+`generate_article_gemini.js`.
+
+Pokrivenost obradom na dan 14. 8. 2026.: transkript / diarizacija / sažetak /
+članak **99,5 %**, Magisterium **9,8 %** (311 epizoda, 28 kanala), EN **1,3 %**.
+Kod koji ovisi o Magisteriju (npr. izbor istaknute epizode u
+`screens/home/home_feed.dart`) time bira iz manje od desetine kataloga.
 
 ### Po kanalu — `/channels/`
 
@@ -329,9 +343,33 @@ TestFlight i Play internal; testovi su tvrda vrata. Sve u Telegram ide kroz
 `scripts/telegram-notify.rb` (redigira `.env` vrijednosti i JWT-ove) — nikad
 izravni `curl` na Bot API.
 
-**Stanje testova, iskreno:** 26 testnih datoteka na 55 945 LOC. Dio pada i na
-čistom mainu i vodi se u `.nightly/test-baseline.txt`. Prije nego zaključiš da
-si nešto slomio — provjeri sa stashom.
+**Stanje testova, izmjereno 14. 8. 2026. na `7de73ea`:**
+
+```
+flutter test  →  +228 -2   (26 datoteka, 230 slučajeva)
+```
+
+Oba pada su poznata i izuzeta iz nightly vrata preko `.nightly/test-baseline.txt`:
+
+| Test | Uzrok |
+| :--- | :--- |
+| `test/widget_test.dart` | smoke test gradi cijelu aplikaciju; puca na `HttpClient` u `TestWidgetsFlutterBinding` (mreža vraća 400) |
+| `test/home_feed_test.dart` | `pickFeatured` očekuje `hiQualityRecent`, dobiva `hiQuality` |
+
+Prije nego zaključiš da si nešto slomio — provjeri sa stashom. I obrnuto: ako
+diraš izbor istaknute epizode u `home_feed.dart`, **prvo popravi
+`home_feed_test.dart`** jer je to jedini test koji tu logiku pokriva.
+
+### Provjera dokumentacije
+
+```bash
+./scripts/verify-doc-refs.sh docs/podcasterium_*.md   # ili bez argumenta: svi docs/
+```
+
+Provjeri da svaka `lib/…` putanja citirana u markdownu stvarno postoji, i
+predloži pravu ako ne. Dokument koji namjerno citira krivu putanju (npr.
+tablica ispravaka) omeđi s `<!-- doc-refs:ignore-start -->` /
+`<!-- doc-refs:ignore-end -->`.
 
 Lokalni web dev traži `--dart-define` vrijednosti iz `.env` i port 5173
 (GoTrue allow-lista).

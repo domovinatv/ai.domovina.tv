@@ -1,6 +1,7 @@
 # Podcasterium — analiza codebasea i izvedivost rebranda
 
-*Verificirano protiv `main` @ 2055e6d, 14. kolovoza 2026.*
+*Verificirano protiv `main` @ 7de73ea, 14. kolovoza 2026. — druga iteracija,
+uz ispravke vlastitih tvrdnji iz prve (vidi §2 „Ispravak", §3 i §7).*
 
 Pitanje na koje ovaj dokument odgovara: **može li se `domovina.ai` pretvoriti u
 generički „Podcasterium" — alat za gledanje, čitanje i analizu podcasta bez
@@ -14,6 +15,7 @@ netočno. Ovdje je svaka tvrdnja provjerena — putanje `test -f`, brojevi
 `wc -l` / parsiranjem ARB-a, korpus dohvatom `cdn.domovina.ai/channels/data/index.json`,
 pipeline čitanjem `../fetch.domovina.tv/README.md`.
 
+<!-- doc-refs:ignore-start — tablica NAMJERNO citira krive putanje iz prethodne verzije -->
 | Tvrdnja (prethodna verzija) | Stvarno stanje |
 | :--- | :--- |
 | `lib/widgets/pinka_grid_wall.dart`, `pinka_support_card.dart`, `pinka_slot.dart`, `pinka_onchain_confirm.dart` | Sve živi u `lib/pinka_sdk/src/{widgets,models}/` — SDK je izoliran paket, ne `widgets/` |
@@ -25,6 +27,8 @@ pipeline čitanjem `../fetch.domovina.tv/README.md`.
 | „Magisterium = provjera činjenica / ocjena kvalitete" | Ocjena je **usklađenost s katoličkim naukom** (`magisteriumScoreActivelyPromotes` → `…Contradicts`, `widgets/magisterium_section.dart:26-32`), a ne točnost |
 | „unesete link YouTube kanala **ili RSS feeda**" | RSS ingestija ne postoji — nula pogodaka u `lib/`. Ulaz je YouTube kanal, X post ili beamly/transistor audio feed, sve kroz pipeline u drugom repou |
 | `docs/podcasterium_technical_manual.md`, 186 kB | Sadržaj je bio rečenica „This is a very detailed explanation." ponovljena 5 000 puta. Generirano skriptom `modify_file.py` (500× string × 10 poglavlja). Zamijenjeno stvarnim priručnikom |
+
+<!-- doc-refs:ignore-end -->
 
 Ono što je prethodna verzija **dobro** pogodila: opseg funkcionalnosti (ovo
 doista nije MVP), pozicioniranje kao „enhancer" a ne konkurent YouTubeu, i
@@ -107,15 +111,51 @@ sve što ima veze s reprodukcijom i čitanjem.
 
 ### Korpus (živi CDN, index generiran 14. 8. 2026. 07:36 UTC)
 
-- **48 kanala**, **3 175 epizoda**, **≈3 036 sati** sadržaja
-- Prosječna epizoda: **57 minuta**
-- Magisterium ocjenu ima **28 od 48** kanala, prosjek **86,2 / 100**
-- Najveći kanali: Nanovo rođeni (316 ep. / 301 h), budiFRAjer (259 / 134),
-  LOOD (224 / 343), Radio Mrežnica (209 / 273), Sub Club by RevenueCat (178 / 151)
+**48 kanala**, **3 175 epizoda**, **≈3 036 sati**, prosječna epizoda **57 minuta**.
 
-Zadnji je zanimljiv: **Sub Club je engleski, tehnološki podcast bez ikakve veze
-s hrvatskim ili katoličkim kontekstom, i već je u produkciji.** Podcasterium
-teza dakle nije hipoteza — dijelom je već testirana.
+Pokrivenost obradom, izbrojana iz `pipeline` objekta svake epizode u svih 48
+kanalskih JSON-ova (ne procjena — vidi §7 za naredbu):
+
+| Korak | Epizoda | Udio |
+| :--- | ---: | ---: |
+| transkript | 3 160 | 99,5 % |
+| diarizacija | 3 160 | 99,5 % |
+| sažetak | 3 160 | 99,5 % |
+| **članak** | **3 160** | **99,5 %** |
+| **Magisterium ocjena** | **311** | **9,8 %** |
+| EN prijevod | 40 | 1,3 % |
+| EN članak | 40 | 1,3 % |
+
+Dvije brojke mijenjaju sliku:
+
+**Magisterium pokriva manje od desetine korpusa** (311 epizoda, 28 od 48
+kanala, prosjek 86,2/100). Sloj koji izgleda kao srž identiteta zapravo je
+tanak namaz preko malog dijela sadržaja. Za rebrand je to dobra vijest — nema
+se što masovno migrirati — ali i trezveno o pozicioniranju: „AI analiza
+usklađenosti" danas vrijedi za 1 od 10 epizoda.
+
+**Engleski postoji za 40 epizoda (1,3 %).** Korpus je praktički jednojezičan.
+
+### Ispravak: što Sub Club zapravo dokazuje
+
+U prvoj verziji ovog dokumenta napisao sam da je Sub Club (RevenueCat, 178
+epizoda) engleski tehnološki podcast u produkciji, pa da je Podcasterium teza
+„dijelom testirana". **Provjerio sam sadržaj i to je bilo prebrzo.**
+
+Epizoda `jzlPf100vy4`: naslov `"Make Ugly Ads to Grow Your App – Yuliya Lennox"`,
+ali `title_hr` je hrvatski prijevod, `abstract` je hrvatski
+(„U epizodi podcasta Sub Club domaćin David Barnard razgovara s…"), a `topics`
+su hrvatski („marketing aplikacija", „ružni oglasi i kreativno testiranje").
+
+Dakle: **pipeline prima bilo koji jezik, ali piše na hrvatskom.** Engleski
+audio → hrvatski članak. To nije bug, to je bila namjera za hrvatsku publiku —
+ali je za Podcasterium **najveća prepreka koju sam u prvoj verziji potpuno
+promašio**. Globalni proizvod traži članak na jeziku izvora, što je promjena
+prompta u `generate_article_gemini.js` plus ponovna obrada **cijelog** korpusa,
+a ne prevođenje sučelja.
+
+Engleskih izvornih kanala ima ~4 (Sub Club 178, Launched 115, Catholic Futurist
+19, Founder Talks 7) — oko 10 % epizoda, sve s hrvatskim izlazom.
 
 ---
 
@@ -124,28 +164,56 @@ teza dakle nije hipoteza — dijelom je već testirana.
 Podijelio sam codebase u tri kante prema tome koliko je vezan uz „DOMOVINA.ai
 za hrvatski katolički sadržaj".
 
+**Prvo mjerenje, prije podjele.** U prvoj verziji ovog dokumenta napisao sam
+raspodjelu „~65 % / ~25 % / ~10 % LOC". **Taj broj nisam bio izmjerio** — i kad
+sam ga pokušao izmjeriti, ispalo je da je metrika loša: svaka datoteka koja
+igdje spomene `magisterium` završi u „žutoj" kanti iako je 95 % njenog koda
+generičko (`home_feed.dart` spominje ga zbog jednog bedža, `app_router.dart`
+zbog jedne rute). Podjela po datotekama daje bilo koji rezultat koji poželiš.
+
+Poštena mjera je koliko **redaka** uopće spominje domenske pojmove:
+
+| Pojam | Redaka | % svih 55 945 | Datoteka |
+| :--- | ---: | ---: | ---: |
+| `pinka` | 645 | 1,15 % | 36 |
+| `magisterium` | 596 | 1,07 % | 38 |
+| `glasanje` / `vote` | 536 | 0,96 % | 13 |
+| `domovina` | 207 | 0,37 % | 79 |
+| `croRed` / `croBlue` | 111 | 0,20 % | 39 |
+| `certilia` | 76 | 0,14 % | 9 |
+| `OIB` | 2 | 0,00 % | 1 |
+
+Ukupno **~2 170 redaka, 3,9 % codebasea** (uz preklapanja). Aplikacija je
+dakle **gotovo domenski neutralna** — znatno neutralnija nego što sam u prvoj
+verziji tvrdio. Zaključak koji iz toga slijedi je obrnut od očekivanog:
+**problem nije kod, nego korpus i jezik pipeline izlaza.**
+
 ```mermaid
 flowchart TB
-    subgraph G["🟢 Prenosivo bez izmjena (~65 % LOC)"]
+    subgraph G["🟢 Prenosivo bez izmjena"]
         G1["player · kontrole · fullscreen<br/>članak↔video sinkronizacija"]
         G2["person hub · pretraga · isječci<br/>favoriti · napredak · handoff"]
         G3["TV Leanback · PWA · background audio"]
         G4["auth jezgra (OAuth/magic link/passkeys)"]
         G5["RevenueCat pretplate"]
     end
-    subgraph Y["🟡 Vezano uz domenu, odvojivo (~25 %)"]
-        Y1["Magisterium sloj — 38 datoteka<br/>19 ARB ključeva"]
-        Y2["brand: croRed/croBlue, logo,<br/>splash s biblijskim citatima"]
+    subgraph Y["🟡 Vezano uz domenu, odvojivo"]
+        Y1["Magisterium — 596 redaka / 38 dat.<br/>19 ARB ključeva · 9,8 % korpusa"]
+        Y2["brand: croRed/croBlue, logo,<br/>splash s biblijskim citatima — 111 redaka"]
         Y3["HR kao ARB template<br/>977 ključeva × 2"]
-        Y4["Pinka SDK (SEPA/EPC = eurozona)"]
+        Y4["Pinka SDK — 645 redaka<br/>(SEPA/EPC = eurozona)"]
     end
-    subgraph R["🔴 Zabijeno u Hrvatsku (~10 %)"]
-        R1["Certilia e-Osobna — samo HR državljani"]
-        R2["Izborni dan — glasanje ovisi o Certiliji"]
-        R3["OIB u KYC-u, ITalk d.o.o. u pravnim tekstovima"]
-        R4["79 datoteka s hardkodiranim domovina.ai<br/>AASA/App Links na domovina.ai"]
+    subgraph R["🔴 Ne seli se"]
+        R1["PIPELINE PIŠE HRVATSKI<br/>bez obzira na jezik izvora<br/>→ ponovna obrada 3 175 epizoda"]
+        R2["Certilia e-Osobna — samo HR državljani<br/>(76 redaka, ali nema zamjene)"]
+        R3["Izborni dan — ovisi o Certiliji"]
+        R4["OIB u KYC-u, ITalk d.o.o. u pravnim tekstovima"]
     end
 ```
+
+Crvena kanta je mala u kodu (`certilia` 76 redaka) a velika u posljedicama —
+zato je mjerenje redaka nužno, ali nije dovoljno. Najveća stavka u njoj
+**uopće nije u ovom repou**: jezik pipeline izlaza.
 
 ### 🟢 Zelena kanta — radi odmah
 
@@ -161,13 +229,24 @@ ne-YouTube izvori su već prošli kroz sustav.
 
 ### 🟡 Žuta kanta — posao, ali ravan
 
-**Magisterium (38 datoteka).** Zvuči kao veliki zahvat, ali nije: sloj je
-gotovo isključivo **prikaz JSON-a s CDN-a** (`article.magisterium*.json`).
-Većina od 38 pogodaka su rail kartice koje čitaju `avg_magisterium_score` radi
-sortiranja i bedža. Nema poslovne logike koju bi trebalo prepisati — treba
-apstrakcija imena (`DomainScore` umjesto `Magisterium`), pluggable skala
-etiketa i feature flag. Sam pipeline korak (`enrich_magisterium*.js`) je u
-drugom repou i zamjenjuje se drugim promptom.
+**Magisterium (596 redaka, 38 datoteka).** U prvoj verziji napisao sam „nema
+poslovne logike, sve je prikaz". **To je netočno i ispravljam.** Ocjena je
+ugrađena u dva algoritma:
+
+- `screens/home/home_feed.dart` — izbor istaknute epizode je 4-slojni:
+  Tier 1 `hasMagisterium && score ≥ 70 && ≤ 14 dana`, Tier 2 isto bez datuma,
+  Tier 3 bilo koja s Magisterijem. Naslovnica dakle bira **iz 9,8 % korpusa**.
+- `screens/home/sort_mode.dart` — `ChannelSortMode.magisterium` je jedan od
+  načina sortiranja kanala.
+
+Ostatak jest prikaz (bedževi na karticama, panel na epizodi). Zahvat je dakle
+apstrakcija imena (`DomainScore`) + pluggable skala + **zamjena kriterija
+rangiranja**, ne samo preimenovanje. Pipeline korak (`enrich_magisterium*.js`)
+je u drugom repou i mijenja se promptom.
+
+Usput, nalaz vrijedan neovisno o rebrandu: naslovnica bira hero iz manje od
+desetine kataloga. Ako Magisterium pokrivenost ne raste, kriterij bi trebao
+imati fallback na širi skup.
 
 **Brand.** `theme/app_theme.dart` ima točno dvije konstante (`croRed`,
 `croBlue`) i sve ide kroz `seedColor`. Splash je PNG generiran Python skriptom
@@ -183,28 +262,41 @@ izoliran paket s vlastitim klijentom i konfiguracijom.
 
 ### 🔴 Crvena kanta — ne seli se
 
-Certilia e-Osobna radi samo za hrvatske državljane preko sustava e-Građani.
-Sve što o njoj ovisi — Izborni dan (1 potvrđeni građanin = 1 glas), KYC s
-OIB-om za isplate kreatorima, „high-trust" pozicioniranje — nema ekvivalent
-izvan HR bez integracije s eIDAS-om ili nacionalnim shemama pojedine zemlje.
-Za Podcasterium te se značajke **isključuju**, ne prenose.
+**1. Jezik pipeline izlaza.** Najveća stavka, i nije u ovom repou. Članak,
+sažetak, teme i predloženi nazivi govornika pišu se na hrvatskom bez obzira na
+jezik izvora (dokaz gore, Sub Club). Globalni Podcasterium traži članak na
+jeziku izvora → izmjena prompta u `generate_article_gemini.js` **i ponovna
+obrada svih 3 175 epizoda**. Postojeći EN overlay (1,3 %) je prijevod
+hrvatskog članka, ne izvorni engleski tekst.
 
-### Gruba procjena truda
+**2. Certilia e-Osobna.** Radi samo za hrvatske državljane preko sustava
+e-Građani. Sve što o njoj ovisi — Izborni dan (1 potvrđeni građanin = 1 glas),
+KYC s OIB-om za isplate, „high-trust" pozicioniranje — nema ekvivalent izvan HR
+bez eIDAS-a ili nacionalne sheme pojedine zemlje. Te se značajke **isključuju**,
+ne prenose. U kodu je to malo (76 redaka, 9 datoteka) — cijena je proizvodna,
+ne inženjerska.
 
-Dani rada jednog developera, uz pretpostavku da pipeline ostaje isti:
+### Procjena truda
+
+Dani rada jednog developera. **Ovo su procjene, ne mjerenja** — za razliku od
+svega ostalog u dokumentu.
 
 | Zahvat | Dana | Rizik |
 | :--- | ---: | :--- |
-| Brand tokeni + logo + splash + naziv paketa | 2–3 | nizak |
-| Apstrakcija Magisterium → generički `DomainScore` + flag | 5–8 | srednji (3 formata, EN overlay, TV varijante) |
+| Brand tokeni + logo + splash + naziv paketa | 2–3 | nizak (111 redaka `croRed`/`croBlue`) |
+| Apstrakcija Magisterium → `DomainScore` + flag | 6–10 | srednji (3 formata, EN overlay, TV varijante, **+ kriterij hero rangiranja**) |
 | EN kao template jezik, HR kao prijevod | 3–5 | srednji (ICU plural, 977 ključeva) |
 | Isključivanje Certilia/glasanja iza flaga | 2–3 | nizak |
 | Konfigurabilna CDN/API domena (79 datoteka) | 2–4 | nizak, ali dosadan |
 | AASA/App Links/OG za novu domenu + worker | 2 | srednji (Apple CDN cachira AASA do tjedan dana) |
+| **Članak na jeziku izvora (prompt + reprocesiranje 3 175 ep.)** | **neprocijenjeno** | **visok — LLM trošak × cijeli korpus** |
 | Multi-tenant pipeline u `fetch.domovina.tv` | **neprocijenjeno** | **visok — ovo je pravi projekt** |
 
-Frontend je dakle **16–25 dana**. To je jeftin dio. Skup dio je backend
-višekorisničkost, koja u ovom repou ni ne postoji.
+Frontend ostaje **17–29 dana** i to je i dalje jeftin dio. Ali zaključak prve
+verzije („skup dio je multi-tenancy") bio je nepotpun: **prvi skup dio je
+ponovna obrada korpusa na izvornom jeziku**, i on dolazi prije svega ostalog
+jer bez njega globalni proizvod nema sadržaj koji itko izvan Hrvatske može
+čitati.
 
 ---
 
@@ -220,7 +312,7 @@ komparatori su drugi.
 | Transkript | strukturiran članak po poglavljima | sirovi auto-titlovi | AI highlightovi | full-text | titlovi |
 | Diarizacija | pyannote 3.1, imenovani govornici | ne | djelomično | da | ne |
 | Osoba **govori** ⇄ **spominje se** | oboje, s timestampom | ne | gost-stranice, spomeni **namjerno maknuti** | oboje, ali B2B API | ne |
-| Domenska ocjena sadržaja | katolički nauk, 0–100 | ne | ne | ne | ne |
+| Domenska ocjena sadržaja | katolički nauk, 0–100, ali samo **9,8 %** korpusa | ne | ne | ne | ne |
 | TV aplikacija | Leanback + D-pad | odlična | ne | ne | zlatni standard |
 | Hrvatski sadržaj | 3 175 epizoda | sve, neindeksirano | ~ništa | ~ništa | ništa |
 | Poslovni model | pretplata + izravna podrška kreatoru | oglasi | pretplata | B2B API | pretplata |
@@ -233,6 +325,12 @@ hrvatski sadržaj, uz doktrinarni sloj.
 radi nad 4,6 M podcasta (`as_host`/`as_guest`/`as_mention` + timestamp), a
 akademski korpus SPoRC (ACL 2025) klasificira Host/Guest/Neither nad 550 K
 epizoda. Tehnika ima presedan; **spoj i publika nemaju**.
+
+> **Izvor i njegova granica:** redci o Snipdu i Podscanu dolaze iz
+> web-istraživanja od 4. 7. 2026., ne iz moje provjere danas. Podscanova
+> role-polja izvedena su iz njihove javne dokumentacije jer direktan dohvat
+> API-ja vraća 403 — „jako indicirano", ne first-party potvrđeno. Prije nego
+> ovo uđe u pitch deck, provjeriti ponovno.
 
 Za Podcasterium bez doktrinarnog sloja i bez hrvatskog korpusa ostaje samo
 „consumer person hub s obje facete" — obranjivo, ali znatno tanje. Uklanjanjem
@@ -265,8 +363,13 @@ po satu obrađenog sadržaja, po koraku. Bez toga je svaka priča o
 „Podcasterium za sve podcaste svijeta" nagađanje.
 
 Operativni rizici koje ovaj repo nosi neovisno o rebrandu:
-- **26 testnih datoteka na 56 kLOC**, a dio ih pada i na čistom mainu
-  (`.nightly/test-baseline.txt`). Refaktor Magisterium sloja nema mrežu.
+- **Testovi: 26 datoteka, 230 slučajeva, 228 prolazi / 2 padaju** — pokrenuto
+  na `7de73ea` danas, ne prepisano iz dokumentacije. Oba pada su poznata i
+  vode se u `.nightly/test-baseline.txt` (`widget_test.dart` puca na
+  `HttpClient` u test bindingu; `home_feed_test.dart` očekuje
+  `hiQualityRecent` a dobiva `hiQuality`). Nema regresije — ali **230
+  slučajeva na 56 kLOC znači da refaktor Magisterium sloja nema mrežu**, a
+  ironično, jedini test koji pokriva hero rangiranje je upravo onaj koji pada.
 - **`episode_screen.dart` 2 683 LOC** — jedna datoteka drži i ruting, i sidra
   za osobe, i članak, i Magisterium, i player. Svaki rebrand prolazi kroz nju.
 - **CLAUDE.md tvrdi da ruting ide preko `onGenerateRoute` u `main.dart`**, a
@@ -277,23 +380,35 @@ Operativni rizici koje ovaj repo nosi neovisno o rebrandu:
 
 ## 6. Preporuka
 
-**Ne raditi rebrand kao rebrand.** Postojeći codebase već servira engleski
-tehnološki podcast (Sub Club) uz hrvatske katoličke kanale iz iste instance.
-Podcasterium nije nova aplikacija nego **konfiguracija postojeće**.
+**Ne raditi rebrand kao rebrand.** Aplikacija je već gotovo domenski neutralna
+— 3,9 % redaka spominje bilo što hrvatsko ili katoličko. Podcasterium nije
+nova aplikacija nego **konfiguracija postojeće**. Ali prepreka nije tamo gdje
+se čini.
+
+Sub Club to pokazuje precizno: engleski tehnološki podcast **već prolazi kroz
+sustav** (178 epizoda, 176 s člankom) — dokaz da ingestija nije vezana uz
+domenu. Istovremeno taj isti Sub Club dobiva **hrvatski** članak, sažetak i
+teme. Cijev radi; izlaz govori krivi jezik.
 
 Redoslijed koji daje najviše po uloženom danu:
 
-1. **Izmjeriti pipeline** (€/h i min/h po koraku). Sve ostalo ovisi o tome.
+1. **Jedna epizoda kroz pipeline s člankom na jeziku izvora.** Jedan prompt,
+   jedna epizoda Sub Cluba, usporedba s postojećim hrvatskim izlazom. Dok to
+   ne postoji, Podcasterium nema proizvod izvan Hrvatske — sve ostalo na ovoj
+   listi je kozmetika. Izmjeriti pritom **€ i minute po satu obrade**, po koraku.
 2. **Apstrahirati domenski sloj** — `Magisterium` → `DomainScore` s pluggable
-   skalom etiketa i promptom. Isti UI, druga domena: tehnološki podcast dobiva
-   „provjerljivost tvrdnji", politički „izvorišnost", medicinski „usklađenost sa
-   smjernicama". Ovo je jedini zahvat koji istovremeno čisti codebase i otvara
-   tržište.
-3. **Konfigurabilna domena i brand** (CDN base, API base, tokeni teme, l10n
+   skalom etiketa i promptom, **uključujući kriterij hero rangiranja u
+   `home_feed.dart`**. Isti UI, druga domena: tehnološki podcast dobiva
+   „provjerljivost tvrdnji", politički „izvorišnost", medicinski „usklađenost
+   sa smjernicama". Jedini zahvat koji istovremeno čisti codebase i otvara tržište.
+3. **Popraviti `home_feed_test.dart` prije tog refaktora.** Jedini test koji
+   pokriva izbor istaknute epizode trenutno pada — mijenjati rangiranje bez
+   njega je rad bez mreže.
+4. **Konfigurabilna domena i brand** (CDN base, API base, tokeni teme, l10n
    template). Jeftino, i tek nakon toga fork ima smisla.
-4. **Flag-irati crvenu kantu** (Certilia, glasanje, OIB KYC) umjesto brisanja —
+5. **Flag-irati crvenu kantu** (Certilia, glasanje, OIB KYC) umjesto brisanja —
    HR instanca ih zadržava.
-5. **Tek onda multi-tenant pipeline.** Dok jedna epizoda prolazi kroz ručno
+6. **Tek onda multi-tenant pipeline.** Dok jedna epizoda prolazi kroz ručno
    orkestriran 13-koračni lanac s rclone sinkronizacijom s Google Drivea, nema
    „unesite svoj kanal i za par sati je gotovo".
 
@@ -304,6 +419,70 @@ Redoslijed koji daje najviše po uloženom danu:
   beamly/transistor.
 - Ne prodavati „AI provjeru činjenica". Ocjena mjeri usklađenost s naukom, ne
   istinitost, i ta razlika je pravno i reputacijski bitna.
+
+---
+
+## 7. Kako provjeriti svaki broj iz ovog dokumenta
+
+Dokument je nastao kao zamjena za verziju punu izmišljenih detalja, pa je
+pošteno da se svaka tvrdnja može oboriti u minuti. Ove naredbe reproduciraju
+sve brojke:
+
+```bash
+# LOC, broj datoteka, raspodjela po slojevima
+find lib -name '*.dart' -not -path '*/l10n/*' | wc -l
+find lib -name '*.dart' -not -path '*/l10n/*' | xargs wc -l | tail -1
+
+# ARB ključevi po jeziku
+python3 -c "import json;d=json.load(open('lib/l10n/app_hr.arb'));print(len([k for k in d if not k.startswith('@')]))"
+
+# domenska sprega — redaka po pojmu (tablica u §3)
+for t in pinka magisterium certilia domovina croRed; do
+  printf '%-14s %s\n' "$t" "$(grep -ri "$t" lib --include=*.dart | grep -v '/l10n/' | wc -l)"
+done
+
+# korpus: kanali, epizode, sati (§2)
+curl -s https://cdn.domovina.ai/channels/data/index.json > /tmp/idx.json
+python3 -c "
+import json;d=json.load(open('/tmp/idx.json'))['channels']
+print(len(d),'kanala', sum(c['video_count'] for c in d),'epizoda',
+      round(sum(c['total_duration_seconds'] for c in d)/3600),'h')"
+
+# pokrivenost obradom (§2) — treba dohvatiti svih 48 kanalskih JSON-ova
+python3 -c "import json;print('\n'.join(c['id'] for c in json.load(open('/tmp/idx.json'))['channels']))" \
+  | xargs -P8 -I{} curl -s -o /tmp/ch_{}.json https://cdn.domovina.ai/channels/data/{}.json
+python3 - <<'PY'
+import json,glob,collections
+f=collections.Counter(); n=0
+for p in glob.glob('/tmp/ch_*.json'):
+    for v in json.load(open(p)).get('videos',[]):
+        n+=1
+        for k,val in (v.get('pipeline') or {}).items():
+            if val: f[k]+=1
+for k,c in f.most_common(): print(f'{k:20} {c:5} {c/n*100:5.1f}%')
+PY
+
+# testovi (§5)
+flutter test 2>&1 | tail -1     # očekivano: +228 -2
+
+# putanje citirane u dokumentima stvarno postoje
+./scripts/verify-doc-refs.sh docs/podcasterium_*.md
+```
+
+Zadnja naredba je skripta dodana uz ovaj dokument: izvuče svaku `lib/…`,
+`web/…`, `scripts/…` ili `test/…` putanju iz markdowna i provjeri postoji li.
+Točno taj propust — imena datoteka točna, direktoriji izmišljeni — bio je
+najčešća greška u verziji koju ovaj dokument zamjenjuje.
+
+**Što ostaje neprovjereno** (namjerno, s razlogom):
+
+| Tvrdnja | Zašto ne mogu potvrditi |
+| :--- | :--- |
+| „181 kandidat" u Izbornom danu | Iz komentara u `voting_screen.dart`, ne iz baze — traži Supabase pristup |
+| „~40 % spomena nema `first_ts`" | Iz `CLAUDE.md`; per-osoba API bi to potvrdio, nisam prošao kroz korpus |
+| Snipd / Podscan redci u §4 | Web-research od 4. 7. 2026., vidi ogradu ondje |
+| Trošak pipelinea po epizodi | Nije mjerljivo iz ovog repoa — vidi §5 |
+| Procjene truda u §3 | Procjene su, i tako su označene |
 
 ---
 

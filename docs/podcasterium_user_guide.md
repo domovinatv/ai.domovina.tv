@@ -1,6 +1,6 @@
 # Podcasterium — što korisnik i kreator stvarno dobiju
 
-*Verificirano protiv `main` @ 2055e6d, 14. kolovoza 2026.*
+*Verificirano protiv `main` @ 7de73ea, 14. kolovoza 2026.*
 
 Ovo je vodič kroz **ono što postoji danas u produkciji**. Svaka tvrdnja se
 može otvoriti u aplikaciji. Ono što još ne postoji je na kraju, pod „Što još
@@ -116,10 +116,25 @@ Na dan 14. kolovoza 2026.:
 | Epizoda | 3 175 |
 | Sati sadržaja | ≈ 3 036 |
 | Prosječna epizoda | 57 min |
+| **s transkriptom, diarizacijom i člankom** | **3 160 — 99,5 %** |
+| s Magisterium ocjenom | 311 — 9,8 % |
+| s engleskim prijevodom | 40 — 1,3 % |
 
-Nije svaka epizoda potpuno obrađena. Neke imaju samo video (pipeline još nije
-došao do njih) — te se prikazuju u osnovnom prikazu i označene su. Engleski
-prijevod postoji za dio korpusa; gdje ga nema, prebacivač jezika nudi hrvatski.
+Dakle: **gotovo sve što je u katalogu je i obrađeno** — čitljiv članak,
+poglavlja i imenovani govornici postoje za 99,5 % epizoda. Petnaestak epizoda
+čeka obradu i prikazuju se u osnovnom prikazu.
+
+Dvije stvari su rjeđe nego što se čini iz sučelja:
+
+- **Magisterium ocjena postoji za svaku desetu epizodu.** Kad je nema, epizoda
+  je i dalje potpuno čitljiva — samo nema bedž s ocjenom.
+- **Engleski prijevod postoji za 40 epizoda.** Gdje ga nema, prebacivač jezika
+  ostaje na hrvatskom.
+
+I jedna stvar koju treba znati unaprijed: **članak se piše na hrvatskom bez
+obzira na jezik podcasta.** Engleski podcast (npr. Sub Club) dobiva engleski
+zvuk i hrvatski tekst uz njega. Za hrvatsku publiku to je značajka; ako
+očekuješ engleski članak uz engleski podcast, danas ga nema.
 
 ---
 
@@ -135,7 +150,8 @@ Popis je ovdje namjerno — bolje je znati granicu nego je otkriti.
 - **Nema prepoznavanja lica ni govornika iz slike.**
 - **Ocjena nije provjera činjenica.** Magisterium ocjena mjeri **usklađenost s
   katoličkim naukom** (od „aktivno promiče" do „proturječi"), ne istinitost
-  tvrdnji. Ne prodavati je kao fact-checking.
+  tvrdnji. Ne prodavati je kao fact-checking. Postoji za 9,8 % epizoda.
+- **Nema članka na jeziku izvora.** Pipeline piše hrvatski, uvijek.
 - **e-Osobna i glasanje su samo za Hrvatsku.** Ovise o sustavu e-Građani.
 - **Zaustavljena stavka na iPhone Dynamic Islandu** zna ostati vidljiva nakon
   kraja reprodukcije — poznat browserski problem, ne kvar tvog uređaja.
