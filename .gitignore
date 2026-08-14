@@ -70,3 +70,6 @@ test-results/
 # lokalni, ali test-baseline.txt je KONFIGURACIJA i mora biti u gitu.
 .nightly/*
 !.nightly/test-baseline.txt
+
+# generirani marketinški HTML (izvor je docs/marketing/*.md)
+/build/marketing/

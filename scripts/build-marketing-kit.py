@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Gradi HTML verziju Anitinog priručnika iz markdown izvora."""
+"""Gradi HTML verziju Anitinog priručnika iz markdown izvora.
+
+    python3 scripts/build-marketing-kit.py
+
+Izvor je docs/marketing/benefiti-i-outreach.md — uređuj SAMO njega, pa pokreni
+ovo. Rezultat ide u build/marketing/ (nije u gitu) i objavljuje se kao artifact.
+Traži `pip install markdown`.
+"""
 import re, markdown, pathlib, html as htmlmod
 
-SRC = pathlib.Path('/Users/ms/git/domovinatv/domovina.ai/docs/marketing/benefiti-i-outreach.md')
-OUT = pathlib.Path('/private/tmp/claude-501/-Users-ms-git-domovinatv-domovina-ai/'
-                   'f932a16b-7667-42f4-a43b-4068afbdea95/scratchpad/anitin-prirucnik.html')
+REPO = pathlib.Path(__file__).resolve().parent.parent
+SRC = REPO / 'docs/marketing/benefiti-i-outreach.md'
+OUT = REPO / 'build/marketing/anitin-prirucnik.html'
+OUT.parent.mkdir(parents=True, exist_ok=True)
 
 md = SRC.read_text(encoding='utf-8')
 
