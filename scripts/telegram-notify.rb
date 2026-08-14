@@ -22,6 +22,13 @@ require 'json'
 require 'net/http'
 require 'uri'
 
+# launchd NE postavlja LANG, pa Ruby uzme US-ASCII i svaki emoji/dijakritik u
+# poruci digne Encoding::CompatibilityError. Izmjereno 2026-08-14: izvještaj o
+# padu nightlyja zbog toga NIJE poslan. Encoding se zato prisiljava ovdje, a ne
+# oslanja na okolinu.
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
+
 ROOT     = File.expand_path('..', __dir__)
 ENV_FILE = File.join(ROOT, '.env')
 API      = 'https://api.telegram.org'
@@ -129,7 +136,8 @@ end
 # ── main ─────────────────────────────────────────────────────────────────────
 dry = ARGV.delete('--dry-run')
 idx = ARGV.index('--text')
-raw = if idx then ARGV[idx + 1].to_s else $stdin.read end
+$stdin.set_encoding(Encoding::UTF_8)
+raw = if idx then ARGV[idx + 1].to_s.dup.force_encoding(Encoding::UTF_8) else $stdin.read end
 raw = raw.to_s.strip
 exit 0 if raw.empty?
 

@@ -28,6 +28,14 @@ if [[ -z "${BASH_VERSINFO:-}" || ${BASH_VERSINFO[0]} -lt 4 ]]; then
   echo "GRESKA: treba bash >= 4 (brew install bash)"; exit 1
 fi
 
+# launchd ne postavlja ni LANG — bez ovoga Ruby uzme US-ASCII i pukne na emojiju
+# u izvještaju (izmjereno 2026-08-14: obavijest o padu nije poslana).
+export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"
+
+# `flutter clean` -> `xcodebuild clean` je pod launchd-om visio 60 min; nightly
+# zato koristi brzo čišćenje putanja umjesto poziva Xcodea.
+export FAST_CLEAN=1
+
 # launchd daje minimalan PATH — sve alate razriješi eksplicitno.
 export PATH="$HOME/fvm/default/bin:$HOME/google-cloud-sdk/bin:/opt/homebrew/bin:/opt/homebrew/opt/ruby/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 

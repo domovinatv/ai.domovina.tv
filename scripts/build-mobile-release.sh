@@ -64,8 +64,18 @@ if [[ "$TARGET" == "all" || "$TARGET" == "ios" ]]; then
   if [[ ! -f "$ASC_KEY_PATH" ]]; then
     echo "GRESKA: nema ASC API key na $ASC_KEY_PATH"; exit 1
   fi
-  echo "==> iOS: flutter clean + config-only…"
-  flutter clean
+  # `flutter clean` interno zove `xcodebuild clean` nad workspaceom. Pod launchd-om
+  # je to 2026-08-14 visjelo 60 min bez ijednog retka ispisa (PID je bio živ, watchdog
+  # ga je ubio). Nama treba samo da nema ostataka prethodnog/simulatorskog builda, a
+  # to su iste putanje koje `flutter clean` briše — bez zvanja Xcodea.
+  if [[ "${FAST_CLEAN:-0}" == "1" ]]; then
+    echo "==> iOS: brzo čišćenje (bez xcodebuild clean)…"
+    rm -rf build .dart_tool ios/Flutter/ephemeral
+  else
+    echo "==> iOS: flutter clean…"
+    flutter clean
+  fi
+  echo "==> iOS: config-only…"
   flutter pub get
   flutter build ios --config-only --release $DEFINES $VERSION_ARGS
 

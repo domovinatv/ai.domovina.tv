@@ -23,6 +23,13 @@
     <string>/Users/ms/git/domovinatv/domovina.ai/scripts/nightly-build.sh</string>
   </array>
 
+  <!-- launchd ne nasljeđuje LANG; bez toga Ruby izvještaj pukne na US-ASCII. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>LANG</key><string>en_US.UTF-8</string>
+    <key>LC_ALL</key><string>en_US.UTF-8</string>
+  </dict>
+
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key><integer>1</integer>
