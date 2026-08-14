@@ -41,7 +41,9 @@ export PATH="$HOME/fvm/default/bin:$HOME/google-cloud-sdk/bin:/opt/homebrew/bin:
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE="$ROOT/.nightly"
-WT="${NIGHTLY_WORKTREE:-$(dirname "$ROOT")/.nightly-domovina}"
+# WT se razrješava TEK nakon montiranja build kontejnera (korak 2b) —
+# worktree ide na APFS kontejner da nightly uopće ne dira tijesan boot disk.
+WT="${NIGHTLY_WORKTREE:-}"
 BASELINE="$STATE/test-baseline.txt"
 LAST_SHA_FILE="$STATE/last-built-sha"
 RUN_TS="$(date +%Y-%m-%d-%H%M)"
@@ -71,7 +73,11 @@ START_TS=$SECONDS
 esc() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
 dur() { printf '%d min %02d s' $(($1 / 60)) $(($1 % 60)); }
 # `"${REPORT[@]}"` na praznom polju puca pod `set -u` — uvijek kroz ovo.
-report_lines() { [[ ${#REPORT[@]} -eq 0 ]] || printf '%s\n' "${REPORT[@]}"; }
+report_lines_raw() { [[ ${#REPORT[@]} -eq 0 ]] || printf '%s\n' "${REPORT[@]}"; }
+# Za Telegram MORA ići kroz esc: vlastiti retci sadrže `<` i `>` ("(< 20 GB)"),
+# a parse_mode=HTML to čita kao tag → 400 "Unsupported start tag" i poruka propadne
+# (izmjereno 2026-08-14). HTML u poruci pišemo samo mi, u predlošcima.
+report_lines() { report_lines_raw | esc; }
 
 # ── lock ─────────────────────────────────────────────────────────────────────
 LOCK="$STATE/lock"
@@ -115,7 +121,7 @@ write_report() {
     echo
     echo "- commit: ${SHA_SHORT:-?} — ${SUBJECT:-?}"
     echo "- build: ${BUILD_NAME:-?} (${BN:-?})"
-    report_lines | sed 's/<[^>]*>//g' | sed 's/^/- /'
+    report_lines_raw | sed 's/^/- /'
     echo "- trajanje: $(dur $((SECONDS - START_TS)))"
     echo "- log: .nightly/logs/$RUN_TS.log"
   } > "$STATE/reports/$RUN_TS.md"
@@ -249,6 +255,15 @@ elif [[ -L "$HOME/.gradle" && ! -e "$HOME/.gradle" ]]; then
 fi
 
 # ── 3. izolirani worktree na HEAD shi ────────────────────────────────────────
+if [[ -z "$WT" ]]; then
+  if [[ -d "$BUILD_FILES" ]]; then
+    WT="$BUILD_FILES/worktree"
+  else
+    WT="$(dirname "$ROOT")/.nightly-domovina"
+    echo "UPOZORENJE: build kontejner nedostupan — worktree ide na boot disk ($WT)"
+  fi
+fi
+echo "==> worktree: $WT"
 if ! git -C "$ROOT" worktree list --porcelain | grep -qx "worktree $WT"; then
   echo "==> kreiram worktree $WT"
   rm -rf "$WT"
