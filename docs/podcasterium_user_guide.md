@@ -54,6 +54,16 @@ Kao autor podcasta, uložili ste sate u pripremu gostiju, postavljanje mikrofona
 - **Bez distrakcija:** Gledatelji ne dobivaju sa strane preporuke da "kliknu na zabavni video mačke", već ostaju 100% fokusirani na vaš intervju, vaš glas i vašu poruku.
 - **Drugačija vrsta publike:** Privlačite studente, novinare, znanstvenike i profesionalce koji vole analizirati sadržaj, citirati ga i tražiti specifične informacije u tekstu – onaj tip ljudi kojima klasičan YouTube player nije dovoljan.
 
+### Što vi trebate napraviti?
+Gotovo ništa! Proces je osmišljen tako da vi samo nastavite raditi ono što najbolje radite – stvarati sjajne podcaste.
+1. **Prijava i povezivanje:** Unesete link svog postojećeg YouTube kanala ili RSS feeda u naš sustav.
+2. **Magija u pozadini:** Naš moćni AI procesor (tzv. *Pipeline*) preuzima epizodu čim je objavite. Transkribira razgovor, prepoznaje lica i glasove, piše sažetke, detektira pojmove i stvara poglavlja.
+3. **Objava:** U roku od nekoliko sati, vaša epizoda osviće na Podcasteriumu, pretvorena u predivnu interaktivnu knjigu. Nema dodatnog posla s vaše strane oko uređivanja tekstova.
+
+### Financiranje (Podrška kreatorima)
+Znamo da kvaliteta zahtijeva resurse. Umjesto da vas tjeramo na lov za sponzorima koji prodaju proizvode nevezane za vašu temu, uveli smo sustav **Pinka podrške** (uz SEPA/EPC QR kodove). 
+Gledatelj koji je upravo riješio svoj problem gledajući vaš podcast može direktno, putem pametnog "Podrži ovu epizodu" panela unutar samog članka, poslati financijsku podršku izravno vama. Interakcija ostaje osobna, direktna i bez posredničkih provizija koje uzimaju klasične mreže.
+
 ---
 
 ## 🚀 Sažetak: Budućnost učenja

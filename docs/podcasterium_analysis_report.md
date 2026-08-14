@@ -21,20 +21,30 @@ flowchart TD
     F -->|Renderiranje| I[TV: D-pad navigacija]
 ```
 
-**Ključne funkcionalnosti Podcasteriuma na temelju koda:**
-1. **Sinkronizirano Gledanje i Čitanje:**
-   - Postoje komponente poput `article_section.dart` i `video_panel.dart` koje omogućuju korisniku da podcast istovremeno gleda i čita u formi strukturiranog članka s poglavljima (`chapters_section.dart`), a ne samo kao neuredni "zid teksta" ili sirovi transkript.
-2. **Diarizacija (Prepoznavanje govornika):**
-   - Implementiran je `speaker_timeline.dart` (čita se iz `diarized.srt`), što znači da aplikacija točno zna tko govori u kojem trenutku.
-3. **Izdvajanje i Navigacija po Entitetima:**
-   - Postoji napredni sustav za praćenje osoba, mjesta i organizacija (`entities_section.dart`). Preko "Person Hub-a" omogućeno je skakanje točno na dijelove epizode gdje određena osoba govori ili se samo spominje.
-4. **Domenska AI Analiza (Fact-checking / Alignment):**
-   - Kod trenutno koristi _Magisterium AI_ za teološku analizu (`magisterium_section.dart`). U Podcasteriumu se ovo lako može adaptirati u **prilagođeni AI Fact-checker** koji provjerava izjave izgovorene u podcastu u odnosu na znanstvene radove, povijesne činjenice ili specifičnu stručnu literaturu.
-5. **Napredne Kontrole i UX:**
-   - Prilagođen "Seek-Undo" (poništavanje slučajnog premotavanja), kontrola brzine reprodukcije, te rješavanje kompleksnih problema "muted autoplay-a" na web preglednicima.
-   - Background playback podrška za mobilne uređaje (slušanje podcasta dok je zaslon ugašen).
-6. **Cross-Platform uz Leanback (TV) Podršku:**
-   - Kod nativno rješava navigaciju putem daljinskog upravljača za Android TV platforme (`tv_episode_screen.dart`), stavljajući ga uz bok Netflixovom TV iskustvu.
+### Duboki tehnički pregled (Deep-Dive Analysis)
+
+**1. Hibridni Video-Tekst Model (Sinkronizirano Gledanje i Čitanje)**
+Temelj aplikacije počiva na sinkronizaciji medija. Flutter komponente poput `article_section.dart` i `video_panel.dart` omogućuju praćenje videa s tekstom. No, umjesto pukog transkripta, sustav generira *članke* sa semantičkim poglavljima (`chapters_section.dart`). Alat ne "lijepi" titlove preko videa, već upravlja pozicijom playera kroz klikove na elemente teksta.
+*Tehnički detalj:* Web koristi `media_kit` (v2.0.1) koji zahtijeva posebne wrappere (`EpisodeVideo`) za rješavanje problema s fullscreen pauziranjem unutar HTML DOM-a i VTT/SRT parsiranjem titlova. 
+
+**2. Diarizacija (Prepoznavanje govornika) i Vremenska traka**
+Aplikacija parsira `diarized.srt` datoteku pomoću `speaker_timeline.dart` komponente. To omogućuje iscrtavanje "trake s govornicima" (Speaker Timeline) ispod samog videa, gdje korisnik vizualno po bojama može vidjeti tko govori u kojem trenutku.
+*Poslovna vrijednost:* Ovo dramatično poboljšava konzumaciju debatnih formata i intervjua s više sudionika.
+
+**3. Person Hub i Ekstrakcija Entiteta**
+Sustav ne analizira samo *riječi*, već i *značenje*. Komponenta `entities_section.dart` prikazuje osobe, mjesta i organizacije koje se spominju. RAG backend (Retrieval-Augmented Generation) hrani tzv. "Person Hub" – agregator gdje se identitet osobe konstruira iz dva disjunktna izvora: kada osoba govori (Gost) i kada je spomenuta (Subjekt). 
+*Navigacija:* Klik na spomenutu osobu vodi korisnika na točnu sekundu videa gdje je spomenuta, što drastično ubrzava istraživanje.
+
+**4. Domenska AI Analiza (Fact-checking)**
+Codebase trenutno integrira *Magisterium AI* (preko `magisterium_section.dart` i pridruženih panela) koji vrši teološku analizu na temelju specifičnog skupa pravila (Katolički nauk). 
+*Potencijal Podcasteriuma:* Ova se arhitektura može u potpunosti apstrahirati u univerzalni *AI Fact-Checker* ili *Domain Aligner*. Na primjer, IT podcast se može evaluirati u odnosu na službene softverske dokumentacije, a medicinski podcast u odnosu na pubmed članke.
+
+**5. Ekstremna Web Optimizacija i "Muted Autoplay" politika**
+Dostava sadržaja oslanja se 100% na **Cloudflare Pages i globalni CDN**. Ne postoji klasični REST backend koji se queryja po loadu – sve epizode i metapodaci se generiraju unaprijed kao statički JSON fileovi. Flutter Web aplikacija kompilira se putem Skwasm-a (WASM) uz renderiranje preko Skia engine-a (zaobilaženje problematičnog Impeller-a na nekim low-end GPU-ovima).
+*Muted Autoplay:* Posebno impresivan dio koda (`services/media_element_mute_web.dart`) upravlja specifičnim browser politikama o autoplayu zvuka, implementirajući pametne vizualne indikatore (UnmuteOverlay) umjesto blokiranja UI-ja agresivnim modalima.
+
+**6. Cross-Platform TV i Background Playback**
+Aplikacija podržava iOS background playback putem `audio_service`, omogućujući korisnicima da zaključaju ekran i nastave slušati samo zvuk (uz integraciju s iOS Dynamic Island-om). S druge strane, Android TV implementacija (`tv_episode_screen.dart`) donosi kompletno prerađeno D-Pad sučelje dizajnirano za upravljanje daljinskim upravljačem, zaobilazeći dodirne geste koje inače Flutter forsira.
 
 ---
 
