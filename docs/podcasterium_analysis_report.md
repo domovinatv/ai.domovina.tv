@@ -21,30 +21,43 @@ flowchart TD
     F -->|Renderiranje| I[TV: D-pad navigacija]
 ```
 
-### Duboki tehnički pregled (Deep-Dive Analysis)
+### Iscrpni tehnički pregled i arhitektura (Exhaustive Codebase Analysis)
+
+Dubinska analiza `lib/` direktorija otkriva zapanjujuću razinu inženjeringa koja uvelike nadilazi jednostavan video player. Codebase predstavlja sazrelu platformu prepunu integracija. Ovdje je iscrpan pregled ključnih podsustava:
 
 **1. Hibridni Video-Tekst Model (Sinkronizirano Gledanje i Čitanje)**
-Temelj aplikacije počiva na sinkronizaciji medija. Flutter komponente poput `article_section.dart` i `video_panel.dart` omogućuju praćenje videa s tekstom. No, umjesto pukog transkripta, sustav generira *članke* sa semantičkim poglavljima (`chapters_section.dart`). Alat ne "lijepi" titlove preko videa, već upravlja pozicijom playera kroz klikove na elemente teksta.
-*Tehnički detalj:* Web koristi `media_kit` (v2.0.1) koji zahtijeva posebne wrappere (`EpisodeVideo`) za rješavanje problema s fullscreen pauziranjem unutar HTML DOM-a i VTT/SRT parsiranjem titlova. 
+Aplikacija upravlja složenim stanjem preko `media_kit` (v2.0.1) wrappera (`widgets/episode_video.dart`). Interakcija između videa i teksta ostvaruje se kroz `video_panel.dart` i `article_section.dart`. Tekst nije običan transkript, već interaktivni HTML/Markdown s omogućenim podvlačenjem (`em_highlight_text.dart`). Implementirani su napredni servisi poput `seek_undo.dart` koji detektiraju manuelne "skokove" u playeru i omogućuju poništavanje akcije, te `playback_speed.dart` za preciznu kontrolu.
 
-**2. Diarizacija (Prepoznavanje govornika) i Vremenska traka**
-Aplikacija parsira `diarized.srt` datoteku pomoću `speaker_timeline.dart` komponente. To omogućuje iscrtavanje "trake s govornicima" (Speaker Timeline) ispod samog videa, gdje korisnik vizualno po bojama može vidjeti tko govori u kojem trenutku.
-*Poslovna vrijednost:* Ovo dramatično poboljšava konzumaciju debatnih formata i intervjua s više sudionika.
+**2. Autentifikacija, e-Građani i Passkeys**
+Osim standardnog OAuth login-a, codebase ima implementaciju najmodernijih standarda:
+- **Passkeys (`services/passkey_service.dart`):** Biometrijska prijava bez lozinki na svim podržanim uređajima.
+- **Certilia/NIAS eID (`services/certilia_service.dart`):** Kod ukazuje na integraciju s hrvatskim e-Građani sustavom (`flutter_certilia` lokalni paket), što Podcasterium potencijalno čini jedinim podcast playerom s high-trust autentifikacijom (važno za premium / zaštićene sadržaje ili glasanja).
 
-**3. Person Hub i Ekstrakcija Entiteta**
-Sustav ne analizira samo *riječi*, već i *značenje*. Komponenta `entities_section.dart` prikazuje osobe, mjesta i organizacije koje se spominju. RAG backend (Retrieval-Augmented Generation) hrani tzv. "Person Hub" – agregator gdje se identitet osobe konstruira iz dva disjunktna izvora: kada osoba govori (Gost) i kada je spomenuta (Subjekt). 
-*Navigacija:* Klik na spomenutu osobu vodi korisnika na točnu sekundu videa gdje je spomenuta, što drastično ubrzava istraživanje.
+**3. Pinka SDK (On-chain financiranje i Web3 integracija)**
+Codebase sadrži cijeli custom SDK (`lib/pinka_sdk/`) posvećen mikro-transakcijama i podršci kreatorima.
+- Sustav komunicira s on-chain mehanizmima (`pinka_onchain.dart`, `pinka_onchain_confirm.dart`) i digitalnim novčanicima (`wallet/pinka_wallet.dart`).
+- Korisnici mogu ostaviti javni "Contribution" ili sponzorirati "Slot" (`pinka_slot.dart`) direktno kroz aplikaciju. 
+- Vizualizacija podrške rješava se preko predivnih UI elemenata poput zidova sponzora (`pinka_grid_wall.dart` i `pinka_support_card.dart`).
 
-**4. Domenska AI Analiza (Fact-checking)**
-Codebase trenutno integrira *Magisterium AI* (preko `magisterium_section.dart` i pridruženih panela) koji vrši teološku analizu na temelju specifičnog skupa pravila (Katolički nauk). 
-*Potencijal Podcasteriuma:* Ova se arhitektura može u potpunosti apstrahirati u univerzalni *AI Fact-Checker* ili *Domain Aligner*. Na primjer, IT podcast se može evaluirati u odnosu na službene softverske dokumentacije, a medicinski podcast u odnosu na pubmed članke.
+**4. Napredno pretraživanje (MeiliSearch)**
+U `services/meili_client.dart` i `screens/search/meili_search_screen.dart` nalazi se implementacija MeiliSearch engine-a. Za razliku od YouTube-a koji traži samo naslove, ovaj RAG-like sustav traži ključne riječi *unutar samih izgovorenih rečenica* svih podcasta, indeksirajući sekunde u kojima su riječi izgovorene.
 
-**5. Ekstremna Web Optimizacija i "Muted Autoplay" politika**
-Dostava sadržaja oslanja se 100% na **Cloudflare Pages i globalni CDN**. Ne postoji klasični REST backend koji se queryja po loadu – sve epizode i metapodaci se generiraju unaprijed kao statički JSON fileovi. Flutter Web aplikacija kompilira se putem Skwasm-a (WASM) uz renderiranje preko Skia engine-a (zaobilaženje problematičnog Impeller-a na nekim low-end GPU-ovima).
-*Muted Autoplay:* Posebno impresivan dio koda (`services/media_element_mute_web.dart`) upravlja specifičnim browser politikama o autoplayu zvuka, implementirajući pametne vizualne indikatore (UnmuteOverlay) umjesto blokiranja UI-ja agresivnim modalima.
+**5. Ekstrakcija Entiteta i "Person Hub" Ekosustav**
+Aplikacija parsira `diarized.srt` i spaja lica i glasove preko `models/person_hub.dart`. UI u `screens/person/person_screen.dart` agregira sve podcaste u kojima je određena osoba *gostovala* (govorila) i sve epizode u kojima je samo *spomenuta*, tvoreći moćan istraživački alat s automatskim prebacivanjem na točnu minutu (`services/person_service.dart`).
 
-**6. Cross-Platform TV i Background Playback**
-Aplikacija podržava iOS background playback putem `audio_service`, omogućujući korisnicima da zaključaju ekran i nastave slušati samo zvuk (uz integraciju s iOS Dynamic Island-om). S druge strane, Android TV implementacija (`tv_episode_screen.dart`) donosi kompletno prerađeno D-Pad sučelje dizajnirano za upravljanje daljinskim upravljačem, zaobilazeći dodirne geste koje inače Flutter forsira.
+**6. Monetizacija, Paywall i Vlasništvo Kanala**
+Postoji robusna integracija za klasične pretplate putem Apple/Google storeova (`services/revenue_cat/revenue_cat_service_native.dart`). Moduli poput `screens/subscribe/paywall_screen.dart` i `upgrade_trigger.dart` rješavaju korisničko putovanje kroz pretplatu. 
+Također, jedinstven je koncept preuzimanja vlasništva nad sadržajem (`screens/ownership/channel_ownership_screen.dart`), gdje stvarni vlasnici YouTube kanala mogu "claimati" svoj sadržaj na platformi.
+
+**7. Glasanje (Voting System)**
+Iznenađujući pronalazak u `screens/voting/voting_screen.dart` i `models/vote_round.dart` ukazuje na to da platforma podržava interaktivna glasanja za vrijeme ili nakon emisija, sa *streak* flagovima i gamifikacijom (`screens/voting/widgets/streak_flags.dart`). 
+
+**8. Ekstremna Cross-Platform TV i Background optimizacija**
+- **Mobile Background (`services/background_audio.dart`):** Kontinuirano slušanje s ugašenim zaslonom.
+- **Handoff (`services/handoff_service.dart`):** Glatki prijenos sesije između mobilnog uređaja i weba.
+- **Android TV (`screens/tv/tv_home_screen.dart`):** Zaseban *Leanback* UI specijaliziran za D-Pad navigaciju (`widgets/tv_row_traversal.dart`), TV boot splash (`tv_boot_splash.dart`) i TV specifične čitače epizoda (`tv_episode_reader_screen.dart`).
+
+**Zaključno o arhitekturi:** Ovo nije MVP (Minimum Viable Product). Radi se o izrazito naprednoj full-stack aplikaciji s elementima Weba3 (Pinka), naprednog Searcha (Meili), High-trust Logina (Certilia) i moćnog AI video-tekst procesiranja.
 
 ---
 
