@@ -255,14 +255,13 @@ elif [[ -L "$HOME/.gradle" && ! -e "$HOME/.gradle" ]]; then
 fi
 
 # ── 3. izolirani worktree na HEAD shi ────────────────────────────────────────
-if [[ -z "$WT" ]]; then
-  if [[ -d "$BUILD_FILES" ]]; then
-    WT="$BUILD_FILES/worktree"
-  else
-    WT="$(dirname "$ROOT")/.nightly-domovina"
-    echo "UPOZORENJE: build kontejner nedostupan — worktree ide na boot disk ($WT)"
-  fi
-fi
+# Rule: worktree MORA biti sestra glavnog repoa. pubspec ima path ovisnost
+# (`flutter_certilia: ../../stepanic/flutter_certilia`) koja se razrješava
+# relativno na lokaciju worktreea — probano 2026-08-14 premjestiti ga u APFS
+# kontejner i `pub get` je odmah pao ("could not find package flutter_certilia").
+# Build mora razrješavati putanje identično ručnom buildu; ušteda ~2 GB na boot
+# disku to ne opravdava. Gradle cache i DerivedData su ionako u kontejneru.
+[[ -n "$WT" ]] || WT="$(dirname "$ROOT")/.nightly-domovina"
 echo "==> worktree: $WT"
 if ! git -C "$ROOT" worktree list --porcelain | grep -qx "worktree $WT"; then
   echo "==> kreiram worktree $WT"

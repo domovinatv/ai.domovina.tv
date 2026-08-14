@@ -29,6 +29,13 @@ flowchart TD
 
 ## Zašto baš ovako
 
+**Rule: worktree je SESTRA glavnog repoa** (`../.nightly-domovina`), ne bilo gdje.
+`pubspec.yaml` ima path ovisnost `flutter_certilia: ../../stepanic/flutter_certilia`
+koja se razrješava relativno na worktree. Premještanje u APFS kontejner
+(2026-08-14, radi uštede boot prostora) odmah je oborilo `pub get` s „could not
+find package flutter_certilia" — jer `../../stepanic` ondje pokazuje u
+`/Volumes/stepanic`. Nightly mora razrješavati putanje identično ručnom buildu.
+
 **Odvojeni git worktree.** Nightly nikad ne gradi iz tvog radnog direktorija.
 U 01:00 ondje lako leži nedovršen WIP, a `flutter clean` iz iOS grane bi ti
 usput obrisao artefakte. Worktree je detached na HEAD shi u
