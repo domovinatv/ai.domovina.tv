@@ -8,6 +8,19 @@ Ovaj izvještaj donosi detaljnu analizu funkcionalnosti prisutnih u analiziranom
 
 Pregledom koda (oslanjajući se na `README.md`, `CLAUDE.md`, strukturu foldera te `pubspec.yaml`), arhitektura platforme otkriva vrlo moćan alat skrojen za "deep-dive" u video sadržaj. Platforma je izgrađena koristeći **Flutter** (optimizirana za Web preko WASM-a, te Mobile i Android TV).
 
+### Arhitektura Sustava (Pipeline)
+```mermaid
+flowchart TD
+    A[Sirovi Video Podcast] -->|Download & Obrada| B(AI Transkripcija)
+    B --> C(Diarizacija: Tko govori?)
+    C --> D(Semantička Analiza: Sažeci i Entiteti)
+    D --> E(Domenska Provjera: Magisterium AI)
+    E -->|JSON Export| F[(Statički CDN)]
+    F -->|Renderiranje| G[Web: Sinkronizirano čitanje]
+    F -->|Renderiranje| H[Mobile: Background slušanje]
+    F -->|Renderiranje| I[TV: D-pad navigacija]
+```
+
 **Ključne funkcionalnosti Podcasteriuma na temelju koda:**
 1. **Sinkronizirano Gledanje i Čitanje:**
    - Postoje komponente poput `article_section.dart` i `video_panel.dart` koje omogućuju korisniku da podcast istovremeno gleda i čita u formi strukturiranog članka s poglavljima (`chapters_section.dart`), a ne samo kao neuredni "zid teksta" ili sirovi transkript.

@@ -10,6 +10,22 @@ Ako ste ikada gledali podcast od 3 sata i pomislili: *"Ovo je odlično, ali voli
 
 Većina platformi danas dizajnirana je tako da vam odvrati pažnju – dok gledate jedan video, sa strane vam iskaču kratki videi (Shorts) i preporuke za stvari koje vas zapravo ne zanimaju. Podcasterium radi suprotno: **on vas uvlači u fokus**. 
 
+### Vaše putovanje kroz sadržaj
+```mermaid
+journey
+    title Interaktivno učenje iz podcasta
+    section Gledanje
+      Otvara epizodu: 5: Korisnik
+      Video svira, čita strukturirani tekst: 5: Korisnik
+    section Istraživanje
+      Zanima ga citat iz 42. minute: 4: Korisnik
+      Klika točno na poglavlje u tekstu: 5: Korisnik
+      Video automatski prebacuje na citat: 5: Sustav
+    section Otkrivanje (Deep-Dive)
+      Klika na ime gosta spomenutog u tekstu: 5: Korisnik
+      Sustav otvara sve podcaste s tim gostom: 4: Sustav
+```
+
 Evo što možete raditi na našoj platformi, korak po korak:
 
 ### 1. Gledajte i čitajte u isto vrijeme
