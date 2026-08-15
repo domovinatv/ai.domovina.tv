@@ -62,6 +62,17 @@ ide PRIJE commita i PRIJE `/clear`, da dorade padnu devu kojem je kontekst još
 Format mora biti: `Co-authored-by: <Ime Agenta> (<Verzija Modela>) <bot@domena>`
 Primjer: `Co-authored-by: Antigravity (Gemini 3.1 Pro) <bot@antigravity.google>` ili `Co-authored-by: Claude Code (Claude 3.7 Sonnet) <bot@anthropic.com>`.
 
+**Rule (dokumentacija se provjerava, ne vjeruje joj se)**: prije nego preuzmeš
+tuđi (ili svoj stariji) `docs/*.md` kao izvor istine, pokreni
+`./scripts/verify-doc-refs.sh docs/*.md` — provjeri postoji li svaka `lib/…`
+putanja citirana u markdownu i predloži pravu ako ne. Povod je izmjeren
+14.8.2026.: AI-generirana analiza citirala je 33 putanje od kojih 6 nije
+postojalo (imena datoteka točna, direktoriji izmišljeni), uz 186 kB generirane
+ispune u istom setu dokumenata. Dokument koji NAMJERNO citira krivu putanju
+omeđi s `<!-- doc-refs:ignore-start -->` / `<!-- doc-refs:ignore-end -->`.
+Isto pravilo vrijedi za brojke: ako broj ima decimalu, mora postojati naredba
+koja ga reproducira (primjer: `docs/podcasterium_analysis_report.md` §7).
+
 ## Nightly store build (launchd, 01:00)
 
 `scripts/nightly-build.sh` svaku noć — ako je HEAD drukčiji od zadnjeg uspješno
@@ -224,11 +235,14 @@ radi (bitrate je nizak ~94 kbps), ali zahtijeva eksplicitno `hwdec=no`
 u libmpv konfiguraciji. Vidi `lib/screens/tv/tv_episode_screen.dart`
 gdje se to setira preko `player.platform.setProperty('hwdec', 'no')`.
 
-**Production deployment strategija** (TODO): pipeline bi trebao producirati
-i H.264 fallback verziju (`video.h264.mp4` paralelno s `video.mp4`/AV1).
-App bi onda pickao codec ovisno o platformi/device-u. H.264 hardware
-decode radi univerzalno od Android 4 nadalje. Bez ovoga, novi 720p/1080p
-AV1 sadržaj neće glatko playati na većini Android TV box-ova.
+**RIJEŠENO** (provjereno 15.8.2026., ovo je nekad bio TODO): pipeline producira
+H.264 verziju kao **`video_h264.mp4`** (podvlaka, ne točka) paralelno s
+`video.mp4`/AV1. Klijent bira sam — `DataService.resolveMedia()` probe-a redom
+`video_h264.mp4` → `audio.mp3` → legacy `video.mp4`. H.264 hardware decode radi
+univerzalno od Android 4 nadalje.
+
+**Rule**: probe URL MORA nositi cache-buster (`videoH264ProbeUrl`) — CDN cachira
+404 četiri sata, pa bi jedan prerani probe zaključao fallback na cijeli prozor.
 
 ### Android TV lokalni emulator (dev loop)
 
@@ -496,7 +510,13 @@ bez ciljne sekunde nikad ne tvrdi „govori ovdje", nego „ovdje se spominje".
 
 ### Routing
 
-`main.dart` uses `onGenerateRoute` with `PageRouteBuilder(transitionDuration: Duration.zero)` for instant navigation. The initial route uses `home: const HomeScreen()` — do NOT replace with `initialRoute` or `onGenerateInitialRoutes` as both crash on web.
+Ruting je **go_router 14.8** u `lib/router/app_router.dart` (`createRouter()`).
+Puna tablica ruta: `docs/podcasterium_technical_manual.md` §3.
+
+*(Povijesno: ovdje je do 15.8.2026. pisalo da `main.dart` koristi
+`onGenerateRoute` s `home: const HomeScreen()` i da `initialRoute` /
+`onGenerateInitialRoutes` crashaju na webu. To je zastarjelo — migracija na
+go_router se dogodila u međuvremenu, a ova sekcija nije bila ažurirana.)*
 
 ### Croatian flag theme
 
