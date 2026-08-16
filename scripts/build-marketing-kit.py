@@ -1,62 +1,25 @@
 #!/usr/bin/env python3
-"""Gradi HTML verziju Anitinog priručnika iz markdown izvora.
+"""Gradi HTML verzije Anitinih dokumenata iz markdown izvora.
 
-    python3 scripts/build-marketing-kit.py
+    python3 scripts/build-marketing-kit.py            # oba
+    python3 scripts/build-marketing-kit.py proizvod   # samo jedan
 
-Izvor je docs/marketing/benefiti-i-outreach.md — uređuj SAMO njega, pa pokreni
-ovo. Rezultat ide u build/marketing/ (nije u gitu) i objavljuje se kao artifact.
+Izvori su markdown datoteke u docs/ — uređuj SAMO njih, pa pokreni ovo.
+Rezultat ide u build/marketing/ (nije u gitu) i objavljuje se kao artifact.
 Traži `pip install markdown`.
+
+Dodavanje novog dokumenta = jedan unos u DOCS. Zajednički su CSS, navigacija,
+tablice i tipizacija citata; po dokumentu se razlikuju zaglavlje i to koji
+blockquote dobiva koju etiketu.
 """
-import re, markdown, pathlib, html as htmlmod
+import re, sys, markdown, pathlib, html as htmlmod
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-SRC = REPO / 'docs/marketing/benefiti-i-outreach.md'
-OUT = REPO / 'build/marketing/anitin-prirucnik.html'
-OUT.parent.mkdir(parents=True, exist_ok=True)
 
-md = SRC.read_text(encoding='utf-8')
 
-# H1 i uvodni blok idu u zaglavlje, ne u tijelo.
-lines = md.split('\n')
-assert lines[0].startswith('# ')
-body_md = '\n'.join(lines[1:])
-body_md = body_md.split('---', 1)[1]  # makni uvodni kurziv + prvu crtu
+# ---------------------------------------------------------------- figure ---
+# Jedini ukrasi u dokumentima — oba nose informaciju, ne dekoraciju.
 
-conv = markdown.Markdown(extensions=['tables', 'sane_lists', 'attr_list', 'md_in_html'])
-body = conv.convert(body_md)
-
-# --- post-obrada -----------------------------------------------------------
-# 1. id-evi na naslove za navigaciju
-def slugify(t):
-    t = re.sub(r'<[^>]+>', '', t)
-    t = t.lower().replace('š','s').replace('č','c').replace('ć','c').replace('ž','z').replace('đ','d')
-    t = re.sub(r'[^a-z0-9]+', '-', t).strip('-')
-    return t
-
-nav = []
-def h2(m):
-    text = m.group(1)
-    sid = slugify(text)
-    num = re.match(r'^(\d+|Prilog A)', re.sub(r'<[^>]+>', '', text))
-    nav.append((num.group(1) if num else '•', re.sub(r'<[^>]+>', '', text), sid))
-    return f'<h2 id="{sid}">{text}</h2>'
-body = re.sub(r'<h2>(.*?)</h2>', h2, body, flags=re.S)
-body = re.sub(r'<h3>(.*?)</h3>', lambda m: f'<h3 id="{slugify(m.group(1))}">{m.group(1)}</h3>', body, flags=re.S)
-
-# 2. tablice u scroll kontejner
-body = body.replace('<table>', '<div class="scroll"><table>').replace('</table>', '</table></div>')
-
-# 3. tipizacija blockquoteova
-def type_quote(m):
-    inner = m.group(1)
-    if 'Predmet:' in inner or 'Bok Iva' in inner:
-        return f'<blockquote class="draft"><span class="draft-tag">nacrt poruke</span>{inner}</blockquote>'
-    if 'jedini izvor činjenica' in inner:
-        return f'<blockquote class="ai"><span class="draft-tag">upute za AI</span>{inner}</blockquote>'
-    return f'<blockquote>{inner}</blockquote>'
-body = re.sub(r'<blockquote>(.*?)</blockquote>', type_quote, body, flags=re.S)
-
-# 4. vremenska crta (jedini ukras — nosi informaciju)
 TIMELINE = '''
 <figure class="timeline">
   <figcaption>Epizoda <em>„Kako otpustiti pritisak savršene mame?"</em> — Rastući s djecom</figcaption>
@@ -78,12 +41,165 @@ TIMELINE = '''
   </svg>
   <p class="tl-note">Nitko ne posluša tuđu dvosatnu epizodu da provjeri spominju li ga.</p>
 </figure>'''
-body = body.replace('<!--TIMELINE-->', TIMELINE)
 
-# 5. navigacija
-navhtml = '\n'.join(
-    f'<a href="#{sid}"><span class="nav-n">{n}</span>{htmlmod.escape(t.split(" ",1)[1] if t[0].isdigit() else t)}</a>'
-    for n, t, sid in nav)
+# Pokrivenost obradom: jedna slika koja odmah pokaže gdje smijemo biti glasni,
+# a gdje moramo biti oprezni. Brojke = §9 dokumenta, mjereno 14.–15. 8. 2026.
+_COVER_ROWS = [
+    ('Članak, transkript i imena govornika', 99.5, '3 160 od 3 175 epizoda', True),
+    ('Ocjena usklađenosti', 9.8, '311 epizoda', False),
+    ('Engleski prijevod', 1.3, '40 epizoda', False),
+]
+COVERAGE = '<figure class="bars">\n  <figcaption>Pokrivenost obradom — što stvarno postoji u arhivu</figcaption>\n' + '\n'.join(
+    f'''  <div class="bar-row">
+    <span class="bar-lab">{lab}</span>
+    <span class="bar-track"><span class="bar-fill{'' if strong else ' thin'}" style="width:{max(pct, 0.8)}%"></span></span>
+    <span class="bar-num">{str(pct).replace(".", ",")} %</span>
+    <span class="bar-note">{note}</span>
+  </div>''' for lab, pct, note, strong in _COVER_ROWS
+) + '''
+  <p class="tl-note">Gotovo sve je obrađeno. Ocjena i engleski su iznimka — i tako se
+  o njima govori.</p>
+</figure>'''
+
+
+# ------------------------------------------------------------- dokumenti ---
+
+def _quotes_marketing(inner):
+    """(oznaka, klasa) za blockquote u terenskom priručniku."""
+    if 'Predmet:' in inner or 'Bok Iva' in inner:
+        return 'nacrt poruke', 'draft'
+    if 'jedini izvor činjenica' in inner:
+        return 'upute za AI', 'ai'
+    return None, None
+
+
+def _quotes_proizvod(inner, section=''):
+    """(oznaka, klasa) za blockquote u opisu proizvoda — ovisi o sekciji."""
+    if 'AI asistentu' in inner or 'Brojke uzimaj' in inner:
+        return 'upute za AI', 'ai'
+    if section.startswith('11'):
+        return 'što odgovoriti', 'draft'
+    if section.startswith('13'):
+        return 'gotov prompt', 'ai'
+    return None, None
+
+
+DOCS = {
+    'marketing': dict(
+        src='docs/marketing/benefiti-i-outreach.md',
+        out='anitin-prirucnik.html',
+        title='Anitin terenski priručnik',
+        eyebrow='DOMOVINA.ai · terenski priručnik',
+        h1='Zašto DOMOVINA.ai, i kako to reći ljudima',
+        dek='Benefiti za gledatelje i za podcast kreatore, gotove poruke za '
+            'javljanje svih 48 kanala, i pitanja koja se postavljaju korisnicima.',
+        stamp='Podaci provjereni 15. kolovoza 2026. Svaka brojka izvučena je iz '
+              'živog sustava — nijedna nije procijenjena. Ovaj dokument čitaju dvoje: '
+              '<strong>Anita</strong> i <strong>AI asistent</strong> koji iz njega '
+              'piše objave i mailove.',
+        footer='Brojke se mijenjaju kako stižu nove epizode — reci Matiji da osvježi dokument.',
+        quotes=_quotes_marketing,
+        figures={'<!--TIMELINE-->': TIMELINE},
+    ),
+    'proizvod': dict(
+        src='docs/podcasterium_b2c_product.md',
+        out='podcasterium-proizvod.html',
+        title='Podcasterium ljudskim jezikom',
+        eyebrow='DOMOVINA.ai · opis proizvoda',
+        h1='Što je Podcasterium, ljudskim jezikom',
+        dek='Što proizvod jest, koji problem rješava, što korisnik zapravo dobije '
+            'i gdje su granice koje ne prelazimo.',
+        stamp='Peti dokument u nizu — prva tri pisana su za programiranje, ovaj se '
+              'čita naglas. Sve činjenice izmjerene 14.–15. kolovoza 2026. '
+              '<strong>Prvo pročitaj §2</strong>: Podcasterium i DOMOVINA.ai nisu ista stvar.',
+        footer='Predlošci poruka, brojke po kanalu i postupak razgovora s korisnicima '
+               'su u terenskom priručniku.',
+        quotes=_quotes_proizvod,
+        figures={'<!--POKRIVENOST-->': COVERAGE},
+    ),
+}
+
+
+# ----------------------------------------------------------------- build ---
+
+def slugify(t):
+    t = re.sub(r'<[^>]+>', '', t)
+    t = t.lower().replace('š','s').replace('č','c').replace('ć','c').replace('ž','z').replace('đ','d')
+    t = re.sub(r'[^a-z0-9]+', '-', t).strip('-')
+    return t
+
+
+def build(key, doc):
+    src = REPO / doc['src']
+    out = REPO / 'build/marketing' / doc['out']
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    md = src.read_text(encoding='utf-8')
+
+    # H1 i uvodni blok idu u zaglavlje, ne u tijelo.
+    lines = md.split('\n')
+    assert lines[0].startswith('# '), f'{src} ne počinje H1 naslovom'
+    body_md = '\n'.join(lines[1:])
+    body_md = body_md.split('---', 1)[1]  # makni uvodni kurziv + prvu crtu
+
+    conv = markdown.Markdown(extensions=['tables', 'sane_lists', 'attr_list', 'md_in_html'])
+    body = conv.convert(body_md)
+
+    # 1. id-evi na naslove za navigaciju
+    nav = []
+
+    def h2(m):
+        text = m.group(1)
+        sid = slugify(text)
+        plain = re.sub(r'<[^>]+>', '', text)
+        num = re.match(r'^(\d+|Prilog A)', plain)
+        nav.append((num.group(1) if num else '•', plain, sid))
+        return f'<h2 id="{sid}">{text}</h2>'
+
+    body = re.sub(r'<h2>(.*?)</h2>', h2, body, flags=re.S)
+    body = re.sub(r'<h3>(.*?)</h3>',
+                  lambda m: f'<h3 id="{slugify(m.group(1))}">{m.group(1)}</h3>',
+                  body, flags=re.S)
+
+    # 2. tablice u scroll kontejner
+    body = body.replace('<table>', '<div class="scroll"><table>').replace('</table>', '</table></div>')
+
+    # 3. tipizacija blockquoteova — klasifikator zna u kojoj je sekciji citat
+    classify = doc['quotes']
+    takes_section = classify.__code__.co_argcount > 1
+
+    def type_quotes(section_html, section_title):
+        def one(m):
+            inner = m.group(1)
+            tag, cls = classify(inner, section_title) if takes_section else classify(inner)
+            if not cls:
+                return f'<blockquote>{inner}</blockquote>'
+            return (f'<blockquote class="{cls}">'
+                    f'<span class="draft-tag">{tag}</span>{inner}</blockquote>')
+        return re.sub(r'<blockquote>(.*?)</blockquote>', one, section_html, flags=re.S)
+
+    parts = re.split(r'(?=<h2 id=)', body)
+    body = ''.join(
+        type_quotes(p, re.sub(r'<[^>]+>', '', re.search(r'<h2[^>]*>(.*?)</h2>', p, re.S).group(1)))
+        if p.startswith('<h2 id=') else type_quotes(p, '')
+        for p in parts)
+
+    # 4. figure na svojim mjestima
+    for marker, figure in doc['figures'].items():
+        body = body.replace(marker, figure)
+
+    # 5. navigacija
+    navhtml = '\n'.join(
+        f'<a href="#{sid}"><span class="nav-n">{n}</span>'
+        f'{htmlmod.escape(t.split(" ", 1)[1] if t[0].isdigit() else t)}</a>'
+        for n, t, sid in nav)
+
+    html = PAGE.format(css=CSS, title=htmlmod.escape(doc['title']), eyebrow=doc['eyebrow'],
+                       h1=doc['h1'], dek=doc['dek'], stamp=doc['stamp'],
+                       nav=navhtml, body=body, src=doc['src'], footer=doc['footer'])
+    out.write_text(html, encoding='utf-8')
+    print(f'{out} — {len(html)//1024} kB, {len(nav)} sekcija u navigaciji')
+
 
 CSS = '''
 :root{
@@ -234,6 +350,37 @@ td code{background:transparent; padding:0; font-size:.8em}
   color:var(--ink-soft); margin:.7rem 0 0;
 }
 
+/* ---- trake pokrivenosti ---- */
+.bars{
+  margin:2rem 0; padding:1.3rem 1.25rem 1rem; background:var(--card);
+  border:1px solid var(--rule); border-radius:3px; box-shadow:var(--shadow);
+}
+.bars figcaption{
+  font-family:ui-sans-serif,system-ui,sans-serif; font-size:.75rem; color:var(--ink-soft);
+  margin-bottom:1rem;
+}
+.bar-row{
+  display:grid; grid-template-columns:1fr auto; gap:.35rem .8rem;
+  align-items:baseline; margin-bottom:1.05rem;
+}
+.bar-lab{
+  font-family:ui-sans-serif,system-ui,sans-serif; font-size:.85rem; font-weight:600; color:var(--ink);
+}
+.bar-num{
+  font-family:ui-sans-serif,system-ui,sans-serif; font-size:.85rem; font-weight:650;
+  font-variant-numeric:tabular-nums; color:var(--navy); text-align:right;
+}
+.bar-track{
+  grid-column:1 / -1; order:3; display:block; height:8px; border-radius:2px;
+  background:var(--tint); border:1px solid var(--rule-soft); overflow:hidden;
+}
+.bar-fill{display:block; height:100%; background:var(--navy)}
+.bar-fill.thin{background:var(--accent)}
+.bar-note{
+  grid-column:1 / -1; order:4; font-family:ui-sans-serif,system-ui,sans-serif;
+  font-size:.75rem; color:var(--ink-soft);
+}
+
 /* ---- sitno ---- */
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
 @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
@@ -250,34 +397,35 @@ footer{
 }
 '''
 
-HTML = f'''<meta charset="utf-8">
-<title>Anitin terenski priručnik</title>
+PAGE = '''<meta charset="utf-8">
+<title>{title}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>{CSS}</style>
+<style>{css}</style>
 
 <header class="mast">
   <div class="wrap">
-    <p class="eyebrow">DOMOVINA.ai · terenski priručnik</p>
-    <h1>Zašto DOMOVINA.ai, i kako to reći ljudima</h1>
-    <p class="dek">Benefiti za gledatelje i za podcast kreatore, gotove poruke za
-    javljanje svih 48 kanala, i pitanja koja se postavljaju korisnicima.</p>
-    <p class="stamp">Podaci provjereni 15. kolovoza 2026. Svaka brojka izvučena je iz
-    živog sustava — nijedna nije procijenjena. Ovaj dokument čitaju dvoje: <strong>Anita</strong>
-    i <strong>AI asistent</strong> koji iz njega piše objave i mailove.</p>
+    <p class="eyebrow">{eyebrow}</p>
+    <h1>{h1}</h1>
+    <p class="dek">{dek}</p>
+    <p class="stamp">{stamp}</p>
   </div>
 </header>
 
-<nav class="toc" aria-label="Sadržaj"><div class="wrap">{navhtml}</div></nav>
+<nav class="toc" aria-label="Sadržaj"><div class="wrap">{nav}</div></nav>
 
 <main><div class="wrap">
 {body}
 </div></main>
 
 <footer><div class="wrap">
-Izvor: <code>docs/marketing/benefiti-i-outreach.md</code> u repozitoriju domovina.ai.
-Brojke se mijenjaju kako stižu nove epizode — reci Matiji da osvježi dokument.
+Izvor: <code>{src}</code> u repozitoriju domovina.ai. {footer}
 </div></footer>
 '''
 
-OUT.write_text(HTML, encoding='utf-8')
-print(f'{OUT} — {len(HTML)//1024} kB, {len(nav)} sekcija u navigaciji')
+
+if __name__ == '__main__':
+    keys = sys.argv[1:] or list(DOCS)
+    for k in keys:
+        if k not in DOCS:
+            sys.exit(f'nepoznat dokument: {k} (poznati: {", ".join(DOCS)})')
+        build(k, DOCS[k])
