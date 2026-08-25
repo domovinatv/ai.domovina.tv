@@ -167,6 +167,39 @@ overlay klikove (search palette, share sheet) zbog #163576.
 
 **Rule**: Use PNG (`Image.asset`) instead of SVG for in-app images on web.
 
+### Fontovi na webu — `<link>` u index.html NE oblikuje Flutter tekst
+
+canvaskit/skwasm ne čita `@font-face` iz dokumenta (to je radio samo stari HTML
+renderer). Sve dok je `AppTypography` na webu postavljao goli
+`fontFamily: 'Playfair Display'` i računao na `<link>` u `web/index.html`,
+Flutter je taj font tražio među **registriranima**, ne nalazio ga i padao na
+ugrađeni fallback: naslovi i wordmark su se na webu crtali sans-serifom umjesto
+Playfairom (izmjereno 25.8.2026. na produkciji), a pojedini glyphovi znali su
+nestati dok asinkroni Noto fallback ne stigne.
+
+Fontovi se zato registriraju kroz `google_fonts` na **svim** platformama.
+`web/index.html` `<link>` ostaje — njime se crta HTML boot-intro splash (pravi
+DOM, prije Fluttera) i ugrije `fonts.gstatic.com`.
+
+**Rule**: novi font/težina u `lib/theme/typography.dart` mora ići i u
+`AppTypography._usedVariants`. `main()` zove `startPreload()` odmah, a
+`awaitPreload()` pred `runApp` — inače se prvi frame crta fallbackom pa cijela
+stranica prelomi kad pravi font stigne.
+
+### Hero na naslovnici se otkriva TEK kad je izbor konačan
+
+`ChannelCache` javlja svakim učitanim kanalom, a `HomeFeed.pickFeaturedCarousel`
+rangira po **trenutno** učitanom bazenu. Hero je zato tijekom prefetcha
+prelistavao kandidate (bljeskanje + skakanje stranice). Sada
+`_ChannelGridViewState` latcha izbor jednom — kad je `channelCache.done` (ili
+nakon 6 s grace prozora, uz `hasMinimumData`) — i više ga ne dira.
+
+**Rule**: `HeroSkeleton` mora biti **točno jednako visok** kao `HeroCarousel`,
+uključujući `kHeroControlBarHeight` (zato karusel s jednim pickom zadržava
+praznu kontrolnu traku). Kontrakt čuva `test/hero_slot_layout_test.dart`;
+mijenjaš li hero layout, mijenjaj i skeleton. Testni font je širi od Intera pa
+test namjerno drži meta red u jednom retku.
+
 ### Universal/App Links NE smiju hvatati auth callback rute
 
 Web OAuth povratak (`GoTrue → https://domovina.ai/auth/callback`) je
