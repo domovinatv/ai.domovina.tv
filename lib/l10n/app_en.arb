@@ -968,6 +968,7 @@
   "votingAlreadyVoted": "Today's vote is already used.",
   "votingVoteRecorded": "Vote recorded.",
   "votingStreakSaved": "{count, plural, one{{count} flag saved your streak.} other{{count} flags saved your streak.}}",
+  "votingStreakBrokeBurned": "{count, plural, one{Streak broken — {count} flag spent.} other{Streak broken — {count} flags spent.}}",
   "votingErrorNotVerified": "Voting requires eID verification.",
   "votingErrorCandidateGone": "This candidate is no longer in the running.",
   "votingErrorRoundClosed": "The round has closed in the meantime.",

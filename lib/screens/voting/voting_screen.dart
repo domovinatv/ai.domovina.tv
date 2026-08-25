@@ -197,15 +197,19 @@ class _VotingScreenState extends State<VotingScreen> {
           SnackBar(content: Text(l.votingAlreadyVoted)),
         );
       } else {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              ishod.streakSaved && ishod.flagsBurned > 0
-                  ? l.votingStreakSaved(ishod.flagsBurned)
-                  : l.votingVoteRecorded,
-            ),
-          ),
-        );
+        // Tri ishoda, ne dva: od 25.8.2026. `flags_burned > 0` može doći i uz
+        // `streak_saved = false` (praznina veća od broja zastavica pojede sve,
+        // a niz svejedno pukne — migracija 20260825122100). Bez zasebne poruke
+        // zastavice bi nestale bez ijedne riječi.
+        final String poruka;
+        if (ishod.flagsBurned > 0) {
+          poruka = ishod.streakSaved
+              ? l.votingStreakSaved(ishod.flagsBurned)
+              : l.votingStreakBrokeBurned(ishod.flagsBurned);
+        } else {
+          poruka = l.votingVoteRecorded;
+        }
+        messenger.showSnackBar(SnackBar(content: Text(poruka)));
       }
       // Tally se pomaknuo za sve — povuci svježu ljestvicu s istim filterima.
       await _service.loadLeaderboard(limit: _limit);

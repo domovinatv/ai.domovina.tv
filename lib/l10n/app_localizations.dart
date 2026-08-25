@@ -5915,6 +5915,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} zastavica spasila je tvoj niz.} few{{count} zastavice spasile su tvoj niz.} other{{count} zastavica spasilo je tvoj niz.}}'**
   String votingStreakSaved(int count);
 
+  /// Nakon glasa koji je puknuo niz, a pritom pojeo zastavice (praznina veća od broja zastavica). Bez ove poruke zastavice nestanu bez objašnjenja.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{Niz je pukao — potrošena je {count} zastavica.} few{Niz je pukao — potrošene su {count} zastavice.} other{Niz je pukao — potrošeno je {count} zastavica.}}'**
+  String votingStreakBrokeBurned(int count);
+
   /// Greška: korisnik nije verificiran.
   ///
   /// In hr, this message translates to:

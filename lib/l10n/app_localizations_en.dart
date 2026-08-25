@@ -3736,6 +3736,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String votingStreakBrokeBurned(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Streak broken — $count flags spent.',
+      one: 'Streak broken — $count flag spent.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get votingErrorNotVerified => 'Voting requires eID verification.';
 
   @override

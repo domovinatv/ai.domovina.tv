@@ -21,8 +21,17 @@
 set -uo pipefail
 
 export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"
-# launchd daje minimalan PATH — node i ruby razriješi eksplicitno.
+# launchd daje minimalan PATH — alate razriješi eksplicitno.
 export PATH="/opt/homebrew/bin:/opt/homebrew/opt/ruby/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+# node živi pod nvm-om, a nvm se aktivira tek u interaktivnom shellu — pod
+# launchdom ga NEMA (izmjereno 25.8.2026.: prvi kickstart pao s
+# „node: command not found", exit 2). Verzija se ne hardkodira: uzmi najnoviju
+# instaliranu, da nadogradnja node-a ne obori tripwire.
+if ! command -v node >/dev/null 2>&1; then
+  NVM_BIN="$(/bin/ls -d "$HOME"/.nvm/versions/node/*/bin 2>/dev/null | sort -V | tail -1)"
+  [[ -n "${NVM_BIN:-}" ]] && export PATH="$NVM_BIN:$PATH"
+fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FETCH_REPO="${FETCH_REPO:-$HOME/git/domovinatv/fetch.domovina.tv}"
@@ -46,6 +55,13 @@ notify() {  # nikad ne obara skriptu — notifikacija je posljedica, ne uvjet
 # Sve što ide u <pre> MORA kroz ovo: parse_mode=HTML bi `<` iz izvještaja pročitao
 # kao tag i cijela poruka bi propala s 400 (ista zamka kao u nightly-build.sh).
 esc() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "GRESKA: nema node u PATH-u" >&2
+  notify "⚠️ <b>Glasanje — tripwire ne radi</b>
+<code>node</code> nije u PATH-u (nvm se ne aktivira pod launchdom)."
+  exit 2
+fi
 
 if [[ ! -f "$SYNC" ]]; then
   echo "GRESKA: nema $SYNC (postavi FETCH_REPO)" >&2

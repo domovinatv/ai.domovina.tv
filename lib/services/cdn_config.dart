@@ -88,8 +88,45 @@ class CdnConfig {
   static String audioProbeUrl(String ytId) =>
       '$base/data/$ytId/audio.mp3?${_channelCacheBuster()}';
 
-  /// Thumbnail epizode
+  /// Thumbnail epizode — full-res PNG original (1280×720, tipično ~800 KB).
+  ///
+  /// Za PRIKAZ radije koristi [CachedThumbnail], koji ovaj URL automatski
+  /// zamijeni WebP varijantom primjerenom render-širini (vidi
+  /// [thumbnailVariantUrl]) i pada natrag na ovaj PNG ako varijanta ne postoji.
+  /// Ovaj URL ostaje kanonski identitet slike i fallback.
   static String thumbnailUrl(String ytId) => '$base/images/$ytId/thumbnail.png';
+
+  /// Širine WebP varijanti koje pipeline generira
+  /// (`fetch.domovina.tv/generate_webp_thumbs.js`). Mora ostati sortirano
+  /// uzlazno — [pickThumbWidth] se oslanja na to.
+  static const List<int> thumbVariantWidths = [320, 640, 1280];
+
+  /// WebP varijanta thumbnaila. [width] mora biti iz [thumbVariantWidths].
+  ///
+  /// Zašto uopće: PNG original je ~800 KB po epizodi, pa lista od 20 epizoda
+  /// povuče ~16 MB. Ista slika kao WebP q80 @320px je ~13 KB — 61× manje.
+  /// Varijante su unaprijed generirane i leže na R2 kao obični statični fajlovi
+  /// (nema resize servisa u request pathu), immutable, cachirane na CF edgeu.
+  static String thumbnailVariantUrl(String ytId, int width) =>
+      '$base/images/$ytId/thumb-$width.webp';
+
+  /// Najmanja varijanta koja pokriva [targetPx] fizičkih piksela.
+  ///
+  /// [targetPx] je render-širina u logičkim pikselima × devicePixelRatio.
+  /// Ako ništa nije dovoljno veliko (vrlo širok layout na DPR 3), vraća najveću
+  /// — bolje blago skaliranje prema dolje nego 800 KB PNG.
+  static int pickThumbWidth(double targetPx) {
+    for (final w in thumbVariantWidths) {
+      if (w >= targetPx) return w;
+    }
+    return thumbVariantWidths.last;
+  }
+
+  /// Regex za prepoznavanje kanonskog thumbnail URL-a → hvata YouTube ID.
+  /// Koristi [CachedThumbnail] da automatski nadogradi URL na WebP varijantu
+  /// bez da ijedan call-site mora znati za varijante.
+  static final RegExp thumbnailUrlPattern =
+      RegExp(r'/images/([A-Za-z0-9_-]{11})/thumbnail\.png$');
 
   /// Screenshot za dani timestamp ("HH:MM:SS" → "HH-MM-SS.png")
   static String screenshotUrl(String ytId, String timestamp) {

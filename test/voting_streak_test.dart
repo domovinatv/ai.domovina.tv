@@ -130,8 +130,11 @@ void main() {
       expect(cast.snapshot.longestStreak, 13);
     });
 
-    test('6. propuštena 3 dana uz 2 zastavice → niz 1, zastavice ostaju 2', () {
-      // Sve-ili-ništa (§6.3): zastavice se NE troše kad ne mogu spasiti niz.
+    test('6. propuštena 3 dana uz 2 zastavice → niz 1, zastavice pojedene', () {
+      // REVIDIRANO 25.8.2026. (migracija 20260825122100): prije je vrijedilo
+      // sve-ili-ništa — zastavice su ostajale netaknute i glas je uz to nosio
+      // nagradu, pa je korisnik koji je propustio 12 dana izgubio niz i DOBIO
+      // zastavicu. Sada se troše i kad ne mogu spasiti, a nagrade nema.
       final cast = projectStreakForVote(
         today: day(8),
         snapshot: snap(streak: 12, longest: 12, flags: 2, lastDay: 4),
@@ -139,10 +142,34 @@ void main() {
 
       expect(cast.streakBroken, isTrue);
       expect(cast.streakSaved, isFalse);
+      expect(cast.flagsBurned, 2, reason: 'djelomično trošenje: pojede se sve');
+      expect(cast.snapshot.streak, 1);
+      expect(cast.snapshot.flags, 0, reason: 'puknuće ne nosi nagradu');
+      expect(cast.snapshot.longestStreak, 12); // najduži se pamti zauvijek
+    });
+
+    test('6b. stvarni slučaj s produkcije: 12 propuštenih uz 1 zastavicu', () {
+      // stepanic.matija@gmail.com: glas 12.8. (prvi ikad), pa 25.8.
+      // Po staroj logici: niz 1, zastavice 1 → 2. Po novoj: zastavica nestane.
+      final cast = projectStreakForVote(
+        today: day(25),
+        snapshot: snap(streak: 1, longest: 1, flags: 1, lastDay: 12),
+      );
+
+      expect(cast.streakBroken, isTrue);
+      expect(cast.flagsBurned, 1);
+      expect(cast.snapshot.streak, 1);
+      expect(cast.snapshot.flags, 0);
+      expect(cast.snapshot.longestStreak, 1);
+    });
+
+    test('6c. prvi glas ikad NIJE puknuće — nosi zastavicu', () {
+      final cast = projectStreakForVote(today: day(8), snapshot: snap());
+
+      expect(cast.streakBroken, isFalse);
       expect(cast.flagsBurned, 0);
       expect(cast.snapshot.streak, 1);
-      expect(cast.snapshot.flags, 2); // 2 netaknute + 1 → strop 2
-      expect(cast.snapshot.longestStreak, 12); // najduži se pamti zauvijek
+      expect(cast.snapshot.flags, 1);
     });
 
     test('7. zastavice na stropu → ostaje 2, ne 3', () {

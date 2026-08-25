@@ -201,12 +201,22 @@ StreakCast projectStreakForVote({
     saved = true;
     streak = snapshot.streak + 1;
   } else {
-    // Zastavice se NE troše kad ne mogu spasiti niz (§6.3, odstupanje od Brilliant-a).
+    // PUKNUO. Zastavice se troše i kad ne mogu spasiti niz (revidirano
+    // 25.8.2026., migracija 20260825122100_channel_voting_flags_brilliant.sql):
+    // prije su ostajale netaknute, pa nikad nisu nestale osim kad nešto spase i
+    // prestale su biti resurs kojim se upravlja.
+    burned = flags;
+    flags = 0;
     streak = 1;
     broken = true;
   }
 
-  flags = math.min(kMaxVoteFlags, flags + 1);
+  // Nagrada za dolazak SAMO ako niz stoji. Prvi glas ikad (`last == null`) nije
+  // puknuće i nosi zastavicu; glas koji je upravo resetirao niz ne nosi ništa —
+  // reset i nagrada u istom potezu korisniku su izgledali kao bug.
+  if (!broken) {
+    flags = math.min(kMaxVoteFlags, flags + 1);
+  }
 
   return StreakCast(
     snapshot: StreakSnapshot(

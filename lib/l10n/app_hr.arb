@@ -4620,6 +4620,13 @@
     "description": "Potvrda korisnikove radnje nakon uspješnog glasa."
   },
   "votingStreakSaved": "{count, plural, one{{count} zastavica spasila je tvoj niz.} few{{count} zastavice spasile su tvoj niz.} other{{count} zastavica spasilo je tvoj niz.}}",
+  "votingStreakBrokeBurned": "{count, plural, one{Niz je pukao — potrošena je {count} zastavica.} few{Niz je pukao — potrošene su {count} zastavice.} other{Niz je pukao — potrošeno je {count} zastavica.}}",
+  "@votingStreakBrokeBurned": {
+    "description": "Nakon glasa koji je puknuo niz, a pritom pojeo zastavice (praznina veća od broja zastavica). Bez ove poruke zastavice nestanu bez objašnjenja.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "@votingStreakSaved": {
     "description": "Potvrda da su zastavice pokrile propuštene izborne dane.",
     "placeholders": {

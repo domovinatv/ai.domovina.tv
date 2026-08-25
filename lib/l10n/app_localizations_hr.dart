@@ -3778,6 +3778,18 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String votingStreakBrokeBurned(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Niz je pukao — potrošeno je $count zastavica.',
+      few: 'Niz je pukao — potrošene su $count zastavice.',
+      one: 'Niz je pukao — potrošena je $count zastavica.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get votingErrorNotVerified => 'Za glasanje treba potvrda e-Osobnom.';
 
   @override
