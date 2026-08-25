@@ -101,6 +101,26 @@ TestFlight i Play internal. Ishod ide u Telegram grupu preko
   `launchd/ai.domovina.build-volume.plist` pri prijavi, a nightly ga digne sam ako
   treba. Ista logika kao emulatorski `DOMOVINA_ANDROID.sparsebundle`.
 
+## Tripwire: registar podcasta ↔ glasački bazen (launchd, 08:30)
+
+`domovina_ai.vote_candidates` je **snimka** `fetch.domovina.tv/data/podcasts_registry.json`,
+ne živi pogled — podcast dodan u registar ne stigne u bazu dok se ne pokrene
+`sync_voting_candidates.mjs --commit`. Izmjereno 25.8.2026.: registar je 17 dana
+nosio 37 kandidata (AbbaCast među njima) kojih u bazi nije bilo, korisnici za njih
+nisu mogli glasati, i ništa to nije javilo.
+
+`scripts/voting-drift-check.sh` (launchd `ai.domovina.voting-drift`) svako jutro
+usporedi registar i bazu; tiho je kad su poravnati, na drift javi u Telegram.
+Sama usporedba je `node sync_voting_candidates.mjs --check` u fetch repou —
+**filtar kandidata (§3) živi na jednom mjestu**, u sync skripti, i tripwire ga
+ne prepisuje. (Reimplementacija filtra je pri prvom pokušaju dala 164 umjesto
+218 kandidata.) `--check` preskače yt-dlp i CDN pa traje sekundu; exit 0 =
+poravnato, 1 = drift, 2 = ne mogu provjeriti.
+
+**Rule**: tripwire NE pokreće `--commit` sam od sebe — sync uploada avatare na
+CDN i mijenja `status` redova, pa je to promjena produkcijskih podataka koju
+potpisuje čovjek. `--sync` flag postoji ako se to ikad svjesno promijeni.
+
 ## Known Issues & Gotchas
 
 > **Web delivery, rendering & caching** (service worker staleness, cache-busting

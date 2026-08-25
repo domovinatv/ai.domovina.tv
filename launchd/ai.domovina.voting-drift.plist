@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Tripwire: registar podcasta ↔ glasački bazen u bazi. Svaki dan u 08:30.
+  Tiho kad je poravnato; na drift ide poruka u Telegram grupu.
+
+  Instalacija (NE radi je agent, isto pravilo kao za nightly):
+    cp launchd/ai.domovina.voting-drift.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.domovina.voting-drift.plist
+  Ručni okidač:  launchctl kickstart -k gui/$(id -u)/ai.domovina.voting-drift
+  Deinstalacija: launchctl bootout gui/$(id -u)/ai.domovina.voting-drift
+
+  LaunchAgent, ne Daemon: skripta čita `.env` iz korisnikova homea i šalje u
+  Telegram — treba korisnikovu sesiju, ne sistemski kontekst.
+  Program je homebrew bash 5 (macOS /bin/bash je 3.2).
+
+  08:30, a ne 01:00 kao nightly: drift nastaje kad ČOVJEK doda podcast u
+  registar tijekom dana, pa provjera ima smisla ujutro — kad si tu da je
+  riješiš jednom komandom, a ne usred noći.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ai.domovina.voting-drift</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/bash</string>
+    <string>/Users/ms/git/domovinatv/domovina.ai/scripts/voting-drift-check.sh</string>
+  </array>
+
+  <!-- launchd ne nasljeđuje LANG; bez toga Ruby notifier pukne na US-ASCII. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>LANG</key><string>en_US.UTF-8</string>
+    <key>LC_ALL</key><string>en_US.UTF-8</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>8</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai/.nightly/voting-drift.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/ms/git/domovinatv/domovina.ai/.nightly/voting-drift.err.log</string>
+</dict>
+</plist>
