@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_thumbnail.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
 
@@ -130,10 +131,14 @@ class EpisodeRailCard extends StatelessWidget {
 
   Widget _coverImage(ThemeData theme) {
     if (thumbnailUrl == null) return _coverFallback(theme);
-    return Image.network(
-      thumbnailUrl!,
+    // `width` je stvarna širina kartice → CachedThumbnail iz nje bira WebP
+    // varijantu (180/220 dp × dpr → thumb-640 umjesto 830 KB PNG-a).
+    return CachedThumbnail(
+      url: thumbnailUrl!,
+      width: width,
       fit: BoxFit.cover,
-      errorBuilder: (c, e, s) => _coverFallback(theme),
+      errorIcon: Icons.ondemand_video,
+      errorIconSize: 28,
     );
   }
 

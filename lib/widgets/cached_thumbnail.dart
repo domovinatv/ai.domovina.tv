@@ -31,14 +31,35 @@ import '../services/cdn_config.dart';
 /// i leže na R2 kao statični immutable fajlovi — nema resize servisa u request
 /// pathu, sve ide s Cloudflare edge cachea.
 ///
-/// **Fallback**: ako varijanta vrati grešku (404 — epizoda koju backfill još
-/// nije pokrio, ili nova epizoda prije nego pipeline odradi korak), widget se
-/// tiho vrati na originalni PNG. U sretnom slučaju to ne košta nijedan dodatni
-/// request — nema probe-a unaprijed.
+/// **Fallback**: ako varijanta vrati grešku, widget se tiho vrati na originalni
+/// PNG. Pokriva oba uzroka — 404 (epizoda koju backfill još nije pokrio, ili
+/// nova epizoda prije nego pipeline odradi KORAK 9.7) i neuspjeh dekodiranja
+/// (browser bez WebP podrške). Ne razlikujemo ta dva uzroka i ne moramo —
+/// ishod je isti. U sretnom slučaju fallback ne košta nijedan dodatni request —
+/// nema probe-a unaprijed. Ako padne i PNG, zove se `onFailed`.
 ///
-/// WebP je siguran za in-app prikaz: Flutter sam dekodira sliku, ne ovisi o
-/// browseru. (Za `og:image` i dijeljenje na društvenim mrežama se NE koristi
-/// WebP nego `og-share.jpg` — link-preview crawleri WebP ne dokumentiraju.)
+/// ## Podrška za WebP dekodiranje
+///
+/// Na **nativeu** (iOS/Android/macOS) sliku dekodira Skia unutar Flutter
+/// enginea — WebP radi bez obzira na OS verziju.
+///
+/// Na **webu** dekodira BROWSER (Flutter napravi blob i pusti ga kroz
+/// `createImageBitmap`/`<img>`), pa podrška prati browser: Chrome 32+,
+/// Firefox 65+, Edge 18+, **Safari 14+ / iOS Safari 14+** (rujan 2020.).
+/// Realno pokriveno ~97 % prometa, a jedini rupa (iOS ≤ 13) ionako ne vrti
+/// Flutter web smisleno. I da pukne, gornji fallback vrati PNG — degradacija
+/// je "sporije", ne "prazna slika".
+///
+/// (Za `og:image` i dijeljenje na društvenim mrežama se NE koristi WebP nego
+/// `og-share.jpg` — link-preview crawleri WebP ne dokumentiraju.)
+///
+/// ## CORS je tvrdi uvjet
+///
+/// [CachedNetworkImage] povlači bajtove kroz `package:http`, pa URL MORA imati
+/// `access-control-allow-origin`. `cdn.domovina.ai` ga ima (`*`) za sve slike.
+/// Ne prosljeđuj ovamo URL-ove sa stranih hostova bez provjere — `Image.network`
+/// na webu ima `<img>` fallback koji CORS preživi, a ovaj widget nema.
+/// Vidi istu zamku u `audio_poster.dart`.
 class CachedThumbnail extends StatefulWidget {
   final String url;
   final double? width;
@@ -58,6 +79,20 @@ class CachedThumbnail extends StatefulWidget {
   /// Koristi samo ako ti stvarno treba baš original (npr. share/export flow).
   final bool useVariants;
 
+  /// Poziva se kad slika KONAČNO ne uspije — dakle tek nakon što je i fallback
+  /// na originalni PNG pao, ne na neuspjeh same WebP varijante. Za call-siteove
+  /// koji na nepostojeću sliku ne crtaju placeholder nego kolabiraju cijeli
+  /// blok (hero, screenshot u članku). Poziv je već odgođen post-frame, pa
+  /// [setState] unutar njega smiješ zvati izravno.
+  final VoidCallback? onFailed;
+
+  /// Zamjenjuje default error prikaz (obojani pravokutnik + [errorIcon]) kad
+  /// call-site na nedostupnu sliku crta nešto svoje — npr. gradijentni backdrop
+  /// heroa. Zove se SAMO pri konačnom neuspjehu; dok se pokušava fallback s
+  /// WebP varijante na PNG i dalje se prikazuje neutralni placeholder, da
+  /// korisnik ne vidi bljesak greške prije nego slika sjedne.
+  final WidgetBuilder? errorFallbackBuilder;
+
   const CachedThumbnail({
     super.key,
     required this.url,
@@ -68,6 +103,8 @@ class CachedThumbnail extends StatefulWidget {
     this.errorIconSize = 32,
     this.fadeInDuration = const Duration(milliseconds: 200),
     this.useVariants = true,
+    this.onFailed,
+    this.errorFallbackBuilder,
   });
 
   @override
@@ -129,29 +166,48 @@ class _CachedThumbnailState extends State<CachedThumbnail> {
       memCacheWidth: widget.width != null && widget.width!.isFinite
           ? (widget.width! * dpr).round()
           : null,
-      // Varijanta 404-a (backfill je još ne pokriva) → jednom se prebaci na
-      // originalni PNG. Bez ovoga bi epizoda bez varijante ostala prazna.
-      errorListener: isVariant
-          ? (_) {
-              if (!mounted || _variantFailed) return;
-              setState(() => _variantFailed = true);
-            }
-          : null,
       placeholder: (_, _) => Container(
         width: widget.width,
         height: widget.height,
         color: theme.colorScheme.surfaceContainerHighest,
       ),
-      errorWidget: (_, _, _) {
-        // Dok fallback ne "sjedne" prikaži placeholder umjesto ikone greške —
-        // inače bi korisnik na trenutak vidio broken-image pa sliku.
+      // Fallback se okida iz `errorWidget`, a ne iz `errorListener`. Oboje su
+      // legitimni hookovi paketa, ali `errorWidget` je onaj koji SIGURNO ide
+      // kroz build kad load padne (on crta ono što korisnik vidi), pa je
+      // fallback vezan uz njega — bez oslanjanja na to fira li `errorListener`
+      // na svakoj platformi. Zove se iz build faze → setState ide post-frame.
+      //
+      // NAPOMENA: ovaj put nije pokriven automatskim testom (mockanje
+      // flutter_cache_managera je nerazmjerno); pokriven je samo izbor URL-a u
+      // `test/cdn_thumbnail_variants_test.dart`. Ako mijenjaš ovu granu,
+      // provjeri ručno na epizodi kojoj `thumb-*.webp` 404-a a `thumbnail.png`
+      // postoji.
+      errorWidget: (ctx, _, _) {
+        // Varijanta pukla (404 od backfill rupe, ili dekoder bez WebP-a) →
+        // prebaci se jednom na originalni PNG i dotad drži neutralni
+        // placeholder, da korisnik ne vidi bljesak greške prije slike.
         if (isVariant) {
+          if (!_variantFailed) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_variantFailed) {
+                setState(() => _variantFailed = true);
+              }
+            });
+          }
           return Container(
             width: widget.width,
             height: widget.height,
             color: theme.colorScheme.surfaceContainerHighest,
           );
         }
+        // Pao je i PNG → slike stvarno nema.
+        if (widget.onFailed != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onFailed!.call();
+          });
+        }
+        final custom = widget.errorFallbackBuilder;
+        if (custom != null) return custom(ctx);
         return Container(
           width: widget.width,
           height: widget.height,

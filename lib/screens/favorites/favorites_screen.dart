@@ -8,6 +8,7 @@ import '../../services/channel_cache.dart';
 import '../../services/favorites_service.dart';
 import '../../services/view_mode.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_thumbnail.dart';
 import 'favorites_resolver.dart';
 
 /// Puni popis spremljenih (lajkanih) epizoda — najnovija prvo.
@@ -215,15 +216,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   aspectRatio: 16 / 9,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      CdnConfig.thumbnailUrl(item.episodeId),
+                    child: CachedThumbnail(
+                      url: CdnConfig.thumbnailUrl(item.episodeId),
+                      width: 128,
                       fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(
-                        color: cs.surfaceContainerHigh,
-                        child: Icon(Icons.ondemand_video,
-                            size: 22,
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                      ),
+                      errorIcon: Icons.ondemand_video,
+                      errorIconSize: 22,
                     ),
                   ),
                 ),

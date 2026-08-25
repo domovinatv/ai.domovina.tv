@@ -5,6 +5,7 @@ import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
+import 'cached_thumbnail.dart';
 
 class HeroSection extends StatefulWidget {
   final PodcastInfo info;
@@ -63,19 +64,15 @@ class _HeroSectionState extends State<HeroSection> {
           if (!_thumbFailed)
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: Image.network(
-                CdnConfig.thumbnailUrl(widget.youtubeId),
+              child: CachedThumbnail(
+                url: CdnConfig.thumbnailUrl(widget.youtubeId),
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  // Nema thumbnaila → kolabiraj blok (post-frame setState da se
-                  // ne dogodi tijekom build/paint faze).
-                  if (!_thumbFailed) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) setState(() => _thumbFailed = true);
-                    });
-                  }
-                  return const SizedBox.shrink();
+                // Nema thumbnaila (ni varijante ni PNG-a) → kolabiraj blok.
+                // Post-frame jer ovo mijenja layout roditelja.
+                onFailed: () {
+                  if (!_thumbFailed) setState(() => _thumbFailed = true);
                 },
+                errorFallbackBuilder: (_) => const SizedBox.shrink(),
               ),
             ),
 

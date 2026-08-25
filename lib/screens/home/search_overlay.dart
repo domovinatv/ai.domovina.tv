@@ -21,6 +21,7 @@ import '../../widgets/person_monogram.dart';
 
 import '../../theme/typography.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/cached_thumbnail.dart';
 
 /// Otvori search overlay (modal) povrh home screen-a.
 ///
@@ -813,12 +814,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: ch.avatarSquare != null
-                  ? Image.network(
-                      ch.avatarSquare!,
+                  ? CachedThumbnail(
+                      url: ch.avatarSquare!,
                       width: 40,
                       height: 40,
                       fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => _placeholder(theme, 40),
+                      errorFallbackBuilder: (_) => _placeholder(theme, 40),
                     )
                   : _placeholder(theme, 40),
             ),
@@ -866,12 +867,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.network(
-                CdnConfig.thumbnailUrl(vr.video.id),
+              child: CachedThumbnail(
+                url: CdnConfig.thumbnailUrl(vr.video.id),
                 width: 72,
                 height: 40,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => _thumbPlaceholder(theme, 72, 40),
+                errorFallbackBuilder: (_) => _thumbPlaceholder(theme, 72, 40),
               ),
             ),
             const SizedBox(width: 12),
@@ -974,12 +975,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.network(
-                CdnConfig.thumbnailUrl(r.youtubeId),
+              child: CachedThumbnail(
+                url: CdnConfig.thumbnailUrl(r.youtubeId),
                 width: 72,
                 height: 40,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => _thumbPlaceholder(theme, 72, 40),
+                errorFallbackBuilder: (_) => _thumbPlaceholder(theme, 72, 40),
               ),
             ),
             const SizedBox(width: 12),

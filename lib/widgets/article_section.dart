@@ -15,6 +15,7 @@ import 'clip_share_sheet.dart';
 import '../services/clip_service.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
+import 'cached_thumbnail.dart';
 
 class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
@@ -513,30 +514,23 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                     aspectRatio: 16 / 9,
                     child: Container(
                       color: theme.colorScheme.surfaceContainerHighest,
-                      child: Image.network(
-                        CdnConfig.screenshotUrl(
+                      // Screenshotovi nemaju WebP varijante (drugi URL prostor
+                      // od thumbnaila) — dobitak je disk cache: povratak na
+                      // pročitanu epizodu više ne povlači slike ponovno.
+                      child: CachedThumbnail(
+                        url: CdnConfig.screenshotUrl(
                           widget.youtubeId,
                           section.screenshotTimestamp,
                         ),
                         fit: BoxFit.cover,
-                        width: double.infinity,
-                        // Fade-in kad slika stigne — sprječava flash blank → loaded.
-                        frameBuilder: (context, child, frame, wasSyncLoaded) {
-                          if (wasSyncLoaded || frame != null) return child;
-                          return const SizedBox.shrink();
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          // Nema screenshota → kolabiraj blok (post-frame da se
-                          // setState ne dogodi tijekom build/paint faze).
+                        // Nema screenshota → kolabiraj blok (post-frame da se
+                        // setState ne dogodi tijekom build/paint faze).
+                        onFailed: () {
                           if (!_screenshotFailed) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) {
-                                setState(() => _screenshotFailed = true);
-                              }
-                            });
+                            setState(() => _screenshotFailed = true);
                           }
-                          return const SizedBox.shrink();
                         },
+                        errorFallbackBuilder: (_) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_detail.dart';
 import '../../../services/locale_service.dart';
+import '../../../widgets/cached_thumbnail.dart';
 
 /// Multi-select epizoda kanala za dodjelu kampanji. Pre-checked iz trenutnog
 /// seta; "Spremi" zove [onSave] (koja smije baciti — npr. epizoda već u drugoj
@@ -130,12 +131,12 @@ class _EpisodePickerState extends State<EpisodePicker> {
                 secondary: v.thumbnail != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(4),
-                        child: Image.network(
-                          v.thumbnail!,
+                        child: CachedThumbnail(
+                          url: v.thumbnail!,
                           width: 64,
                           height: 36,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const SizedBox(
+                          errorFallbackBuilder: (_) => const SizedBox(
                               width: 64, height: 36),
                         ),
                       )

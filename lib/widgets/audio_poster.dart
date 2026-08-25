@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import 'cached_thumbnail.dart';
 
 /// Cover-art prikaz za audio-only epizode — zamjenjuje crnu media_kit video
 /// površinu (nema video frame-ova). Prikazuje kvadratni artwork (channel
@@ -32,10 +33,10 @@ class AudioPoster extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          artUrl!,
+                        child: CachedThumbnail(
+                          url: artUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _fallbackIcon(theme),
+                          errorFallbackBuilder: (_) => _fallbackIcon(theme),
                         ),
                       ),
                     ),

@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 
 import '../../services/favorites_service.dart';
 import '../../theme/typography.dart';
+import '../../widgets/cached_thumbnail.dart';
 import 'home_feed.dart';
 
 /// Editorial hero sekcija — split layout (slika lijevo, tekst desno) na desktop,
@@ -139,10 +140,12 @@ class HeroSection extends StatelessWidget {
 
   Widget _coverImage() {
     // CDN URL (ne `video.thumbnail` koji moze biti i.ytimg.com - CORS blok).
-    return Image.network(
-      CdnConfig.thumbnailUrl(featured.video.video.id),
+    // Hero puni širinu → CachedThumbnail uzima širinu ekrana kao gornju ogradu
+    // i bira najveću varijantu (thumb-1280, ~71 KB umjesto 830 KB PNG-a).
+    return CachedThumbnail(
+      url: CdnConfig.thumbnailUrl(featured.video.video.id),
       fit: BoxFit.cover,
-      errorBuilder: (c, e, s) => _backdropFallback(Theme.of(c)),
+      errorFallbackBuilder: (c) => _backdropFallback(Theme.of(c)),
     );
   }
 

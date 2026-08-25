@@ -16,6 +16,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/typography.dart';
 import '../../widgets/follow_button.dart';
 import '../../widgets/person_monogram.dart';
+import '../../widgets/cached_thumbnail.dart';
 
 /// Javni profil osobe ("person hub") — /p/:slug.
 ///
@@ -1269,18 +1270,13 @@ class _EpisodeCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  CdnConfig.thumbnailUrl(episode.youtubeId),
+                child: CachedThumbnail(
+                  url: CdnConfig.thumbnailUrl(episode.youtubeId),
                   width: 120,
                   height: 68,
                   fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(
-                    width: 120,
-                    height: 68,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Icon(Icons.ondemand_video,
-                        color: theme.colorScheme.onSurfaceVariant),
-                  ),
+                  errorIcon: Icons.ondemand_video,
+                  errorIconSize: 24,
                 ),
               ),
               const SizedBox(width: 12),

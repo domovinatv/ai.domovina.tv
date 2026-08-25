@@ -12,6 +12,7 @@ import '../../services/channel_cache.dart';
 import '../../services/meili_client.dart';
 import '../../widgets/em_highlight_text.dart';
 import '../../widgets/episode_age.dart';
+import '../../widgets/cached_thumbnail.dart';
 
 /// LOKALNI PoC ekran — instant keyword tražilica nad 2562 epizode preko
 /// Meilisearcha (`localhost:7700`). Komplementarno semantičkoj MCP pretrazi.
@@ -316,19 +317,13 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                CdnConfig.thumbnailUrl(hit.youtubeId),
+              child: CachedThumbnail(
+                url: CdnConfig.thumbnailUrl(hit.youtubeId),
                 width: 104,
                 height: 58,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
-                  width: 104,
-                  height: 58,
-                  color: theme.colorScheme.surfaceContainerHigh,
-                  child: Icon(Icons.ondemand_video,
-                      color: theme.colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.5)),
-                ),
+                errorIcon: Icons.ondemand_video,
+                errorIconSize: 24,
               ),
             ),
             const SizedBox(width: 12),

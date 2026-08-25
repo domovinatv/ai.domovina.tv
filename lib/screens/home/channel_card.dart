@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/typography.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
+import '../../widgets/cached_thumbnail.dart';
 
 /// Editorial channel kartica s **dva layouta** ovisno o dimenzijama cover-a.
 ///
@@ -119,11 +120,10 @@ class _ChannelCardState extends State<ChannelCard> {
       children: [
         AspectRatio(
           aspectRatio: dim.aspectRatio,
-          child: Image.network(
-            c.avatarCover!,
+          child: CachedThumbnail(
+            url: c.avatarCover!,
             fit: BoxFit.cover,
-            width: double.infinity,
-            errorBuilder: (ctx, e, s) => _coverFallback(theme),
+            errorFallbackBuilder: (_) => _coverFallback(theme),
           ),
         ),
         Padding(
@@ -162,12 +162,16 @@ class _ChannelCardState extends State<ChannelCard> {
     if (c.avatarSquare == null) return _avatarPlaceholder(theme, size, radius);
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: Image.network(
-        c.avatarSquare!,
+      // Avatari kanala NISU `thumbnail.png` pa nemaju WebP varijante; dobitak
+      // je disk cache + `memCacheWidth`, koji spriječi dekodiranje originala
+      // u punoj rezoluciji za kvadratić od `size` dp. (Najveći avatar u
+      // registru je 5,8 MB — mjereno 25.8.2026.)
+      child: CachedThumbnail(
+        url: c.avatarSquare!,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, e, s) => _avatarPlaceholder(theme, size, radius),
+        errorFallbackBuilder: (_) => _avatarPlaceholder(theme, size, radius),
       ),
     );
   }

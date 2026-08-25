@@ -9,6 +9,7 @@ import '../../services/page_meta.dart';
 import '../../widgets/follow_button.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
+import '../../widgets/cached_thumbnail.dart';
 
 /// Channel detail screen — prikazuje listu video zapisa za određeni kanal.
 ///
@@ -265,12 +266,12 @@ class _VideoCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: video.thumbnail != null
-                    ? Image.network(
-                        video.thumbnail!,
+                    ? CachedThumbnail(
+                        url: video.thumbnail!,
                         width: 120,
                         height: 68,
                         fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => placeholder(),
+                        errorFallbackBuilder: (_) => placeholder(),
                       )
                     : placeholder(),
               ),
@@ -317,11 +318,10 @@ class _VideoGridCard extends StatelessWidget {
             AspectRatio(
               aspectRatio: 16 / 9,
               child: video.thumbnail != null
-                  ? Image.network(
-                      video.thumbnail!,
+                  ? CachedThumbnail(
+                      url: video.thumbnail!,
                       fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (c, e, s) => placeholder(),
+                      errorFallbackBuilder: (_) => placeholder(),
                     )
                   : placeholder(),
             ),
