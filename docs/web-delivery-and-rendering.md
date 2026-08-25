@@ -204,6 +204,69 @@ flowchart TD
 
 ---
 
+## 5. Debugging Flutter web fontova — je li font uopće registriran?
+
+Izmjereno 25.8.2026. Prijava je glasila „font ne radi dobro, negdje slovo
+nestane". Stvarni nalaz je bio veći: **Playfair i Lora se na webu uopće nisu
+primjenjivali**, a nestali glyphovi bili su posljedica toga (async Noto fallback
+stiže po glyphu). Popravak i pravilo su u `CLAUDE.md`; ovdje je metoda kojom se
+to utvrdi, jer je pogrešno zaključivanje ovdje jeftino i tiho.
+
+### Zašto je zamka tiha
+
+Flutter na webu **ne javlja grešku** kad fontFamily ne postoji — samo padne na
+fallback. Vizualno to izgleda kao „font je malo drukčiji", ne kao kvar. A
+`document.fonts` pritom uredno kaže da je font učitan, jer CSS sloj i Flutterov
+canvas sloj **nisu isti font registar**.
+
+```mermaid
+flowchart TD
+  L["&lt;link&gt; Google Fonts<br/>u index.html"] --> CSS[CSS @font-face<br/>document.fonts]
+  CSS --> DOM["DOM tekst<br/>(boot-intro splash)"]
+  CSS -.->|"NE stiže"| SK
+  GF["google_fonts paket<br/>fetch + loadFontFromList"] --> SK[Flutter FontCollection<br/>canvaskit / skwasm]
+  SK --> CANVAS[Flutter tekst<br/>na canvasu]
+  SK -.->|"family nije registriran"| FB["fallback font<br/>+ async Noto po glyphu"]
+  FB --> CANVAS
+```
+
+Stari HTML renderer je crtao tekst DOM-om, pa je lijeva grana radila. Otkako ga
+nema (Flutter 3.29+), `<link>` hrani samo DOM.
+
+### Probe koje razdvajaju slojeve
+
+U konzoli (radi i dok je canvas još prazan — a u automation browseru to traje
+20–30 s, vidi §4):
+
+```js
+// 1. Koji renderer? Ako je falsy → skwasm (--wasm build).
+!!window.flutterCanvasKit
+
+// 2. Vidi li CSS sloj font? (ovo NE dokazuje da ga Flutter koristi)
+document.fonts.check('40px "Playfair Display"')
+
+// 3. Je li font stvarno drukčiji od fallbacka? Usporedi širine.
+//    Ako playfair == serif, @font-face nije primijenjen ni u DOM-u.
+const w = ff => { const s = document.createElement('span');
+  s.textContent = 'Spremi Susreo'; s.style.cssText =
+  'position:absolute;visibility:hidden;font-size:40px;white-space:nowrap;font-family:'+ff;
+  document.body.appendChild(s); const r = s.getBoundingClientRect().width;
+  s.remove(); return Math.round(r); };
+({ playfair: w('"Playfair Display",serif'), serif: w('serif') })
+```
+
+**Dokaz za canvas sloj postoji samo vizualno**: zumiraj naslov i wordmark. Serif
+s jakim kontrastom debljine = Playfair radi. Sans = ne radi, bez obzira što
+`document.fonts` tvrdi. Probe 2 i 3 su nužni, ali nisu dovoljni.
+
+### Vezani dokumenti
+- `CLAUDE.md` → „Fontovi na webu — `<link>` u index.html NE oblikuje Flutter
+  tekst" (pravilo + `AppTypography._usedVariants` obveza)
+- `docs/tech-stack-assessment-flutter-vs-expo.md` — još jedna stavka u kolonu
+  „web zamke su omeđene i dokumentirane"
+
+---
+
 ## Brze dijagnostičke komande
 
 ```bash
