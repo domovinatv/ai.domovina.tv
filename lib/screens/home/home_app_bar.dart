@@ -115,11 +115,17 @@ class HomeAppBar extends StatelessWidget {
 ///
 /// Plan: `docs/plans/2026-08-08-glasanje-o-kanalima.md` §8.6.
 ///
-/// **Vidi ga samo verificirani građanin.** Niz i zastavice postoje isključivo
-/// za korisnika potvrđenog e-Osobnom (odluka 3 iz predaje), pa bi gostu ovdje
-/// stajao prazan simbol bez značenja — gost u zaglavlju ne dobiva ništa novo.
-/// Poziv na potvrdu identiteta živi na samom ekranu glasanja
-/// (`VotingVerifyBar`), gdje uz sebe ima i ljestvicu koja ga objašnjava.
+/// **Niz i zastavice vidi samo verificirani građanin** — postoje isključivo za
+/// korisnika potvrđenog e-Osobnom (odluka 3 iz predaje). Svi ostali dobiju
+/// [_VotingDiscoverChip]: isti položaj, ista ruta, bez brojke koja im ništa ne
+/// znači.
+///
+/// Do 25.8.2026. je chip za neverificirane vraćao `SizedBox.shrink()`, uz
+/// obrazloženje da bi im ovdje stajao prazan simbol. To je bila greška: gost i
+/// korisnik prijavljen Googleom time nisu imali NIJEDAN znak da glasanje
+/// postoji (jedini javni ulaz bio je traka na dnu `/channels`), pa se nisu
+/// imali zašto potvrditi e-Osobnom. Odluka 3 gate-a **glas**, ne saznanje da se
+/// glasa.
 ///
 /// Crvena točka = današnji glas još nije potrošen. Nikakav modal ni snackbar —
 /// CLAUDE.md pravilo o nudge-evima traži trajnu površinu.
@@ -179,7 +185,7 @@ class _VotingStreakChipState extends State<VotingStreakChip> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_verificiran) return const SizedBox.shrink();
+    if (!_verificiran) return const _VotingDiscoverChip();
 
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
@@ -266,6 +272,84 @@ class _VotingStreakChipState extends State<VotingStreakChip> {
                       ),
                     ),
                 ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Chip „Izborni dan" za korisnika BEZ potvrde e-Osobnom (gost, Google, Apple…).
+///
+/// Isto mjesto i ista ruta kao [VotingStreakChip], ali bez niza, zastavica i
+/// crvene točke — sve troje su podaci verificiranog glasača. Ovdje stoji samo
+/// znak da natjecanje postoji; objašnjenje i poziv na potvrdu čekaju na
+/// `/glasanje` (`VotingVerifyBar`), gdje uz sebe imaju i ljestvicu.
+///
+/// **Ne dira nijedan RPC.** Svojstvo „neverificirani ne okidaju `my_voting_state`"
+/// iz T5 ostaje netaknuto — chip je čisti navigacijski element.
+///
+/// Natpis se pojavi tek od **840 dp**, ne od desktop praga (600 dp). Razlog je
+/// izmjeren: na 606 dp logičke širine desktop red zaglavlja s natpisom pukne
+/// („BOTTOM OVERFLOWED BY 38 PIXELS") jer `Expanded` oko `_SearchTrigger`a
+/// spadne ispod ~90 dp koliko traži njegov vlastiti sadržaj (ikona + ⌘K
+/// značka). Ikona bez natpisa uzima ~40 dp umjesto ~103 dp i red diše.
+/// Na mobitelu (< 600 dp) red se ionako horizontalno scrolla, pa bi natpis
+/// samo odgurao `AccountChip` — jedini ulaz u prijavu — izvan vidljivog dijela.
+/// Tooltip i Semantics nose značenje na svim širinama.
+class _VotingDiscoverChip extends StatelessWidget {
+  const _VotingDiscoverChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final sirok = MediaQuery.sizeOf(context).width >= 840;
+
+    return Tooltip(
+      message: l.votingHomeChipTooltip,
+      child: Semantics(
+        button: true,
+        label: l.votingTitle,
+        child: ExcludeSemantics(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => context.go('/glasanje'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Brand crvena, ne onSurfaceVariant: chip mora odskočiti od
+                    // reda sivih ikona (pretraga, jezik, tema) da ga oko uopće
+                    // primijeti — to je jedina svrha ove površine.
+                    Icon(
+                      Icons.how_to_vote_outlined,
+                      size: 16,
+                      color: AppTheme.croRed,
+                    ),
+                    if (sirok) ...[
+                      const SizedBox(width: 5),
+                      Text(
+                        l.votingTitle,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),

@@ -246,8 +246,13 @@ class _NetScore extends StatelessWidget {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final net = candidate.net;
+    // `cs.primary`, NE `AppTheme.croBlue`: pravilo „navy = croBlue" vrijedi za
+    // POVRŠINE koje se boje (fill + rim), a #002F6C kao tekst na tamnoj podlozi
+    // je nečitljiv — vodeći kandidat je time izgubio jedinu brojku koja ga
+    // razlikuje. `cs.primary` je iz istog brand sjemena: navy u svijetloj temi,
+    // njezina svijetla varijanta u tamnoj.
     final boja = net > 0
-        ? AppTheme.croBlue
+        ? theme.colorScheme.primary
         : (net < 0 ? AppTheme.croRed : theme.colorScheme.onSurfaceVariant);
 
     return Semantics(

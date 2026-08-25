@@ -456,3 +456,47 @@ greške. Provjera sumnje:
   idempotentan; `withdrawn` dobivaju samo kandidati koji ispadnu iz registra.
 - `registry/avatars/2pogled-povijest.jpg` na CDN-u NIJE anomalija — bio je
   test ključ iz T4, sada je legitiman dio potpunog seta (179 avatara).
+
+---
+
+## Naknadni zapisnik — 25.8.2026.: T5 je isporučio 3 od 4 ulazne točke
+
+**Nalaz.** Dizajn §8.6 traži četiri ulazne točke. T5 (commit `2f4fcc6`) je
+isporučio tri — home chip, `/account` kartica, `/channels` traka. **Home rail
+„Izborni dan" nikad nije napisan**, a on je bio jedini javni ulaz na
+naslovnici. Uz to su chip i `/account` kartica bili gate-ani na
+`isVerified`, pa je posljedica bila:
+
+> korisnik prijavljen Googleom (velika većina) nije imao NIJEDAN znak da
+> glasanje postoji, osim trake na dnu `/channels`.
+
+To je izokrenulo odluku 3 iz ovog dokumenta. Ona gate-a **glas** — niz i
+zastavice postoje samo za građanina potvrđenog e-Osobnom. Ne gate-a saznanje
+da se glasa. Bez saznanja nema ni razloga za potvrdu e-Osobnom, pa je lijevak
+prema Certiliji bio prekinut na prvom koraku.
+
+**Popravak** (isti dan):
+
+1. `lib/screens/home/voting_rail.dart` — dug iz §8.6. Vrh ljestvice (10
+   kandidata) + kartica koja objašnjava što se ovdje radi, iznad „Nastavi
+   slušati". Javno, jedan `anon` RPC (`round_leaderboard` bez `p_round_id`),
+   nikad ne dira `lastError`, sam se sakrije kad ljestvica ne stigne.
+2. `VotingService.ensurePreviewLoaded()` — **odvojeno** polje od
+   `candidates`; rail traži 10 redaka, `/glasanje` 100, a `ensureLoaded()` na
+   drugom ulasku vraća dovršeni Future pa bi dijeljeno polje zaključalo krivi
+   broj kandidata. Pokriveno u `test/voting_rail_preview_test.dart`.
+3. `_VotingDiscoverChip` u `home_app_bar.dart` — chip za neverificirane, bez
+   niza/zastavica/točke i **bez ijednog RPC-a**. Natpis tek od 840 dp:
+   izmjereno, na 606 dp desktop red pukne za 38 px jer `Expanded` oko
+   `_SearchTrigger`a spadne ispod ~90 dp koliko traži njegov sadržaj.
+4. `/account` sekcija „Izborni dan" se prikazuje svima; neverificirani dobiva
+   poziv umjesto niza. To je ekran na kojem Google korisnik ionako sjedi kad
+   gleda načine prijave.
+5. Usput: neto rezultat (`+N`) crtao se u `AppTheme.croBlue` — #002F6C kao
+   tekst na tamnoj podlozi je nečitljiv, pa je vodeći kandidat gubio jedinu
+   brojku koja ga razlikuje. Sada `cs.primary` (isto brand sjeme, tema-svjesno).
+   Pravilo „navy = croBlue" vrijedi za POVRŠINE koje se boje, ne za tekst.
+
+**Pravilo za idući put**: review kruga gleda diff onoga što je task dirao, pa
+NE vidi točku iz plana koja uopće nije napisana. Kad plan nabraja N stavki,
+zapisnik taska mora izrijekom reći koliko ih je isporučeno.

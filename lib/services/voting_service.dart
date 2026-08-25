@@ -150,6 +150,16 @@ class VotingService extends ChangeNotifier {
 
   List<String> _tags = const [];
 
+  /// Kratki javni izvadak ljestvice za home rail (§8.6).
+  ///
+  /// Namjerno **odvojen** od [_candidates]: rail traži 10 redaka, a
+  /// `/glasanje` cijelu ljestvicu (100). Da dijele isto polje, prvi bi dohvat
+  /// pobijedio i drugi ekran bi ostao na krivom broju kandidata —
+  /// `ensureLoaded()` na drugom ulasku vraća već dovršeni Future i ne bi
+  /// ponovno dohvatio ništa.
+  List<VoteCandidate> _preview = const [];
+  Future<void>? _previewLoading;
+
   bool _loadingState = false;
   bool _loadingCandidates = false;
   bool _cacheRead = false;
@@ -194,6 +204,10 @@ class VotingService extends ChangeNotifier {
   /// Ima li korisnik neiskorišten glas — signal za crvenu točku na home chipu.
   bool get hasUnusedVote => _state?.canVote ?? false;
 
+  /// Vrh ljestvice za home rail — prazno dok [ensurePreviewLoaded] ne odgovori
+  /// (rail se tada sam sakrije).
+  List<VoteCandidate> get previewCandidates => _preview;
+
   /// Prikazna projekcija niza za [now] (default: serverov `today`).
   StreakDisplay? displayFor([DateTime? now]) => _state?.display(now);
 
@@ -223,6 +237,46 @@ class VotingService extends ChangeNotifier {
       notifyListeners();
     }
     if (withLeaderboard) await loadLeaderboard();
+  }
+
+  /// Vrh ljestvice za home rail. Idempotentno; višestruki pozivi dijele Future.
+  ///
+  /// **Javno i bez sesije** — `round_leaderboard` je `anon` RPC, pa rail radi i
+  /// za gosta koji nikad nije vidio da glasanje postoji (to mu je i svrha).
+  /// `p_round_id` se namjerno NE šalje: server sam razriješi otvoreno kolo, pa
+  /// rail košta **jedan** RPC umjesto `current_round()` + ljestvica.
+  ///
+  /// Nikad ne baca i nikad ne dira [lastError] — pad ove trake ne smije
+  /// obojati `/glasanje` porukom o grešci; rail jednostavno ostane skriven.
+  Future<void> ensurePreviewLoaded({int limit = 10}) =>
+      _previewLoading ??= _loadPreview(limit);
+
+  /// Sjemenovanje raila u testu — proizvodni kod uvijek ide kroz
+  /// [ensurePreviewLoaded] (widget testovi nemaju Supabase klijenta).
+  @visibleForTesting
+  void debugSetPreview(List<VoteCandidate> candidates) {
+    _preview = List.unmodifiable(candidates);
+    _previewLoading = Future<void>.value();
+    notifyListeners();
+  }
+
+  Future<void> _loadPreview(int limit) async {
+    try {
+      final result = await _rpc(kRpcRoundLeaderboard, params: {
+        kParamSort: VoteSort.leaderboard.wire,
+        kParamLimit: limit,
+        kParamOffset: 0,
+      });
+      if (result is List) {
+        _preview = result
+            .whereType<Map>()
+            .map((e) => VoteCandidate.fromJson(e.cast<String, dynamic>()))
+            .toList(growable: false);
+        notifyListeners();
+      }
+    } catch (e) {
+      log('VotingService.ensurePreviewLoaded failed: $e');
+    }
   }
 
   Future<void> _fetchRound() async {
@@ -354,6 +408,10 @@ class VotingService extends ChangeNotifier {
       _round = _state?.round ?? _round;
       _lastError = null;
       _writeCache();
+      // Tallyji u railu su od ovog trenutka stariji od ljestvice — sljedeći
+      // ulazak na home ih ponovno dohvati (novi `State` sam zove
+      // `ensurePreviewLoaded`, a bez ovoga bi dobio dovršeni Future).
+      _previewLoading = null;
       notifyListeners();
       return CastVoteOutcome(
         state: _state!,

@@ -976,5 +976,11 @@
   "votingTotalVotes": "{count, plural, one{{count} vote in total} other{{count} votes in total}}",
   "votingChannelsBarTitle": "Missing your podcast?",
   "votingChannelsBarBody": "Vote for the podcast that gets processed next.",
-  "votingChannelsBarCta": "Vote"
+  "votingChannelsBarCta": "Vote",
+  "votingRailSeeAll": "All candidates",
+  "votingRailRank": "Rank {rank}",
+  "votingRailCtaTitle": "Vote for what comes next",
+  "votingRailCtaBody": "The leaderboard is decided by citizens verified with eID.",
+  "votingAccountVerifyTitle": "Vote for the next podcast",
+  "votingAccountVerifyBody": "Verify with your eID and you get one vote every day."
 }

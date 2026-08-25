@@ -3780,4 +3780,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get votingChannelsBarCta => 'Vote';
+
+  @override
+  String get votingRailSeeAll => 'All candidates';
+
+  @override
+  String votingRailRank(int rank) {
+    return 'Rank $rank';
+  }
+
+  @override
+  String get votingRailCtaTitle => 'Vote for what comes next';
+
+  @override
+  String get votingRailCtaBody =>
+      'The leaderboard is decided by citizens verified with eID.';
+
+  @override
+  String get votingAccountVerifyTitle => 'Vote for the next podcast';
+
+  @override
+  String get votingAccountVerifyBody =>
+      'Verify with your eID and you get one vote every day.';
 }

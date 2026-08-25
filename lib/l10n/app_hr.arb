@@ -4673,5 +4673,32 @@
   "votingChannelsBarCta": "Glasaj",
   "@votingChannelsBarCta": {
     "description": "Gumb trajne trake koji vodi na ekran glasanja."
+  },
+  "votingRailSeeAll": "Svi kandidati",
+  "@votingRailSeeAll": {
+    "description": "Poveznica u zaglavlju home raila „Izborni dan\" na puni popis kandidata."
+  },
+  "votingRailRank": "{rank}. mjesto",
+  "@votingRailRank": {
+    "description": "Mjesto kandidata na ljestvici, ispod imena u home railu.",
+    "placeholders": {
+      "rank": { "type": "int" }
+    }
+  },
+  "votingRailCtaTitle": "Glasaj koji ide sljedeći",
+  "@votingRailCtaTitle": {
+    "description": "Naslov zadnje kartice u home railu — vodi na ekran glasanja."
+  },
+  "votingRailCtaBody": "Ljestvicu odlučuju građani potvrđeni e-Osobnom.",
+  "@votingRailCtaBody": {
+    "description": "Podnaslov zadnje kartice u home railu."
+  },
+  "votingAccountVerifyTitle": "Glasaj koji podcast ide sljedeći",
+  "@votingAccountVerifyTitle": {
+    "description": "Naslov kartice na /account za korisnika bez potvrde e-Osobnom."
+  },
+  "votingAccountVerifyBody": "Potvrdi se e-Osobnom i dobivaš jedan glas svaki dan.",
+  "@votingAccountVerifyBody": {
+    "description": "Tijelo kartice na /account za korisnika bez potvrde e-Osobnom."
   }
 }

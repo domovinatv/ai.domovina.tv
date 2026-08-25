@@ -28,6 +28,7 @@ import 'persons_rail.dart';
 import 'search_overlay.dart';
 import 'skeletons.dart';
 import 'sort_mode.dart';
+import 'voting_rail.dart';
 
 const _channelOrderKey = 'channel_order';
 
@@ -386,6 +387,14 @@ class _ChannelGridView extends StatelessWidget {
                   SliverToBoxAdapter(
                     child: HeroSkeleton(isMobile: isMobile),
                   ),
+
+                // Rail „Izborni dan" — vrh ljestvice kandidata za sljedeći
+                // kanal (plan §8.6). Stoji IZNAD „Nastavi slušati" jer je za
+                // većinu korisnika jedini susret s glasanjem: `/glasanje` je
+                // inače dostupan samo s trake na dnu `/channels`, a chip u
+                // zaglavlju vidi tek onaj tko je već potvrđen e-Osobnom. Sam
+                // se sakrije kad kola nema ili ljestvica ne stigne.
+                SliverToBoxAdapter(child: VotingRail(isMobile: isMobile)),
 
                 // "Nastavi slušati" rail — samo ako ima itema.
                 // Thumbnail uvijek konstruiramo iz CDN-a (ignoriraj denorm

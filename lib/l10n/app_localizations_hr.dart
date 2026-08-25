@@ -3822,4 +3822,26 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get votingChannelsBarCta => 'Glasaj';
+
+  @override
+  String get votingRailSeeAll => 'Svi kandidati';
+
+  @override
+  String votingRailRank(int rank) {
+    return '$rank. mjesto';
+  }
+
+  @override
+  String get votingRailCtaTitle => 'Glasaj koji ide sljedeći';
+
+  @override
+  String get votingRailCtaBody =>
+      'Ljestvicu odlučuju građani potvrđeni e-Osobnom.';
+
+  @override
+  String get votingAccountVerifyTitle => 'Glasaj koji podcast ide sljedeći';
+
+  @override
+  String get votingAccountVerifyBody =>
+      'Potvrdi se e-Osobnom i dobivaš jedan glas svaki dan.';
 }

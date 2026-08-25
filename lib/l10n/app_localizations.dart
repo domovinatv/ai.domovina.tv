@@ -5968,6 +5968,42 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Glasaj'**
   String get votingChannelsBarCta;
+
+  /// Poveznica u zaglavlju home raila „Izborni dan" na puni popis kandidata.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi kandidati'**
+  String get votingRailSeeAll;
+
+  /// Mjesto kandidata na ljestvici, ispod imena u home railu.
+  ///
+  /// In hr, this message translates to:
+  /// **'{rank}. mjesto'**
+  String votingRailRank(int rank);
+
+  /// Naslov zadnje kartice u home railu — vodi na ekran glasanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj koji ide sljedeći'**
+  String get votingRailCtaTitle;
+
+  /// Podnaslov zadnje kartice u home railu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ljestvicu odlučuju građani potvrđeni e-Osobnom.'**
+  String get votingRailCtaBody;
+
+  /// Naslov kartice na /account za korisnika bez potvrde e-Osobnom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Glasaj koji podcast ide sljedeći'**
+  String get votingAccountVerifyTitle;
+
+  /// Tijelo kartice na /account za korisnika bez potvrde e-Osobnom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi se e-Osobnom i dobivaš jedan glas svaki dan.'**
+  String get votingAccountVerifyBody;
 }
 
 class _AppLocalizationsDelegate

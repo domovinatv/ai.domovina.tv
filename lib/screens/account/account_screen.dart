@@ -229,14 +229,15 @@ class _AccountScreenState extends State<AccountScreen> {
               _sectionLabel(theme, l.authSectionSubscription),
               _plusCard(theme),
               const SizedBox(height: 16),
-              // „Izborni dan" — niz postoji samo za građanina potvrđenog
-              // e-Osobnom, pa se i kartica pojavljuje samo njemu (isti gate kao
-              // chip u home zaglavlju).
-              if (AuthService.instance.currentUser?.isVerified ?? false) ...[
-                _sectionLabel(theme, l.votingTitle),
-                _votingCard(theme),
-                const SizedBox(height: 16),
-              ],
+              // „Izborni dan" — sekcija stoji SVIMA. Verificirani vidi svoj
+              // niz, ostali poziv na potvrdu e-Osobnom: ovo je ekran na kojem
+              // korisnik prijavljen Googleom ionako sjedi kad gleda načine
+              // prijave, pa je najbliži trenutak da dozna da glasanje postoji.
+              // (Do 25.8.2026. je kartica bila skrivena neverificiranima —
+              // vidi _VotingDiscoverChip u home_app_bar.dart.)
+              _sectionLabel(theme, l.votingTitle),
+              _votingCard(theme),
+              const SizedBox(height: 16),
               _sectionLabel(theme, l.authSectionLibrary),
               _favoritesCard(theme),
               const SizedBox(height: 16),
@@ -379,6 +380,30 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget _votingCard(ThemeData theme) {
     final cs = theme.colorScheme;
     final l = AppLocalizations.of(context);
+
+    // Bez potvrde e-Osobnom nema ni niza ni glasa — kartica je tada čisti
+    // poziv, bez ijedne brojke. Vodi na `/glasanje`, ne izravno u Certilia
+    // flow: ondje uz traku za potvrdu stoji i ljestvica koja objašnjava zašto
+    // se uopće potvrđuje. Nikakav RPC se pritom ne okida.
+    if (!(AuthService.instance.currentUser?.isVerified ?? false)) {
+      return _card(
+        theme,
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+          leading: Icon(Icons.how_to_vote_outlined, color: AppTheme.croRed),
+          title: Text(l.votingAccountVerifyTitle),
+          subtitle: Text(
+            l.votingAccountVerifyBody,
+            style:
+                theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.go('/glasanje'),
+        ),
+      );
+    }
+
     return ListenableBuilder(
       listenable: VotingService.instance,
       builder: (context, _) {
