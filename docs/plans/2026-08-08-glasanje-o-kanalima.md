@@ -400,6 +400,13 @@ DST: Hrvatska mijenja sat u 03:00, granica dana je 00:00 → nema preklapanja.
 
 ### 6.3 Prijelaz stanja (lijen, bez crona)
 
+> ⚠️ **ZASTARJELO od 25.8.2026.** Aritmetika zastavica u ovom odjeljku
+> (sve-ili-ništa + bezuvjetna nagrada) više NE vrijedi. Nova pravila su u
+> §12 na dnu ovog dokumenta i u migraciji
+> `domovina-api/supabase/migrations/20260825122100_channel_voting_flags_brilliant.sql`.
+> Ostatak §6.3 (granica dana, `missed`, lijenost) je i dalje točan.
+
+
 ```
 D          = današnji izborni dan
 L          = voter.last_vote_day
@@ -763,3 +770,90 @@ postotak konverzije iz posjetitelja u glasača. Zato:
   `domovina-api/supabase/migrations/20260529120000_identity_verifications.sql`,
   `domovina-api/supabase/functions/certilia/index.ts`,
   `domovina-api/docs/backend-architecture.md`
+
+---
+
+## 12. Revizija 25.8.2026. — zastavice bliže Brilliantu
+
+Nadjačava aritmetiku zastavica iz §6.3 i odluku 7 iz
+`2026-08-08-glasanje-predaja.md`. Sve ostalo (granica dana, kola, kvorum,
+rangiranje, lijenost) ostaje netaknuto.
+
+### 12.1 Povod — mjereno, ne pretpostavljeno
+
+Stvarni redak s produkcije (`stepanic.matija@gmail.com`, jedini glasač):
+
+```
+glas 12.8. (prvi ikad)  → niz 1 · zastavice 1 · last_vote_day 12.8.
+12 propuštenih dana     → ništa se ne događa (nema crona, po dizajnu)
+glas 25.8.              → missed = 25 − 12 − 1 = 12
+                          12 <= 1 ? ne → niz PUKNUO, zastavice NETAKNUTE
+                          pa bezuvjetno: flags = least(2, 1 + 1) = 2
+ishod: niz 1 · zastavice 1 → 2
+```
+
+Korisnik je propustio 12 dana, izgubio niz i **za to dobio zastavicu.**
+
+### 12.2 Što je bilo krivo
+
+**Sve-ili-ništa (odluka 7).** Namjera je bila „ne kazni dvaput". Posljedica je
+da zastavica **nikad ne nestane** osim kad nešto spasi — pa prestaje biti
+resurs kojim se upravlja. Igrač koji ne dolazi mjesecima ima pune zastavice.
+
+**Bezuvjetna nagrada.** `flags := least(2, flags + 1)` je stajao izvan svih
+grana, pa se izvršavao i na glasu koji je upravo resetirao niz. Reset i nagrada
+u istom potezu korisniku izgledaju kao bug — i jesu, u smislu da poruka koju
+mehanika šalje proturječi onome što radi.
+
+### 12.3 Nova pravila
+
+```mermaid
+flowchart TD
+    A[glas na dan D] --> B{last_vote_day<br/>postoji?}
+    B -->|ne| P[prvi glas ikad<br/>niz = 1]
+    B -->|da| C["missed = D − L − 1"]
+    C --> D{missed == 0?}
+    D -->|da| E[uzastopno<br/>niz + 1]
+    D -->|ne| F{missed &lt;= flags?}
+    F -->|da| G["SPAŠENO<br/>flags −= missed<br/>burned = missed<br/>saved = true<br/>niz + 1"]
+    F -->|ne| H["PUKNUO<br/>burned = flags<br/>flags = 0<br/>niz = 1"]
+    P --> N{niz stoji?}
+    E --> N
+    G --> N
+    H --> N
+    N -->|da| R["flags = min 2, flags + 1<br/>(nagrada za dolazak)"]
+    N -->|ne| S[bez nagrade]
+    R --> T[upiši voters]
+    S --> T
+```
+
+Dvije promjene, obje u `_cast_vote_on`:
+
+1. **Djelomično trošenje.** Kad praznina prelazi broj zastavica, pojedu se sve
+   (`burned = flags`, `flags = 0`) i niz svejedno pukne — kao na Brilliantu.
+2. **Nagrada samo uz živ niz.** Prvi glas ikad **nije** puknuće i i dalje nosi
+   zastavicu; glas koji je resetirao niz ne nosi ništa.
+
+Isti slučaj po novom: `burned 1 · saved false · niz 1 · zastavice 0`.
+Provjereno na produkciji kroz rollbackanu transakciju, ne simulacijom.
+
+### 12.4 Posljedica za ugovor i UI
+
+`flags_burned > 0` uz `streak_saved = false` je **novi valjan slučaj** u ugovoru
+v1.1 („zastavice potrošene, niz ipak pukao"). Klijent za njega ima zasebnu
+poruku `votingStreakBrokeBurned` — bez nje bi zastavice nestale bez ijedne
+riječi, što je isti razred greške kao onaj koji je ovu reviziju i pokrenuo.
+
+Dart `projectStreakForVote` je **replika** ove aritmetike i mora se mijenjati
+istovremeno, inače optimistički update pokaže jedno a mreža vrati drugo.
+Kontrakt čuva `test/voting_streak_test.dart`; slučaj **6b** je doslovan
+produkcijski slučaj iz §12.1.
+
+### 12.5 Što ovo NE rješava
+
+Zastavice ne mogu spasiti niz korisniku koji ne zna da mu niz curi. Odluka 4
+(„bez podsjetnika u v1") je i dalje na snazi, pa je mehanika i dalje pola
+mehanike. Plan: `docs/plans/2026-08-25-glasanje-podsjetnici.md`.
+
+**Vezani dokumenti**: `2026-08-08-glasanje-predaja.md` (odluke, zapisnici,
+naknadni zapisnik o ulaznim točkama), `2026-08-25-glasanje-podsjetnici.md`.
