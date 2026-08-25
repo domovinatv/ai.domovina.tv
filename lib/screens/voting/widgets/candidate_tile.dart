@@ -27,7 +27,8 @@ enum CandidateActionMode {
   /// 👍 / 👎 aktivni.
   vote,
 
-  /// Glas je za danas potrošen — cijela lista je read-only.
+  /// Glas je za danas potrošen (ili je kolo zatvoreno) — lista je read-only,
+  /// ali gumbi OSTAJU tapabilni i objašnjavaju zašto (vidi [_Actions]).
   spent,
 }
 
@@ -43,6 +44,10 @@ class CandidateTile extends StatelessWidget {
   final ValueChanged<int>? onVote;
   final VoidCallback? onOpen;
 
+  /// Tap na 👍/👎 koji se NE može izvršiti (glas potrošen, kolo zatvoreno,
+  /// kandidat ispao). Pozivatelj objašnjava razlog — vidi [_Actions].
+  final VoidCallback? onBlocked;
+
   const CandidateTile({
     super.key,
     required this.candidate,
@@ -50,6 +55,7 @@ class CandidateTile extends StatelessWidget {
     this.mojGlas,
     this.onVote,
     this.onOpen,
+    this.onBlocked,
   });
 
   @override
@@ -116,6 +122,7 @@ class CandidateTile extends StatelessWidget {
               mojGlas: mojGlas,
               votable: candidate.isVotable,
               onVote: onVote,
+              onBlocked: onBlocked,
             ),
           ],
         ),
@@ -279,17 +286,28 @@ class _NetScore extends StatelessWidget {
   }
 }
 
+/// 👍/👎 par, ili značka „Tvoj glas danas" na kandidatu za kojeg je glas dan.
+///
+/// **Gumbi se nikad ne renderiraju `onPressed: null`.** Onesposobljen
+/// `IconButton` nema gesture recognizer, pa tap propadne na `InkWell` cijelog
+/// retka i otvori se detalj sheet — korisnik koji je već glasao vidi kako mu se
+/// „na 👍 otvara sheet" i nigdje ne piše zašto (prijavljeno 25.8.2026.).
+/// Umjesto toga gumbi ostaju tapabilni, prigušene boje, i tap zove [onBlocked]
+/// koji objasni razlog snackbarom. Snackbar je ovdje dopušten jer je izravna
+/// potvrda korisnikove radnje (CLAUDE.md pravilo o nudge-evima).
 class _Actions extends StatelessWidget {
   final CandidateActionMode mode;
   final int? mojGlas;
   final bool votable;
   final ValueChanged<int>? onVote;
+  final VoidCallback? onBlocked;
 
   const _Actions({
     required this.mode,
     required this.mojGlas,
     required this.votable,
     required this.onVote,
+    this.onBlocked,
   });
 
   @override
@@ -327,22 +345,29 @@ class _Actions extends StatelessWidget {
     if (mode == CandidateActionMode.none) return const SizedBox.shrink();
 
     final aktivno = mode == CandidateActionMode.vote && votable;
+    // Prigušeno kad se ne može glasati — gumb i dalje prima tap, ali vizualno
+    // ne obećava akciju.
+    final double neprozirnost = aktivno ? 1.0 : 0.38;
+    void tap(int smjer) =>
+        aktivno ? onVote?.call(smjer) : onBlocked?.call();
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          onPressed: aktivno ? () => onVote?.call(kVoteDirectionUp) : null,
+          onPressed: () => tap(kVoteDirectionUp),
           icon: const Icon(Icons.thumb_up_outlined, size: 20),
           tooltip: l.votingVoteUp,
           visualDensity: VisualDensity.compact,
-          color: AppTheme.croBlue,
+          color: AppTheme.croBlue.withValues(alpha: neprozirnost),
         ),
         IconButton(
-          onPressed: aktivno ? () => onVote?.call(kVoteDirectionDown) : null,
+          onPressed: () => tap(kVoteDirectionDown),
           icon: const Icon(Icons.thumb_down_outlined, size: 20),
           tooltip: l.votingVoteDown,
           visualDensity: VisualDensity.compact,
-          color: theme.colorScheme.onSurfaceVariant,
+          color: theme.colorScheme.onSurfaceVariant
+              .withValues(alpha: neprozirnost),
         ),
       ],
     );

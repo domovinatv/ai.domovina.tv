@@ -4306,9 +4306,17 @@
   "@tvRailPersons": {
     "description": "Naslov lanea s osobama (virtualnim kanalima) na Android TV naslovnici."
   },
-  "votingTitle": "Izborni dan",
+  "votingTitle": "Tko ide sljedeći",
   "@votingTitle": {
-    "description": "Naslov ekrana /glasanje — glasanje o sljedećem kanalu."
+    "description": "Oznaka feature-a — home chip, eyebrow raila, sekcija na /account. Namjerno NIJE „Izborni dan\": to je ime mehanike (prozor ponoć–ponoć), a kao oznaka ne kaže ni što se bira ni zašto bi korisnika zanimalo."
+  },
+  "votingScreenTitle": "Tko ide sljedeći?",
+  "@votingScreenTitle": {
+    "description": "Naslov ekrana /glasanje. Upitnik samo ovdje — u zaglavlju je pitanje, na chipu i railu bi bio šum."
+  },
+  "votingElectionDayPlain": "Izborni dan",
+  "@votingElectionDayPlain": {
+    "description": "Zaglavlje glasanja kad server još nije javio datum — jedino mjesto gdje „Izborni dan\" stoji sam, u značenju prozora ponoć–ponoć."
   },
   "votingElectionDay": "Izborni dan · {date}",
   "@votingElectionDay": {
@@ -4636,7 +4644,7 @@
   "@votingErrorGeneric": {
     "description": "Neočekivana greška pri glasanju."
   },
-  "votingHomeChipTooltip": "Izborni dan — glasaj za sljedeći kanal",
+  "votingHomeChipTooltip": "Glasaj koji podcast ide sljedeći u obradu",
   "@votingHomeChipTooltip": {
     "description": "Tooltip chipa s nizom u zaglavlju početnog ekrana."
   },
@@ -4676,7 +4684,7 @@
   },
   "votingRailSeeAll": "Svi kandidati",
   "@votingRailSeeAll": {
-    "description": "Poveznica u zaglavlju home raila „Izborni dan\" na puni popis kandidata."
+    "description": "Poveznica u zaglavlju home raila na puni popis kandidata."
   },
   "votingRailRank": "{rank}. mjesto",
   "@votingRailRank": {

@@ -23,6 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
 import '../../models/vote_candidate.dart';
+import '../../models/vote_round.dart';
 import '../../services/auth_service.dart';
 import '../../services/locale_service.dart' show appStrings;
 import '../../services/voting_service.dart';
@@ -317,6 +318,8 @@ class _VotingScreenState extends State<VotingScreen> {
         kandidat: kandidat,
         mode: _actionMode(),
         mojGlas: _mojGlasZa(kandidat.slug),
+        round: _service.round,
+        today: _service.today,
         onVote: _actionMode() == CandidateActionMode.vote
             ? (smjer) {
                 Navigator.of(ctx).pop();
@@ -330,6 +333,26 @@ class _VotingScreenState extends State<VotingScreen> {
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
+
+  /// Objasni zašto tap na 👍/👎 nije prošao. Snackbar je izravna potvrda
+  /// korisnikove radnje, pa je dopušten (CLAUDE.md pravilo o nudge-evima).
+  ///
+  /// Bez ovoga tap na prigušeni gumb ne radi ništa vidljivo — jedini trag je
+  /// rečenica u zaglavlju na vrhu ekrana, koju korisnik na dnu duge liste ne
+  /// vidi (prijavljeno 25.8.2026.).
+  void _objasniBlokadu(VoteCandidate kandidat) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text(razlogBlokadeGlasa(
+        // Jednokratni event-time resolve → `appStrings` je ovdje ispravan.
+        l: appStrings,
+        kandidat: kandidat,
+        round: _service.round,
+        today: _service.today,
+      )),
+    ));
+  }
 
   CandidateActionMode _actionMode() {
     final state = _service.state;
@@ -365,7 +388,7 @@ class _VotingScreenState extends State<VotingScreen> {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surface,
-        title: Text(l.votingTitle),
+        title: Text(l.votingScreenTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: l.commonBack,
@@ -479,6 +502,7 @@ class _VotingScreenState extends State<VotingScreen> {
             mode: mode,
             mojGlas: _mojGlasZa(k.slug),
             onVote: _glasanjeUTijeku ? null : (smjer) => _glasaj(k, smjer),
+            onBlocked: () => _objasniBlokadu(k),
             onOpen: () => _otvoriDetalj(k),
           );
         },
@@ -652,11 +676,17 @@ class _CandidateSheet extends StatelessWidget {
   final int? mojGlas;
   final ValueChanged<int>? onVote;
 
+  /// Za objašnjenje zašto glasanje nije moguće — vidi [razlogBlokadeGlasa].
+  final VoteRound? round;
+  final DateTime? today;
+
   const _CandidateSheet({
     required this.kandidat,
     required this.mode,
     this.mojGlas,
     this.onVote,
+    this.round,
+    this.today,
   });
 
   @override
@@ -782,7 +812,23 @@ class _CandidateSheet extends StatelessWidget {
                         tooltip: l.votingVoteDown,
                         color: cs.onSurfaceVariant,
                       ),
-                    ],
+                    ]
+                    // Ne može glasati: prije je ovdje stajala praznina, pa je
+                    // sheet izgledao kao da su gumbi jednostavno nestali.
+                    else if (mode == CandidateActionMode.spent)
+                      Flexible(
+                        child: Text(
+                          razlogBlokadeGlasa(
+                            l: l,
+                            kandidat: kandidat,
+                            round: round,
+                            today: today,
+                          ),
+                          textAlign: TextAlign.end,
+                          style: theme.textTheme.labelMedium
+                              ?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -822,4 +868,23 @@ class _CandidateSheet extends StatelessWidget {
       log('voting: launchUrl failed ($url): $e');
     }
   }
+}
+
+/// Zašto tap na 👍/👎 nije prošao — jedna rečenica, tri razloga.
+///
+/// Prima [l] umjesto da ga sam razrješava: snackbar na ekranu ga zove s
+/// `appStrings` (jednokratni event-time resolve), a sheet s
+/// `AppLocalizations.of(context)` jer se ondje renderira perzistentno
+/// (CLAUDE.md pravilo o `appStrings`).
+String razlogBlokadeGlasa({
+  required AppLocalizations l,
+  required VoteCandidate kandidat,
+  required VoteRound? round,
+  required DateTime? today,
+}) {
+  if (!kandidat.isVotable) return l.votingErrorCandidateGone;
+  if (round != null && today != null && !round.acceptsVotesOn(today)) {
+    return l.votingErrorRoundClosed;
+  }
+  return '${l.votingAlreadyVoted} ${l.votingComeBackTomorrow}';
 }

@@ -54,7 +54,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(VotingRail), findsOneWidget);
-    expect(find.text('Izborni dan'), findsNothing);
+    expect(find.text('TKO IDE SLJEDEĆI'), findsNothing);
   });
 
   testWidgets('320 dp: kandidati + CTA kartica, bez overflowa', (tester) async {
@@ -66,8 +66,10 @@ void main() {
     await tester.pumpWidget(_harness(width: 320));
     await tester.pump();
 
-    // Eyebrow je uppercased u EpisodesRail-u.
-    expect(find.text('IZBORNI DAN'), findsOneWidget);
+    // Eyebrow je uppercased u EpisodesRail-u. Oznaka je od 25.8.2026.
+    // „Tko ide sljedeći", ne „Izborni dan" — potonje je ime mehanike
+    // (prozor ponoć–ponoć) i ostalo je samo u zaglavlju ekrana.
+    expect(find.text('TKO IDE SLJEDEĆI'), findsOneWidget);
     expect(find.text('Svi kandidati'), findsOneWidget);
     expect(find.text('Podcast Jedan'), findsOneWidget);
     // Zadnja kartica objašnjava feature — bez nje su same sličice bez značenja.

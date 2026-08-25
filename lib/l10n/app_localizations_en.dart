@@ -3450,7 +3450,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tvRailPersons => 'People';
 
   @override
-  String get votingTitle => 'Election day';
+  String get votingTitle => 'Who\'s next';
+
+  @override
+  String get votingScreenTitle => 'Who\'s next?';
+
+  @override
+  String get votingElectionDayPlain => 'Election day';
 
   @override
   String votingElectionDay(String date) {
@@ -3744,7 +3750,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get votingHomeChipTooltip =>
-      'Election Day — vote for the next channel';
+      'Vote for the podcast that gets processed next';
 
   @override
   String get votingUnusedVote => 'You have an unused vote.';

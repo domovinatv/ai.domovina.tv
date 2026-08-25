@@ -5567,11 +5567,23 @@ abstract class AppLocalizations {
   /// **'Osobe'**
   String get tvRailPersons;
 
-  /// Naslov ekrana /glasanje — glasanje o sljedećem kanalu.
+  /// Oznaka feature-a — home chip, eyebrow raila, sekcija na /account. Namjerno NIJE „Izborni dan": to je ime mehanike (prozor ponoć–ponoć), a kao oznaka ne kaže ni što se bira ni zašto bi korisnika zanimalo.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tko ide sljedeći'**
+  String get votingTitle;
+
+  /// Naslov ekrana /glasanje. Upitnik samo ovdje — u zaglavlju je pitanje, na chipu i railu bi bio šum.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tko ide sljedeći?'**
+  String get votingScreenTitle;
+
+  /// Zaglavlje glasanja kad server još nije javio datum — jedino mjesto gdje „Izborni dan" stoji sam, u značenju prozora ponoć–ponoć.
   ///
   /// In hr, this message translates to:
   /// **'Izborni dan'**
-  String get votingTitle;
+  String get votingElectionDayPlain;
 
   /// Zaglavlje glasanja: današnji izborni dan (datum je već formatiran, npr. 8.8.2026.).
   ///
@@ -5930,7 +5942,7 @@ abstract class AppLocalizations {
   /// Tooltip chipa s nizom u zaglavlju početnog ekrana.
   ///
   /// In hr, this message translates to:
-  /// **'Izborni dan — glasaj za sljedeći kanal'**
+  /// **'Glasaj koji podcast ide sljedeći u obradu'**
   String get votingHomeChipTooltip;
 
   /// Značenje crvene točke na chipu: današnji glas još nije potrošen.
@@ -5969,7 +5981,7 @@ abstract class AppLocalizations {
   /// **'Glasaj'**
   String get votingChannelsBarCta;
 
-  /// Poveznica u zaglavlju home raila „Izborni dan" na puni popis kandidata.
+  /// Poveznica u zaglavlju home raila na puni popis kandidata.
   ///
   /// In hr, this message translates to:
   /// **'Svi kandidati'**

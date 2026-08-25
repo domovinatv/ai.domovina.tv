@@ -3480,7 +3480,13 @@ class AppLocalizationsHr extends AppLocalizations {
   String get tvRailPersons => 'Osobe';
 
   @override
-  String get votingTitle => 'Izborni dan';
+  String get votingTitle => 'Tko ide sljedeći';
+
+  @override
+  String get votingScreenTitle => 'Tko ide sljedeći?';
+
+  @override
+  String get votingElectionDayPlain => 'Izborni dan';
 
   @override
   String votingElectionDay(String date) {
@@ -3784,7 +3790,8 @@ class AppLocalizationsHr extends AppLocalizations {
   String get votingErrorGeneric => 'Glas nije zabilježen. Pokušaj ponovno.';
 
   @override
-  String get votingHomeChipTooltip => 'Izborni dan — glasaj za sljedeći kanal';
+  String get votingHomeChipTooltip =>
+      'Glasaj koji podcast ide sljedeći u obradu';
 
   @override
   String get votingUnusedVote => 'Imaš neiskorišten glas.';

@@ -152,8 +152,11 @@ class _DayAndRoundLine extends StatelessWidget {
     final cs = theme.colorScheme;
 
     final dijelovi = <String>[
+      // `votingElectionDayPlain`, NE `votingTitle`: ovaj redak nosi PROZOR
+      // glasanja (ponoć–ponoć, Europe/Zagreb), a `votingTitle` je od 25.8.2026.
+      // oznaka feature-a („Tko ide sljedeći").
       today == null
-          ? l.votingTitle
+          ? l.votingElectionDayPlain
           : l.votingElectionDay(formatElectionDay(today!)),
       if (round != null) l.votingRoundLabel(round!.id),
       if (round != null) _preostalo(l),
