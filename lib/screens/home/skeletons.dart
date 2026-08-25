@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'hero_carousel.dart' show kHeroControlBarHeight;
+
 /// Animated shimmer box — koristi se kao loading placeholder.
 ///
 /// Custom implementacija bez paketa: AnimationController + LinearGradient
@@ -209,16 +211,38 @@ class ChannelGridSkeleton extends StatelessWidget {
 class HeroSkeleton extends StatelessWidget {
   final bool isMobile;
 
-  const HeroSkeleton({super.key, required this.isMobile});
+  /// Mjesto za kontrolnu traku karusela ("U ROTACIJI" + dots), koju
+  /// [HeroCarousel] crta ispod kartice. Rezerviramo ga da otkrivanje hero-a ne
+  /// pomakne cijelu stranicu prema dolje.
+  ///
+  /// **Rule**: dimenzije ispod nisu dekorativne — namjerno reproduciraju
+  /// visinu pravog [HeroSection]a (2-redni naslov). Ako se hero layout mijenja,
+  /// mijenja se i ovaj skeleton, inace se vrati skok pri otkrivanju.
+  final bool reserveControlBar;
+
+  const HeroSkeleton({
+    super.key,
+    required this.isMobile,
+    this.reserveControlBar = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: isMobile ? _mobile() : _desktop(),
-      ),
+    return Column(
+      children: [
+        Padding(
+          // Isti padding kao slide u karuselu (donji je stisnut jer kontrolna
+          // traka dolazi ispod).
+          padding: reserveControlBar
+              ? const EdgeInsets.fromLTRB(16, 8, 16, 4)
+              : const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: isMobile ? _mobile() : _desktop(),
+          ),
+        ),
+        if (reserveControlBar) _controlBar(),
+      ],
     );
   }
 
@@ -261,35 +285,90 @@ class HeroSkeleton extends StatelessWidget {
     );
   }
 
+  /// Visine prate `HeroSection._content` red po red (izmjereno widget testom,
+  /// `test/hero_slot_layout_test.dart`):
+  /// eyebrow 17 + 12 + naslov 2 retka 56 (24 px × height 1.15) + 10 +
+  /// meta red 21 + 16 + CTA gumbi 48 = **180 px**.
+  ///
+  /// Meta red je ovdje uvijek jedan redak. `HeroSection` ga crta `Wrap`-om, pa
+  /// na jako uskom ekranu s dugim imenom kanala može prijeći u dva retka —
+  /// tada je pravi hero za jedan redak viši od skeletona.
   Widget _textLines() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Eyebrow ("— ISTAKNUTO  (?) ZAŠTO?")
         ShimmerBox(
-          height: 12,
-          width: 80,
+          height: 17,
+          width: 150,
           borderRadius: BorderRadius.circular(4),
         ),
         const SizedBox(height: 12),
+        // Naslov, 2 retka (20 + 16 + 20 = 56)
         ShimmerBox(
-          height: 22,
-          width: 320,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        const SizedBox(height: 8),
-        ShimmerBox(
-          height: 22,
-          width: 240,
+          height: 20,
+          width: 340,
           borderRadius: BorderRadius.circular(4),
         ),
         const SizedBox(height: 16),
         ShimmerBox(
-          height: 14,
-          width: 200,
+          height: 20,
+          width: 250,
           borderRadius: BorderRadius.circular(4),
         ),
+        const SizedBox(height: 10),
+        // Meta red (kanal · datum · trajanje)
+        ShimmerBox(
+          height: 21,
+          width: 220,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 16),
+        // CTA gumbi ("Slušaj" / "Spremi") — 48 px zbog padded tap targeta.
+        Row(
+          children: [
+            ShimmerBox(
+              height: 48,
+              width: 118,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            const SizedBox(width: 10),
+            ShimmerBox(
+              height: 48,
+              width: 118,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  /// Prazna kontrolna traka karusela — badge lijevo, dots desno. Visina mora
+  /// ostati [kHeroControlBarHeight], jednako `_HeroCarouselState._controlBar`.
+  Widget _controlBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
+      child: Row(
+        children: [
+          ShimmerBox(
+            height: 20,
+            width: 96,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          const Spacer(),
+          for (var i = 0; i < 5; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: ShimmerBox(
+                height: 7,
+                width: i == 0 ? 22 : 7,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

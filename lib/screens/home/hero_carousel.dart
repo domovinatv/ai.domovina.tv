@@ -7,6 +7,11 @@ import '../../l10n/app_localizations.dart';
 import 'home_feed.dart';
 import 'hero_section.dart';
 
+/// Visina kontrolne trake ispod hero kartice (badge 20 px + 2/18 padding).
+/// Dijeljena konstanta jer je i `HeroSkeleton` mora rezervirati — inače
+/// otkrivanje hero-a pomakne cijelu stranicu.
+const double kHeroControlBarHeight = 40;
+
 /// Hero **karusel** — umjesto jedne istaknute epizode prikazuje uži izbor
 /// (do 5 kandidata iz [HomeFeed.pickFeaturedCarousel]) s auto-rotacijom,
 /// swipe-om, strelicama (desktop) i dots indikatorom. Kontrolna traka ispod
@@ -14,7 +19,11 @@ import 'hero_section.dart';
 ///
 /// Auto-advance se pauzira na hover (desktop) i tijekom drag-a; svaka ručna
 /// navigacija (strelica / dot / swipe) resetira tajmer. Ako je `picks` length
-/// 1, renderira goli [HeroSection] bez ikakvog karusel-chrome-a.
+/// 1, kontrolni chrome se ne crta, ali se njegova visina zadržava.
+///
+/// `picks` stiže **latchan** iz `_ChannelGridViewState` — lista se ne mijenja
+/// nakon prvog prikaza, pa hero više ne prelistava kandidate dok se channel
+/// cache puni.
 class HeroCarousel extends StatefulWidget {
   final List<FeaturedPick> picks;
   final bool isMobile;
@@ -110,10 +119,23 @@ class _HeroCarouselState extends State<HeroCarousel> {
     final theme = Theme.of(context);
 
     if (widget.picks.isEmpty) return const SizedBox.shrink();
-    if (widget.picks.length == 1) return _slide(widget.picks.first);
 
     // Stisni donji razmak hero-a — kontrolnu traku crtamo sami ispod.
     const slidePadding = EdgeInsets.fromLTRB(16, 8, 16, 4);
+
+    // Jedan kandidat nema što rotirati, ali visina MORA ostati ista kao kod
+    // više njih: [HeroSkeleton] rezervira kontrolnu traku dok ne zna koliko će
+    // pickova biti, pa bi inače otkrivanje hero-a pomaknulo cijelu stranicu.
+    // Prazna traka se čita kao nešto veći donji razmak — vidi
+    // test/hero_slot_layout_test.dart.
+    if (widget.picks.length == 1) {
+      return Column(
+        children: [
+          _slide(widget.picks.first, padding: slidePadding),
+          const SizedBox(height: kHeroControlBarHeight),
+        ],
+      );
+    }
 
     final card = MouseRegion(
       onEnter: (_) => _paused = true,

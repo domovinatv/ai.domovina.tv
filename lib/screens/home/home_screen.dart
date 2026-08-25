@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -258,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
 // Channel grid
 // ---------------------------------------------------------------------------
 
-class _ChannelGridView extends StatelessWidget {
+class _ChannelGridView extends StatefulWidget {
   final Future<ChannelIndex> indexFuture;
   final List<ChannelSummary>? orderedChannels;
   final ChannelCache channelCache;
@@ -278,7 +279,62 @@ class _ChannelGridView extends StatelessWidget {
   });
 
   @override
+  State<_ChannelGridView> createState() => _ChannelGridViewState();
+}
+
+/// Drži **latch** hero izbora.
+///
+/// `channelCache` javlja svakim učitanim kanalom, a `pickFeaturedCarousel`
+/// rangira po TRENUTNO učitanom bazenu — dok prefetch teče, hero je zato
+/// mijenjao epizode svakih par stotina ms (vidljivo kao bljeskanje i skakanje
+/// stranice). Sada se izbor izračuna **jednom**, kad je bazen konačan, i više
+/// se ne dira; do tada stoji [HeroSkeleton] iste visine.
+///
+/// Konačan bazen = `channelCache.done`. Sigurnosni ventil je [_graceWindow]:
+/// ako se prefetch zaglavi na jednom kanalu, nakon njega se latcha ono što
+/// imamo (uz [HomeFeed.hasMinimumData]) da hero ne ostane skeleton zauvijek.
+class _ChannelGridViewState extends State<_ChannelGridView> {
+  static const _graceWindow = Duration(seconds: 6);
+
+  List<FeaturedPick>? _lockedPicks;
+  bool _graceElapsed = false;
+  Timer? _graceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _graceTimer = Timer(_graceWindow, () {
+      if (mounted) setState(() => _graceElapsed = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _graceTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Vrati latchani izbor, ili ga latchaj ako je bazen konačan. `null` znači
+  /// "još ne znamo" → crtaj skeleton.
+  List<FeaturedPick>? _featuredPicks(ChannelCache cache) {
+    final locked = _lockedPicks;
+    if (locked != null) return locked;
+    final poolFinal = cache.done ||
+        (_graceElapsed && HomeFeed.hasMinimumData(cache));
+    if (!poolFinal) return null;
+    return _lockedPicks = HomeFeed.pickFeaturedCarousel(cache.allVideos);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final indexFuture = widget.indexFuture;
+    final orderedChannels = widget.orderedChannels;
+    final channelCache = widget.channelCache;
+    final continueWatching = widget.continueWatching;
+    final onChannelsLoaded = widget.onChannelsLoaded;
+    final onSearchTap = widget.onSearchTap;
+    final onVideoTap = widget.onVideoTap;
+
     return FutureBuilder<ChannelIndex>(
       future: indexFuture,
       builder: (context, snap) {
@@ -337,7 +393,7 @@ class _ChannelGridView extends StatelessWidget {
           );
         }
 
-        final channels = orderedChannels!;
+        final channels = orderedChannels;
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -349,12 +405,14 @@ class _ChannelGridView extends StatelessWidget {
             // uvijek pokazuje pun listing po aktivnom sort modu.
             final allVids = channelCache.allVideos;
             final hasMinData = HomeFeed.hasMinimumData(channelCache);
-            // Uži izbor (do 5) za hero karusel; prvi je dnevni pick.
-            final featuredPicks = hasMinData
-                ? HomeFeed.pickFeaturedCarousel(allVids)
-                : const <FeaturedPick>[];
-            final featured =
-                featuredPicks.isEmpty ? null : featuredPicks.first;
+            // Uži izbor (do 5) za hero karusel; prvi je dnevni pick. `null` =
+            // bazen još nije konačan, hero stoji na skeletonu (vidi
+            // [_ChannelGridViewState]). Rail-ovi ispod iz istog razloga
+            // izuzimaju baš latchanu epizodu, nikad "trenutno najbolju".
+            final featuredPicks = _featuredPicks(channelCache);
+            final featured = (featuredPicks == null || featuredPicks.isEmpty)
+                ? null
+                : featuredPicks.first;
             // "Upravo stiglo" — tek pristigle, još neobrađene epizode.
             final freshlyArrived = featured != null
                 ? HomeFeed.freshlyArrived(allVids,
@@ -373,20 +431,37 @@ class _ChannelGridView extends StatelessWidget {
                   ),
                 ),
 
-                // Hero — uži izbor istaknutih epizoda u karuselu (ili skeleton
-                // dok prefetch ne stigne).
-                if (featuredPicks.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: HeroCarousel(
-                      picks: featuredPicks,
-                      isMobile: isMobile,
-                      onPlay: (id) => onVideoTap(id),
+                // Hero — uži izbor istaknutih epizoda u karuselu. Skeleton
+                // stoji dok izbor nije konačan, pa se hero otkrije jednim
+                // fadeom. Skeleton je iste visine (uklj. kontrolnu traku), pa
+                // zamjena ne pomiče ništa ispod sebe; `layoutBuilder` slaže
+                // stari i novi u Stack da AnimatedSwitcher ne animira veličinu.
+                SliverToBoxAdapter(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 320),
+                    switchInCurve: Curves.easeOut,
+                    layoutBuilder: (currentChild, previousChildren) => Stack(
+                      alignment: Alignment.topCenter,
+                      children: [
+                        ...previousChildren,
+                        ?currentChild,
+                      ],
                     ),
-                  )
-                else if (!hasMinData)
-                  SliverToBoxAdapter(
-                    child: HeroSkeleton(isMobile: isMobile),
+                    child: featuredPicks == null
+                        ? HeroSkeleton(
+                            key: const ValueKey('hero-skeleton'),
+                            isMobile: isMobile,
+                          )
+                        : featuredPicks.isEmpty
+                            ? const SizedBox.shrink(key: ValueKey('hero-none'))
+                            : HeroCarousel(
+                                key: const ValueKey('hero-carousel'),
+                                picks: featuredPicks,
+                                isMobile: isMobile,
+                                onPlay: (id) => onVideoTap(id),
+                              ),
                   ),
+                ),
 
                 // Rail „Izborni dan" — vrh ljestvice kandidata za sljedeći
                 // kanal (plan §8.6). Stoji IZNAD „Nastavi slušati" jer je za
@@ -458,7 +533,10 @@ class _ChannelGridView extends StatelessWidget {
                           .toList(),
                     ),
                   )
-                else if (!hasMinData)
+                // Skeleton stoji i dok hero izbor nije latchan — rail izuzima
+                // baš tu epizodu, pa ga ne smijemo crtati prije nje (a ni
+                // ostaviti prazninu na njezinu mjestu).
+                else if (featuredPicks == null || !hasMinData)
                   SliverToBoxAdapter(child: RailSkeleton(isMobile: isMobile)),
 
                 // "Upravo stiglo" rail — tek pristigle epizode bez članka
