@@ -401,15 +401,33 @@ Naša ruta jednako re-parenta `<video>` → koristi postojeći
 aplikaciju je namjerno iOS ponašanje — to nije bug i ne može se isključiti dok
 želimo pozadinski zvuk.
 
-### Thumbnail caching — cached_network_image (TV)
+### Thumbnail caching + WebP varijante — `CachedThumbnail`
 
-TV thumbnail-i koriste `CachedThumbnail` widget (`lib/widgets/cached_thumbnail.dart`)
-koji wrap-a `cached_network_image` — disk-persistent cache (preživljava app
-restart) + sivi placeholder + error widget. Cache key = URL, pa CDN `?v=`
-cache-buster prirodno invalidira. Web/mobile screens još koriste raw
-`Image.network` (TODO: proširiti ako se potvrdi benefit).
+Sve slike epizoda idu kroz `CachedThumbnail` (`lib/widgets/cached_thumbnail.dart`):
+disk-persistent cache, sivi placeholder, error widget, i — ako je URL kanonski
+`/images/{id}/thumbnail.png` — **automatska zamjena WebP varijantom** po
+render-širini (`thumb-320/640/1280.webp`, pipeline KORAK 9.7). Call-siteovi ne
+znaju za varijante. Fallback na PNG ide kroz `errorWidget` (ne `errorListener`).
 
-**Rule**: za nove TV thumbnail-e koristi `CachedThumbnail`, ne `Image.network`.
+*(Povijesno: do 25.8.2026. su varijante koristili SAMO TV ekrani, a web je i
+dalje vukao PNG od ~830 KB po slici — naslovnica ~20 MB. Sada ~0,9 MB.)*
+
+**Rule**: za slike epizoda koristi `CachedThumbnail`, ne `Image.network`.
+Uvijek proslijedi `width` kad ga znaš — bez njega widget pesimistično uzima
+širinu ekrana i bira najveću varijantu.
+
+**Rule (CORS je tvrdi uvjet)**: `CachedNetworkImage` povlači bajtove kroz
+`package:http`, pa URL MORA imati `access-control-allow-origin`.
+`Image.network` na webu ima `<img>` fallback koji CORS preživi — `CachedThumbnail`
+ga NEMA. Ne prosljeđuj mu strane hostove bez provjere. Zato su namjerno ostavljeni
+na `Image.network`: person avatar + `person_monogram` (host iz `mcp.domovina.ai`),
+`pinka_campaign_screen`, i `episode_simple_screen` (`info.thumbnail` =
+`i.ytimg.com`, što ionako krši pravilo "nikad `info.thumbnail`").
+
+**Rule (WebP na webu dekodira BROWSER, ne Flutter)**: na nativeu dekodira Skia pa
+WebP radi svugdje; na webu podrška prati browser (Chrome 32+, Firefox 65+,
+Safari/iOS Safari **14+**). Ne tvrditi da je "Flutter neovisan o browseru" — to
+vrijedi samo za native.
 
 ## Logging
 
