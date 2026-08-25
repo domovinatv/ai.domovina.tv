@@ -1,22 +1,64 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Editorial typography za DOMOVINA.ai homepage redesign.
+/// Editorial typography za DOMOVINA.ai.
 ///
-/// Strategija: na web koristimo direktan fontFamily string (browser dohvaća
-/// font preko `<link>` u web/index.html — brže, bez runtime downloada). Na
-/// native (iOS/Android/macOS) koristimo `google_fonts` paket koji handle-a
-/// caching i fallback.
+/// **Fontovi se registriraju kroz `google_fonts` na SVIM platformama, i na
+/// webu.** Ranije je web imao zasebnu granu koja je samo postavljala
+/// `fontFamily: 'Playfair Display'` i računala da će font stići preko
+/// `<link>`-a u `web/index.html`. To je radilo dok je postojao HTML renderer;
+/// canvaskit/skwasm ne čita `@font-face` iz dokumenta, pa je Flutter tekst
+/// padao na ugrađeni fallback — naslovi i wordmark su se na webu crtali
+/// sans-serifom umjesto Playfairom, a pojedini glyphovi bi nestali dok
+/// asinkroni Noto fallback ne stigne.
 ///
-/// Vidi web/index.html za font load deklaraciju i Korak 1 plana redizajna.
+/// `<link>` u `web/index.html` NIJE višak — njime se crta HTML boot-intro
+/// splash (pravi DOM, prije nego Flutter uopće starta).
+///
+/// [startPreload] + [awaitPreload] skidaju sve varijante PRIJE `runApp` da
+/// tekst ne bljesne u fallback fontu pa se prelomi kad pravi font stigne.
 class AppTypography {
-  static const _playfair = 'Playfair Display';
-  static const _lora = 'Lora';
-  static const _inter = 'Inter';
+  /// Sve (obitelj, težina) kombinacije koje tema stvarno koristi. Preload ih
+  /// vrti redom; nova težina u [textTheme] mora doći i ovamo, inače ta grana
+  /// prvi put stiže tek u buildu (i bljesne).
+  static final List<TextStyle Function()> _usedVariants = [
+    () => _playfairStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    () => _playfairStyle(fontSize: 16, fontWeight: FontWeight.w700),
+    () => _playfairStyle(fontSize: 16, fontWeight: FontWeight.w800),
+    () => _loraStyle(fontSize: 16, fontWeight: FontWeight.w400),
+    () => _interStyle(fontSize: 16, fontWeight: FontWeight.w400),
+    () => _interStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    () => _interStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  ];
 
-  /// Vraća TextStyle s odgovarajućim fontom — web koristi fontFamily string,
-  /// native koristi GoogleFonts wrapper.
+  static bool _preloadStarted = false;
+
+  /// Pokreni skidanje svih korištenih varijanti. Zovi ODMAH na početku
+  /// `main()` — dok teku ostali `await`-ovi (Supabase, auth, prefs) fontovi
+  /// stignu u pozadini, pa [awaitPreload] na kraju obično čeka ~0 ms.
+  static void startPreload() {
+    if (_preloadStarted) return;
+    _preloadStarted = true;
+    for (final variant in _usedVariants) {
+      variant();
+    }
+  }
+
+  /// Pričekaj da preload završi, ali ne duže od [timeout] — spor gstatic ne
+  /// smije zaustaviti boot. Ako istekne, tekst se jednom prelomi kad font
+  /// naknadno stigne (isto ponašanje kao prije, samo rijetko).
+  static Future<void> awaitPreload({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    startPreload();
+    try {
+      await GoogleFonts.pendingFonts().timeout(timeout);
+    } catch (_) {
+      // Nema mreže / spor CDN — nastavi s fallback fontom.
+    }
+  }
+
+  /// Playfair Display — display/headline (editorial serif).
   static TextStyle _playfairStyle({
     required double fontSize,
     required FontWeight fontWeight,
@@ -24,16 +66,6 @@ class AppTypography {
     double? letterSpacing,
     double? height,
   }) {
-    if (kIsWeb) {
-      return TextStyle(
-        fontFamily: _playfair,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
-    }
     return GoogleFonts.playfairDisplay(
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -50,16 +82,6 @@ class AppTypography {
     double? letterSpacing,
     double? height,
   }) {
-    if (kIsWeb) {
-      return TextStyle(
-        fontFamily: _lora,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
-    }
     return GoogleFonts.lora(
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -76,16 +98,6 @@ class AppTypography {
     double? letterSpacing,
     double? height,
   }) {
-    if (kIsWeb) {
-      return TextStyle(
-        fontFamily: _inter,
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
-    }
     return GoogleFonts.inter(
       fontSize: fontSize,
       fontWeight: fontWeight,

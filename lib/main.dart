@@ -19,6 +19,7 @@ import 'services/tv_mode.dart';
 import 'services/update_notifier.dart';
 import 'services/watch_progress_service.dart';
 import 'theme/app_theme.dart';
+import 'theme/typography.dart';
 
 /// Supabase backend (self-hosted na Coolify, Kong gateway).
 /// Konfiguracija dolazi preko --dart-define u build/run komandi; vidi
@@ -37,6 +38,12 @@ void log(String msg) => print('[DOMOVINA v$appVersion] $msg');
 void main() async {
   log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Fontovi krecu ODMAH, u pozadini — dok teku ostali await-ovi (Supabase,
+  // auth, prefs) stignu se skinuti i registrirati, pa cekanje pred runApp
+  // obicno traje ~0 ms. Bez ovoga se prvi frame crta fallback fontom pa se
+  // cijela stranica prelomi kad pravi font stigne.
+  AppTypography.startPreload();
 
   try { usePathUrlStrategy(); } catch (_) {}
 
@@ -132,6 +139,9 @@ void main() async {
     log('STACK: ${details.stack}');
     FlutterError.presentError(details);
   };
+
+  // Zadnja stanica prije prvog framea — vidi AppTypography.startPreload().
+  await AppTypography.awaitPreload();
 
   log('runApp');
   runApp(const DominovinaApp());
