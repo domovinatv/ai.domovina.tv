@@ -448,6 +448,9 @@ Epizoda u railu „Upravo stiglo" može biti u bitno različitim stanjima, a do
 `lib/models/episode_status.dart` uvodi pet faza (`queued` → `fetched` →
 `mediaReady` → `transcribed` → `published`) + listu koraka koju crta
 `widgets/episode_status_card.dart` (detaljni ekran, `_InfoTab` jednostavnog).
+Puna slika (mermaid prijelazi, odbačene alternative, otvoreni backend dug):
+`docs/2026-08-26-episode-processing-status.md`. Koliko je epizoda zaglavljeno
+gdje: `node scripts/audit-episode-stages.mjs`.
 
 **Rule (faza se MJERI, ne čita iz listinga)**: `EpisodeStatus.measured(...)`
 (preko `EpisodeData.status`) je jedini autoritet — `info.json` presence, probe
