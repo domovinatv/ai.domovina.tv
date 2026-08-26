@@ -333,6 +333,31 @@ Napomena: isti je kvar tiho nosio i postojeći „YouTube mode" gumb u
 otvorio na izoliranoj stranici. Feature detection ga sad sakrije umjesto da
 ponudi nešto što ne radi.
 
+### Što ugrađeni player NE može — reklame
+
+Pitanje koje se vraća: u **Braveu** na `/v/<id>` nema YouTube reklama, u
+**Chromeu/Edgeu** ih ima. Nije razlika u našem kodu.
+
+- Naš embed je **pravi `<iframe>`** u DOM-u stranice (`HtmlElementView` →
+  `web.HTMLIFrameElement`), **ne webview**. Ponaša se kao YouTube bilo gdje.
+- Brave blokira oglase **na razini mreže**, prije nego išta dođe do naše
+  stranice. Isti naš kod, tri browsera, tri ishoda.
+- Ne možemo utjecati: iframe je cross-origin (`youtube-nocookie.com`), pa
+  same-origin policy ne da čitati ni mijenjati njegov DOM. Službeni IFrame
+  Player API daje `play`/`pause`/`seek` i stanja, ali oglase **ne izlaže niti
+  preskače** — namjerno.
+- Zaobilaženje bi ionako kršilo YouTube ToS i pravilo iz CLAUDE.md.
+
+**Pravi put do „bez reklama" je `mediaReady`**: naša CDN kopija
+(`video_h264.mp4`) nema oglasa jer je streamamo sami, i čim sjedne, embed
+nestaje a primarno postaje naš player. Dakle rješenje je **skratiti vrijeme do
+obrade** (`docs/2026-08-26-episode-processing-status.md` §6.3 — backlog 14–25
+dana), ne adblock.
+
+Protuteža koju ne treba zaboraviti: naš CDN video je **360p**, a embed daje puni
+izvor **do 4K**. Embed nije samo privremeni most nego i kvaliteta koju ne hostamo
+— zato „YouTube mode" gumb postoji i na epizodama koje imaju našu mediju.
+
 ### Vezano
 - `lib/widgets/youtube_embed_web.dart` — detekcija + atribut
 - `docs/2026-08-26-episode-processing-status.md` — zašto epizoda uopće nudi YouTube
