@@ -132,19 +132,21 @@ zanemariv, a izdavanje vlastitog tokena traži licencu. Zato je u decku to
 | 1 | Naslov | „Brand kupuje trenutak, ne publiku." |
 | 2 | Problem | „Od oglašivačeva eura do kreatora stigne 25 do 40 centi — i najveći gubitak je *prije* nego platforma išta podijeli." |
 | 3 | Uvid | „Nitko ne prodaje trenutak. Provjerili smo — te sposobnosti nema ni kod koga." |
-| 4 | Proizvod | „Ne 'podcast o poduzetništvu', nego devet minuta o tome kako mali poduzetnik dolazi do kapitala." |
+| 4 | Proizvod | „Ne 'podcast o poduzetništvu', nego ovih sedam minuta — i to je **prava epizoda**, evo poveznice." |
 | 5 | Mehanizam | „Kod nas se oglašivač koji ispadne nije opekao — reklamirao se besplatno i još zaradio." |
 | 6 | Zašto sada | „DSA ubija ciljanje po osobi. Kontekst je jedino što preživljava — a mi ne ciljamo osobu nego sadržaj." |
-| 7 | Što radi | „Ovo nije prezentacija ideje. 3.047 sati je obrađeno, 144 tisuće odlomaka je pretraživo, plaćanje radi." |
-| 8 | Model | „Nula posto na primarnoj je trošak stjecanja, ne model." |
-| 9 | Zamašnjak | „Brandova pretraga je naša lista za outreach — potražnja povlači ponudu." |
-| 10 | Tržište | „Hrvatski digitalni oglasi su €203 M ove godine. Ne treba nam postotak toga — treba nam 20 plaćenih trenutaka." |
-| 11 | Konkurencija | „Jedni znaju pretražiti, drugi znaju prodati. Nitko ne radi oboje." |
-| 12 | Rizici | „Ovo su rupe koje sam našao prije vas." |
-| 13 | Tim | „Solo, i to je rizik. Evo što prvi novac zapošljava." |
-| 14 | Ask | „€1,2 M, 18 mjeseci, četiri prekretnice." |
+| 7 | Trakcija | „Ovo nije prezentacija ideje. 3.047 sati je obrađeno, 144 tisuće odlomaka je pretraživo, plaćanje radi." |
+| 8 | Dokaz | „Ista epizoda, u produkciji. Screenshotovi su sa živog sitea, ništa nije iza logina." |
+| 9 | Model | „Nula posto na primarnoj je trošak stjecanja, ne model." |
+| 10 | Zamašnjak | „Brandova pretraga je naša lista za outreach — potražnja povlači ponudu." |
+| 11 | Tržište | „Hrvatski digitalni oglasi su €203 M ove godine. Ne treba nam postotak toga — treba nam 20 plaćenih trenutaka." |
+| 12 | Go to market | „Nitko ne kupuje doseg od kanala s 28 pratitelja. Kupuje razgovor. Zato se prvih dvadeset prodaje rukom." |
+| 13 | Konkurencija | „Jedni znaju pretražiti, drugi znaju prodati. Nitko ne radi oboje." |
+| 14 | Rizici | „Ovo su rupe koje sam našao prije vas." |
+| 15 | Tim | „Solo, i to je rizik. Evo što prvi novac zapošljava." |
+| 16 | Ask | „€1,2 M, 18 mjeseci, četiri prekretnice." |
 
-**Slajd 12 je najvažniji u cijelom decku.** Osnivač koji sam imenuje svoje rupe
+**Slajd 14 (rizici) je najvažniji u cijelom decku.** Osnivač koji sam imenuje svoje rupe
 kupuje povjerenje u sve ostalo. Ne izbacuj ga da bi deck izgledao jače — time ga
 oslabljuješ.
 
@@ -203,6 +205,20 @@ prije nego ih izgovoriš.
    Slajd 12 zadržava svih osam rizika — dobio je dva stupca, nije skraćen.
 3. ~~Valuta na slajdu 2~~ — **gotovo**, euro/cent.
 
+**Riješeno 26.8.2026.** (treća iteracija):
+
+4. ~~Slajd 4 je bio maketa~~ — sada je **prava epizoda iz korpusa**
+   (`WRE248YCIeI`, #005 Marijana Šarolić Robić / CroStartup): traka je stvarna
+   mapa 85 strojno detektiranih poglavlja u pravom mjerilu, blok 24:35–31:40 su
+   tri stvarna uzastopna poglavlja o prikupljanju kapitala, a izvor nosi
+   poveznicu koju investitor može kliknuti.
+5. ~~Deck nema nijednu sliku proizvoda~~ — novi **slajd 8 (Dokaz)** nosi dva
+   screenshota sa **žive produkcije**, uzeta dok je deck pisan. Ugrađeni su kao
+   data URI jer artifact mora biti self-contained; izvori su u `deck/shots/`.
+6. ~~Nema GTM-a~~ — novi **slajd 12**. Deck je obećavao 20 plaćenih trenutaka a
+   nije pokazivao stroj koji ih proizvodi; to je prvo pitanje nakon „od čega
+   živite".
+
 Otvoreno, redom po prioritetu:
 
 1. **Financijski model ne postoji.** Iznos od €1,2 M izveden je iz objavljenih
@@ -210,6 +226,12 @@ Otvoreno, redom po prioritetu:
    projekcija troška po vertikali.
 2. **CPM za hrvatski podcast i dalje nedostaje.** Ako netko u sobi ima taj
    podatak, to je najkorisnija stvar koju taj sastanak može dati.
-3. **Share pin na artifactu.** Vanjski čitatelji vide verziju na koju je pin
+3. **Speech notes po slajdu** — tablica §6 nosi jednu rečenicu po slajdu; pune
+   bilješke još ne postoje. One su i ulaz za demo video proizvoda.
+4. **Sintetički avatar za sam pitch: NE.** Seed je oklada na osnivača, a slajdovi
+   14 i 15 su poziv na povjerenje — avatar ondje čita kao skrivanje. Ista
+   tehnologija se isplati na demou proizvoda, async follow-upu i outreachu
+   kreatorima, ne u sobi.
+5. **Share pin na artifactu.** Vanjski čitatelji vide verziju na koju je pin
    postavljen — nakon svakog republisha ga treba pomaknuti iz share izbornika,
    inače im deck ostaje na staroj verziji.

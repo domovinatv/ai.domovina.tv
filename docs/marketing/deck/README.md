@@ -14,7 +14,26 @@ Strategija, priprema po fondu i zabranjene tvrdnje:
 - **Bez emojija** (brand pravilo iz `pitch-deck` repoa).
 - Navy `#002F6C` + zlato `#C8912A` / `#E3AF35`; Fraunces + Inter.
 - Nijedna brojka bez izvora. Sve što nije potvrđeno ide na slajd 12, ne van.
-- Slajd rizika (12) se **ne briše** da deck izgleda jače.
+- Slajd rizika (**14**) se **ne briše** da deck izgleda jače.
+- **Rule (nijedan primjer nije izmišljen)**: slajd 4 crta pravu epizodu iz
+  korpusa, s pravim poglavljima i klikabilnom poveznicom. Maketa je najjači
+  signal da je deck generiran; provjerljiv primjer je najjači protusignal.
+  Novi primjer se vadi iz MCP-a (`get_episode`), ne piše rukom.
+
+## Slike
+
+Artifact je jedna samostalna HTML datoteka — **relativne putanje do slika ne
+rade** pri objavi. Screenshotovi se zato ugrađuju kao `data:` URI. Izvori žive u
+`shots/` (JPEG, dulja stranica 1160 px, kvaliteta ~74) da se mogu zamijeniti:
+
+```bash
+sips -Z 1160 shot.png --out s.png
+sips -s format jpeg -s formatOptions 74 s.png --out shots/shot-home.jpg
+```
+
+Uzeti su sa **žive produkcije**, ne iz lokalnog builda. Flutter na
+`domovina.ai` traži ~30 s do prvog painta u automatiziranom Chromeu — prerani
+screenshot je prazna stranica, ne puknuta stranica.
 
 ## Layout
 
