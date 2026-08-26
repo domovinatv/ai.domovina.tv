@@ -460,6 +460,14 @@ producentova namjera i lažu u oba smjera (`DnzG2OvRflI` ima video uz
 vraća 404). `EpisodeStatus.fromPipeline(...)` postoji SAMO za oznake na
 karticama u railovima/channel listi, gdje ničeg boljeg nema.
 
+**Rule (izostanak zastavice NIJE informacija)**: `fromPipeline` smije tvrditi
+fazu samo kad je neka zastavica **podignuta**; inače je `stageCertain == false`,
+`badge()` vraća `null` i call-site padne na neutralno „U obradi". Prva izvedba
+je iz samih `false` vrijednosti zaključila „Preuzimamo" i tu oznaku dala svakoj
+epizodi u railu — netočno za 12 od 20. Danas pipeline zastavice piše sve
+odjednom na kraju (0 od 20 ima ijednu među-zastavicu), pa je neutralna oznaka
+jedini pošten izlaz.
+
 **Rule (`info.json` 404 ≠ 404)**: `VideoNotFoundException` vodi na
 `_QueuedEpisodeScreen`, koji epizodu potraži u channel listinzima
 (`channelCache.findVideoAsync`, kanali poredani po svježini, staje na prvi

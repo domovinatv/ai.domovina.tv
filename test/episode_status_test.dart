@@ -128,14 +128,66 @@ void main() {
         hasMagisterium: false,
       ));
       expect(s.measured, isFalse);
-      // Listing ne zna nista o mediji; epizoda JEST u listingu pa je
-      // preuzimanje gotovo, a sve dalje ceka.
-      expect(s.stage, EpisodeStage.fetched);
-      expect(s.steps[EpisodeStep.fetch], EpisodeStepState.done);
     });
 
-    test('listing bez pipeline bloka ne puca', () {
-      expect(EpisodeStatus.fromPipeline(null).stage, EpisodeStage.fetched);
+    testWidgets('nijedna zastavica podignuta → oznaka ŠUTI, ne pogađa fazu',
+        (tester) async {
+      // Regresija (v2.0.142, prijavio korisnik): fromPipeline je iz samih
+      // false-zastavica zaključivao „Preuzimamo" i tu oznaku zalijepio SVAKOJ
+      // epizodi u railu „Upravo stiglo". Izmjereno 26.8.2026.: nijedna od 20
+      // nedovrsenih epizoda nema ijednu podignutu medu-zastavicu, a 12 ih je
+      // imalo mediju na CDN-u — dakle oznaka je bila netocna gotovo uvijek.
+      // Null → call-site padne na neutralno „U obradi".
+      await tester.pumpWidget(harness(const SizedBox()));
+      final l = AppLocalizations.of(tester.element(find.byType(SizedBox)));
+
+      final blank = EpisodeStatus.fromPipeline(const VideoPipeline(
+        hasTranscript: false,
+        hasDiarized: false,
+        hasSummary: false,
+        hasArticle: false,
+        hasMagisterium: false,
+      ));
+      expect(blank.stageCertain, isFalse);
+      expect(blank.badge(l), isNull);
+      expect(EpisodeStatus.fromPipeline(null).badge(l), isNull);
+    });
+
+    testWidgets('podignuta zastavica JEST informacija → oznaka govori',
+        (tester) async {
+      await tester.pumpWidget(harness(const SizedBox()));
+      final l = AppLocalizations.of(tester.element(find.byType(SizedBox)));
+
+      for (final p in [
+        const VideoPipeline(
+          hasTranscript: true,
+          hasDiarized: false,
+          hasSummary: false,
+          hasArticle: false,
+          hasMagisterium: false,
+        ),
+        // Samo `has_diarized` mora vrijediti jednako kao `has_transcript` —
+        // oboje dokazuju da je zvuk bio preuzet.
+        const VideoPipeline(
+          hasTranscript: false,
+          hasDiarized: true,
+          hasSummary: false,
+          hasArticle: false,
+          hasMagisterium: false,
+        ),
+      ]) {
+        final s = EpisodeStatus.fromPipeline(p);
+        expect(s.stageCertain, isTrue);
+        expect(s.stage, EpisodeStage.transcribed);
+        expect(s.badge(l), l.episodeStageTranscribedBadge);
+      }
+    });
+
+    test('izmjereno stanje uvijek nesto tvrdi — probe je odgovor, ne nagadanje',
+        () {
+      for (final s in [status(info: false), status(), status(media: true)]) {
+        expect(s.stageCertain, isTrue);
+      }
     });
 
     test('gotova epizoda nema oznaku', () {

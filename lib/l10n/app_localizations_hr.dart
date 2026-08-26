@@ -975,6 +975,10 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String get episodeYouTubeUntilProcessed =>
+      'Gledaj s YouTubea dok epizodu ne obradimo.';
+
+  @override
   String get episodeMediaUnavailable =>
       'Medijski zapis nije dostupan za ovu epizodu.';
 

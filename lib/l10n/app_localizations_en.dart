@@ -976,6 +976,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get episodeYouTubeUntilProcessed =>
+      'Watch on YouTube until we finish processing this episode.';
+
+  @override
   String get episodeMediaUnavailable =>
       'Media isn’t available for this episode.';
 

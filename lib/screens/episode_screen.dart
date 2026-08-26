@@ -226,6 +226,67 @@ class _QueuedEpisodeScreenState extends State<_QueuedEpisodeScreen> {
       return _NotFoundScreen(youtubeId: widget.youtubeId);
     }
 
+    // Isti raspored kao basic layout: na širokom ekranu player desno, status
+    // lijevo. Prag je isti (1100) da prijelaz između faza ne pomiče stupce.
+    final wide = MediaQuery.sizeOf(context).width > 1100;
+
+    final content = SingleChildScrollView(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  listed.video.displayTitle,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  listed.video.date ?? listed.channelName,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (!wide) ...[
+                  InAppYouTubePlayer(
+                    videoId: widget.youtubeId,
+                    posterUrl: CdnConfig.thumbnailUrl(widget.youtubeId),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                EpisodeStatusCard(
+                  status: EpisodeStatus.measured(
+                    hasInfo: false,
+                    hasMedia: false,
+                    hasTranscript: false,
+                    hasSummary: false,
+                    hasArticle: false,
+                    hasMagisterium: false,
+                  ),
+                  footnote: l.episodeStatusNotOnCdn(widget.youtubeId),
+                ),
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: () => openUrl(
+                    'https://www.youtube.com/watch?v=${widget.youtubeId}',
+                  ),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: Text(l.episodeOpenOnYouTube),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
@@ -238,60 +299,15 @@ class _QueuedEpisodeScreenState extends State<_QueuedEpisodeScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: SingleChildScrollView(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 860),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      listed.video.displayTitle,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      listed.video.date ?? listed.channelName,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    InAppYouTubePlayer(
-                      videoId: widget.youtubeId,
-                      posterUrl: CdnConfig.thumbnailUrl(widget.youtubeId),
-                    ),
-                    const SizedBox(height: 20),
-                    EpisodeStatusCard(
-                      status: EpisodeStatus.measured(
-                        hasInfo: false,
-                        hasMedia: false,
-                        hasTranscript: false,
-                        hasSummary: false,
-                        hasArticle: false,
-                        hasMagisterium: false,
-                      ),
-                      footnote: l.episodeStatusNotOnCdn(widget.youtubeId),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton.icon(
-                      onPressed: () => openUrl(
-                        'https://www.youtube.com/watch?v=${widget.youtubeId}',
-                      ),
-                      icon: const Icon(Icons.open_in_new, size: 18),
-                      label: Text(l.episodeOpenOnYouTube),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        child: wide
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: content),
+                  _YouTubeSidePanel(youtubeId: widget.youtubeId),
+                ],
+              )
+            : content,
       ),
     );
   }
@@ -338,6 +354,67 @@ class _NotFoundScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Desni stupac s ugrađenim YouTube playerom — zamjena za [VideoPanel] na
+/// epizodama kojima medija još nije kod nas.
+///
+/// Zašto stupac a ne inline blok: na širokom ekranu je desna strana mjesto na
+/// kojem korisnik i inače očekuje player (ondje stoji `VideoPanel`), a status
+/// kartica s koracima obrade time ostaje iznad pregiba umjesto da je 16:9 blok
+/// gurne dolje. Panel se ne skrola sa sadržajem — kao ni `VideoPanel`.
+class _YouTubeSidePanel extends StatelessWidget {
+  final String youtubeId;
+
+  /// Isti raspon kao `VideoPanel` (360), ali malo širi jer je ovdje player
+  /// jedini sadržaj stupca, a YouTube kontrole na 360 dp postaju skučene.
+  static const double width = 440;
+
+  const _YouTubeSidePanel({required this.youtubeId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(left: BorderSide(color: theme.colorScheme.outlineVariant)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: InAppYouTubePlayer(
+              videoId: youtubeId,
+              posterUrl: CdnConfig.thumbnailUrl(youtubeId),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Row(
+              children: [
+                const Icon(Icons.smart_display, size: 16, color: Color(0xFFFF0000)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l.episodeYouTubeUntilProcessed,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2371,6 +2448,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final embedBlocked = youTubeIsTheOnlyWay &&
         youTubeEmbedSupported &&
         !data.info.playableInEmbed;
+    // Na širokom ekranu embed ide u desni stupac — na isto mjesto gdje stoji
+    // `VideoPanel` kad medija postoji, pa reprodukcija uvijek živi na istoj
+    // strani ekrana i ne gura status-karticu ispod pregiba.
+    final showEmbedPanel = embedYouTube && !showVideo && width > 1100;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
@@ -2432,7 +2513,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     // In-app YouTube player — jedina reprodukcija kad medije
                     // kod nas nema (faza `queued`/`fetched`). Facade, pa
                     // iframe krene tek na korisnikov tap.
-                    if (embedYouTube) ...[
+                    if (embedYouTube && !showEmbedPanel) ...[
                       InAppYouTubePlayer(
                         videoId: data.youtubeId,
                         posterUrl: CdnConfig.thumbnailUrl(data.youtubeId),
@@ -2549,7 +2630,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
     );
 
     Widget body;
-    if (showVideo) {
+    if (showEmbedPanel) {
+      body = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: scrollBody),
+          _YouTubeSidePanel(youtubeId: data.youtubeId),
+        ],
+      );
+    } else if (showVideo) {
       body = Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

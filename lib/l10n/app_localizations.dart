@@ -1778,6 +1778,12 @@ abstract class AppLocalizations {
   /// **'Epizoda „{id}” nije pronađena na CDN-u.'**
   String episodeStatusNotOnCdn(String id);
 
+  /// Caption under the embedded YouTube player in the desktop side panel, shown while the episode has no media on our CDN.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gledaj s YouTubea dok epizodu ne obradimo.'**
+  String get episodeYouTubeUntilProcessed;
+
   /// Placeholder shown in the player area when no playable media exists for the episode.
   ///
   /// In hr, this message translates to:

@@ -1250,6 +1250,10 @@
     "placeholders": {"id": {"type": "String"}},
     "description": "Short not-found line used above the queued status card, with the episode id."
   },
+  "episodeYouTubeUntilProcessed": "Gledaj s YouTubea dok epizodu ne obradimo.",
+  "@episodeYouTubeUntilProcessed": {
+    "description": "Caption under the embedded YouTube player in the desktop side panel, shown while the episode has no media on our CDN."
+  },
   "episodeMediaUnavailable": "Medijski zapis nije dostupan za ovu epizodu.",
   "@episodeMediaUnavailable": {
     "description": "Placeholder shown in the player area when no playable media exists for the episode."

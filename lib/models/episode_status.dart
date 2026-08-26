@@ -51,10 +51,17 @@ class EpisodeStatus {
   /// True kad je stanje izvedeno iz stvarnih CDN probe-ova, a ne iz listinga.
   final bool measured;
 
+  /// True kad [stage] doista nešto tvrdi. Listing zna samo za tekstualne
+  /// artefakte — kad su sve zastavice false, epizoda je *negdje* između „u redu
+  /// čekanja" i „prepisujemo", a koje od toga se iz listinga NE MOŽE znati.
+  /// Tada je ovo false i [badge] šuti umjesto da pogodi.
+  final bool stageCertain;
+
   const EpisodeStatus({
     required this.stage,
     required this.steps,
     required this.measured,
+    this.stageCertain = true,
   });
 
   /// Status iz IZMJERENOG stanja — ono što je episode screen doista dohvatio.
@@ -97,23 +104,33 @@ class EpisodeStatus {
   }
 
   /// Status iz channel listinga (`pipeline` zastavice). Slabiji vantage: o
-  /// `info.json`-u i mediji listing ne zna ništa, pa se preuzimanje smatra
-  /// gotovim (epizoda JEST u listingu), a medija samo ako postoji prijepis.
-  /// Koristi se za oznake na karticama u railovima.
+  /// `info.json`-u i mediji listing ne zna **ništa** — nema zastavicu za njih.
+  /// Koristi se za oznake na karticama u railovima, gdje probe nije izvediv.
+  ///
+  /// **Rule**: kad nijedna zastavica nije podignuta, faza se NE pogađa
+  /// ([stageCertain] je false, [badge] vraća null i call-site padne na neutralno
+  /// „U obradi"). Prva izvedba je u tom slučaju tvrdila „Preuzimamo" i time na
+  /// naslovnici svakoj epizodi u railu zalijepila istu, uglavnom netočnu
+  /// oznaku — izmjereno 26.8.2026.: 12 od 20 tih epizoda imalo je mediju na
+  /// CDN-u, dakle bile su dvije faze dalje.
   factory EpisodeStatus.fromPipeline(VideoPipeline? p) {
-    final hasTranscript = p?.hasTranscript ?? false;
+    final hasTranscript = (p?.hasTranscript ?? false) || (p?.hasDiarized ?? false);
+    final hasSummary = p?.hasSummary ?? false;
+    final hasArticle = p?.hasArticle ?? false;
     final derived = EpisodeStatus.measured(
       hasInfo: true,
       hasMedia: hasTranscript,
       hasTranscript: hasTranscript,
-      hasSummary: p?.hasSummary ?? false,
-      hasArticle: p?.hasArticle ?? false,
+      hasSummary: hasSummary,
+      hasArticle: hasArticle,
       hasMagisterium: p?.hasMagisterium ?? false,
     );
     return EpisodeStatus(
       stage: derived.stage,
       steps: derived.steps,
       measured: false,
+      // Samo podignuta zastavica nosi informaciju; njihov izostanak ne nosi.
+      stageCertain: hasTranscript || hasSummary || hasArticle,
     );
   }
 
@@ -138,6 +155,7 @@ class EpisodeStatus {
   /// "Prepisujemo", …). Null za [EpisodeStage.published] — gotova epizoda ne
   /// nosi oznaku.
   String? badge(AppLocalizations l) {
+    if (!stageCertain) return null;
     switch (stage) {
       case EpisodeStage.queued:
         return l.episodeStageQueuedBadge;

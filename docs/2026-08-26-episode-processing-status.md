@@ -57,6 +57,18 @@ To je ista klasa problema kao WebP varijante iz 25.8.2026.: producent zapisuje
 > `EpisodeStatus.fromPipeline(...)` postoji samo za oznake na karticama u
 > railovima (gdje probe nije izvediv) i nosi `measured: false`.
 
+Prva izvedba (v2.0.142) je iz **izostanka** zastavica zaključivala fazu i tako
+svakoj epizodi u railu „Upravo stiglo" zalijepila „Preuzimamo" — netočno za 12
+od 20. Ispravak (v2.0.143): **samo podignuta zastavica nosi informaciju.** Kad
+nijedna nije podignuta, `stageCertain` je `false`, `badge()` vraća `null` i
+call-site padne na neutralno „U obradi".
+
+Mjerenje koje to zaključuje: **0 od 20** nedovršenih epizoda ima ijednu
+podignutu među-zastavicu (`has_transcript` / `has_diarized` / `has_summary`).
+Pipeline ih očito piše sve odjednom na kraju, pa listing danas **ne nosi
+nikakav** signal o napretku — rail može reći samo „U obradi" dok se to na
+backendu ne promijeni (§6.4).
+
 ## 3. Faze i prijelazi
 
 ```mermaid
@@ -149,9 +161,13 @@ Ove stavke frontend može samo **iskomunicirati**, ne popraviti. Rade se iz
    razdoblja 1.–12.8., dakle **14 do 25 dana** s gotovom medijom i bez članka
    (`fetched` bucket je za usporedbu star najviše 7 dana). Ili LLM korak
    zaostaje, ili je dio epizoda tiho ispao iz reda.
-4. **`pipeline` blok nema zastavicu za mediju.** Kad bi listing nosio
-   `has_media`, railovi bi mogli pokazati točnu fazu bez probe-a. Trenutno
-   `fromPipeline` mora nagađati (prijepis ⇒ medija je bila tu).
+4. **`pipeline` blok se piše sve-odjednom-na-kraju i nema zastavicu za mediju.**
+   Izmjereno: 0 od 20 nedovršenih epizoda ima podignut `has_transcript`,
+   `has_diarized` ili `has_summary` — dakle listing danas ne nosi **nijedan**
+   među-signal, a za mediju nema polja ni u principu. Posljedica: oznaka u railu
+   može biti samo neutralna „U obradi". Da pipeline zastavice piše **inkrementalno**
+   (i doda `has_media`), railovi bi pokazali točnu fazu bez ijednog probe-a —
+   frontend je za to već spreman (`EpisodeStatus.fromPipeline`).
 
 ## Vezani dokumenti
 

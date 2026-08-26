@@ -280,6 +280,7 @@
   "episodeWatchOurPlayer": "Watch the episode",
   "episodeEmbedBlocked": "The owner disabled the embedded player for this episode, so it opens on YouTube.",
   "episodeStatusNotOnCdn": "Episode “{id}” wasn’t found on the CDN.",
+  "episodeYouTubeUntilProcessed": "Watch on YouTube until we finish processing this episode.",
   "episodeMediaUnavailable": "Media isn’t available for this episode.",
   "episodeNoChapters": "No chapters for this episode.",
   "episodeKeyTopics": "Key topics",
