@@ -1,0 +1,553 @@
+<title>Trenutak, ne publika</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --ground:#04101F;
+    --surface:#0A1D33;
+    --surface-2:#102845;
+    --rule:#173352;
+    --ink:#F0F4F9;
+    --ink-2:#A9B8CB;
+    --ink-3:#6E8098;
+    --navy:#1B4E8F;
+    --navy-lit:#6FA8E8;
+    --gold:#C8912A;
+    --gold-lit:#E3AF35;
+    --bad:#D2606B;
+    --f-d:"Fraunces",Georgia,"Times New Roman",serif;
+    --f-b:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--f-b);font-size:17px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .slide{
+    min-height:100svh;scroll-snap-align:start;scroll-snap-stop:always;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:clamp(40px,6vh,80px) clamp(24px,5vw,80px) clamp(64px,8vh,96px);
+    position:relative;border-bottom:1px solid var(--rule);
+  }
+  .inner{max-width:1080px;margin:0 auto;width:100%}
+  .num{
+    position:absolute;top:clamp(24px,4vh,40px);right:clamp(24px,5vw,80px);
+    font-size:12px;letter-spacing:.18em;color:var(--ink-3);
+    font-variant-numeric:tabular-nums;
+  }
+  .eyebrow{
+    font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--gold);font-weight:600;display:flex;align-items:center;gap:14px;
+  }
+  .eyebrow::before{content:"";width:28px;height:2px;background:var(--gold);flex:none}
+  h1{
+    font-family:var(--f-d);font-weight:700;letter-spacing:-.02em;
+    font-size:clamp(40px,7.4vw,84px);line-height:1.02;margin:26px 0 0;
+    text-wrap:balance;
+  }
+  h2{
+    font-family:var(--f-d);font-weight:600;letter-spacing:-.015em;
+    font-size:clamp(30px,4.6vw,54px);line-height:1.1;margin:20px 0 0;
+    text-wrap:balance;max-width:19ch;
+  }
+  h2.wide{max-width:26ch}
+  h1 em,h2 em{font-style:italic;font-weight:400;color:var(--gold-lit)}
+  .sub{
+    margin-top:22px;font-size:clamp(17px,1.9vw,21px);color:var(--ink-2);
+    max-width:56ch;line-height:1.5;
+  }
+  .sub strong{color:var(--ink);font-weight:600}
+  .quote{
+    font-family:var(--f-d);font-style:italic;font-weight:400;
+    font-size:clamp(19px,2.5vw,28px);line-height:1.35;color:var(--gold-lit);
+    border-left:2px solid var(--gold);padding-left:22px;margin-top:38px;max-width:38ch;
+  }
+  .tick{position:absolute;bottom:26px;left:clamp(24px,5vw,80px);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  .src{margin-top:26px;font-size:12px;color:var(--ink-3);line-height:1.5;max-width:70ch}
+
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:40px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:40px}
+  .cell{background:var(--surface);padding:26px 24px}
+  .cell .lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .cell .big{
+    font-family:var(--f-d);font-weight:600;font-size:clamp(30px,4vw,44px);
+    letter-spacing:-.02em;margin:10px 0 8px;font-variant-numeric:tabular-nums;line-height:1;
+  }
+  .cell .big.g{color:var(--gold-lit)}
+  .cell .big.b{color:var(--bad)}
+  .cell p{margin:0;font-size:14.5px;color:var(--ink-2);line-height:1.5}
+  .cell h3{font-family:var(--f-b);font-size:16px;font-weight:600;margin:0 0 8px}
+
+  .bars{margin-top:40px;display:flex;flex-direction:column;gap:16px;max-width:760px}
+  .bar-row{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:18px;align-items:center}
+  .bar-row .who{font-size:14px;color:var(--ink-2)}
+  .track{height:26px;background:var(--surface);border:1px solid var(--rule);position:relative}
+  .fill{height:100%;background:var(--navy)}
+  .fill.g{background:var(--gold)}
+  .fill.b{background:#5A2630}
+  .bar-row .val{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+
+  .tl{display:flex;gap:2px;height:56px;margin-top:36px}
+  .seg{background:var(--surface-2);border-top:3px solid var(--ink-3);position:relative}
+  .seg.hot{background:rgba(200,145,42,.22);border-top-color:var(--gold)}
+  .tlabels{display:flex;gap:2px;margin-top:10px}
+  .tlab{font-size:11.5px;color:var(--ink-3);line-height:1.35;padding-right:8px}
+  .tlab.hot{color:var(--gold-lit)}
+
+  ul.plain{list-style:none;margin:34px 0 0;padding:0;max-width:64ch}
+  ul.plain li{padding:13px 0;border-top:1px solid var(--rule);font-size:16px;color:var(--ink-2);display:grid;grid-template-columns:auto 1fr;gap:16px}
+  ul.plain li::before{content:"—";color:var(--gold);}
+  ul.plain li b{color:var(--ink);font-weight:600}
+
+  table{border-collapse:collapse;width:100%;margin-top:36px;font-size:14.5px}
+  caption{text-align:left;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);padding-bottom:14px}
+  th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--rule);vertical-align:top}
+  thead th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--ink-3)}
+  thead th.us{color:var(--gold)}
+  tbody th{font-weight:500;color:var(--ink-2);width:26%}
+  td.us{background:rgba(200,145,42,.09);color:var(--ink);font-weight:500}
+  .tscroll{overflow-x:auto}
+  .tscroll table{min-width:660px}
+
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:36px}
+  .step{background:var(--surface);padding:24px 22px}
+  .step .k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .step p{margin:10px 0 0;font-size:14.5px;color:var(--ink-2);line-height:1.5}
+  .step p b{color:var(--ink)}
+
+  .nav{
+    position:fixed;right:20px;bottom:20px;display:flex;gap:6px;z-index:10;
+    background:rgba(4,16,31,.85);border:1px solid var(--rule);padding:6px;
+    backdrop-filter:blur(8px);
+  }
+  .nav button{
+    background:none;border:0;color:var(--ink-2);font:inherit;font-size:13px;
+    padding:6px 12px;cursor:pointer;letter-spacing:.04em;
+  }
+  .nav button:hover{color:var(--gold-lit)}
+  .nav button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .prog{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:11;width:0}
+</style>
+
+<div class="prog" id="prog"></div>
+
+<section class="slide" id="s1">
+  <div class="inner">
+    <p class="eyebrow">DOMOVINA.ai &nbsp;·&nbsp; Seed &nbsp;·&nbsp; kolovoz 2026.</p>
+    <h1>Brand kupuje <em>trenutak</em>,<br>ne publiku.</h1>
+    <p class="sub">
+      Podcast epizoda se dijeli na sponzorske trenutke izvedene iz onoga što se
+      u njoj doista govori. <strong>Kreator dobiva 100 % primarne prodaje.</strong>
+      Slušatelja se ne prekida ni sekunde.
+    </p>
+  </div>
+  <div class="tick">strelice ili scroll za dalje</div>
+  <div class="num">01 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Problem</p>
+    <h2>Od oglašivačeve kune do kreatora stigne <em>25 do 40 lipa</em>.</h2>
+    <div class="bars">
+      <div class="bar-row">
+        <span class="who">Oglašivač plati</span>
+        <div class="track"><div class="fill" style="width:100%"></div></div>
+        <span class="val">1,00</span>
+      </div>
+      <div class="bar-row">
+        <span class="who">Stigne do izdavača</span>
+        <div class="track"><div class="fill" style="width:50%"></div></div>
+        <span class="val">~0,50</span>
+      </div>
+      <div class="bar-row">
+        <span class="who">Stvarno radno oglašavanje</span>
+        <div class="track"><div class="fill b" style="width:36%"></div></div>
+        <span class="val">0,36</span>
+      </div>
+      <div class="bar-row">
+        <span class="who">Kreator, nakon podjele</span>
+        <div class="track"><div class="fill b" style="width:32%"></div></div>
+        <span class="val">~0,32</span>
+      </div>
+      <div class="bar-row">
+        <span class="who">Izravan posao</span>
+        <div class="track"><div class="fill g" style="width:100%"></div></div>
+        <span class="val">1,00</span>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:34px">
+      Najveći gubitak nije platformina podjela nego <strong>posrednički lanac
+      prije nje</strong>. Uz to kreator ne zna tko ga oglašava, ne može odbiti
+      oglašivača, i katalog stariji od mjesec dana mu ne zarađuje ništa.
+    </p>
+    <p class="src">
+      ISBA/PwC 2020.: ~50 % stiže do izdavača, 15 % je „nepoznata delta". ANA prosinac 2023.
+      (123 M$ potrošnje, 35,5 mlrd prikaza): 36 % je TrueAdSpend. YouTube 55/45 i Spotify
+      50/50 su službeni. Raspon „25–40 lipa" je naš izračun iz ta dva izvora, ne citat.
+    </p>
+  </div>
+  <div class="num">02 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Uvid</p>
+    <h2 class="wide">Nitko ne prodaje <em>trenutak</em>.</h2>
+    <div class="grid3">
+      <div class="cell">
+        <div class="lbl">Kontekstualni alati</div>
+        <h3 style="margin-top:12px">Staju na epizodi</h3>
+        <p>Sounder (Triton, 2024.) i Barometer (The Trade Desk) ocjenjuju prikladnost cijele epizode iz transkripta. Nijedan ne bira trenutak unutar nje.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Rezači reklamnih pauza</div>
+        <h3 style="margin-top:12px">Traže tišinu, ne temu</h3>
+        <p>Svi alati u prodaji rade isključivo detekciju tišine. Traže stanku, ne promjenu teme.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Presjek</div>
+        <h3 style="margin-top:12px">Prazan</h3>
+        <p>Istraživanje nije našlo nijedan proizvod koji bira točan semantički trenutak. Ta sposobnost ne postoji.</p>
+      </div>
+    </div>
+    <p class="quote">Mi na podlozi za to već sjedimo: dijarizirani transkripti s temama i vremenskim sidrima za 3.047 sati.</p>
+  </div>
+  <div class="num">03 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Proizvod</p>
+    <h2 class="wide">Ne „podcast o poduzetništvu" — nego <em>ovih devet minuta</em>.</h2>
+    <div class="tl">
+      <div class="seg" style="flex:187"></div>
+      <div class="seg" style="flex:670"></div>
+      <div class="seg" style="flex:585"></div>
+      <div class="seg hot" style="flex:625"></div>
+      <div class="seg" style="flex:670"></div>
+      <div class="seg" style="flex:510"></div>
+      <div class="seg" style="flex:600"></div>
+      <div class="seg" style="flex:700"></div>
+      <div class="seg" style="flex:640"></div>
+      <div class="seg" style="flex:560"></div>
+      <div class="seg" style="flex:467"></div>
+    </div>
+    <div class="tlabels">
+      <div class="tlab" style="flex:1442">00:00</div>
+      <div class="tlab hot" style="flex:625"><b>24:35 – 35:00</b><br>„Kako mali poduzetnik u Hrvatskoj skuplja kapital?"<br>tržište kapitala · IPO · OPG</div>
+      <div class="tlab" style="flex:4147;text-align:right">1:44:07</div>
+    </div>
+    <ul class="plain">
+      <li><b>Imenovan trenutak.</b> Brand prije kupnje vidi izvadak iz transkripta kao dokaz konteksta.</li>
+      <li><b>Ne prekida.</b> Znak u kutu playera i redak u tekstu. Nema pre-rolla ni odbrojavanja.</li>
+      <li><b>Ostaje.</b> Epizoda i njen članak se čitaju mjesecima — placement ostaje na njima.</li>
+      <li><b>Retroaktivno.</b> Epizoda od prije godinu dana je kupljiva. Drugdje je mrtva.</li>
+    </ul>
+  </div>
+  <div class="num">04 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Mehanizam</p>
+    <h2 class="wide">Cijena raste po pravilu, a ispadanje je <em>dobra vijest</em>.</h2>
+    <p class="sub">
+      Kupiš po cijeni. Od tog trena javno piše cijena po kojoj te netko može
+      zamijeniti — uvijek 50 % viša od one koju si platio. Imaš 72 h da izjednačiš.
+      Prvih 30 dana te nitko ne dira.
+    </p>
+    <div class="grid3" style="margin-top:34px">
+      <div class="cell">
+        <div class="lbl">Brand koji ispada</div>
+        <div class="big g">450 €</div>
+        <p>Platio 400 €. Puni povrat plus udio u razlici — i 45 dana se reklamirao.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Kreator, ukupno</div>
+        <div class="big g">520 €</div>
+        <p>Cijela primarna cijena, pa 60 % razlike. Za istih deset minuta.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Novi brand</div>
+        <div class="big">600 €</div>
+        <p>Dobiva trenutak. Njegova cijena postaje nova baza ljestvice.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Platforma</div>
+        <div class="big">30 €</div>
+        <p>15 % razlike. Jedini novac koji platforma vidi na ovoj transakciji.</p>
+      </div>
+    </div>
+    <p class="quote">Oglašivač koji ispadne nije se opekao — reklamirao se besplatno i još zaradio.</p>
+    <p class="src">Brojke su ilustrativna aritmetika, ne cjenik. Harbergerov porez je razmotren i odbačen: griefing, samoprocjena na plitkom tržištu, stalni porez i trajna nelagoda branda.</p>
+  </div>
+  <div class="num">05 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Zašto sada</p>
+    <h2 class="wide">Tri stvari koje se poklapaju prvi put.</h2>
+    <div class="grid3">
+      <div class="cell">
+        <div class="lbl">Regulativa</div>
+        <h3 style="margin-top:12px">DSA ubija ciljanje po osobi</h3>
+        <p>Članak 26 traži oznaku tko je platio; 26(3) zabranjuje profiliranje posebnim kategorijama bez iznimke pristanka. Kontekst je jedino što preživljava — a mi ciljamo sadržaj, ne osobu.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Tehnologija</div>
+        <h3 style="margin-top:12px">Transkripcija je postala jeftina</h3>
+        <p>Semantička segmentacija cijele epizode koštala bi prije pet godina više nego što oglas na njoj vrijedi. Danas ne.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Navika tržišta</div>
+        <h3 style="margin-top:12px">Retroaktivnost je već norma</h3>
+        <p>Dinamičko umetanje oglasa čini preko 90 % prihoda podcast industrije. Brandovi su već navikli kupovati u starom sadržaju.</p>
+      </div>
+    </div>
+  </div>
+  <div class="num">06 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Trakcija</p>
+    <h2 class="wide">Ovo nije prezentacija ideje.</h2>
+    <div class="grid3">
+      <div class="cell"><div class="lbl">Obrađeno</div><div class="big g">3.047 h</div><p>3.157 epizoda kroz 48 kanala, raspon 2016.–2026.</p></div>
+      <div class="cell"><div class="lbl">Pretraživo</div><div class="big g">144.294</div><p>odlomka s vektorima, uživo preko MCP-a i javnog API-ja</p></div>
+      <div class="cell"><div class="lbl">Inventar</div><div class="big g">~25.500</div><p>sponzorskih trenutaka pri osam po epizodi — od danas</p></div>
+    </div>
+    <ul class="plain">
+      <li><b>Aplikacija radi</b> na webu, iOS-u, Androidu i Android TV-u. Nije prototip.</li>
+      <li><b>Plaćanje radi</b> — SEPA nalog i EURe na Gnosisu, s atomarnom rezervacijom mjesta.</li>
+      <li><b>RAG radi</b> — semantička pretraga korpusa je javna i koristi se iz Claudea, ChatGPT-a i Cursora.</li>
+      <li><b>Pipeline radi</b> svaku noć: transkripcija, dijarizacija, sažetak, članak, RAG odlomci.</li>
+    </ul>
+    <p class="src">Korpus mjeren alatom server_info nad produkcijom, 26.8.2026. Prihoda još nema — vidi slajd 12.</p>
+  </div>
+  <div class="num">07 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Model</p>
+    <h2 class="wide">Nula posto na primarnoj je <em>trošak stjecanja</em>, ne model.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="k">Zašto 0 %</div>
+        <p><b>Trošak stjecanja kreatora</b>, plaćen odricanjem od provizije umjesto marketinškim budžetom. To je razlog zbog kojeg kreator dolazi.</p>
+      </div>
+      <div class="step">
+        <div class="k">Prihod danas</div>
+        <p><b>15 % razlike</b> pri svakom otkupu. Opcionalnost, ne plan — sekundarna likvidnost ne dolazi sama.</p>
+      </div>
+      <div class="step">
+        <div class="k">Prihod na skali</div>
+        <p><b>Prinos na rezervi.</b> U zatvorenoj euro-petlji novac ne izlazi, a prinos ostaje izdavatelju.</p>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:1px">
+      <div class="cell">
+        <div class="lbl">Aritmetika floata</div>
+        <div class="big">45 M€ &rarr; 1 M€</div>
+        <p>Prosječni float od ~45 M€ pri depozitnoj stopi ECB-a od 2,25 % daje ~1 M€ bruto godišnje. MiCA čl. 50 zabranjuje isplatu kamate imatelju, ali izdavatelj smije zadržati prinos na rezervi — model Circlea i Monerija.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Ograničenje koje sami iznosimo</div>
+        <div class="big b">danas ~0</div>
+        <p>Na sadašnjoj skali float je zanemariv, a izdavanje vlastitog tokena traži licencu. U ovom decku to je putanja, ne prihod.</p>
+      </div>
+    </div>
+  </div>
+  <div class="num">08 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Zamašnjak</p>
+    <h2 class="wide">Brandova pretraga je naša lista za <em>outreach</em>.</h2>
+    <p class="sub">
+      Korpus ima dva sloja. Ono što možemo prodati, i ono što još ne možemo —
+      a drugi sloj pretvara potražnju u ponudu.
+    </p>
+    <div class="grid2">
+      <div class="cell">
+        <div class="lbl">Sloj K &nbsp;·&nbsp; kupljivo</div>
+        <h3 style="margin-top:12px">Kanali u našem pipelineu</h3>
+        <p>Puna obrada, slot mape, cijena. Rezultat pretrage nosi gumb <b>„kupi ovaj trenutak"</b>.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Sloj V &nbsp;·&nbsp; vidljivo</div>
+        <h3 style="margin-top:12px">Svjetski korpus iz RSS-a</h3>
+        <p>Samo transkript i vektori. Rezultat nosi <b>„javi kreatoru da ga brand traži"</b> — i taj kreator preuzima svoj kanal, koji time prelazi u sloj K.</p>
+      </div>
+    </div>
+    <p class="quote">Potražnja povlači ponudu. Konkurencija to strukturno ne može imati, jer nema što prodati.</p>
+    <p class="src">Podscan.fm transkribira 4M+ podcasta unutar ~10 min od objave i prodaje brand alerte od 100 $/mj. Pretraga nije jarak — jarak je mogućnost transakcije.</p>
+  </div>
+  <div class="num">09 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Tržište</p>
+    <h2 class="wide">Ne treba nam postotak tržišta — treba nam <em>dvadeset plaćenih trenutaka</em>.</h2>
+    <div class="grid3">
+      <div class="cell"><div class="lbl">Hrvatska, digitalni oglasi</div><div class="big">202,8 M€</div><p>projekcija za 2026.; 190,9 M€ u 2025., rast blizu 23 %</p></div>
+      <div class="cell"><div class="lbl">Globalno, podcast oglasi</div><div class="big">&gt; 5 mlrd $</div><p>2026., rast ~20 % g/g; SAD prelazi 3 mlrd $</p></div>
+      <div class="cell"><div class="lbl">Naš inventar danas</div><div class="big g">~25.500</div><p>trenutaka, bez ijednog novog sata obrade</p></div>
+    </div>
+    <p class="sub" style="margin-top:34px">
+      Odozdo prema gore, ne odozgo: <strong>vertikala nije strop nego prvi dokaz.</strong>
+      Aplikacija je vođena listom kanala, pa je nova vertikala konfiguracija —
+      isti stack, druga publika, drugi brandovi.
+    </p>
+    <p class="src">IAB Croatia Online Media AdEx (prenosi media-marketing.com). Deloitte/IAB za globalni podcast oglasni prihod (prenose Podnews i Radio Ink). Za hrvatski podcast CPM javnih podataka nema — vidi slajd 12.</p>
+  </div>
+  <div class="num">10 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Konkurencija</p>
+    <h2 class="wide">Jedni znaju pretražiti, drugi znaju prodati.</h2>
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr><th></th><th>Podscan, Podchaser</th><th>Acast, Spotify, Megaphone</th><th>YouTube, Meta</th><th class="us">DOMOVINA.ai</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Pretražuje transkripte</th><td>da</td><td>djelomično</td><td>ne</td><td class="us">da</td></tr>
+          <tr><th>Bira točan trenutak</th><td>ne</td><td>ne</td><td>ne</td><td class="us">da</td></tr>
+          <tr><th>Može prodati oglas</th><td>ne</td><td>da</td><td>da</td><td class="us">da</td></tr>
+          <tr><th>Kreator zna tko ga plaća</th><td>—</td><td>ne</td><td>ne</td><td class="us">da</td></tr>
+          <tr><th>Udio platforme</th><td>pretplata</td><td>20–50 %</td><td>45–55 %</td><td class="us">0 % na primarnoj</td></tr>
+          <tr><th>Prekida slušatelja</th><td>—</td><td>da</td><td>da</td><td class="us">ne</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="quote">Nitko ne radi oboje. To nije tehnički jaz nego inovatorova dilema — dati kreatoru 100 % primarne prodaje znači napasti vlastiti prihod.</p>
+  </div>
+  <div class="num">11 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Rizici</p>
+    <h2 class="wide">Rupe koje smo našli <em>prije vas</em>.</h2>
+    <ul class="plain">
+      <li><b>Nema prihoda.</b> Nijedan sponzorski trenutak još nije plaćen.</li>
+      <li><b>Pilot-kanal ima 28 pratitelja.</b> Dokazuje mehanizam, ne potražnju. Prvi sponzori su lokalne tvrtke.</li>
+      <li><b>Za hrvatski podcast CPM javnih podataka nema.</b> Prvi cjenik je pogađanje.</li>
+      <li><b>Isplata kreatoru je nedovršena</b> za tuđe kanale — on-chain dio je stubban.</li>
+      <li><b>Pet pravnih pitanja čeka odvjetnika</b> — MiCA, oznaka sponzora, PDV tročlanog toka otkupa.</li>
+      <li><b>Patentni FTO nije završen.</b> Nasdaq/NYIAX patenti pokrivaju knjigu naloga; naš mehanizam je bilateralan i time izvan njih, ali tri od četiri patenta nisu provjerena na europske članove obitelji.</li>
+      <li><b>Tolerancija na sponzorski znak nije istražena</b> ni kod koga. YouTube je svoj overlay format ugasio 2023.</li>
+      <li><b>Sekundarna likvidnost možda nikad ne dođe.</b> NYIAX je s Nasdaqovom tehnologijom šest godina pokušavao i nije uspio — zato model ne ovisi o njoj.</li>
+    </ul>
+  </div>
+  <div class="num">12 / 14</div>
+</section>
+
+<section class="slide">
+  <div class="inner">
+    <p class="eyebrow">Tim</p>
+    <h2 class="wide">Solo, i to je najveći rizik u ovom decku.</h2>
+    <div class="grid2">
+      <div class="cell">
+        <div class="lbl">Danas</div>
+        <h3 style="margin-top:12px">Jedan inženjer, jedan terenac</h3>
+        <p>Osnivač gradi cijeli stack — aplikaciju na četiri platforme, pipeline, RAG, plaćanja. Customer development i outreach kreatorima vodi drugi član tima.</p>
+      </div>
+      <div class="cell">
+        <div class="lbl">Što dokazuje</div>
+        <h3 style="margin-top:12px">Brzinu isporuke</h3>
+        <p>3.047 sati obrađenog sadržaja, aplikacija u trgovinama, radna naplata i javni RAG — sve izgrađeno prije prvog eura investicije.</p>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:30px">
+      Zato prva stavka namjene sredstava nisu marketing ni prodaja nego
+      <strong>dva inženjera</strong>. Usko grlo je jedna osoba, i to se ne
+      rješava boljim planom.
+    </p>
+  </div>
+  <div class="num">13 / 14</div>
+</section>
+
+<section class="slide" style="border-bottom:0">
+  <div class="inner">
+    <p class="eyebrow">Ask</p>
+    <h1 style="font-size:clamp(38px,6.4vw,72px)">1,2 M€ &nbsp;·&nbsp; <em>18 mjeseci</em></h1>
+    <div class="grid2" style="margin-top:40px">
+      <div class="cell">
+        <div class="lbl">Namjena</div>
+        <ul class="plain" style="margin-top:16px">
+          <li><b>200 K€</b> dva inženjera</li>
+          <li><b>150 K€</b> compute za korpus</li>
+          <li><b>70 K€</b> prodaja prema brandovima</li>
+          <li><b>60 K€</b> pravno: MiCA, TDM, FTO, oznaka sponzora</li>
+        </ul>
+      </div>
+      <div class="cell">
+        <div class="lbl">Što obećavamo — i ništa više</div>
+        <ul class="plain" style="margin-top:16px">
+          <li><b>20</b> plaćenih trenutaka kroz najmanje pet kanala</li>
+          <li><b>5</b> izvršenih otkupa — jedini pošten dokaz viška potražnje</li>
+          <li><b>3</b> vertikale uživo na white-labelu</li>
+          <li><b>1</b> strana vertikala u korpusu, s mjerenim troškom po satu</li>
+        </ul>
+      </div>
+    </div>
+    <p class="quote">Nitko ne prodaje trenutak, a mi na podlozi za to već sjedimo.</p>
+  </div>
+  <div class="num">14 / 14</div>
+</section>
+
+<nav class="nav" aria-label="Navigacija kroz slajdove">
+  <button id="prev" type="button">Natrag</button>
+  <button id="next" type="button">Dalje</button>
+</nav>
+
+<script>
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const prog = document.getElementById("prog");
+
+  const current = () => {
+    const mid = window.innerHeight / 2;
+    return slides.findIndex((s) => {
+      const r = s.getBoundingClientRect();
+      return r.top <= mid && r.bottom > mid;
+    });
+  };
+
+  const go = (delta) => {
+    const i = current();
+    const t = Math.max(0, Math.min(slides.length - 1, (i < 0 ? 0 : i) + delta));
+    slides[t].scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  document.getElementById("next").addEventListener("click", () => go(1));
+  document.getElementById("prev").addEventListener("click", () => go(-1));
+
+  window.addEventListener("keydown", (e) => {
+    if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(1); }
+    if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); go(-1); }
+    if (e.key === "Home") { e.preventDefault(); slides[0].scrollIntoView(); }
+    if (e.key === "End") { e.preventDefault(); slides[slides.length - 1].scrollIntoView(); }
+  });
+
+  const paint = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
+  };
+  window.addEventListener("scroll", paint, { passive: true });
+  window.addEventListener("resize", paint);
+  paint();
+</script>
