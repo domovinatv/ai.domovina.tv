@@ -56,6 +56,13 @@ Deck mora stati u ekran bez scrolla na **svakoj** projektorskoj rezoluciji od
   prelistava kroz nju prije nego prijeđe na sljedeću — inače je donja polovica
   nedostupna iz kontrola.
 
+## Zašto ovo uopće ima orakl
+
+Mjerenja iz prolaza 26.–27.8.2026. — koje su provjere mehaničke, koliko su
+slajdova stvarno probile i zašto: [`../../2026-08-26-pitch-deck-orakl.md`](../../2026-08-26-pitch-deck-orakl.md).
+Taj dokument je ulaz za `provjeri.sh` pitch vertikale u `claude-tmux-teams`,
+koji još nije napisan.
+
 ## Otvoreno
 
 Vidi „Sljedeći krug" u [`../vc-pitch-strategija.md`](../vc-pitch-strategija.md).
