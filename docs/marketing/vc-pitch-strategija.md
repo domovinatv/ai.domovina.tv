@@ -188,22 +188,28 @@ prije nego ih izgovoriš.
 
 ---
 
-## 9. Sljedeći krug — otvoreno na decku (26.8.2026.)
+## 9. Sljedeći krug — otvoreno na decku
 
-Prva verzija decka je objavljena i pregledana. Otvoreno, redom po prioritetu:
+**Riješeno 26.8.2026.** (druga iteracija decka):
 
-1. **Deck mora biti na engleskom.** Hrvatska verzija je poslužila za provjeru
-   razumijevanja, ali fondovi ga dobivaju na engleskom. Ne prevoditi doslovno —
-   u hrvatskoj verziji ima konstrukcija koje nisu u duhu jezika i ne smiju se
-   prenijeti u engleski.
-2. **UI se raspada na slajdovima 4, 7 i 12.** Slajd 4: `.tlabels` flex labele se
-   preklapaju. Slajdovi 7 i 12 prelijevaju vertikalno na nižim viewportima.
-   Testirati na 390 px širine i 1280×720.
-3. **Valuta na slajdu 2 nije ispravljena.** Dokumenti su popravljeni (commit
-   `8954fb4`), deck još kaže „kune" i „lipe". Hrvatska je na euru od 1.1.2023.
-   `airKUNA`/`KUNA` kao ime planiranog EUR stablecoina ostaje.
-4. **Financijski model ne postoji.** Iznos od €1,2 M izveden je iz objavljenih
+1. ~~Deck na engleskom~~ — **gotovo**. Svih 14 slajdova, pisano kao engleski
+   original, ne kao prijevod. Naslov: „A Moment, Not an Audience".
+2. ~~UI se raspada na 4, 7 i 12~~ — **gotovo**, i problem je bio širi nego što
+   se činilo: na 1280×720 je **osam** od 14 slajdova prelijevalo (12 za 797 px).
+   Uzrok na 4 je bila `.tlabels` flex labela široka 114 px; uzrok na 7/12/14 je
+   bio `ul.plain li{display:grid}` čiji su se `auto 1fr` traci unutar
+   dvostupčanog roditelja razriješili obrnuto (crtica 409 px, tekst 89 px).
+   Danas: **0 prelijevanja od 1024×768 do 1920×1080**, bez vodoravnog scrolla.
+   Slajd 12 zadržava svih osam rizika — dobio je dva stupca, nije skraćen.
+3. ~~Valuta na slajdu 2~~ — **gotovo**, euro/cent.
+
+Otvoreno, redom po prioritetu:
+
+1. **Financijski model ne postoji.** Iznos od €1,2 M izveden je iz objavljenih
    raspona fondova, ne iz modela. Prije prvog sastanka treba barem gruba
    projekcija troška po vertikali.
-5. **CPM za hrvatski podcast i dalje nedostaje.** Ako netko u sobi ima taj
+2. **CPM za hrvatski podcast i dalje nedostaje.** Ako netko u sobi ima taj
    podatak, to je najkorisnija stvar koju taj sastanak može dati.
+3. **Share pin na artifactu.** Vanjski čitatelji vide verziju na koju je pin
+   postavljen — nakon svakog republisha ga treba pomaknuti iz share izbornika,
+   inače im deck ostaje na staroj verziji.

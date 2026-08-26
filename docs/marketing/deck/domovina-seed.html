@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>A Moment, Not an Audience</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,9 +20,14 @@
     --bad:#D2606B;
     --f-d:"Fraunces",Georgia,"Times New Roman",serif;
     --f-b:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    /* vertical density — every block gap on a slide reads from these, so a
+       short viewport tightens the whole deck instead of spilling past the fold */
+    --gap:40px;--gap-s:34px;--cellpad:26px 24px;--lipad:13px;--srcgap:26px;
   }
+  @media (max-height:880px){:root{--gap:28px;--gap-s:24px;--cellpad:20px 20px;--lipad:10px;--srcgap:18px}}
+  @media (max-height:800px){:root{--gap:20px;--gap-s:18px;--cellpad:15px 18px;--lipad:7px;--srcgap:14px}}
   *{box-sizing:border-box}
-  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  html{scroll-snap-type:y proximity;scroll-behavior:smooth}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   body{
     margin:0;background:var(--ground);color:var(--ink);
@@ -29,9 +35,9 @@
     -webkit-font-smoothing:antialiased;
   }
   .slide{
-    min-height:100svh;scroll-snap-align:start;scroll-snap-stop:always;
+    min-height:100svh;scroll-snap-align:start;
     display:flex;flex-direction:column;justify-content:center;
-    padding:clamp(40px,6vh,80px) clamp(24px,5vw,80px) clamp(64px,8vh,96px);
+    padding:clamp(32px,5vh,80px) clamp(24px,5vw,80px) clamp(52px,7vh,96px);
     position:relative;border-bottom:1px solid var(--rule);
   }
   .inner{max-width:1080px;margin:0 auto;width:100%}
@@ -47,66 +53,77 @@
   .eyebrow::before{content:"";width:28px;height:2px;background:var(--gold);flex:none}
   h1{
     font-family:var(--f-d);font-weight:700;letter-spacing:-.02em;
-    font-size:clamp(40px,7.4vw,84px);line-height:1.02;margin:26px 0 0;
+    font-size:clamp(38px,min(7.4vw,11vh),84px);line-height:1.02;margin:clamp(16px,2.6vh,26px) 0 0;
     text-wrap:balance;
   }
   h2{
     font-family:var(--f-d);font-weight:600;letter-spacing:-.015em;
-    font-size:clamp(30px,4.6vw,54px);line-height:1.1;margin:20px 0 0;
+    font-size:clamp(28px,min(4.6vw,7vh),54px);line-height:1.1;margin:clamp(12px,2.2vh,20px) 0 0;
     text-wrap:balance;max-width:19ch;
   }
   h2.wide{max-width:26ch}
   h1 em,h2 em{font-style:italic;font-weight:400;color:var(--gold-lit)}
   .sub{
-    margin-top:22px;font-size:clamp(17px,1.9vw,21px);color:var(--ink-2);
+    margin-top:clamp(12px,2.4vh,22px);font-size:clamp(16px,min(1.9vw,2.7vh),21px);color:var(--ink-2);
     max-width:56ch;line-height:1.5;
   }
   .sub strong{color:var(--ink);font-weight:600}
   .quote{
     font-family:var(--f-d);font-style:italic;font-weight:400;
-    font-size:clamp(19px,2.5vw,28px);line-height:1.35;color:var(--gold-lit);
-    border-left:2px solid var(--gold);padding-left:22px;margin-top:38px;max-width:38ch;
+    font-size:clamp(17px,min(2.5vw,3.4vh),28px);line-height:1.35;color:var(--gold-lit);
+    border-left:2px solid var(--gold);padding-left:22px;margin-top:var(--gap);max-width:38ch;
   }
   .tick{position:absolute;bottom:26px;left:clamp(24px,5vw,80px);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
-  .src{margin-top:26px;font-size:12px;color:var(--ink-3);line-height:1.5;max-width:70ch}
+  .src{margin-top:var(--srcgap);font-size:12px;color:var(--ink-3);line-height:1.5;max-width:70ch}
 
-  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:40px}
-  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:40px}
-  .cell{background:var(--surface);padding:26px 24px}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:var(--gap)}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:var(--gap)}
+  .cell{background:var(--surface);padding:var(--cellpad)}
   .cell .lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
   .cell .big{
-    font-family:var(--f-d);font-weight:600;font-size:clamp(30px,4vw,44px);
-    letter-spacing:-.02em;margin:10px 0 8px;font-variant-numeric:tabular-nums;line-height:1;
+    font-family:var(--f-d);font-weight:600;font-size:clamp(26px,min(4vw,5.6vh),44px);
+    letter-spacing:-.02em;margin:clamp(6px,1.2vh,10px) 0 8px;font-variant-numeric:tabular-nums;line-height:1;
   }
   .cell .big.g{color:var(--gold-lit)}
   .cell .big.b{color:var(--bad)}
   .cell p{margin:0;font-size:14.5px;color:var(--ink-2);line-height:1.5}
   .cell h3{font-family:var(--f-b);font-size:16px;font-weight:600;margin:0 0 8px}
 
-  .bars{margin-top:40px;display:flex;flex-direction:column;gap:16px;max-width:760px}
+  .bars{margin-top:var(--gap);display:flex;flex-direction:column;gap:clamp(9px,1.7vh,16px);max-width:760px}
   .bar-row{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:18px;align-items:center}
   .bar-row .who{font-size:14px;color:var(--ink-2)}
-  .track{height:26px;background:var(--surface);border:1px solid var(--rule);position:relative}
+  .track{height:clamp(20px,3.2vh,26px);background:var(--surface);border:1px solid var(--rule);position:relative}
   .fill{height:100%;background:var(--navy)}
   .fill.g{background:var(--gold)}
   .fill.b{background:#5A2630}
   .bar-row .val{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
 
-  .tl{display:flex;gap:2px;height:56px;margin-top:36px}
+  .tl{display:flex;gap:2px;height:clamp(34px,6.4vh,56px);margin-top:var(--gap)}
   .seg{background:var(--surface-2);border-top:3px solid var(--ink-3);position:relative}
   .seg.hot{background:rgba(200,145,42,.22);border-top-color:var(--gold)}
-  .tlabels{display:flex;gap:2px;margin-top:10px}
-  .tlab{font-size:11.5px;color:var(--ink-3);line-height:1.35;padding-right:8px}
-  .tlab.hot{color:var(--gold-lit)}
+  /* the callout is full width and never proportional to its segment — sizing a
+     label to the slot it points at squeezed it to ~114px and wrapped it 5 deep */
+  .taxis{display:flex;justify-content:space-between;margin-top:9px;font-size:11.5px;
+    color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .tcall{margin:var(--gap-s) 0 0;border-left:2px solid var(--gold);padding-left:16px;
+    font-size:clamp(13px,min(1.35vw,2vh),15px);line-height:1.45;color:var(--gold-lit);max-width:64ch}
+  .tcall b{font-variant-numeric:tabular-nums}
+  .tcall .keys{color:var(--ink-3)}
 
-  ul.plain{list-style:none;margin:34px 0 0;padding:0;max-width:64ch}
-  ul.plain li{padding:13px 0;border-top:1px solid var(--rule);font-size:16px;color:var(--ink-2);display:grid;grid-template-columns:auto 1fr;gap:16px}
-  ul.plain li::before{content:"—";color:var(--gold);}
+  ul.plain{list-style:none;margin:var(--gap) 0 0;padding:0;max-width:64ch}
+  ul.plain li{padding:var(--lipad) 0 var(--lipad) 28px;border-top:1px solid var(--rule);
+    font-size:clamp(14.5px,min(1.25vw,2.1vh),16px);color:var(--ink-2);position:relative}
+  ul.plain li::before{content:"—";color:var(--gold);position:absolute;left:0;top:var(--lipad)}
   ul.plain li b{color:var(--ink);font-weight:600}
+  /* slide 12 must never be shortened to fit; it widens instead */
+  @media (min-width:820px){
+    ul.plain.split{max-width:none;display:grid;grid-template-columns:1fr 1fr;
+      column-gap:clamp(24px,4vw,52px)}
+  }
 
-  table{border-collapse:collapse;width:100%;margin-top:36px;font-size:14.5px}
+  table{border-collapse:collapse;width:100%;margin-top:var(--gap);font-size:14.5px}
   caption{text-align:left;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);padding-bottom:14px}
-  th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th,td{text-align:left;padding:var(--lipad) 16px;border-bottom:1px solid var(--rule);vertical-align:top}
   thead th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--ink-3)}
   thead th.us{color:var(--gold)}
   tbody th{font-weight:500;color:var(--ink-2);width:26%}
@@ -114,8 +131,8 @@
   .tscroll{overflow-x:auto}
   .tscroll table{min-width:660px}
 
-  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:36px}
-  .step{background:var(--surface);padding:24px 22px}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:var(--gap)}
+  .step{background:var(--surface);padding:var(--cellpad)}
   .step .k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
   .step p{margin:10px 0 0;font-size:14.5px;color:var(--ink-2);line-height:1.5}
   .step p b{color:var(--ink)}
@@ -153,7 +170,7 @@
 <section class="slide">
   <div class="inner">
     <p class="eyebrow">Problem</p>
-    <h2>An advertiser spends a euro. The creator sees <em>25 to 40 cents</em>.</h2>
+    <h2 class="wide">An advertiser spends a euro. The creator sees <em>25 to 40 cents</em>.</h2>
     <div class="bars">
       <div class="bar-row">
         <span class="who">Advertiser pays</span>
@@ -181,16 +198,16 @@
         <span class="val">1.00</span>
       </div>
     </div>
-    <p class="sub" style="margin-top:34px">
-      The biggest loss is not the platform's revenue share but <strong>the
+    <p class="sub" style="margin-top:var(--gap-s)">
+      The biggest loss is not the platform’s revenue share but <strong>the
       intermediary chain ahead of it</strong>. On top of that, the creator has no
       idea who is advertising on the show, cannot turn an advertiser down, and a
       back catalogue older than a month earns nothing at all.
     </p>
     <p class="src">
-      ISBA/PwC 2020: ~50% reaches the publisher, 15% is an "unknown delta". ANA,
+      ISBA/PwC 2020: ~50% reaches the publisher, 15% is an “unknown delta”. ANA,
       December 2023 ($123M of spend, 35.5bn impressions): 36% is TrueAdSpend.
-      YouTube's 55/45 and Spotify's 50/50 are published splits. The 25–40 cent
+      YouTube’s 55/45 and Spotify’s 50/50 are published splits. The 25–40 cent
       range is our own arithmetic across those two sources, not a quoted figure.
     </p>
   </div>
@@ -226,7 +243,7 @@
 <section class="slide">
   <div class="inner">
     <p class="eyebrow">Product</p>
-    <h2 class="wide">Not "a podcast about business" — <em>these nine minutes</em>.</h2>
+    <h2 class="wide">Not “a podcast about business” — <em>these nine minutes</em>.</h2>
     <div class="tl">
       <div class="seg" style="flex:187"></div>
       <div class="seg" style="flex:670"></div>
@@ -240,11 +257,12 @@
       <div class="seg" style="flex:560"></div>
       <div class="seg" style="flex:467"></div>
     </div>
-    <div class="tlabels">
-      <div class="tlab" style="flex:1442">00:00</div>
-      <div class="tlab hot" style="flex:625"><b>24:35 – 35:00</b><br>"How does a small business in Croatia actually raise capital?"<br>capital markets · IPO · family farms</div>
-      <div class="tlab" style="flex:4147;text-align:right">1:44:07</div>
-    </div>
+    <div class="taxis"><span>00:00</span><span>1:44:07</span></div>
+    <p class="tcall">
+      <b>24:35 – 35:00</b><br>
+      “How does a small business in Croatia actually raise capital?”<br>
+      <span class="keys">capital markets · IPO · family farms</span>
+    </p>
     <ul class="plain">
       <li><b>A named moment.</b> Before buying, the brand reads the transcript excerpt that proves the context.</li>
       <li><b>No interruption.</b> A mark in the corner of the player and a line in the article. No pre-roll, no countdown.</li>
@@ -264,7 +282,7 @@
       take your place is public — always 50% above what you paid. You get 72
       hours to match it. For the first 30 days nobody can touch you.
     </p>
-    <div class="grid3" style="margin-top:34px">
+    <div class="grid3" style="margin-top:var(--gap-s)">
       <div class="cell">
         <div class="lbl">The outgoing brand</div>
         <div class="big g">€450</div>
@@ -374,7 +392,7 @@
 <section class="slide">
   <div class="inner">
     <p class="eyebrow">Flywheel</p>
-    <h2 class="wide">A brand's search query is our <em>outreach list</em>.</h2>
+    <h2 class="wide">A brand’s search query is our <em>outreach list</em>.</h2>
     <p class="sub">
       The corpus has two layers: what we can sell, and what we cannot sell yet —
       and the second layer turns demand into supply.
@@ -383,12 +401,12 @@
       <div class="cell">
         <div class="lbl">Layer B &nbsp;·&nbsp; buyable</div>
         <h3 style="margin-top:12px">Channels inside our pipeline</h3>
-        <p>Fully processed, with slot maps and prices. The search result carries a <b>"buy this moment"</b> button.</p>
+        <p>Fully processed, with slot maps and prices. The search result carries a <b>“buy this moment”</b> button.</p>
       </div>
       <div class="cell">
         <div class="lbl">Layer V &nbsp;·&nbsp; visible</div>
-        <h3 style="margin-top:12px">The world's podcasts, straight from RSS</h3>
-        <p>Transcript and vectors only. The result carries <b>"tell the creator a brand is looking for them"</b> — and that creator claims the channel, which moves it into Layer B.</p>
+        <h3 style="margin-top:12px">The world’s podcasts, straight from RSS</h3>
+        <p>Transcript and vectors only. The result carries <b>“tell the creator a brand is looking for them”</b> — and that creator claims the channel, which moves it into Layer B.</p>
       </div>
     </div>
     <p class="quote">Demand pulls supply through. A competitor structurally cannot run this, because it has nothing to sell.</p>
@@ -406,7 +424,7 @@
       <div class="cell"><div class="lbl">Global, podcast advertising</div><div class="big">&gt; $5bn</div><p>2026, growing ~20% year on year; the US passes $3bn</p></div>
       <div class="cell"><div class="lbl">Our inventory today</div><div class="big g">~25,500</div><p>moments, without processing a single new hour</p></div>
     </div>
-    <p class="sub" style="margin-top:34px">
+    <p class="sub" style="margin-top:var(--gap-s)">
       Bottom-up, not top-down: <strong>the vertical is the first proof, not the
       ceiling.</strong> The app is driven by a channel list, so a new vertical is
       configuration — same stack, different audience, different brands.
@@ -430,12 +448,12 @@
           <tr><th>Picks the exact moment</th><td>no</td><td>no</td><td>no</td><td class="us">yes</td></tr>
           <tr><th>Can sell the ad</th><td>no</td><td>yes</td><td>yes</td><td class="us">yes</td></tr>
           <tr><th>Creator knows who pays</th><td>—</td><td>no</td><td>no</td><td class="us">yes</td></tr>
-          <tr><th>Platform's cut</th><td>subscription</td><td>20–50%</td><td>45–55%</td><td class="us">0% on primary</td></tr>
+          <tr><th>Platform’s cut</th><td>subscription</td><td>20–50%</td><td>45–55%</td><td class="us">0% on primary</td></tr>
           <tr><th>Interrupts the listener</th><td>—</td><td>yes</td><td>yes</td><td class="us">no</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="quote">Nobody does both. That is not a technical gap but the innovator's dilemma — handing the creator 100% of the primary sale means attacking your own revenue line.</p>
+    <p class="quote">Nobody does both. That is not a technical gap but the innovator’s dilemma — handing the creator 100% of the primary sale means attacking your own revenue line.</p>
   </div>
   <div class="num">11 / 14</div>
 </section>
@@ -444,7 +462,7 @@
   <div class="inner">
     <p class="eyebrow">Risks</p>
     <h2 class="wide">The holes we found <em>before you did</em>.</h2>
-    <ul class="plain">
+    <ul class="plain split">
       <li><b>No revenue.</b> Not a single sponsored moment has been paid for yet.</li>
       <li><b>The pilot channel has 28 followers.</b> It proves the mechanism, not demand. The first sponsors will be local businesses.</li>
       <li><b>There is no public CPM data for Croatian podcasts.</b> The first rate card is a guess.</li>
@@ -452,7 +470,7 @@
       <li><b>Five legal questions are waiting on counsel</b> — MiCA, sponsorship disclosure, VAT on the three-party buyout flow.</li>
       <li><b>Patent freedom-to-operate is not done.</b> The Nasdaq/NYIAX patents cover an order book, and our mechanism is bilateral and therefore outside them — but three of the four have not been checked for European family members.</li>
       <li><b>Nobody has measured tolerance for a sponsor mark.</b> YouTube shut its own overlay format down in 2023.</li>
-      <li><b>Secondary liquidity may never show up.</b> NYIAX spent six years trying with Nasdaq's technology and failed — which is exactly why the model does not depend on it.</li>
+      <li><b>Secondary liquidity may never show up.</b> NYIAX spent six years trying with Nasdaq’s technology and failed — which is exactly why the model does not depend on it.</li>
     </ul>
   </div>
   <div class="num">12 / 14</div>
@@ -474,7 +492,7 @@
         <p>3,047 hours of processed content, an app in the stores, working payments and a public RAG — all built before the first euro of investment.</p>
       </div>
     </div>
-    <p class="sub" style="margin-top:30px">
+    <p class="sub" style="margin-top:var(--gap-s)">
       Which is why the first line in the use of funds is not marketing or sales
       but <strong>two engineers</strong>. The bottleneck is one person, and no
       better plan fixes that.
@@ -529,9 +547,26 @@
     });
   };
 
+  const EDGE = 8;
+
   const go = (delta) => {
     const i = current();
-    const t = Math.max(0, Math.min(slides.length - 1, (i < 0 ? 0 : i) + delta));
+    const idx = i < 0 ? 0 : i;
+    const r = slides[idx].getBoundingClientRect();
+    const step = Math.max(240, window.innerHeight - 96);
+
+    // a slide taller than the viewport is paged through before we leave it,
+    // otherwise its lower half is unreachable from the controls
+    if (delta > 0 && r.bottom > window.innerHeight + EDGE) {
+      window.scrollBy({ top: step, behavior: "smooth" });
+      return;
+    }
+    if (delta < 0 && r.top < -EDGE) {
+      window.scrollBy({ top: -step, behavior: "smooth" });
+      return;
+    }
+
+    const t = Math.max(0, Math.min(slides.length - 1, idx + delta));
     slides[t].scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
