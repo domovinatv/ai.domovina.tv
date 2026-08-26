@@ -380,12 +380,11 @@ class _YouTubeSidePanel extends StatelessWidget {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
 
-    return Container(
+    // Bez ispune i bez lijevog ruba: `VideoPanel` ih nosi jer je gust panel s
+    // kontrolama i poglavljima, a ovdje je sadržaj samo player — obrub na
+    // svijetloj temi ispadne bijela crta koja siječe stranicu ni zbog čega.
+    return SizedBox(
       width: width,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(left: BorderSide(color: theme.colorScheme.outlineVariant)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
