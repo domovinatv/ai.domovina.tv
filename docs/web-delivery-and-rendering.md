@@ -267,6 +267,79 @@ s jakim kontrastom debljine = Playfair radi. Sans = ne radi, bez obzira što
 
 ---
 
+## 6. COEP zabranjuje SVAKI tuđi iframe (YouTube, i sve buduće)
+
+### Simptom
+Ugrađeni YouTube player crn, poruka **„www.youtube-nocookie.com refused to
+connect"** (izmjereno 26.8.2026. na produkciji, v2.0.143).
+
+### Uzrok — naš header, ne YouTubeov
+YouTube na `/embed/<id>` vraća `200` **bez** `X-Frame-Options` i **bez**
+`frame-ancestors` — dakle ništa s njegove strane ne brani ugrađivanje:
+
+```bash
+curl -sI -H "Referer: https://domovina.ai/" \
+  https://www.youtube-nocookie.com/embed/<ytId> | grep -iE "http/|x-frame|frame-ancestors"
+# → HTTP/2 200, i ništa drugo
+```
+
+Brani **naš** `web/_worker.js`, koji za HTML odgovore šalje:
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: credentialless
+```
+
+Pod COEP-om **ugniježđeni dokument mora sam poslati COEP** da bi bio ugradiv.
+YouTube ga ne šalje → browser odbije frame. `credentialless` je pritom već
+blaža varijanta od `require-corp`, ali za *iframeove* ne pomaže: ona samo
+skida zahtjev za CORP-om s pod-resursa.
+
+### Zašto COEP uopće postoji ovdje
+`SharedArrayBuffer` je iza cross-origin izolacije, a Flutterov bootstrap bira
+renderer po `window.crossOriginIsolated`:
+
+| izolacija | binary | raster |
+|---|---|---|
+| da | `canvaskit/skwasm_heavy.wasm` (5,1 MB) | zasebna nit |
+| ne | `canvaskit/skwasm.wasm` (3,5 MB) | **glavna nit** |
+
+Glavna nit je točno uzrok janka opisanog u §1, pa se izolacija ne skida bez
+razloga — cijena je 1,6 MB više downloada, dobitak je raster izvan glavne niti.
+
+### Rješenje: `credentialless` iframe + feature detection
+`<iframe credentialless>` (Chrome/Edge 110+) je jedini način da dokument pod
+COEP-om ugradi frame koji COEP ne šalje. Atribut se MORA postaviti **prije**
+`src` — čita se pri pokretanju navigacije.
+
+Safari i Firefox ga ne podržavaju, pa se ondje embed **ne smije ni ponuditi**:
+`youtube_embed_web.dart` vraća `supported == false` kad je stranica izolirana a
+atribut nepodržan, i facade tada otvori youtube.com u novoj kartici umjesto da
+korisnik dobije crnu plohu.
+
+```dart
+supported = !crossOriginIsolated || ('credentialless' in HTMLIFrameElement.prototype)
+```
+
+### Što ovo znači za buduće integracije
+**Rule**: dok worker šalje COEP, **nijedan** tuđi iframe ne radi u Safariju ni
+Firefoxu — ni YouTube, ni Cal.com booking widget, ni hostani checkout. Integracija
+treće strane zato ide preko **API-ja**, ne iframea (kao što `cal_booking_native.dart`
+već radi nad Cal.com API-jem v2). Ako neka budućnost traži iframe na svim
+browserima, odluka je: skinuti COOP/COEP i pristati na jednodretveni skwasm.
+
+Napomena: isti je kvar tiho nosio i postojeći „YouTube mode" gumb u
+`video_panel.dart` — bio je neupotrebljiv otkad postoji, samo ga nitko nije
+otvorio na izoliranoj stranici. Feature detection ga sad sakrije umjesto da
+ponudi nešto što ne radi.
+
+### Vezano
+- `lib/widgets/youtube_embed_web.dart` — detekcija + atribut
+- `docs/2026-08-26-episode-processing-status.md` — zašto epizoda uopće nudi YouTube
+- §1 gore — jank zbog rastera na glavnoj niti (razlog da COEP ostane)
+
+---
+
 ## Brze dijagnostičke komande
 
 ```bash
@@ -281,4 +354,11 @@ curl -sI https://domovina.ai/flutter_bootstrap.js | grep -i cache-control
 await navigator.serviceWorker.getRegistrations()
 navigator.serviceWorker.controller?.scriptURL
 await caches.keys()
+
+# COEP — je li stranica cross-origin izolirana? (u browser konzoli)
+crossOriginIsolated                              // true → skwasm_heavy, tuđi iframe traži credentialless
+'credentialless' in HTMLIFrameElement.prototype  // false u Safariju/Firefoxu
+
+# Brani li YouTube ugradnju? (spoiler: ne brani — COEP je naš)
+curl -sI https://www.youtube-nocookie.com/embed/<ytId> | grep -iE "http/|x-frame|frame-ancestors"
 ```

@@ -487,6 +487,18 @@ zvukom (ista politika kao u „Muted autoplay" gore), a tko ne klikne ne plati
 - Native, ili vlasnik isključio ugrađivanje → tap otvori youtube.com, uz
   objašnjenje (`episodeEmbedBlocked`) zašto korisnika šaljemo van.
 
+**Rule (COEP zabranjuje SVAKI tuđi iframe)**: `web/_worker.js` šalje
+`Cross-Origin-Embedder-Policy: credentialless` jer bez cross-origin izolacije
+Flutter učita jednodretveni `skwasm.wasm` i rasterizira na glavnoj niti
+(uzrok janka iz `docs/web-delivery-and-rendering.md` §1). Pod COEP-om ugniježđeni
+dokument mora **sam** slati COEP — YouTube ga ne šalje, pa frame bude odbijen
+(„refused to connect"). Jedini izlaz je `<iframe credentialless>` (Chrome/Edge
+110+), i atribut se MORA postaviti **prije** `src`. Safari i Firefox ga nemaju,
+pa `youTubeEmbedSupported` ondje vraća false i facade otvori youtube.com umjesto
+crne plohe. **Nova integracija treće strane ide preko API-ja, ne iframea** (kao
+`cal_booking_native.dart` nad Cal.com API-jem). Puna analiza s mjerenjima:
+`docs/web-delivery-and-rendering.md` §6.
+
 **Rule**: embed se nudi samo dok kod nas NEMA što pustiti
 (`EpisodeStatus.needsExternalSource`) — inače bi na stranici bila dva playera.
 Kad medija JEST na CDN-u, primarna radnja je NAŠ player („Gledaj epizodu" →

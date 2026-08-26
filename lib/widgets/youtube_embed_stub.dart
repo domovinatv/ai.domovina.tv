@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-const bool supported = false;
+/// Native platforme nemaju `HtmlElementView`/iframe — embed se ne nudi.
+bool get supported => false;
 
 Widget buildYouTubeEmbed({
   required String videoId,
