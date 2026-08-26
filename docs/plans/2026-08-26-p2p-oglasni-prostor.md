@@ -393,6 +393,11 @@ likvidnost koju nemamo. Tri nalaza:
 se prikazuje kao **„vlasnički list trenutka"**, javan i provjerljiv zapis, ne kao
 token. Namira i dalje ide postojećom EURe/SEPA šinom.
 
+Zašto onda uopće držimo novac u zatvorenoj petlji, ako ne zbog tokena: prinos na
+rezervi, i on je **stvaran ali dugoročan**. Aritmetika, pravni okvir (MiCA čl. 50)
+i mjesta na kojima ovaj mehanizam parkira novac:
+[`../2026-08-26-zatvorena-petlja-i-prinos-na-floatu.md`](../2026-08-26-zatvorena-petlja-i-prinos-na-floatu.md).
+
 **Okidač za fazu 4** (on-chain, ERC-4907 pravo korištenja umjesto vlasništva):
 tek kad postoji **stvarna prekomjerna potražnja** — mjereno listom čekanja na
 primarnom tržištu i barem 20 izvršenih otkupa — i tek nakon pravne potvrde iz
