@@ -879,25 +879,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String get episodeArticle => 'Article';
 
   @override
-  String get episodeAiPendingTitle => 'AI processing isn’t finished yet';
-
-  @override
-  String get episodeAiPendingAudio =>
-      'Showing the audio and basic details. The summary, chapters, article and theological analysis arrive as soon as processing finishes.';
-
-  @override
-  String get episodeAiPendingVideo =>
-      'Showing only the video and basic details from YouTube. The summary, chapters, article and theological analysis arrive as soon as processing finishes.';
-
-  @override
-  String get episodeAiPendingInfo =>
-      'AI processing isn’t finished yet — showing only the basic details. The summary, chapters and article arrive as soon as it’s done.';
-
-  @override
   String get episodeListen => 'Listen to episode';
 
   @override
   String get episodeWatchOnYouTube => 'Watch on YouTube';
+
+  @override
+  String get episodeStageQueuedBadge => 'Queued';
+
+  @override
+  String get episodeStageFetchedBadge => 'Downloading';
+
+  @override
+  String get episodeStageMediaReadyBadge => 'Transcribing';
+
+  @override
+  String get episodeStageTranscribedBadge => 'Writing article';
+
+  @override
+  String get episodeStageQueuedHeadline =>
+      'This episode hasn’t been downloaded yet';
+
+  @override
+  String get episodeStageFetchedHeadline => 'Downloading the audio and video';
+
+  @override
+  String get episodeStageMediaReadyHeadline => 'Transcribing the conversation';
+
+  @override
+  String get episodeStageTranscribedHeadline =>
+      'Writing the summary and article';
+
+  @override
+  String get episodeStagePublishedHeadline => 'This episode is fully processed';
+
+  @override
+  String get episodeStageQueuedBody =>
+      'We know about it from the channel, but the files aren’t with us yet — the download either failed or hasn’t run. Watch it at the source in the meantime.';
+
+  @override
+  String get episodeStageFetchedBody =>
+      'We have the title, description and thumbnail; the audio and video aren’t here yet. Playback on our side won’t work until they are — watch the episode at the source for now.';
+
+  @override
+  String get episodeStageMediaReadyBodyVideo =>
+      'You can watch the video right away. The transcript, summary, chapters, article and theological analysis arrive as soon as processing produces them.';
+
+  @override
+  String get episodeStageMediaReadyBodyAudio =>
+      'You can listen right away. The transcript, summary, chapters, article and theological analysis arrive as soon as processing produces them.';
+
+  @override
+  String get episodeStageTranscribedBody =>
+      'The transcript is done. The summary, chapters, article and theological analysis arrive as soon as processing produces them.';
+
+  @override
+  String get episodeStagePublishedBody => 'All the content is ready.';
+
+  @override
+  String get episodeStepFetch => 'Episode fetched';
+
+  @override
+  String get episodeStepMedia => 'Audio and video';
+
+  @override
+  String get episodeStepTranscript => 'Transcript';
+
+  @override
+  String get episodeStepSummary => 'Summary';
+
+  @override
+  String get episodeStepArticle => 'Article';
+
+  @override
+  String get episodeStepMagisterium => 'Theological analysis';
+
+  @override
+  String get episodeStatusStepsTitle => 'Processing progress';
+
+  @override
+  String get episodeWatchHere => 'Watch here';
+
+  @override
+  String get episodeWatchInApp => 'Watch in the app';
+
+  @override
+  String get episodeWatchOurPlayer => 'Watch the episode';
+
+  @override
+  String get episodeEmbedBlocked =>
+      'The owner disabled the embedded player for this episode, so it opens on YouTube.';
+
+  @override
+  String episodeStatusNotOnCdn(String id) {
+    return 'Episode “$id” wasn’t found on the CDN.';
+  }
 
   @override
   String get episodeMediaUnavailable =>

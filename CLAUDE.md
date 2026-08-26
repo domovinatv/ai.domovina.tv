@@ -434,6 +434,55 @@ Naša ruta jednako re-parenta `<video>` → koristi postojeći
 aplikaciju je namjerno iOS ponašanje — to nije bug i ne može se isključiti dok
 želimo pozadinski zvuk.
 
+### Faza obrade epizode — `EpisodeStatus`, ne „AI obrada nije gotova"
+
+Epizoda u railu „Upravo stiglo" može biti u bitno različitim stanjima, a do
+26.8.2026. su sva govorila istu rečenicu. Izmjereno tog dana na produkciji:
+
+| epizoda | `info.json` | medija | AI | što je korisnik vidio |
+|---|---|---|---|---|
+| `UclibQB3SZM` | 404 | — | — | „nije pronađena na CDN-u" (slijepa ulica) |
+| `ZYG_ksNDl3s` | ✓ | 404 | — | „Prikazujemo samo **video**…" (videa nema) |
+| `DnzG2OvRflI` | ✓ | `video_h264` | — | crveni „Gledaj na YouTubeu" iako video IMAMO |
+
+`lib/models/episode_status.dart` uvodi pet faza (`queued` → `fetched` →
+`mediaReady` → `transcribed` → `published`) + listu koraka koju crta
+`widgets/episode_status_card.dart` (detaljni ekran, `_InfoTab` jednostavnog).
+
+**Rule (faza se MJERI, ne čita iz listinga)**: `EpisodeStatus.measured(...)`
+(preko `EpisodeData.status`) je jedini autoritet — `info.json` presence, probe
+medije, prisutnost artefakata. `pipeline` zastavice iz channel listinga su
+producentova namjera i lažu u oba smjera (`DnzG2OvRflI` ima video uz
+`has_transcript:false`; `UclibQB3SZM` ima listinganu `thumbnail` putanju koja
+vraća 404). `EpisodeStatus.fromPipeline(...)` postoji SAMO za oznake na
+karticama u railovima/channel listi, gdje ničeg boljeg nema.
+
+**Rule (`info.json` 404 ≠ 404)**: `VideoNotFoundException` vodi na
+`_QueuedEpisodeScreen`, koji epizodu potraži u channel listinzima
+(`channelCache.findVideoAsync`, kanali poredani po svježini, staje na prvi
+pogodak). Nađe li je — naslov, kanal i YouTube player. Ne nađe li — tek tada
+prava 404. Embed se NE nudi bez tog pogotka, inače bi `/v/<bilo-koji-YT-ID>`
+ugrađivao proizvoljan tuđi video pod našim brandom.
+
+### In-app YouTube za epizode bez medije — `InAppYouTubePlayer`
+
+Facade (poster + play gumb) koji na tap zamijeni sam sebe službenim
+`youtube-nocookie` iframeom (`widgets/youtube_embed.dart`). Dva razloga za
+facade umjesto odmah-iframea: prvi tap JEST korisnikova gesta pa embed krene sa
+zvukom (ista politika kao u „Muted autoplay" gore), a tko ne klikne ne plati
+~1 MB YouTube playera na stranici koja mu je ionako samo status.
+
+- Web (`youTubeEmbedSupported`) + `info.playable_in_embed` → iframe u aplikaciji.
+- Native, ili vlasnik isključio ugrađivanje → tap otvori youtube.com, uz
+  objašnjenje (`episodeEmbedBlocked`) zašto korisnika šaljemo van.
+
+**Rule**: embed se nudi samo dok kod nas NEMA što pustiti
+(`EpisodeStatus.needsExternalSource`) — inače bi na stranici bila dva playera.
+Kad medija JEST na CDN-u, primarna radnja je NAŠ player („Gledaj epizodu" →
+`endDrawer` na uskom ekranu), a YouTube pada na tihu tekstualnu poveznicu.
+Sintetički ID-evi (X izvor, `_yt_matched:false`) nemaju YouTube video iza sebe
+i ne smiju se ugrađivati.
+
 ### Thumbnail caching + WebP varijante — `CachedThumbnail`
 
 Sve slike epizoda idu kroz `CachedThumbnail` (`lib/widgets/cached_thumbnail.dart`):

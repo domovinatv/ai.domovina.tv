@@ -8,6 +8,7 @@ import '../models/podcast_outline.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
+import '../models/episode_status.dart';
 import '../models/magisterium_full_v2_data.dart';
 import '../models/speaker_timeline.dart';
 import 'cdn_config.dart';
@@ -394,6 +395,18 @@ class EpisodeData {
   /// True kad AI pipeline (clanak) nije produkcijski gotov. UI tada pokazuje
   /// samo player + basic info i opcionalno YouTube chapters iz info.json.
   bool get hasAiContent => article != null;
+
+  /// Faza obrade izvedena iz IZMJERENOG stanja — `info.json` je po definiciji
+  /// tu (bez njega [EpisodeData] ne postoji), medija iz probe-a, tekstualni
+  /// sloj iz prisutnosti pojedinog artefakta. Vidi [EpisodeStatus].
+  EpisodeStatus get status => EpisodeStatus.measured(
+        hasInfo: true,
+        hasMedia: hasMedia,
+        hasTranscript: speakerTimeline != null,
+        hasSummary: summary != null,
+        hasArticle: article != null,
+        hasMagisterium: magisteriumPrimary != null || magisteriumFullV2 != null,
+      );
 
   /// True kad je razriješena media AUDIO (`audio.mp3` na CDN-u). Autoritativno
   /// iz probe-a ([DataService.resolveMedia]), NE iz info.json flagova. UI tada

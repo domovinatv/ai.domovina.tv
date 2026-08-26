@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart' show log;
+import '../../models/episode_status.dart';
 import '../../models/channel_index.dart';
 import '../../services/app_install_banner.dart';
 import '../../services/cdn_config.dart';
@@ -556,7 +557,13 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                 thumbnailUrl:
                                     CdnConfig.thumbnailUrl(fv.video.id),
                                 dateLabel: fv.video.date,
-                                statusBadge: l.homeStatusProcessing,
+                                // Faza obrade iz `pipeline` zastavica listinga
+                                // ("U redu cekanja" / "Prepisujemo" / …) —
+                                // preciznije od jedinstvenog "U obradi".
+                                statusBadge:
+                                    EpisodeStatus.fromPipeline(fv.video.pipeline)
+                                            .badge(l) ??
+                                        l.homeStatusProcessing,
                                 width: isMobile ? 180 : 220,
                                 shareUrl:
                                     'https://domovina.ai/v/${fv.video.id}',

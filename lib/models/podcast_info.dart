@@ -35,6 +35,12 @@ class PodcastInfo {
   /// `video.mp4` na CDN-u). Default true (stare/YT epizode nemaju ovo polje).
   final bool ytMatched;
 
+  /// yt-dlp `playable_in_embed` — false kad je vlasnik kanala isključio
+  /// ugrađivanje videa na tuđe stranice. Tada naš in-app YouTube iframe
+  /// ostane crn ("Video unavailable"), pa se mora ponuditi vanjska poveznica.
+  /// Default true: polje ima samo YouTube info.json, a stariji ga nemaju.
+  final bool playableInEmbed;
+
   const PodcastInfo({
     required this.id,
     required this.title,
@@ -58,6 +64,7 @@ class PodcastInfo {
     this.extractor = 'youtube',
     this.soundLink,
     this.ytMatched = true,
+    this.playableInEmbed = true,
   });
 
   factory PodcastInfo.fromJson(Map<String, dynamic> json) {
@@ -97,6 +104,7 @@ class PodcastInfo {
       extractor: json['extractor'] as String? ?? 'youtube',
       soundLink: json['_sound_link'] as String?,
       ytMatched: json['_yt_matched'] as bool? ?? true,
+      playableInEmbed: json['playable_in_embed'] as bool? ?? true,
     );
   }
 

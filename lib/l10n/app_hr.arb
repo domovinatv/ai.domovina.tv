@@ -1133,22 +1133,6 @@
   "@episodeArticle": {
     "description": "Bottom-bar tab label for the AI-written article view."
   },
-  "episodeAiPendingTitle": "AI obrada još nije gotova",
-  "@episodeAiPendingTitle": {
-    "description": "Title of the banner shown when an episode is published but the AI pipeline hasn't produced enriched content yet."
-  },
-  "episodeAiPendingAudio": "Prikazujemo audio i osnovne podatke. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.",
-  "@episodeAiPendingAudio": {
-    "description": "AI-pending banner body for audio-only episodes."
-  },
-  "episodeAiPendingVideo": "Prikazujemo samo video i osnovne podatke s YouTubea. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.",
-  "@episodeAiPendingVideo": {
-    "description": "AI-pending banner body for video episodes."
-  },
-  "episodeAiPendingInfo": "AI obrada još nije gotova — prikazujemo samo osnovne podatke. Sažetak, poglavlja i članak stižu čim obrada završi.",
-  "@episodeAiPendingInfo": {
-    "description": "Compact AI-pending banner shown in the Info tab of the simple episode screen."
-  },
   "episodeListen": "Slušaj epizodu",
   "@episodeListen": {
     "description": "Button that (re)opens the audio player for audio-only episodes."
@@ -1156,6 +1140,115 @@
   "episodeWatchOnYouTube": "Gledaj na YouTubeu",
   "@episodeWatchOnYouTube": {
     "description": "Button that opens the episode on YouTube when the video isn't on the CDN yet."
+  },
+  "episodeStageQueuedBadge": "U redu čekanja",
+  "@episodeStageQueuedBadge": {
+    "description": "Short badge on episode cards: the episode is registered but nothing has been downloaded yet."
+  },
+  "episodeStageFetchedBadge": "Preuzimamo",
+  "@episodeStageFetchedBadge": {
+    "description": "Short badge on episode cards: metadata is here, audio/video is still being downloaded."
+  },
+  "episodeStageMediaReadyBadge": "Prepisujemo",
+  "@episodeStageMediaReadyBadge": {
+    "description": "Short badge on episode cards: media is playable, transcription is next."
+  },
+  "episodeStageTranscribedBadge": "Pišemo članak",
+  "@episodeStageTranscribedBadge": {
+    "description": "Short badge on episode cards: transcript exists, the article is being written."
+  },
+  "episodeStageQueuedHeadline": "Epizoda još nije preuzeta",
+  "@episodeStageQueuedHeadline": {
+    "description": "Status card headline when info.json is missing from the CDN."
+  },
+  "episodeStageFetchedHeadline": "Preuzimamo zvuk i sliku",
+  "@episodeStageFetchedHeadline": {
+    "description": "Status card headline when metadata exists but no media is on the CDN."
+  },
+  "episodeStageMediaReadyHeadline": "Radimo prijepis govora",
+  "@episodeStageMediaReadyHeadline": {
+    "description": "Status card headline when media is playable but there is no transcript yet."
+  },
+  "episodeStageTranscribedHeadline": "Pišemo sažetak i članak",
+  "@episodeStageTranscribedHeadline": {
+    "description": "Status card headline when a transcript exists but the article does not."
+  },
+  "episodeStagePublishedHeadline": "Epizoda je obrađena",
+  "@episodeStagePublishedHeadline": {
+    "description": "Status card headline when the full pipeline is done."
+  },
+  "episodeStageQueuedBody": "Znamo za nju iz kanala, ali datoteke još nisu kod nas — preuzimanje nije uspjelo ili tek slijedi. Do tada je pogledaj izravno s izvora.",
+  "@episodeStageQueuedBody": {
+    "description": "Status card body for the queued stage."
+  },
+  "episodeStageFetchedBody": "Naslov, opis i sličica su kod nas; zvuk i slika još nisu. Reprodukcija kod nas zato još ne radi — pogledaj epizodu s izvora dok je ne prenesemo.",
+  "@episodeStageFetchedBody": {
+    "description": "Status card body for the fetched stage."
+  },
+  "episodeStageMediaReadyBodyVideo": "Video možeš gledati odmah. Prijepis, sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.",
+  "@episodeStageMediaReadyBodyVideo": {
+    "description": "Status card body when playable video exists but there is no AI text layer."
+  },
+  "episodeStageMediaReadyBodyAudio": "Zvuk možeš slušati odmah. Prijepis, sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.",
+  "@episodeStageMediaReadyBodyAudio": {
+    "description": "Status card body when playable audio exists but there is no AI text layer."
+  },
+  "episodeStageTranscribedBody": "Prijepis je gotov. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.",
+  "@episodeStageTranscribedBody": {
+    "description": "Status card body for the transcribed stage."
+  },
+  "episodeStagePublishedBody": "Sav sadržaj je spreman.",
+  "@episodeStagePublishedBody": {
+    "description": "Status card body for the published stage."
+  },
+  "episodeStepFetch": "Preuzeta epizoda",
+  "@episodeStepFetch": {
+    "description": "Progress step label: episode metadata fetched from the source."
+  },
+  "episodeStepMedia": "Zvuk i slika",
+  "@episodeStepMedia": {
+    "description": "Progress step label: playable media uploaded to the CDN."
+  },
+  "episodeStepTranscript": "Prijepis govora",
+  "@episodeStepTranscript": {
+    "description": "Progress step label: diarized transcript."
+  },
+  "episodeStepSummary": "Sažetak",
+  "@episodeStepSummary": {
+    "description": "Progress step label: AI summary."
+  },
+  "episodeStepArticle": "Članak",
+  "@episodeStepArticle": {
+    "description": "Progress step label: AI-written article."
+  },
+  "episodeStepMagisterium": "Teološka analiza",
+  "@episodeStepMagisterium": {
+    "description": "Progress step label: Magisterium theological analysis."
+  },
+  "episodeStatusStepsTitle": "Napredak obrade",
+  "@episodeStatusStepsTitle": {
+    "description": "Heading above the per-step pipeline progress checklist."
+  },
+  "episodeWatchHere": "Gledaj ovdje",
+  "@episodeWatchHere": {
+    "description": "Primary button that reveals the in-app YouTube player."
+  },
+  "episodeWatchInApp": "Gledaj u aplikaciji",
+  "@episodeWatchInApp": {
+    "description": "Label of the play overlay on the in-app YouTube facade."
+  },
+  "episodeWatchOurPlayer": "Gledaj epizodu",
+  "@episodeWatchOurPlayer": {
+    "description": "Primary button that opens our own player for an episode whose media is on the CDN."
+  },
+  "episodeEmbedBlocked": "Vlasnik je za ovu epizodu isključio ugrađeni player, pa se otvara na YouTubeu.",
+  "@episodeEmbedBlocked": {
+    "description": "Explains why the in-app YouTube player is unavailable for this episode."
+  },
+  "episodeStatusNotOnCdn": "Epizoda „{id}” nije pronađena na CDN-u.",
+  "@episodeStatusNotOnCdn": {
+    "placeholders": {"id": {"type": "String"}},
+    "description": "Short not-found line used above the queued status card, with the episode id."
   },
   "episodeMediaUnavailable": "Medijski zapis nije dostupan za ovu epizodu.",
   "@episodeMediaUnavailable": {

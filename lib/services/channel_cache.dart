@@ -86,6 +86,62 @@ class ChannelCache extends ChangeNotifier {
     return result;
   }
 
+  /// Nadi epizodu po video ID-u medju VEC ucitanim kanalima. Null ako kanal
+  /// koji je nosi jos nije u cacheu — za to sluzi [findVideoAsync].
+  ({String channelId, String channelName, ChannelVideo video})? findVideo(
+    String videoId,
+  ) {
+    for (final detail in _cache.values) {
+      for (final video in detail.videos) {
+        if (video.id == videoId) {
+          return (
+            channelId: detail.id,
+            channelName: detail.name,
+            video: video,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Isto, ali dohvati kanale dok epizoda ne bude nadena.
+  ///
+  /// Zasto uopce: epizoda kojoj `info.json` jos nije na CDN-u ("u redu
+  /// cekanja") postoji ISKLJUCIVO u channel listingu, pa je to jedini izvor
+  /// naslova i kanala za nju. Na hladan deep-link `/v/<id>` cache je prazan.
+  ///
+  /// Kanali se obilaze poredani po datumu zadnje epizode (najsvjeziji prvo):
+  /// epizoda bez `info.json`-a je po definiciji tek pristigla, pa je gotovo
+  /// uvijek u prvoj sacici kanala. Trazenje staje cim je nade — puni prefetch
+  /// svih 48 kanala se dogodi samo za ID koji ne postoji nigdje.
+  Future<({String channelId, String channelName, ChannelVideo video})?>
+      findVideoAsync(String videoId) async {
+    final cached = findVideo(videoId);
+    if (cached != null) return cached;
+
+    final ChannelIndex idx;
+    try {
+      idx = await loadIndex();
+    } catch (e) {
+      log('ChannelCache.findVideoAsync: index failed: $e');
+      return null;
+    }
+
+    final ordered = List<ChannelSummary>.from(idx.channels)
+      ..sort((a, b) => (b.latestVideo?.date ?? '')
+          .compareTo(a.latestVideo?.date ?? ''));
+
+    const batchSize = 6;
+    for (var i = 0; i < ordered.length; i += batchSize) {
+      final batch = ordered.skip(i).take(batchSize);
+      await Future.wait(batch.map((c) => _loadOne(c.id)), eagerError: false);
+      final hit = findVideo(videoId);
+      if (hit != null) return hit;
+    }
+    return null;
+  }
+
   /// Prefetchaj sve kanale iz indexa u pozadini.
   /// Noop ako je vec u tijeku ili zavrseno.
   Future<void> prefetchAll(List<ChannelSummary> channels) async {

@@ -1604,30 +1604,6 @@ abstract class AppLocalizations {
   /// **'Članak'**
   String get episodeArticle;
 
-  /// Title of the banner shown when an episode is published but the AI pipeline hasn't produced enriched content yet.
-  ///
-  /// In hr, this message translates to:
-  /// **'AI obrada još nije gotova'**
-  String get episodeAiPendingTitle;
-
-  /// AI-pending banner body for audio-only episodes.
-  ///
-  /// In hr, this message translates to:
-  /// **'Prikazujemo audio i osnovne podatke. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
-  String get episodeAiPendingAudio;
-
-  /// AI-pending banner body for video episodes.
-  ///
-  /// In hr, this message translates to:
-  /// **'Prikazujemo samo video i osnovne podatke s YouTubea. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
-  String get episodeAiPendingVideo;
-
-  /// Compact AI-pending banner shown in the Info tab of the simple episode screen.
-  ///
-  /// In hr, this message translates to:
-  /// **'AI obrada još nije gotova — prikazujemo samo osnovne podatke. Sažetak, poglavlja i članak stižu čim obrada završi.'**
-  String get episodeAiPendingInfo;
-
   /// Button that (re)opens the audio player for audio-only episodes.
   ///
   /// In hr, this message translates to:
@@ -1639,6 +1615,168 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Gledaj na YouTubeu'**
   String get episodeWatchOnYouTube;
+
+  /// Short badge on episode cards: the episode is registered but nothing has been downloaded yet.
+  ///
+  /// In hr, this message translates to:
+  /// **'U redu čekanja'**
+  String get episodeStageQueuedBadge;
+
+  /// Short badge on episode cards: metadata is here, audio/video is still being downloaded.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzimamo'**
+  String get episodeStageFetchedBadge;
+
+  /// Short badge on episode cards: media is playable, transcription is next.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prepisujemo'**
+  String get episodeStageMediaReadyBadge;
+
+  /// Short badge on episode cards: transcript exists, the article is being written.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pišemo članak'**
+  String get episodeStageTranscribedBadge;
+
+  /// Status card headline when info.json is missing from the CDN.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda još nije preuzeta'**
+  String get episodeStageQueuedHeadline;
+
+  /// Status card headline when metadata exists but no media is on the CDN.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzimamo zvuk i sliku'**
+  String get episodeStageFetchedHeadline;
+
+  /// Status card headline when media is playable but there is no transcript yet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Radimo prijepis govora'**
+  String get episodeStageMediaReadyHeadline;
+
+  /// Status card headline when a transcript exists but the article does not.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pišemo sažetak i članak'**
+  String get episodeStageTranscribedHeadline;
+
+  /// Status card headline when the full pipeline is done.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda je obrađena'**
+  String get episodeStagePublishedHeadline;
+
+  /// Status card body for the queued stage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Znamo za nju iz kanala, ali datoteke još nisu kod nas — preuzimanje nije uspjelo ili tek slijedi. Do tada je pogledaj izravno s izvora.'**
+  String get episodeStageQueuedBody;
+
+  /// Status card body for the fetched stage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naslov, opis i sličica su kod nas; zvuk i slika još nisu. Reprodukcija kod nas zato još ne radi — pogledaj epizodu s izvora dok je ne prenesemo.'**
+  String get episodeStageFetchedBody;
+
+  /// Status card body when playable video exists but there is no AI text layer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Video možeš gledati odmah. Prijepis, sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
+  String get episodeStageMediaReadyBodyVideo;
+
+  /// Status card body when playable audio exists but there is no AI text layer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zvuk možeš slušati odmah. Prijepis, sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
+  String get episodeStageMediaReadyBodyAudio;
+
+  /// Status card body for the transcribed stage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijepis je gotov. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.'**
+  String get episodeStageTranscribedBody;
+
+  /// Status card body for the published stage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sav sadržaj je spreman.'**
+  String get episodeStagePublishedBody;
+
+  /// Progress step label: episode metadata fetched from the source.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzeta epizoda'**
+  String get episodeStepFetch;
+
+  /// Progress step label: playable media uploaded to the CDN.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zvuk i slika'**
+  String get episodeStepMedia;
+
+  /// Progress step label: diarized transcript.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijepis govora'**
+  String get episodeStepTranscript;
+
+  /// Progress step label: AI summary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sažetak'**
+  String get episodeStepSummary;
+
+  /// Progress step label: AI-written article.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članak'**
+  String get episodeStepArticle;
+
+  /// Progress step label: Magisterium theological analysis.
+  ///
+  /// In hr, this message translates to:
+  /// **'Teološka analiza'**
+  String get episodeStepMagisterium;
+
+  /// Heading above the per-step pipeline progress checklist.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredak obrade'**
+  String get episodeStatusStepsTitle;
+
+  /// Primary button that reveals the in-app YouTube player.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gledaj ovdje'**
+  String get episodeWatchHere;
+
+  /// Label of the play overlay on the in-app YouTube facade.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gledaj u aplikaciji'**
+  String get episodeWatchInApp;
+
+  /// Primary button that opens our own player for an episode whose media is on the CDN.
+  ///
+  /// In hr, this message translates to:
+  /// **'Gledaj epizodu'**
+  String get episodeWatchOurPlayer;
+
+  /// Explains why the in-app YouTube player is unavailable for this episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasnik je za ovu epizodu isključio ugrađeni player, pa se otvara na YouTubeu.'**
+  String get episodeEmbedBlocked;
+
+  /// Short not-found line used above the queued status card, with the episode id.
+  ///
+  /// In hr, this message translates to:
+  /// **'Epizoda „{id}” nije pronađena na CDN-u.'**
+  String episodeStatusNotOnCdn(String id);
 
   /// Placeholder shown in the player area when no playable media exists for the episode.
   ///

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/episode_status.dart';
 import '../../models/channel_detail.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
@@ -462,19 +463,33 @@ Widget videoMeta(
           ),
           const SizedBox(width: 6),
         ],
+        // Oznaka nosi FAZU obrade, ne samo "nije gotovo" — epizoda kojoj
+        // je prijepis gotov i ona koja jos ceka preuzimanje su korisniku
+        // bitno razlicite stvari. Izvor je `pipeline` iz listinga, koji je
+        // slabiji vantage od izmjerenog stanja na episode ekranu.
         if (!hasArticle)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              l.channelInProcessing,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+          Builder(
+            builder: (_) {
+              final badge =
+                  EpisodeStatus.fromPipeline(video.pipeline).badge(l) ??
+                      l.channelInProcessing;
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  badge,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              );
+            },
           ),
       ],
     ),

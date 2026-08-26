@@ -140,4 +140,26 @@ void main() {
       expect(s.summary.titleHr, 'Upoznajte Hobba-u');
     });
   });
+
+  group('playable_in_embed — smije li se epizoda ugraditi', () {
+    test('YouTube info.json nosi zastavicu', () {
+      final on = PodcastInfo.fromJson(const {
+        'id': 'ZYG_ksNDl3s',
+        'playable_in_embed': true,
+      });
+      final off = PodcastInfo.fromJson(const {
+        'id': 'ZYG_ksNDl3s',
+        'playable_in_embed': false,
+      });
+      expect(on.playableInEmbed, isTrue);
+      expect(off.playableInEmbed, isFalse);
+    });
+
+    test('bez polja pretpostavljamo da smije — stari info.json ga nema', () {
+      expect(
+        PodcastInfo.fromJson(const {'id': 'x'}).playableInEmbed,
+        isTrue,
+      );
+    });
+  });
 }

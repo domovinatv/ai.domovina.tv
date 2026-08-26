@@ -880,25 +880,99 @@ class AppLocalizationsHr extends AppLocalizations {
   String get episodeArticle => 'Članak';
 
   @override
-  String get episodeAiPendingTitle => 'AI obrada još nije gotova';
-
-  @override
-  String get episodeAiPendingAudio =>
-      'Prikazujemo audio i osnovne podatke. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
-
-  @override
-  String get episodeAiPendingVideo =>
-      'Prikazujemo samo video i osnovne podatke s YouTubea. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
-
-  @override
-  String get episodeAiPendingInfo =>
-      'AI obrada još nije gotova — prikazujemo samo osnovne podatke. Sažetak, poglavlja i članak stižu čim obrada završi.';
-
-  @override
   String get episodeListen => 'Slušaj epizodu';
 
   @override
   String get episodeWatchOnYouTube => 'Gledaj na YouTubeu';
+
+  @override
+  String get episodeStageQueuedBadge => 'U redu čekanja';
+
+  @override
+  String get episodeStageFetchedBadge => 'Preuzimamo';
+
+  @override
+  String get episodeStageMediaReadyBadge => 'Prepisujemo';
+
+  @override
+  String get episodeStageTranscribedBadge => 'Pišemo članak';
+
+  @override
+  String get episodeStageQueuedHeadline => 'Epizoda još nije preuzeta';
+
+  @override
+  String get episodeStageFetchedHeadline => 'Preuzimamo zvuk i sliku';
+
+  @override
+  String get episodeStageMediaReadyHeadline => 'Radimo prijepis govora';
+
+  @override
+  String get episodeStageTranscribedHeadline => 'Pišemo sažetak i članak';
+
+  @override
+  String get episodeStagePublishedHeadline => 'Epizoda je obrađena';
+
+  @override
+  String get episodeStageQueuedBody =>
+      'Znamo za nju iz kanala, ali datoteke još nisu kod nas — preuzimanje nije uspjelo ili tek slijedi. Do tada je pogledaj izravno s izvora.';
+
+  @override
+  String get episodeStageFetchedBody =>
+      'Naslov, opis i sličica su kod nas; zvuk i slika još nisu. Reprodukcija kod nas zato još ne radi — pogledaj epizodu s izvora dok je ne prenesemo.';
+
+  @override
+  String get episodeStageMediaReadyBodyVideo =>
+      'Video možeš gledati odmah. Prijepis, sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
+
+  @override
+  String get episodeStageMediaReadyBodyAudio =>
+      'Zvuk možeš slušati odmah. Prijepis, sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
+
+  @override
+  String get episodeStageTranscribedBody =>
+      'Prijepis je gotov. Sažetak, poglavlja, članak i teološka analiza stižu čim ih obrada pripremi.';
+
+  @override
+  String get episodeStagePublishedBody => 'Sav sadržaj je spreman.';
+
+  @override
+  String get episodeStepFetch => 'Preuzeta epizoda';
+
+  @override
+  String get episodeStepMedia => 'Zvuk i slika';
+
+  @override
+  String get episodeStepTranscript => 'Prijepis govora';
+
+  @override
+  String get episodeStepSummary => 'Sažetak';
+
+  @override
+  String get episodeStepArticle => 'Članak';
+
+  @override
+  String get episodeStepMagisterium => 'Teološka analiza';
+
+  @override
+  String get episodeStatusStepsTitle => 'Napredak obrade';
+
+  @override
+  String get episodeWatchHere => 'Gledaj ovdje';
+
+  @override
+  String get episodeWatchInApp => 'Gledaj u aplikaciji';
+
+  @override
+  String get episodeWatchOurPlayer => 'Gledaj epizodu';
+
+  @override
+  String get episodeEmbedBlocked =>
+      'Vlasnik je za ovu epizodu isključio ugrađeni player, pa se otvara na YouTubeu.';
+
+  @override
+  String episodeStatusNotOnCdn(String id) {
+    return 'Epizoda „$id” nije pronađena na CDN-u.';
+  }
 
   @override
   String get episodeMediaUnavailable =>

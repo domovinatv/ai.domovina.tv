@@ -9,6 +9,8 @@ import 'package:media_kit_video/media_kit_video.dart';
 
 import '../l10n/app_localizations.dart';
 import '../main.dart' show log;
+import '../models/channel_detail.dart' show ChannelVideo;
+import '../models/episode_status.dart';
 import '../models/person_hub.dart' show personSlug;
 import '../models/podcast_article.dart' show PodcastSection;
 import '../services/background_audio.dart';
@@ -43,6 +45,8 @@ import '../widgets/magisterium_v2_view.dart';
 import '../widgets/parallel_article_view.dart';
 import '../widgets/person_needle_highlight.dart' show hasPersonMention;
 import '../widgets/entities_section.dart';
+import '../widgets/episode_status_card.dart';
+import '../widgets/youtube_embed.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
@@ -119,7 +123,12 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
     }
 
     if (_error != null) {
-      final notFound = _error is VideoNotFoundException;
+      // `info.json` 404 ne znaci nuzno da epizoda ne postoji — moze biti tek
+      // registrirana u channel listingu, a jos nepreuzeta (faza `queued`).
+      // Takvu prepoznaje i objasni _QueuedEpisodeScreen; sve ostalo je greska.
+      if (_error is VideoNotFoundException) {
+        return _QueuedEpisodeScreen(youtubeId: widget.youtubeId);
+      }
       final theme = Theme.of(context);
       final l = AppLocalizations.of(context);
       return Scaffold(
@@ -131,28 +140,9 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    notFound ? Icons.video_file_outlined : Icons.error_outline,
-                    size: 48,
-                    color: notFound ? null : Colors.red,
-                  ),
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 12),
-                  Text(
-                    notFound
-                        ? l.episodeNotFoundDetailed(widget.youtubeId)
-                        : l.episodeLoadError('$_error'),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  if (notFound)
-                    Text(
-                      CdnConfig.infoUrl(widget.youtubeId),
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                  Text(l.episodeLoadError('$_error'), textAlign: TextAlign.center),
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () => context.go('/'),
@@ -171,6 +161,184 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
     return _LoadingScreen(
       youtubeId: widget.youtubeId,
       assetStatus: _assetStatus,
+    );
+  }
+}
+
+/// Ekran za epizodu koja je u katalogu, ali kod nas jos nema NIJEDNU datoteku
+/// (`info.json` vraca 404) — faza [EpisodeStage.queued].
+///
+/// Dosad je takva epizoda zavrsavala na generickom "nije pronadena na CDN-u",
+/// sto je bilo i netocno (epizoda POSTOJI, vidi se u railu "Upravo stiglo") i
+/// slijepa ulica. Naslov, kanal i sliku uzimamo iz channel listinga, jedinog
+/// mjesta gdje takva epizoda uopce postoji, a reprodukciju nudimo kroz
+/// ugradeni YouTube player.
+///
+/// **Rule**: embed se nudi SAMO ako je ID nasao svoj red u channel listingu.
+/// Bez te provjere bi `/v/<bilo-koji-YouTube-ID>` ugradivao proizvoljan tudi
+/// video pod nasim brandom.
+class _QueuedEpisodeScreen extends StatefulWidget {
+  final String youtubeId;
+
+  const _QueuedEpisodeScreen({required this.youtubeId});
+
+  @override
+  State<_QueuedEpisodeScreen> createState() => _QueuedEpisodeScreenState();
+}
+
+class _QueuedEpisodeScreenState extends State<_QueuedEpisodeScreen> {
+  ({String channelId, String channelName, ChannelVideo video})? _listed;
+  bool _searching = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _find();
+  }
+
+  Future<void> _find() async {
+    final hit = await channelCache.findVideoAsync(widget.youtubeId);
+    if (!mounted) return;
+    setState(() {
+      _listed = hit;
+      _searching = false;
+    });
+    if (hit != null) {
+      setPageMeta(title: '${hit.video.displayTitle} – DOMOVINA.ai');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final listed = _listed;
+
+    if (_searching) {
+      return Scaffold(
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
+        body: const SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    // ID nije ni u jednom kanalu — to je prava 404, ne epizoda u obradi.
+    if (listed == null) {
+      return _NotFoundScreen(youtubeId: widget.youtubeId);
+    }
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      appBar: AppBar(
+        title: _Breadcrumb(
+          channelName: listed.channelName,
+          channelSlug: listed.channelId,
+          episodeTitle: listed.video.displayTitle,
+        ),
+        titleSpacing: 0,
+      ),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      listed.video.displayTitle,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      listed.video.date ?? listed.channelName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    InAppYouTubePlayer(
+                      videoId: widget.youtubeId,
+                      posterUrl: CdnConfig.thumbnailUrl(widget.youtubeId),
+                    ),
+                    const SizedBox(height: 20),
+                    EpisodeStatusCard(
+                      status: EpisodeStatus.measured(
+                        hasInfo: false,
+                        hasMedia: false,
+                        hasTranscript: false,
+                        hasSummary: false,
+                        hasArticle: false,
+                        hasMagisterium: false,
+                      ),
+                      footnote: l.episodeStatusNotOnCdn(widget.youtubeId),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      onPressed: () => openUrl(
+                        'https://www.youtube.com/watch?v=${widget.youtubeId}',
+                      ),
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: Text(l.episodeOpenOnYouTube),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Prava 404 — ID ne postoji ni na CDN-u ni u jednom channel listingu.
+class _NotFoundScreen extends StatelessWidget {
+  final String youtubeId;
+
+  const _NotFoundScreen({required this.youtubeId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.video_file_outlined, size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  l.episodeNotFoundDetailed(youtubeId),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  CdnConfig.infoUrl(youtubeId),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () => context.go('/'),
+                  icon: const Icon(Icons.arrow_back),
+                  label: Text(l.commonBack),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -2189,6 +2357,20 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
     final showVideo = _videoReady && width > 1100;
+    // Ugrađeni YouTube ima smisla samo kad kod nas NEMA što pustiti — inače bi
+    // na stranici bila dva playera. Sintetički ID-evi (X, ne-YT izvori) nemaju
+    // YouTube video iza sebe.
+    final youTubeIsTheOnlyWay =
+        data.status.needsExternalSource && !data.info.isX && data.info.ytMatched;
+    final embedYouTube = youTubeIsTheOnlyWay &&
+        InAppYouTubePlayer.canEmbed(
+          playableInEmbed: data.info.playableInEmbed,
+        );
+    // Web bi embed mogao, ali ga je vlasnik kanala isključio — recimo to
+    // naglas umjesto da korisnika bez objašnjenja izbacimo na youtube.com.
+    final embedBlocked = youTubeIsTheOnlyWay &&
+        youTubeEmbedSupported &&
+        !data.info.playableInEmbed;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
@@ -2247,77 +2429,50 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   children: [
                     HeroSection(info: data.info, youtubeId: data.youtubeId),
                     const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.tertiaryContainer.withAlpha(
-                          140,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.colorScheme.tertiary.withAlpha(80),
-                        ),
+                    // In-app YouTube player — jedina reprodukcija kad medije
+                    // kod nas nema (faza `queued`/`fetched`). Facade, pa
+                    // iframe krene tek na korisnikov tap.
+                    if (embedYouTube) ...[
+                      InAppYouTubePlayer(
+                        videoId: data.youtubeId,
+                        posterUrl: CdnConfig.thumbnailUrl(data.youtubeId),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_outlined,
-                            size: 20,
-                            color: theme.colorScheme.onTertiaryContainer,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l.episodeAiPendingTitle,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        theme.colorScheme.onTertiaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  data.isAudioOnly
-                                      ? l.episodeAiPendingAudio
-                                      : l.episodeAiPendingVideo,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color:
-                                        theme.colorScheme.onTertiaryContainer,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    EpisodeStatusCard(
+                      status: data.status,
+                      audioOnly: data.isAudioOnly,
                     ),
                     const SizedBox(height: 16),
-                    // Audio-only: audio se već reproducira (panel/endDrawer), pa
-                    // nudimo "Slušaj" koji (re)otvara player na mobilnom.
-                    // YT-matched: crveni YouTube watch gumb (video još nije na
-                    // CDN-u). Inače (ne-YT izvor / nema medije): "Otvori izvor".
-                    if (data.isAudioOnly) ...[
-                      if (_videoReady && !showVideo)
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: () =>
-                                _scaffoldKey.currentState?.openEndDrawer(),
-                            icon: const Icon(Icons.headphones),
-                            label: Text(l.episodeListen),
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
+                    // Primarna radnja slijedi FAZU, ne izvor: kad je medija
+                    // kod nas, korisnika vodimo u naš player. Na uskom ekranu
+                    // je player u endDraweru, pa bez ovog gumba na mobitelu
+                    // nema vidljivog načina da se epizoda uopće pusti — dosad
+                    // je i takva epizoda nudila samo odlazak na YouTube.
+                    if (_videoReady && !showVideo)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () =>
+                              _scaffoldKey.currentState?.openEndDrawer(),
+                          icon: Icon(
+                            data.isAudioOnly
+                                ? Icons.headphones
+                                : Icons.play_arrow,
+                          ),
+                          label: Text(
+                            data.isAudioOnly
+                                ? l.episodeListen
+                                : l.episodeWatchOurPlayer,
+                          ),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
-                    ] else if (data.info.isX && data.info.sourceUrl != null)
-                      // X/Twitter izvor: sintetički `id` — NIKAD YouTube link.
-                      // Vodi na izvorni X post (webpage_url).
+                      ),
+                    // X/Twitter izvor: sintetički `id` — NIKAD YouTube link.
+                    // Vodi na izvorni X post (webpage_url).
+                    if (data.info.isX && data.info.sourceUrl != null)
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -2329,20 +2484,37 @@ class _EpisodeContentState extends State<_EpisodeContent>
                           ),
                         ),
                       )
-                    else if (data.info.ytMatched)
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () => openUrl(
-                            'https://www.youtube.com/watch?v=${data.youtubeId}',
-                          ),
-                          icon: const Icon(Icons.smart_display),
-                          label: Text(l.episodeWatchOnYouTube),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF0000),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
+                    // Odlazak na YouTube nosi crveni naglasak SAMO kad je
+                    // doista jedini put do reprodukcije. Kad epizodu možemo
+                    // pustiti sami (embed na stranici ili naš player), spušta
+                    // se na tihu poveznicu da ne konkurira primarnoj radnji.
+                    else if (!data.info.isX && data.info.ytMatched)
+                      Padding(
+                        padding: EdgeInsets.only(top: _videoReady ? 8 : 0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: (embedYouTube || _videoReady)
+                              ? TextButton.icon(
+                                  onPressed: () => openUrl(
+                                    'https://www.youtube.com/watch?v=${data.youtubeId}',
+                                  ),
+                                  icon: const Icon(Icons.open_in_new, size: 18),
+                                  label: Text(l.episodeOpenOnYouTube),
+                                )
+                              : FilledButton.icon(
+                                  onPressed: () => openUrl(
+                                    'https://www.youtube.com/watch?v=${data.youtubeId}',
+                                  ),
+                                  icon: const Icon(Icons.smart_display),
+                                  label: Text(l.episodeWatchOnYouTube),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFF0000),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
                         ),
                       )
                     else if (data.info.sourceUrl != null)
@@ -2354,6 +2526,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
                           label: Text(l.commonOpenSource),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                    if (embedBlocked)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          l.episodeEmbedBlocked,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),

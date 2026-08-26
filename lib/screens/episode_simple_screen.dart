@@ -28,6 +28,7 @@ import '../services/seek_undo.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
+import '../widgets/episode_status_card.dart';
 import '../widgets/anonymous_signin_bar.dart';
 import '../widgets/audio_poster.dart';
 import '../widgets/clip_share_sheet.dart';
@@ -1034,27 +1035,36 @@ class _PlayerTab extends StatelessWidget {
                     onYouTubeMode: youTubeEmbedSupported ? onEnterYtMode : null,
                   )
                 : !hasMedia
-                ? ColoredBox(
-                    color: Colors.black,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.music_off,
-                            color: Colors.white54,
-                            size: 40,
+                // Medije kod nas nema — umjesto mrtve crne plohe ponudi
+                // ugradeni YouTube (na nativeu facade otvori youtube.com).
+                // Sinteticki ID-evi (X / ne-YT izvori) nemaju sto ugraditi.
+                ? (!data.info.isX && data.info.ytMatched
+                    ? InAppYouTubePlayer(
+                        videoId: data.youtubeId,
+                        posterUrl: CdnConfig.thumbnailUrl(data.youtubeId),
+                        playableInEmbed: data.info.playableInEmbed,
+                      )
+                    : ColoredBox(
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.music_off,
+                                color: Colors.white54,
+                                size: 40,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                l.episodeMediaUnavailable,
+                                style: const TextStyle(color: Colors.white70),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            l.episodeMediaUnavailable,
-                            style: const TextStyle(color: Colors.white70),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
+                        ),
+                      ))
                 : Container(
                     color: Colors.black,
                     child: info.thumbnail.isNotEmpty
@@ -1451,37 +1461,12 @@ class _InfoTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Pending pipeline banner — only when AI nije gotov.
+        // Napredak obrade — ista kartica kao na detaljnom ekranu, pa oba
+        // pogleda o istoj epizodi kazu istu stvar.
         if (summary == null) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.tertiaryContainer.withAlpha(140),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.tertiary.withAlpha(80),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.auto_awesome_outlined,
-                  size: 18,
-                  color: theme.colorScheme.onTertiaryContainer,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    l.episodeAiPendingInfo,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onTertiaryContainer,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          EpisodeStatusCard(
+            status: data.status,
+            audioOnly: data.isAudioOnly,
           ),
           const SizedBox(height: 16),
         ],
