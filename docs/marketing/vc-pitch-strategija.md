@@ -130,7 +130,7 @@ zanemariv, a izdavanje vlastitog tokena traži licencu. Zato je u decku to
 | # | slajd | rečenica koja nosi slajd |
 |---|---|---|
 | 1 | Naslov | „Brand kupuje trenutak, ne publiku." |
-| 2 | Problem | „Od oglašivačeve kune do kreatora stigne 25 do 40 lipa — i najveći gubitak je *prije* nego platforma išta podijeli." |
+| 2 | Problem | „Od oglašivačeva eura do kreatora stigne 25 do 40 centi — i najveći gubitak je *prije* nego platforma išta podijeli." |
 | 3 | Uvid | „Nitko ne prodaje trenutak. Provjerili smo — te sposobnosti nema ni kod koga." |
 | 4 | Proizvod | „Ne 'podcast o poduzetništvu', nego devet minuta o tome kako mali poduzetnik dolazi do kapitala." |
 | 5 | Mehanizam | „Kod nas se oglašivač koji ispadne nije opekao — reklamirao se besplatno i još zaradio." |

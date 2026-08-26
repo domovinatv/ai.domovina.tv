@@ -44,13 +44,13 @@ pripisati **nijednoj** identificiranoj strani u lancu.
 
 **ANA (SAD, prosinac 2023.)**, 123 M$ potrošnje i 35,5 mlrd prikaza: **71 %**
 stigne do izdavača, ali od toga **35 % otpada** na nevidljivo/nemjerljivo, pa je
-stvarno radno oglašavanje („TrueAdSpend") **36 %** izvorne kune.
+stvarno radno oglašavanje („TrueAdSpend") **36 %** izvornog eura.
 [ANA](https://www.ana.net/content/show/id/media-programmatic-transparency)
 
-Složiš li dva učinka, kreator na platformi vidi **negdje između 25 i 40 lipa po
-oglašivačevoj kuni**. Izravan posao nema taj lanac uopće.
+Složiš li dva učinka, kreator na platformi vidi **negdje između 25 i 40 centi po
+oglašivačevu euru**. Izravan posao nema taj lanac uopće.
 
-> **Oprez (naša vlastita brojka)**: raspon „25–40 lipa" je *naš izračun* iz gornja
+> **Oprez (naša vlastita brojka)**: raspon „25–40 centi" je *naš izračun* iz gornja
 > dva izvora, nije citat. ISBA studija II (2023.) navodno je pokazala poboljšanje,
 > ali točan novi postotak nije potvrđen — primarni PDF vraća 403.
 
@@ -63,7 +63,7 @@ oglašivačevoj kuni**. Izravan posao nema taj lanac uopće.
 | | YouTube | Meta (FB/IG) | TikTok | LinkedIn | Spotify | **DOMOVINA.ai** |
 |---|---|---|---|---|---|---|
 | Objavljena podjela | **55 / 45** duga forma; **45 / 55** Shorts — *SLUŽBENO* | „55/45" svugdje u tisku, ali **nije na Metinoj živoj stranici** — *IZVJEŠTENO* | **nema objavljene podjele**; neproziran RPM (TikTok to sam priznaje) | **nema programa**; BrandLink dijeli s ~30 pozvanih, postotak **nije objavljen** | **50 / 50** — *SLUŽBENO*, najtransparentnija od svih | **100 / 0** na primarnoj prodaji |
-| Tko plaća platformu | kreator, na svaku kunu | kreator | kreator | — | kreator | **samo preprodavatelj**, 15 % razlike |
+| Tko plaća platformu | kreator, na svaki euro | kreator | kreator | — | kreator | **samo preprodavatelj**, 15 % razlike |
 | Tipičan RPM/CPM | ~1–5 $, do 8–11 $ u financijama — *IZVJEŠTENO* | 0,01–0,06 $ / 1000 (Reels) — *IZVJEŠTENO* | 0,40–1,00 $ / 1000, u padu 2026. — *IZVJEŠTENO* | — | — | cijena je **za posjed trenutka**, ne za prikaz |
 | Prag i isplata | 100 $, ~30–45 dana | | RH **vjerojatno isključena** iz Creator Rewards | nedostupno | | postojeća SEPA/EURe šina |
 | Zna li tko ga oglašava | **ne** | **ne** | **ne** | — | **ne** | **da**, poimence |
