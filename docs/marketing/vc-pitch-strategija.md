@@ -185,3 +185,25 @@ oslabljuješ.
 Sve ostale brojke koje se pojave u razgovoru provjeri u
 [`../oglasni-prostor-trziste-i-usporedba.md`](../oglasni-prostor-trziste-i-usporedba.md) §7
 prije nego ih izgovoriš.
+
+---
+
+## 9. Sljedeći krug — otvoreno na decku (26.8.2026.)
+
+Prva verzija decka je objavljena i pregledana. Otvoreno, redom po prioritetu:
+
+1. **Deck mora biti na engleskom.** Hrvatska verzija je poslužila za provjeru
+   razumijevanja, ali fondovi ga dobivaju na engleskom. Ne prevoditi doslovno —
+   u hrvatskoj verziji ima konstrukcija koje nisu u duhu jezika i ne smiju se
+   prenijeti u engleski.
+2. **UI se raspada na slajdovima 4, 7 i 12.** Slajd 4: `.tlabels` flex labele se
+   preklapaju. Slajdovi 7 i 12 prelijevaju vertikalno na nižim viewportima.
+   Testirati na 390 px širine i 1280×720.
+3. **Valuta na slajdu 2 nije ispravljena.** Dokumenti su popravljeni (commit
+   `8954fb4`), deck još kaže „kune" i „lipe". Hrvatska je na euru od 1.1.2023.
+   `airKUNA`/`KUNA` kao ime planiranog EUR stablecoina ostaje.
+4. **Financijski model ne postoji.** Iznos od €1,2 M izveden je iz objavljenih
+   raspona fondova, ne iz modela. Prije prvog sastanka treba barem gruba
+   projekcija troška po vertikali.
+5. **CPM za hrvatski podcast i dalje nedostaje.** Ako netko u sobi ima taj
+   podatak, to je najkorisnija stvar koju taj sastanak može dati.
