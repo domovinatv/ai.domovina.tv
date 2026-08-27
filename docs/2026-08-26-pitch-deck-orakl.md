@@ -75,7 +75,7 @@ Vremenska os slajda 4 imala je tri flex labele s `flex:1442 / 625 / 4147`, tj.
 labela je bila **proporcionalna segmentu** na koji pokazuje. Ta srednja dobila
 je **114 px** za cijelu rečenicu i prelomila se u pet redaka.
 
-Popravak: os nosi samo `00:00` / `1:44:06`, a objašnjenje je callout **pune
+Popravak: os nosi samo `00:00` / `1:44:04`, a objašnjenje je callout **pune
 širine** ispod. Veza je boja, ne poravnanje.
 
 ## 3. Gustoća se ne piše u px nego u tokenima
@@ -94,14 +94,31 @@ kartice inače prelome u 2×2 i slajd naraste za 83 px.
 
 Slajd 4 je do 26.8. crtao 11 nasumičnih segmenata i **izmišljeni citat**
 („Kako mali poduzetnik u Hrvatskoj skuplja kapital?"). Ispalo je da ta epizoda
-**postoji**: `WRE248YCIeI`, *#005 Marijana Šarolić Robić (CroStartup)*, 1:44:06,
-**85 strojno detektiranih poglavlja**, a poglavlje na 24:35 nosi gotovo doslovno
+**postoji**: `WRE248YCIeI`, *#005 Marijana Šarolić Robić (CroStartup)*, 1:44:07,
+**85 strojno detektiranih poglavlja**, a poglavlje na 24:04 nosi gotovo doslovno
 tu rečenicu.
 
 Danas slajd crta **pravu mapu tih 85 poglavlja u pravom mjerilu** (iz
-`get_episode` preko `mcp.domovina.link`), istaknuti blok 24:35–31:40 su tri
+`get_episode` preko `mcp.domovina.link`), istaknuti blok 24:04–28:32 su tri
 stvarna uzastopna poglavlja o prikupljanju kapitala, i izvor nosi klikabilnu
 poveznicu.
+
+**Ispravak 27.8.2026.** Prva verzija ovog odjeljka i sam deck pisali su
+`1:44:06` i blok `24:35–31:40`. Oboje je bilo krivo, i oboje je našao orakl:
+`get_episode` vraća `duration_sec = 6244` (**1:44:04**, isti broj daje i zbroj
+segmenata trake), a stari blok je presijecao **šest** poglavlja umjesto tri —
+prvo i zadnje samo djelomično, pa je traka imala 87 segmenata umjesto 85.
+Poravnavanjem na granice poglavlja (**1444–1712 s**, 4 min 28 s) i jedno i
+drugo se zatvara, a natpis „85 chapters" postaje doslovno provjerljiv.
+
+**Dvije mjere, ne jedna.** 6244 s je kraj **zadnjeg poglavlja** i točan je za os
+trake; sam video traje **6247 s (1:44:07)** —
+`cdn.domovina.ai/channels/data/domovina_tv.json`, polja `duration_seconds` i
+`duration_display`. Prva ispravka je obje brojke izjednačila na 1:44:04, što je
+točno za os a tri sekunde prekratko za epizodu. Slajd sada nosi obje i kaže
+koja je koja. **Rule**: kad dvije mjerne točke mjere skoro istu stvar, slajd
+mora reći koju od njih pokazuje — inače je usklađivanje na jednu brojku samo
+druga vrsta greške.
 
 **Rule**: primjer u decku se **vadi iz MCP-a, ne piše rukom**. Ono što razlikuje
 generiran deck od pravog nije tipografija nego postojanje artefakta koji je

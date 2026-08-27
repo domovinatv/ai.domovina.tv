@@ -18,7 +18,7 @@
       "datum": "datum na koji vrijednost vrijedi (za zive brojace: datum mjerenja)",
       "izvod": "null ako brojka nije izvedena; inace doslovan racun",
       "izveden": "bool, kapija za obavezan izvod",
-      "snaga": "primarni-url | interno-mjerenje | interni-dokument",
+      "snaga": "primarni-url | interno-mjerenje | interni-dokument | izvedeno (agregat iz drugih unosa; trazi izvod, nema vlastitu naredbu)",
       "naredba": "obavezna kad je snaga interno-mjerenje",
       "slajdovi": "na kojima se slajdovima koristi",
       "pojava": "doslovni isjecci teksta decka po kojima provjera nalazi upotrebu",
@@ -47,7 +47,8 @@
       "^\\d{1,2}:\\d{2}(:\\d{2})?$"
     ],
     "zanemarive_znamenke_zasto": "Numeracija slajda, gola godina i vremenska oznaka na traci nose layout ili identitet decka, ne tvrdnju, i nikad nece imati unos.",
-    "provjereno-zivo-27-08-2026": "svi gornji URL-ovi odgovaraju 2xx; mcp.domovina.link vraca 401 na goli GET (autorizacija, ne smrt)"
+    "provjereno-zivo-27-08-2026": "svi gornji URL-ovi odgovaraju 2xx; mcp.domovina.link vraca 401 na goli GET (autorizacija, ne smrt)",
+    "model_troska": "docs/marketing/model-troska-po-vertikali.md"
   },
   "podaci": {
     "primarna-prodaja-kreatoru": {
@@ -182,10 +183,12 @@
       "izveden": false,
       "snaga": "primarni-url",
       "slajdovi": [
-        2
+        2,
+        13
       ],
       "pojava": [
-        "55/45"
+        "55/45",
+        "45% YouTube"
       ],
       "napomena": "Doslovno sa sluzbene stranice, provjereno 27.8.2026.: 55 % neto prihoda kreatoru na Watch Page, 45 % kreatoru na Shortsima. Platformin rez je zato 45–55 % — ali samo za YouTube. Na slajdu 13 se ista podjela pojavljuje kao rez platforme 45-55 % i ondje je zasebno pitanje — vidi nedokazivo/meta-rez-45-55."
     },
@@ -198,10 +201,12 @@
       "izveden": false,
       "snaga": "primarni-url",
       "slajdovi": [
-        2
+        2,
+        13
       ],
       "pojava": [
-        "50/50"
+        "50/50",
+        "50% Spotify"
       ],
       "napomena": "Sluzbeno: 50 % udjela u prihodu od oglasa koje monetizira Spotify. URL je nadjen tek 27.8.2026.; ranija putanja podcasters.spotify.com/... vraca 404, a support.spotify.com/us/artists/... vraca HTTP 200 sa 404 stranicom (meki 404 — HEAD i status nisu dokaz)."
     },
@@ -289,14 +294,9 @@
       "izveden": false,
       "snaga": "interno-mjerenje",
       "ziva": true,
-      "slajdovi": [
-        7,
-        11
-      ],
-      "pojava": [
-        "25,500"
-      ],
-      "napomena": "Ne pojavljuje se u decku doslovno, ali je NAZIVNIK inventara od ~25.500. Razlika prema 3.157 (RAG indeks) je 31 epizoda i dvije razlicite mjerne tocke."
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Nakon T4 vise nije u decku ni posredno — inventar se izvodi iz 3.157. Ostaje kao INTERNI podatak jer je nazivnik za trosak po satu u model-troska-po-vertikali.md i jer je izvor za 3.047 h. Razlika prema 3.157 je 32 epizode i dvije razlicite mjerne tocke (platforma vs RAG indeks). Napomena o zivosti: u jednom danu 27.8. porastao je s 3.188 na 3.189."
     },
     "korpus-odlomci": {
       "vrijednost": 144294,
@@ -335,12 +335,12 @@
       "napomena": "Deck pise raspon 2016–2026; najnovija epizoda u indeksu je 30.7.2026."
     },
     "inventar-slotova": {
-      "vrijednost": 25504,
+      "vrijednost": 25256,
       "jedinica": "sponzorskih trenutaka",
-      "izvor": "interna mjerna tocka: audit inventara nad produkcijskim CDN-om",
-      "naredba": "cd ~/git/domovinatv/domovina.ai && node scripts/audit-ad-slot-inventory.mjs --sample 14",
+      "izvor": "izvedeno iz korpus-epizode-indeksirane (server_info na mcp.domovina.link)",
+      "naredba": "server_info na mcp.domovina.link",
       "datum": "2026-08-27",
-      "izvod": "3.188 epizoda na platformi x 8 slotova po epizodi = 25.504. Odozdo prema gore: brojac epizoda pomnozen pretpostavkom o gustoci slotova, nikad postotak tudjeg trzista. Pretpostavka 8/epizodu je konzervativna prema izmjerenom medijanu od 20 sekcija po epizodi.",
+      "izvod": "3.157 indeksiranih epizoda (server_info) x 8 slotova po epizodi = 25.256, u decku zaokruzeno na ~25.300. Odozdo prema gore: brojac epizoda pomnozen pretpostavkom o gustoci slotova, nikad postotak tudjeg trzista. Pretpostavka 8/epizodu je konzervativna prema izmjerenom medijanu od 20 sekcija po epizodi.",
       "izveden": true,
       "snaga": "interno-mjerenje",
       "ziva": true,
@@ -349,9 +349,9 @@
         11
       ],
       "pojava": [
-        "25,500"
+        "~25,300"
       ],
-      "napomena": "Zaokruzeno u decku na ~25.500. Nazivnik je 3.188 (platforma), a isti slajd 7 pise 3.157 (RAG indeks) — vidi nedokazivo/sukob-brojaca-epizoda."
+      "napomena": "Nakon T4 izveden iz ISTOG brojaca (3.157) iz kojeg dolaze i 3.047 h i 144.294 odlomka. Prije je bio izveden iz 3.188 (CDN audit) na slajdu koji pise 3.157."
     },
     "sekcija-po-epizodi-medijan": {
       "vrijednost": 20,
@@ -396,8 +396,10 @@
       "slajdovi": [
         4
       ],
-      "pojava": [],
-      "napomena": "Deck pise 1:44:06 na dva mjesta. To je 2 s vise od izvora I od vlastite trake. Vidi nedokazivo/trajanje-epizode-144-06."
+      "pojava": [
+        "1:44:04"
+      ],
+      "napomena": "6244 s = 1:44:04 je kraj ZADNJEG POGLAVLJA i to je ono do cega ide os trake. Trajanje samog videa je 6247 s = 1:44:07 (cdn.domovina.ai/channels/data/domovina_tv.json). Deck sada pise 1:44:04 na oba mjesta; za os je tocno, za natpis o duljini epizode je 3 s kratko — vidi nedokazivo/trajanje-epizode-dvije-mjere."
     },
     "epizoda-poglavlja": {
       "vrijednost": 85,
@@ -414,43 +416,43 @@
       "pojava": [
         "85 chapters"
       ],
-      "napomena": "Brojka je tocna. Traka na slajdu ipak crta 87 segmenata — dva viska nastaju jer istaknuti blok sijece dva poglavlja. Vidi nedokazivo/traka-87-segmenata."
+      "napomena": "Brojka je tocna: 26 + 31 + 28 = 85. Nakon T4 traka crta tocno 85 segmenata jer blok vise ne sijece nijedno poglavlje."
     },
     "blok-pocetak": {
-      "vrijednost": 1475,
+      "vrijednost": 1444,
       "jedinica": "s",
       "izvor": "zbroj flex vrijednosti segmenata prije prvog .seg.hot u domovina-seed.html; poveznica https://domovina.ai/v/WRE248YCIeI/t/1475",
       "naredba": "grep -oE 'class=\"seg[^\"]*\" style=\"flex:[0-9]+' docs/marketing/deck/domovina-seed.html",
       "datum": "2026-08-27",
-      "izvod": "1475 s = 24:35; deep link t/1475 odgovara 200",
+      "izvod": "1444 s = 24:04. Granica poglavlja u outline.json, ne proizvoljan rez. Deep link https://domovina.ai/v/WRE248YCIeI/t/1444 odgovara 200.",
       "izveden": true,
       "snaga": "interno-mjerenje",
       "slajdovi": [
         4
       ],
       "pojava": [
-        "24:35",
-        "t/1475"
+        "24:04",
+        "t/1444"
       ],
-      "napomena": "Nije granica poglavlja. Poglavlje traje 1444–1525, pa blok pocinje 31 s unutar njega."
+      "napomena": "Nakon T4 blok je poravnat na granice poglavlja. Prije je pocinjao na 1475, sto je padalo 31 s unutar poglavlja."
     },
     "blok-trajanje": {
-      "vrijednost": 425,
+      "vrijednost": 268,
       "jedinica": "s",
       "izvor": "zbroj flex vrijednosti .seg.hot segmenata u domovina-seed.html",
       "naredba": "grep -oE 'class=\"seg hot\" style=\"flex:[0-9]+' docs/marketing/deck/domovina-seed.html",
       "datum": "2026-08-27",
-      "izvod": "1900 s (31:40) - 1475 s (24:35) = 425 s = 7 min 05 s",
+      "izvod": "1712 s (28:32) - 1444 s (24:04) = 268 s = 4 min 28 s. Obje granice su granice poglavlja.",
       "izveden": true,
       "snaga": "interno-mjerenje",
       "slajdovi": [
         4
       ],
       "pojava": [
-        "7 min 05 s",
-        "31:40"
+        "4 min 28 s",
+        "28:32"
       ],
-      "napomena": "Aritmetika je tocna. Broj poglavlja koji blok pokriva nije — vidi nedokazivo/blok-tri-poglavlja."
+      "napomena": "Zbroj .seg.hot flexova mora biti 268, a ukupan zbroj trake 6244."
     },
     "epizoda-citat": {
       "vrijednost": "Tako da pita frenda ili mamu",
@@ -497,7 +499,7 @@
         5
       ],
       "pojava": [
-        "72"
+        "72 hours to match"
       ],
       "napomena": null
     },
@@ -565,7 +567,7 @@
         "Paid €400",
         "€450",
         "€520",
-        "€600",
+        "€600 Gets the moment",
         "€30"
       ],
       "napomena": "Deck sam kaze da je ovo ilustrativna aritmetika a ne cjenik. Vazno je da izvod postoji jer je slajd 5 jedino mjesto gdje se mehanizam vidi u brojkama."
@@ -793,16 +795,36 @@
       "izvod": null,
       "izveden": false,
       "snaga": "primarni-url",
-      "slajdovi": [],
-      "pojava": [],
-      "napomena": "IAB/PwC Internet Advertising Revenue Report: 2,862 mlrd USD u 2025., rast 17,6 %. NE koristi se u decku — deck umjesto toga tvrdi da SAD prelazi 3 mlrd u 2026., a to nijedan izvor ne kaze. Vidi nedokazivo/us-prelazi-3-mlrd."
+      "slajdovi": [
+        11
+      ],
+      "pojava": [
+        "$2.86bn"
+      ],
+      "napomena": "Nakon T4 JEST u decku, i to kao izmjerena godina umjesto projekcije koju nijedan izvor ne daje. Izvor navodi 2,862 mlrd USD; deck zaokruzuje na 2,86."
+    },
+    "us-podcast-rast-2025": {
+      "vrijednost": 17.6,
+      "jedinica": "%",
+      "izvor": "https://radioink.com/2026/04/16/iab-digital-audio-grew-10-in-2025-as-podcasts-near-3b/",
+      "datum": "2026-08-27",
+      "izvod": null,
+      "izveden": false,
+      "snaga": "primarni-url",
+      "slajdovi": [
+        11
+      ],
+      "pojava": [
+        "17.6%"
+      ],
+      "napomena": "IAB/PwC Internet Advertising Revenue Report, rast 2025. prema 2024. Baza je 2,862 mlrd USD iz istog izvora — brojnik i nazivnik su zajedno na slajdu."
     },
     "pilot-pratitelji": {
-      "vrijednost": 29,
+      "vrijednost": 28,
       "jedinica": "pratitelja",
       "izvor": "https://cdn.domovina.ai/channels/data/index.json (kanal domovina_tv, polje follower_count)",
       "naredba": "curl -s https://cdn.domovina.ai/channels/data/index.json | python3 -c \"import json,sys; d=json.load(sys.stdin); ch=d if isinstance(d,list) else d['channels']; print([c['follower_count'] for c in ch if c['id']=='domovina_tv'])\"",
-      "datum": "2026-08-27",
+      "datum": "2026-08-26",
       "izvod": null,
       "izveden": false,
       "snaga": "interno-mjerenje",
@@ -814,7 +836,7 @@
       "pojava": [
         "28 followers"
       ],
-      "napomena": "Deck pise 28. To je bila tocna vrijednost 26.8.2026.; 27.8. je 29. Brojac raste sam od sebe pa u decku mora nositi datum. §7 zabranjuje SVAKU tvrdnju o dosegu vecu od izmjerene — podcjenjivanje je sigurno, precjenjivanje nije."
+      "napomena": "28 je izmjereno 26.8.2026. i deck sada nosi taj datum na oba mjesta. Ponovno mjereno 27.8.2026.: 29. Deck NAMJERNO ostaje na 28 — §7 zabranjuje svaku tvrdnju o dosegu vecu od izmjerene, pa je podcjenjivanje sigurno a precjenjivanje nije. Kad se brojka osvjezava, mijenja se i datum uz nju."
     },
     "pilot-epizode": {
       "vrijednost": 7,
@@ -1057,6 +1079,55 @@
         "1 foreign vertical in the corpus"
       ],
       "napomena": null
+    },
+    "namjena-osnivac": {
+      "vrijednost": 120,
+      "jedinica": "tis. EUR",
+      "izvor": "docs/marketing/vc-pitch-strategija.md §2 (tablica namjene)",
+      "datum": "2026-08-26",
+      "izvod": null,
+      "izveden": false,
+      "snaga": "interni-dokument",
+      "slajdovi": [
+        16
+      ],
+      "pojava": [
+        "€120K"
+      ],
+      "napomena": "Osnivac i customer development. Nakon T4 deck imenuje i preostale stavke, ne samo cetiri najvece."
+    },
+    "namjena-rezerva": {
+      "vrijednost": 600,
+      "jedinica": "tis. EUR",
+      "izvor": "docs/marketing/vc-pitch-strategija.md §2 (tablica namjene)",
+      "datum": "2026-08-26",
+      "izvod": null,
+      "izveden": false,
+      "snaga": "interni-dokument",
+      "slajdovi": [
+        16
+      ],
+      "pojava": [
+        "€600K"
+      ],
+      "napomena": "Rezerva i operativa."
+    },
+    "namjena-prikazano": {
+      "vrijednost": 480,
+      "jedinica": "tis. EUR",
+      "izvor": "izvedeno iz cetiri prikazane stavke namjene",
+      "datum": "2026-08-26",
+      "izvod": "200 + 150 + 70 + 60 = 480 tis. EUR; ostatak do 1,2 M je 720 tis. (120 osnivac + 600 rezerva).",
+      "izveden": true,
+      "snaga": "interni-dokument",
+      "slajdovi": [
+        16
+      ],
+      "pojava": [
+        "€480K",
+        "€720K"
+      ],
+      "napomena": "Nakon T4 slajd 16 sam kaze koliko prikazane stavke daju i sto je ostatak."
     }
   },
   "pripremljeno": {
@@ -1143,6 +1214,181 @@
       "slajdovi": [],
       "pojava": [],
       "napomena": "POTVRDJENO 27.8.2026.: 1. mjesto, 35.333 doprinosa, ljestvica generirana 25.8.2026. u 07:45 UTC. ZIVA LJESTVICA — mijenja se, mjeri zadnjih 12 mjeseci i filtrira po polju location='Croatia'. Ako ikad ude u deck, mora nositi datum generiranja ljestvice, a ne datum decka."
+    },
+    "modal-a100-40-cijena": {
+      "vrijednost": 0.000583,
+      "jedinica": "USD/s",
+      "izvor": "https://modal.com/pricing",
+      "datum": "2026-08-27",
+      "izvod": null,
+      "izveden": false,
+      "snaga": "primarni-url",
+      "ziva": true,
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "$2,099/h. Potvrdjeno 27.8.2026., identicno pretpostavci iz fetch.domovina.tv/docs/transcription_colab_vs_modal_cost_2026-07.md §4.1. Cjenik se moze promijeniti, zato ziva."
+    },
+    "asr-rtf": {
+      "vrijednost": 0.0046,
+      "jedinica": "RTF (inference/zvuk)",
+      "izvor": "interna mjerna tocka: jedna datoteka od 1303,9 s na Modal A100-40GB",
+      "naredba": "modal run modal_canary/canary_modal.py::main --wav <wav>  (u ~/git/domovinatv/fetch.domovina.tv)",
+      "datum": "2026-08-27",
+      "izvod": "6 s inference / 1303,9 s zvuka = 0,0046, odnosno 217x realtime. Neovisna potvrda: batch od 115 epizoda 29.7.2026. dao je 28,7 min inferencea na 82,1 h zvuka = RTF 0,00583 (172x). Dvije mjere se slazu unutar 25 %.",
+      "izveden": true,
+      "snaga": "interno-mjerenje",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "RTF je IZMJEREN, ne pretpostavljen, kako plan kruga 2 trazi. Peak VRAM 12,68 od 39,5 GB."
+    },
+    "asr-cijena-po-satu": {
+      "vrijednost": 0.014,
+      "jedinica": "EUR po satu zvuka",
+      "izvor": "izvedeno iz modal-a100-40-cijena i batch mjerenja 29.7.2026.",
+      "datum": "2026-08-27",
+      "izvod": "Batch 115 ep / 82,1 h: wall clock 38,2 min = 2292 s x $0,000583 = $1,336; / 82,1 h = $0,0163/h; / 1,1669 = 0,0140 EUR/h. Donja granica (samo inference, 1722 s) je $0,0122/h. Ad-hoc rezim za istu kolicinu daje $0,267/h, 17x skuplje, jer svaki poziv placa cold start (40 s) i scaledown (120 s) — nova vertikala je bulk unos pa vrijedi batch.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Uzeta GORNJA granica batcha, konzervativno."
+    },
+    "diarizacija-rtf": {
+      "vrijednost": 0.0518,
+      "jedinica": "RTF (wall/zvuk)",
+      "izvor": "interna mjerna tocka: pyannote 3.1 na M4 Pro (MPS), 1303,9 s zvuka",
+      "naredba": "HF_HOME=~/.config/bizops/hf-cache HF_HUB_OFFLINE=1 python3 diarize.py --wav <wav> --srt <srt> --output <out> --hf-token $HF_TOKEN",
+      "datum": "2026-08-27",
+      "izvod": "67,5 s wall / 1303,9 s zvuka = 0,0518, odnosno 19,3x realtime, 3 govornika. Sest produkcijskih snimki od 2-5 min daje RTF 0,115 jer fiksno ucitavanje modela dominira kratkim datotekama.",
+      "izveden": true,
+      "snaga": "interno-mjerenje",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "NALAZ: docs/diarization_research_2026-05.md tvrdi da je M4 Pro '~real-time wall-clock' i na tome gradi odluku 'diariziraj na Macu'. Odluka stoji, ali broj je pogresan za ~20x u nasu korist."
+    },
+    "llm-cijena-po-epizodi": {
+      "vrijednost": 0.0885,
+      "jedinica": "USD po epizodi (medijan)",
+      "izvor": "interna mjerna tocka: 546 epizoda s *.gemini_usage.json",
+      "naredba": "find ~/git/domovinatv/dataset.domovina.tv/.sync_staging -name '*.gemini_usage.json'",
+      "datum": "2026-08-27",
+      "izvod": "n=546. p25 $0,0592, medijan $0,0885, p75 $0,1324, p90 $0,2052, prosjek $0,1179. Po modelu: 2.5 Flash medijan $0,0722 (n=428), 3.5 Flash medijan $0,1854 (n=114). Prosjecna epizoda traje 57,4 min, pa je medijan po satu zvuka $0,0925 = 0,0793 EUR.",
+      "izveden": true,
+      "snaga": "interno-mjerenje",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Najbolje izmjerena stavka modela. Zapisi nose ispravnu cijenu po modelu (1,50/9,00 za 3.5-flash), provjereno protiv objavljenog cjenika 27.8.2026., pa est_usd nije podcijenjen."
+    },
+    "prostor-po-satu": {
+      "vrijednost": 133,
+      "jedinica": "MB po satu zvuka",
+      "izvor": "interna mjerna tocka: HEAD na cdn.domovina.ai za sest epizoda iz sest kanala",
+      "naredba": "curl -sSI https://cdn.domovina.ai/data/<id>/video_h264.mp4",
+      "datum": "2026-08-27",
+      "izvod": "Video 83-97 MB/h kroz pet nasumicnih kanala (medijan 92). Screenshotovi 44 x 1,66 MB na epizodi od 1,735 h = 40 MB/h (n=1, PRETPOSTAVKA da je gustoca slicna drugdje). Slike i JSON ~0,7 MB/h. Ukupno ~133 MB/h = 0,1299 GB x $0,015/GB-mj = $0,00195/h mjesecno, kroz 18 mjeseci $0,0351 = 0,0301 EUR.",
+      "izveden": true,
+      "snaga": "interno-mjerenje",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "R2 egress je BESPLATAN, pa isporuka sadrzaja ne kosta nista bez obzira na gledanost."
+    },
+    "trosak-po-satu-zvuka": {
+      "vrijednost": "0,123 do 0,322",
+      "jedinica": "EUR po satu zvuka",
+      "izvor": "docs/marketing/model-troska-po-vertikali.md §2.5",
+      "datum": "2026-08-27",
+      "izvod": "Osnovni scenarij (vlastiti Mac za dijarizaciju, medijan LLM): ASR 0,0140 + dijarizacija 0,000 + LLM 0,0793 + prostor 0,0301 = 0,123 EUR/h. Gornji (najmljen GPU, p90 LLM): 0,0140 + 0,0940 + 0,1838 + 0,0301 = 0,322 EUR/h. Udjeli u osnovnom: LLM 64 %, prostor 24 %, ASR 11 %.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Nije uracunato: EN prijevod (udvostrucio bi LLM sloj), Magisterium, RAG embeddingi, yt-dlp egress, ljudski QA, ponovna obrada pri promjeni modela."
+    },
+    "inzenjer-dan": {
+      "vrijednost": 264.55,
+      "jedinica": "EUR po inzenjer-danu",
+      "izvor": "izvedeno iz docs/marketing/vc-pitch-strategija.md §2 (2 inzenjera, ~200 tis. EUR, 18 mjeseci)",
+      "datum": "2026-08-26",
+      "izvod": "200.000 EUR / 2 inzenjera / 18 mjeseci = 5.555,56 EUR po inzenjer-mjesecu; / 21 radni dan = 264,55 EUR po inzenjer-danu. Namjerno NE trzisna satnica — pitanje je sto vertikala kosta nas iz ovog budzeta.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "OGRANICENJE: 264,55 EUR je PROSJECNA CIJENA DANA IZ BUDZETA, ne oportunitetni trosak. Formula tretira svaki dan kao slobodan za novu vertikalu, a isti par inzenjera istovremeno duguje cetiri prekretnice plus dovrsetak on-chain isplate kreatorima (slajd 14). Dan na vertikali je dan koji nije otisao na prekretnicu, i model taj gubitak ne racuna. To je isto usko grlo koje slajd 15 priznaje za jednog osnivaca, samo sakriveno iza cistog broja po danu. Ako se stavka od 200 tis. u §2 promijeni, mijenja se i ova brojka."
+    },
+    "inzenjer-dani-po-vertikali": {
+      "vrijednost": "15 do 60",
+      "jedinica": "inzenjer-dana (PRETPOSTAVKA)",
+      "izvor": "docs/marketing/model-troska-po-vertikali.md §4.2",
+      "datum": "2026-08-27",
+      "izvod": "NIJE MJERENJE. Razlozeno na pet poslova koji su dokumentirani drugdje: onboarding kanala 3-10, jezicni par i validacija ASR-a 2-8 (modal_canary/README: nema auto-detecta), prilagodba promptova 5-20, ugadjanje dijarizacije 2-10 (A/B: pyannote eksplodira do 29 govornika na sumnom audiju), QA prvih N epizoda 3-12.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "NAJSLABIJA VELICINA U MODELU i jedina koja nije izmjerena. Zatvara je: instrumentirati sljedecu vertikalu — biljeziti dane po tih pet poslova od prvog commita do prve zive epizode."
+    },
+    "trosak-vertikale": {
+      "vrijednost": "3.990 do 16.854",
+      "jedinica": "EUR po vertikali",
+      "izvor": "docs/marketing/model-troska-po-vertikali.md §4.3",
+      "datum": "2026-08-27",
+      "izvod": "compute (181 h x 0,123 = 22 EUR do 3.048 h x 0,322 = 981 EUR) + inzenjering (15 x 264,55 = 3.968 EUR do 60 x 264,55 = 15.873 EUR). Rubne tocke velicine vertikale NISU izabrane: donja je 5 kanala jer prekretnica iz vc-pitch-strategija.md §2 obecava 20 trenutaka kroz najmanje 5 kanala, gornja je 48 kanala jer ih toliko ima nasa postojeca vertikala. Vertikala od 3.048 sati kosta 9 % vise od one od 181 sata — sedamnaest puta vise sadrzaja za devet posto veci trosak.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Brojka govori o NOVCU, ne o vremenu. Cijena vertikale je niska, raspolozivost inzenjera nije rijesena — vidi kapacitet-inzenjera. Prekretnica '3 vertikale' = 11.970-50.562 EUR, odnosno 1-4 % traska ali 6-24 % inzenjerskog kapaciteta."
+    },
+    "float-izvod": {
+      "vrijednost": "219 do 6.569",
+      "jedinica": "EUR prosjecnog floata pri obecanim prekretnicama",
+      "izvor": "docs/marketing/model-troska-po-vertikali.md §7",
+      "datum": "2026-08-27",
+      "izvod": "prosjecan float = broj trenutaka x cijena x (dani zadrzavanja / 548). Donja: 20 x 200 EUR x 30/548 = 219 EUR (prinos 4,93 EUR/god pri 2,25 %). Gornja: 20 x 2.000 EUR x 90/548 = 6.569 EUR (147,8 EUR/god). Cijena trenutka je PRETPOSTAVKA jer CPM javno ne postoji (§7). Za float od 45 M EUR uz cijenu 1.000 EUR i zadrzavanje 30 dana treba 822.000 trenutaka u 18 mjeseci — 41.000x vise od obecanih dvadeset.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Razlika prema 45 M EUR sa slajda 9 je cetiri reda velicine. 45 M je izveden UNATRAG iz zeljenog prinosa (1 M / 2,25 % = 44,4 M), dakle odozgo prema dolje — tocno ono sto se u ovoj vertikali zabranjuje. Pripada airKUNA sloju na skali, ne ovom asku."
+    },
+    "eur-usd": {
+      "vrijednost": 1.1669,
+      "jedinica": "USD za 1 EUR",
+      "izvor": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml",
+      "datum": "2026-08-26",
+      "izvod": null,
+      "izveden": false,
+      "snaga": "primarni-url",
+      "ziva": true,
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "ECB referentni tecaj. Svi USD iznosi u modelu troska pretvoreni su ovim tecajem; mijenja se dnevno."
+    },
+    "kapacitet-inzenjera": {
+      "vrijednost": 756,
+      "jedinica": "inzenjer-dana kroz 18 mjeseci",
+      "izvor": "izvedeno iz docs/marketing/vc-pitch-strategija.md §2 (2 inzenjera, 18 mjeseci)",
+      "datum": "2026-08-26",
+      "izvod": "2 inzenjera x 18 mjeseci x 21 radni dan = 756 inzenjer-dana. Prekretnica '3 vertikale' trosi 3 x 15-60 = 45-180 dana, odnosno 6-24 % ukupnog kapaciteta.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Jedino sto se o kapacitetu moze reci bez izmisljanja. Model NE MOZE reci stane li sve obecano u preostalih 76-94 %, jer nijedna od preostale tri prekretnice nije procijenjena u inzenjer-danima. Zatvara to plan kapaciteta: ista razrada od pet poslova iz §4.2 napravljena i za 20 trenutaka, 5 otkupa i on-chain isplatu, pa zbroj usporediti sa 756. Do tada je posten odgovor na pitanje 'koja prekretnica kasni' da ne znamo."
+    },
+    "velicina-vertikale": {
+      "vrijednost": "5 do 48",
+      "jedinica": "kanala po vertikali",
+      "izvor": "donja granica: docs/marketing/vc-pitch-strategija.md §2 (prekretnica '20 trenutaka kroz najmanje 5 kanala'); gornja: cdn.domovina.ai/channels/data/index.json",
+      "naredba": "curl -s https://cdn.domovina.ai/channels/data/index.json",
+      "datum": "2026-08-27",
+      "izvod": "5 kanala je najmanja vertikala koja moze ispuniti obecanje koje deck vec daje. 48 je opazeno — toliko ih ima nasa postojeca vertikala. Sve izmedju je interpolacija i oznaceno je kao PRETPOSTAVKA.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Broj kanala po scenariju odredjuje raspon troska jednako koliko i inzenjer-dani, pa ne smije sjediti neoznacen uz izmjerenu raspodjelu sati po kanalu."
     }
   },
   "nedokazivo": [
@@ -1169,11 +1415,10 @@
       "slajdovi": [
         11
       ],
-      "pojava": [
-        "the US passes $3bn"
-      ],
+      "pojava": [],
       "zasto": "Nijedan citirani izvor to ne kaze. Radio Ink / IAB-PwC (provjereno 27.8.2026.) mjeri 2,862 mlrd USD za 2025. uz rast od 17,6 % i NE daje projekciju za 2026. Podnews citira Deloitte samo za globalnu brojku. Tvrdnja je nasa ekstrapolacija predstavljena kao podatak.",
-      "sto_bi_ga_zatvorilo": "Ili citirati IAB/PwC 2026. izvjestaj kad izade, ili napisati brojku kao ono sto jest: '2,862 mlrd USD u 2025. (IAB/PwC), rast 17,6 %'. Ako se zadrzi projekcija, izvod mora stajati u decku: 2,862 x 1,176 = 3,37 mlrd."
+      "sto_bi_ga_zatvorilo": "Ili citirati IAB/PwC 2026. izvjestaj kad izade, ili napisati brojku kao ono sto jest: '2,862 mlrd USD u 2025. (IAB/PwC), rast 17,6 %'. Ako se zadrzi projekcija, izvod mora stajati u decku: 2,862 x 1,176 = 3,37 mlrd.",
+      "zatvoreno": "2026-08-27: T4: zamijenjeno izmjerenom godinom — 'the US did $2.86bn in 2025 (IAB/PwC), up 17.6%'."
     },
     {
       "id": "meta-rez-45-55",
@@ -1182,12 +1427,11 @@
       "slajdovi": [
         13
       ],
-      "pojava": [
-        "45–55%"
-      ],
+      "pojava": [],
       "s7": "Metina **ziva** sluzbena podjela 55/45 | nije nadjena na Metinoj stranici; svugdje drugdje da",
       "zasto": "Raspon 45–55 % je tocan za YouTube i potvrdjen na njihovoj stranici. Za Metu ne postoji sluzbeno objavljena podjela — to je doslovno redak §7 popisa nepotvrdjenog. Zajednicki stupac cini nepotvrdjenu brojku dijelom potvrdjene.",
-      "sto_bi_ga_zatvorilo": "Ili razdvojiti stupac (YouTube s brojkom, Meta s crticom i biljeskom 'nije objavljeno'), ili izbaciti Metu iz tablice. Nasa vlastita usporedna tablica u oglasni-prostor-trziste-i-usporedba.md §2.1 to vec radi ispravno."
+      "sto_bi_ga_zatvorilo": "Ili razdvojiti stupac (YouTube s brojkom, Meta s crticom i biljeskom 'nije objavljeno'), ili izbaciti Metu iz tablice. Nasa vlastita usporedna tablica u oglasni-prostor-trziste-i-usporedba.md §2.1 to vec radi ispravno.",
+      "zatvoreno": "2026-08-27: T4: celija razdvojena — '45% YouTube - Meta n/a'. Metina podjela vise nema brojku."
     },
     {
       "id": "acast-megaphone-rez",
@@ -1196,11 +1440,10 @@
       "slajdovi": [
         13
       ],
-      "pojava": [
-        "20–50%"
-      ],
+      "pojava": [],
       "zasto": "Spotifyjevih 50 % je sluzbeno i provjereno. Za Acast i Megaphone nemamo nijedan izvor, ni u decku ni u istrazivackim dokumentima — donja granica od 20 % nije nigdje potkrijepljena.",
-      "sto_bi_ga_zatvorilo": "Sluzbena stranica ili ugovorni uvjeti Acasta i Megaphonea za donju granicu; do tada svesti celiju na ono sto se moze obraniti (Spotify 50 %) i ostalo oznaciti kao neobjavljeno."
+      "sto_bi_ga_zatvorilo": "Sluzbena stranica ili ugovorni uvjeti Acasta i Megaphonea za donju granicu; do tada svesti celiju na ono sto se moze obraniti (Spotify 50 %) i ostalo oznaciti kao neobjavljeno.",
+      "zatvoreno": "2026-08-27: T4: celija svedena na '50% Spotify - others n/a'."
     },
     {
       "id": "sukob-brojaca-epizoda",
@@ -1210,12 +1453,10 @@
         7,
         11
       ],
-      "pojava": [
-        "3,157 episodes",
-        "25,500"
-      ],
+      "pojava": [],
       "zasto": "Dvije mjerne tocke za istu stvar na istom slajdu: server_info broji epizode u RAG indeksu (3.157), a audit CDN-a broji epizode na platformi (3.188). Razlika je 31 epizoda. Investitor koji podijeli 25.500 s 8 dobije 3.188 i pita zasto to nije broj na slajdu — a to je pitanje na koje ne treba trositi minutu sastanka.",
-      "sto_bi_ga_zatvorilo": "Izabrati JEDAN brojac za slajd i izvesti inventar iz njega: ili 3.157 x 8 = 25.256 (~25.300), ili prikazati 3.188 kao broj epizoda i ostaviti 25.504. Isto vrijedi za '3000+ epizoda' gdje god se pojavi izvan decka."
+      "sto_bi_ga_zatvorilo": "Izabrati JEDAN brojac za slajd i izvesti inventar iz njega: ili 3.157 x 8 = 25.256 (~25.300), ili prikazati 3.188 kao broj epizoda i ostaviti 25.504. Isto vrijedi za '3000+ epizoda' gdje god se pojavi izvan decka.",
+      "zatvoreno": "2026-08-27: T4: izabran jedan brojac (3.157, server_info); inventar 3.157 x 8 = 25.256, deck pise ~25,300 na oba slajda."
     },
     {
       "id": "blok-tri-poglavlja",
@@ -1224,11 +1465,10 @@
       "slajdovi": [
         4
       ],
-      "pojava": [
-        "three consecutive chapters"
-      ],
+      "pojava": [],
       "zasto": "Izmjereno 27.8.2026. iz outline.json: blok 1475–1900 s preklapa SEST poglavlja (1444–1525, 1525–1632, 1632–1712, 1712–1801, 1801–1875, 1875–1952), od kojih prvo i zadnje samo djelomicno. I sam deck to crta — sest .seg.hot segmenata, ne tri. Granice bloka nisu granice poglavlja: 1475 pada 31 s unutar poglavlja koje pocinje na 1444.",
-      "sto_bi_ga_zatvorilo": "Ili poravnati blok na granice poglavlja (1444–1712 je tocno tri uzastopna poglavlja, 4 min 28 s), ili ispraviti tekst u 'sest poglavlja' i priznati da blok sijece prvo i zadnje. Prva opcija je jaca jer je slajd 4 jedini dokaz da primjer nije maketa."
+      "sto_bi_ga_zatvorilo": "Ili poravnati blok na granice poglavlja (1444–1712 je tocno tri uzastopna poglavlja, 4 min 28 s), ili ispraviti tekst u 'sest poglavlja' i priznati da blok sijece prvo i zadnje. Prva opcija je jaca jer je slajd 4 jedini dokaz da primjer nije maketa.",
+      "zatvoreno": "2026-08-27: T4: blok poravnat na 1444-1712 (24:04-28:32), tocno tri uzastopna poglavlja, 268 s. Provjereno u decku 27.8.2026."
     },
     {
       "id": "trajanje-epizode-144-06",
@@ -1237,11 +1477,10 @@
       "slajdovi": [
         4
       ],
-      "pojava": [
-        "1:44:06"
-      ],
-      "zasto": "MCP get_episode vraca duration_sec = 6244, sto je 1:44:04. Zbroj flex vrijednosti trake na istom slajdu je takodjer tocno 6244. Deck si dakle proturjeci sam sa sobom za 2 sekunde.",
-      "sto_bi_ga_zatvorilo": "Zamijeniti 1:44:06 s 1:44:04 na oba mjesta (.taxis i .src). Isto ispraviti u docs/2026-08-26-pitch-deck-orakl.md §4, gdje stoji ista greska."
+      "pojava": [],
+      "zasto": "Postoje TRI vrijednosti za trajanje iste epizode i mjere razlicite stvari: cdn.domovina.ai/channels/data/domovina_tv.json daje duration_seconds 6247 = 1:44:07 (trajanje videa iz YouTube metapodataka), mcp.domovina.link get_episode daje 6244 = 1:44:04 (kraj zadnjeg poglavlja), a zbroj trake na slajdu 4 je takodjer 6244. Deckovih 1:44:06 ne odgovara nijednoj.",
+      "sto_bi_ga_zatvorilo": "ISPRAVAK NALAZA IZ KRUGA 1 (bio je: '1:44:06 -> 1:44:04 na oba mjesta'). Tocno je: os trake ide do 1:44:04 (kraj zadnjeg poglavlja), a natpis o trajanju epizode mora reci 1:44:07 (CDN, mjerodavan za trajanje videa). Dvije brojke mjere dvije razlicite stvari i ne smiju se stopiti. Isto ispraviti u docs/2026-08-26-pitch-deck-orakl.md §4 (pise 1:44:06) i u deck/README.md (pise 1:44:07 za os, obrnuto od ispravnog).",
+      "zatvoreno": "2026-08-27: T4: 1:44:06 vise nije u decku. Ostaje finija razlika — vidi trajanje-epizode-dvije-mjere."
     },
     {
       "id": "traka-87-segmenata",
@@ -1250,11 +1489,10 @@
       "slajdovi": [
         4
       ],
-      "pojava": [
-        "85 chapters"
-      ],
+      "pojava": [],
       "zasto": "85 je tocan broj poglavlja (outline.json, 26 + 31 + 28). Dva viska nastaju jer istaknuti blok pocinje i zavrsava unutar poglavlja, pa se dva poglavlja moraju rasjeci na po dva segmenta. Nije greska u podacima nego posljedica nalaza blok-tri-poglavlja.",
-      "sto_bi_ga_zatvorilo": "Poravnavanje bloka na granice poglavlja rjesava i ovo: traka tada ima tocno 85 segmenata i natpis postaje doslovno provjerljiv."
+      "sto_bi_ga_zatvorilo": "Poravnavanje bloka na granice poglavlja rjesava i ovo: traka tada ima tocno 85 segmenata i natpis postaje doslovno provjerljiv.",
+      "zatvoreno": "2026-08-27: T4: traka sada ima tocno 85 segmenata, zbroj flexova 6244."
     },
     {
       "id": "citat-pitanje-parafraza",
@@ -1276,11 +1514,10 @@
       "slajdovi": [
         14
       ],
-      "pojava": [
-        "six years trying"
-      ],
+      "pojava": [],
       "zasto": "Nas vlastiti dokument oglasni-prostor-trziste-i-usporedba.md §4.3 kaze devet godina: burza je osnovana 2017., prodana Datavaultu 19.8.2026. Sest godina odgovara razdoblju do S-1 iz 2023., ali deck to ne kaze. Brojka koja je manja od nase vlastite podrijetlom slabi argument bez razloga.",
-      "sto_bi_ga_zatvorilo": "Napisati 'nine years' (2017.–2026.), ili 'six years to its S-1' ako se misli na razdoblje do S-1. Deveta godina je jaci argument, ne slabiji."
+      "sto_bi_ga_zatvorilo": "Napisati 'nine years' (2017.–2026.), ili 'six years to its S-1' ako se misli na razdoblje do S-1. Deveta godina je jaci argument, ne slabiji.",
+      "zatvoreno": "2026-08-27: T4: 'NYIAX spent nine years trying (2017-2026)'."
     },
     {
       "id": "izvod-25-40-centi",
@@ -1317,11 +1554,10 @@
       "slajdovi": [
         11
       ],
-      "pojava": [
-        "$5bn"
-      ],
+      "pojava": [],
       "zasto": "Deloitte preko Podnewsa (provjereno 27.8.2026.) kaze 'will reach $5 billion in 2026'. 'Dosegnut' nije 'premasen', a znak vece od pretvara projekciju u donju granicu.",
-      "sto_bi_ga_zatvorilo": "Zamijeniti '> $5bn' s '$5bn' i dodati da je rijec o projekciji Deloittea za 2026., kako slajd 11 vec radi za hrvatsku brojku."
+      "sto_bi_ga_zatvorilo": "Zamijeniti '> $5bn' s '$5bn' i dodati da je rijec o projekciji Deloittea za 2026., kako slajd 11 vec radi za hrvatsku brojku.",
+      "zatvoreno": "2026-08-27: T4: '$5bn Deloitte projection for 2026', bez znaka vece."
     },
     {
       "id": "float-45m-bez-modela",
@@ -1334,7 +1570,7 @@
         "€45M"
       ],
       "zasto": "Mnozenje je tocno (45 x 2,25 % = 1,01 mil. EUR) i stopa je provjerena, ali ulazna brojka od 45 mil. EUR nema podlogu ni u jednom dokumentu — nema modela koji bi rekao kako i kada float doseze taj iznos. To je otvorena stavka #1 iz §9 strategije, ne propust decka.",
-      "sto_bi_ga_zatvorilo": "Gruba projekcija floata po vertikali (broj kanala x prosjecan saldo x vrijeme zadrzavanja). Do tada celija stoji jer je uz nju u istom kadru ograda '~0 today' — bez te ograde brojka bi bila crvena."
+      "sto_bi_ga_zatvorilo": "IZVEDENO 27.8.2026. u docs/marketing/model-troska-po-vertikali.md §7: pri obecanim prekretnicama prosjecan float je 219-6.569 EUR, cetiri reda velicine ispod 45 M. Odluka za autora i skeptika: pripisati 45 M airKUNA sloju na skali (rec. 'jedno drustvo, dva sloja'), ili uz brojku napisati da je izvedena unatrag iz prinosa (1 M / 2,25 % = 44,4 M). Ograda '~0 today' na slajdu 9 je ono sto brojku danas drzi postenom."
     },
     {
       "id": "namjena-ne-zbraja-se",
@@ -1343,14 +1579,10 @@
       "slajdovi": [
         16
       ],
-      "pojava": [
-        "€200K",
-        "€150K",
-        "€70K",
-        "€60K"
-      ],
+      "pojava": [],
       "zasto": "Zbroj je 480 tis. EUR, odnosno 40 % traska od 1,2 mil. EUR. Slajd nigdje ne kaze da je popis djelomican. Tablica u vc-pitch-strategija.md §2 ima jos dvije stavke (osnivac i customer development ~120 tis., rezerva i operativa) koje deck ne prikazuje.",
-      "sto_bi_ga_zatvorilo": "Ili dodati preostale stavke, ili napisati da su prikazane cetiri najvece. Pitanje 'gdje je ostalih 720 tisuca' dolazi samo od sebe i bolje je da odgovor bude na slajdu."
+      "sto_bi_ga_zatvorilo": "Ili dodati preostale stavke, ili napisati da su prikazane cetiri najvece. Pitanje 'gdje je ostalih 720 tisuca' dolazi samo od sebe i bolje je da odgovor bude na slajdu.",
+      "zatvoreno": "2026-08-27: T4: slajd 16 imenuje ostatak — 480 tis. prikazano, 720 tis. (120 osnivac + 600 rezerva)."
     },
     {
       "id": "financijski-model-ne-postoji",
@@ -1362,8 +1594,8 @@
       "pojava": [
         "€1.2M"
       ],
-      "zasto": "Otvorena stavka #1 u vc-pitch-strategija.md §9. Izvod postoji i posten je (rasponi fondova), ali izvod iz tudjih raspona nije model troska.",
-      "sto_bi_ga_zatvorilo": "Gruba projekcija troska po vertikali kroz 18 mjeseci: trosak po satu obrade x planirani sati + place + pravno. Ta ista projekcija zatvara i float-45m-bez-modela."
+      "zasto": "Otvorena stavka #1 u vc-pitch-strategija.md §9. TROSKOVNA STRANA JE ZATVORENA 27.8.2026. (docs/marketing/model-troska-po-vertikali.md): 0,123-0,322 EUR po satu obradjenog zvuka, 4.012-16.854 EUR po vertikali, sve odozdo prema gore iz objavljenih cijena i nasih izmjerenih kolicina. Ostaje PRIHODNA strana, i ona je blokirana: CPM za hrvatski podcast javno ne postoji (§7), a §7 zabranjuje i projekcije prihoda s decimalama.",
+      "sto_bi_ga_zatvorilo": "Prva stvarno naplacena cijena trenutka. Do tada se model prihoda ne moze napraviti bez izmisljanja, i to je nalaz a ne rupa koju treba popuniti. Iz modela troska usput slijedi nalaz o §2 — stavka 'Compute za korpus ~150 tis. EUR' je oko 75x veca od onoga sto obecane prekretnice traze."
     },
     {
       "id": "ziva-brojka-bez-datuma",
@@ -1375,13 +1607,10 @@
         14,
         15
       ],
-      "pojava": [
-        "28 followers",
-        "3,157 episodes",
-        "144,294"
-      ],
+      "pojava": [],
       "zasto": "Pratitelji pilot-kanala su 26.8. bili 28, a 27.8. su 29. Korpus se puni svaku noc. Deck ima datum samo uz korpus ('measured ... 26 August 2026'), a uz 28 pratitelja nema nista. Brojka bez datuma zastarijeva tiho i cita se kao netocna, a ne kao stara.",
-      "sto_bi_ga_zatvorilo": "Jedan datum mjerenja po slajdu s brojkama koje se mijenjaju, isti onaj koji vec stoji u .src slajda 7. §7 zabranjuje veci doseg od izmjerenog — 28 uz datum je sigurno, 28 bez datuma nije."
+      "sto_bi_ga_zatvorilo": "Jedan datum mjerenja po slajdu s brojkama koje se mijenjaju, isti onaj koji vec stoji u .src slajda 7. §7 zabranjuje veci doseg od izmjerenog — 28 uz datum je sigurno, 28 bez datuma nije.",
+      "zatvoreno": "2026-08-27: T4: '28 followers (measured 26 August 2026)' na slajdovima 12 i 14; korpus je vec nosio datum na slajdu 7."
     },
     {
       "id": "dai-90-bez-primarnog-izvora",
@@ -1434,6 +1663,19 @@
       ],
       "zasto": "Ostatak primjera na slajdu 5 se do zadnjeg eura poklapa sa specifikacijom mehanizma (P = 400, k = 1,5, podjela 60/25/15). Broj od 45 dana ne dolazi niotkud: spec u p2p planu §4.3 jamci max(30 dana, 1000 izmjerenih prikaza), a 45 nije ni jedno ni drugo. Jedina izmisljena znamenka na inace potpuno izvedenom slajdu.",
       "sto_bi_ga_zatvorilo": "Ili napisati '30 days' (donja granica jamstva iz spec-a), ili reci da je rijec o primjeru u kojem je otkup dosao 45. dan. Prvo je jeftinije jer se veze na pravilo koje slajd vec navodi."
+    },
+    {
+      "id": "trajanje-epizode-dvije-mjere",
+      "razina": "zuto",
+      "tvrdnja": "Slajd 4 navodi duljinu epizode kao 1:44:04, isto kao i desni kraj osi trake.",
+      "slajdovi": [
+        4
+      ],
+      "pojava": [
+        "1:44:04, 85 chapters"
+      ],
+      "zasto": "Dvije brojke mjere dvije razlicite stvari. 6244 s (1:44:04) je kraj zadnjeg poglavlja i tocan je za os trake. Trajanje samog videa je 6247 s (1:44:07) prema cdn.domovina.ai/channels/data/domovina_tv.json, polja duration_seconds i duration_display. Natpis '1:44:04, 85 chapters' stoji uz naslov epizode pa se cita kao duljina epizode, a ona je 3 s dulja.",
+      "sto_bi_ga_zatvorilo": "Ili napisati 'chapters run to 1:44:04' (pa je brojka os), ili natpis staviti na 1:44:07 i pustiti os na 1:44:04. ISPRAVAK MOG NALAZA IZ KRUGA 1: tada sam javio '1:44:06 -> 1:44:04 na oba mjesta', sto je tocno za os a prekratko za epizodu. Isto ispraviti u docs/2026-08-26-pitch-deck-orakl.md §4 (pise 1:44:06) i u deck/README.md (pise 1:44:07 za os, obrnuto od ispravnog)."
     }
   ]
 }

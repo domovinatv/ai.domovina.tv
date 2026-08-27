@@ -50,7 +50,7 @@ Deck mora stati u ekran bez scrolla na **svakoj** projektorskoj rezoluciji od
   grid izvedba je unutar dvostupčanog `ul.plain.split` razriješila `auto 1fr`
   obrnuto — crtica 409 px, tekst 89 px — i napuhala slajd 12 za 797 px.
 - **Rule (labela se ne dimenzionira prema onome na što pokazuje)**: vremenska
-  os na slajdu 4 nosi samo `00:00` / `1:44:07`, a objašnjenje je `.tcall` pune
+  os na slajdu 4 nosi samo `00:00` / `1:44:04`, a objašnjenje je `.tcall` pune
   širine. Ranija flex labela proporcionalna svom segmentu dobila je 114 px.
 - Snap je `proximity`, ne `mandatory`, a **Dalje** stranicu viši od ekrana
   prelistava kroz nju prije nego prijeđe na sljedeću — inače je donja polovica
