@@ -12,12 +12,20 @@
 #   ./scripts/voting-drift-check.sh --no-telegram
 #   ./scripts/voting-drift-check.sh --sync       # na drift ODMAH pokreni --commit
 #
-# Pokreće ga launchd (vidi launchd/ai.domovina.voting-drift.plist), ali radi i ručno.
+# Pokreće ga launchd s `--sync` (vidi launchd/ai.domovina.voting-drift.plist),
+# ali radi i ručno.
 #
-# Namjerno NE zove `--commit` sam od sebe u default modu: sync uploada avatare na
-# CDN i mijenja `status` redova, pa je to promjena produkcijskih podataka koju
-# potpisuje čovjek. Tripwire javlja, čovjek odlučuje. `--sync` je za slučaj kad
-# se svjesno odluči da smije sam.
+# Default OSTAJE bez `--sync` — ručno pokretanje samo javlja, ne piše. Ali od
+# 2.9.2026. launchd job svjesno prosljeđuje `--sync`: registar je izvor istine,
+# baza je njegova projekcija, a `sync_voting_candidates.mjs` je idempotentan
+# rekoncilijator — nema što čovjek tu odlučiti osim da prepiše isto. Povod:
+# AbbaCast je 28.8. ušao u pipeline, tripwire je od 29.8. svako jutro javljao
+# drift, i 5 dana nitko nije pritisnuo gumb.
+#
+# Zaštita od pisanja na krivi signal je u samoj sync skripti: `--check` sad
+# razlikuje „ima drifta" (1) od „ne mogu provjeriti" (2), pa prolazna mrežna
+# greška više ne izgleda kao drift; a `--commit` nakon pisanja sam provjeri je
+# li konvergirao i padne ako nije.
 set -uo pipefail
 
 export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"

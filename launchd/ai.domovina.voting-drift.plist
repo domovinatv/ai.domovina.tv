@@ -2,7 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Tripwire: registar podcasta ↔ glasački bazen u bazi. Svaki dan u 08:30.
-  Tiho kad je poravnato; na drift ide poruka u Telegram grupu.
+  Tiho kad je poravnato; na drift SAM pokrene sync i javi ishod u Telegram.
+
+  `--sync` (od 2.9.2026.): registar je izvor istine, baza njegova projekcija, a
+  sync je idempotentan rekoncilijator — nema smisla da čovjek ručno prepisuje
+  ono što skripta izračuna. Prije toga je tripwire samo javljao, pa je AbbaCast
+  5 dana stajao u glasanju iako je 28.8. ušao u pipeline. Ručno pokretanje
+  skripte i dalje NE sinkronizira samo od sebe (default je bez `--sync`).
 
   Instalacija (NE radi je agent, isto pravilo kao za nightly):
     cp launchd/ai.domovina.voting-drift.plist ~/Library/LaunchAgents/
@@ -27,6 +33,7 @@
   <array>
     <string>/opt/homebrew/bin/bash</string>
     <string>/Users/ms/git/domovinatv/domovina.ai/scripts/voting-drift-check.sh</string>
+    <string>--sync</string>
   </array>
 
   <!-- launchd ne nasljeđuje LANG; bez toga Ruby notifier pukne na US-ASCII. -->

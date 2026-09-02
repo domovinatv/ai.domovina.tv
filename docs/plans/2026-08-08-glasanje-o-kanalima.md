@@ -856,4 +856,7 @@ Zastavice ne mogu spasiti niz korisniku koji ne zna da mu niz curi. Odluka 4
 mehanike. Plan: `docs/plans/2026-08-25-glasanje-podsjetnici.md`.
 
 **Vezani dokumenti**: `2026-08-08-glasanje-predaja.md` (odluke, zapisnici,
-naknadni zapisnik o ulaznim točkama), `2026-08-25-glasanje-podsjetnici.md`.
+naknadni zapisnik o ulaznim točkama), `2026-08-25-glasanje-podsjetnici.md`,
+`../2026-09-02-registar-bazen-rekoncilijacija.md` (zašto registar→bazen NIJE
+transakcija nego rekoncilijacija; tripwire od 2.9.2026. sinkronizira sam;
+`onboarded` ≠ `withdrawn`; što od §9 winner-flowa i dalje nedostaje).

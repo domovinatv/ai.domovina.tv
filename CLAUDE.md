@@ -110,16 +110,34 @@ nosio 37 kandidata (AbbaCast među njima) kojih u bazi nije bilo, korisnici za n
 nisu mogli glasati, i ništa to nije javilo.
 
 `scripts/voting-drift-check.sh` (launchd `ai.domovina.voting-drift`) svako jutro
-usporedi registar i bazu; tiho je kad su poravnati, na drift javi u Telegram.
+usporedi registar i bazu; tiho je kad su poravnati, na drift sinkronizira i
+javi ishod u Telegram.
 Sama usporedba je `node sync_voting_candidates.mjs --check` u fetch repou —
 **filtar kandidata (§3) živi na jednom mjestu**, u sync skripti, i tripwire ga
 ne prepisuje. (Reimplementacija filtra je pri prvom pokušaju dala 164 umjesto
 218 kandidata.) `--check` preskače yt-dlp i CDN pa traje sekundu; exit 0 =
 poravnato, 1 = drift, 2 = ne mogu provjeriti.
 
-**Rule**: tripwire NE pokreće `--commit` sam od sebe — sync uploada avatare na
-CDN i mijenja `status` redova, pa je to promjena produkcijskih podataka koju
-potpisuje čovjek. `--sync` flag postoji ako se to ikad svjesno promijeni.
+**Rule (od 2.9.2026. tripwire sinkronizira sam)**: launchd job prosljeđuje
+`--sync`, pa na drift sam pokrene `--commit`. Prije toga je samo javljao i
+AbbaCast je 5 dana stajao u glasanju iako je 28.8. ušao u pipeline. Opravdanje:
+registar je izvor istine, baza njegova projekcija, a sync je idempotentan
+rekoncilijator — čovjek tu nije odlučivao ništa osim da prepiše isti izračun.
+Ručno pokretanje skripte i dalje NE piše bez `--sync`.
+
+**Rule (exit kodovi su ugovor)**: `--check` vraća 0 = poravnato, 1 = ima drifta,
+2 = ne mogu provjeriti. Do 2.9.2026. je nečitljiva baza rušila `existing.length`
+TypeErrorom i izlazila s 1 — tripwire je prolaznu mrežnu grešku javljao kao
+drift, a pod `--sync` bi na nju i pisao. Ne miješati „ne znam" s „ima drifta".
+
+**Rule (onboardan ≠ povučen)**: kandidat koji ispadne iz §3 filtra dobiva status
+po razlogu — `tracking.enabled === true` u registru → `onboarded`, sve ostalo
+(zapis nestao, status ugašen) → `withdrawn`. `onboarded` se NIKAD ne vraća u
+bazen ni ako se zastavica vrati na false. `--commit` nakon pisanja sam provjeri
+konvergenciju (`verifyConverged`) i padne s 2 ako baza nije poravnata: pisanje je
+7 HTTP poziva pa nije atomarno, i bez te provjere polupisano stanje ostane
+nezamijećeno do sutrašnjeg tripwirea. Puna atomarnost traži jednu Postgres
+funkciju nad cijelim payloadom (95,8 kB za 217 kandidata) — nije napravljeno.
 
 ## Known Issues & Gotchas
 
