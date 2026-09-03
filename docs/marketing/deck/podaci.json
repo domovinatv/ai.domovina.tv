@@ -48,7 +48,9 @@
     ],
     "zanemarive_znamenke_zasto": "Numeracija slajda, gola godina i vremenska oznaka na traci nose layout ili identitet decka, ne tvrdnju, i nikad nece imati unos.",
     "provjereno-zivo-27-08-2026": "svi gornji URL-ovi odgovaraju 2xx; mcp.domovina.link vraca 401 na goli GET (autorizacija, ne smrt)",
-    "model_troska": "docs/marketing/model-troska-po-vertikali.md"
+    "model_troska": "docs/marketing/model-troska-po-vertikali.md",
+    "plan_kapaciteta": "privatni bizops repo, funding/plan-kapaciteta-2026-08.md (ne linka se odavde jer je repo privatan)",
+    "vidljivost": "UPOZORENJE: ovaj fajl je u JAVNOM repou domovinatv/ai.domovina.tv (provjereno 27.8.2026.). Ovdje ide samo ono sto brojku u decku cini provjerljivom: iznos, izvor, datum, izvod. GRANICA: izvodi iz vc-pitch-strategija.md §2 smiju ostati jer je §2 ionako javan na origin/main (npr. 264,55 EUR po inzenjer-danu = 200.000 / 2 / 18 / 21). NE SMIJE ovamo nista sto ide DALJE od §2: implicirana cijena rada po inzenjeru, nalaz da §2 podcjenjuje inzenjera, usporedba postava i budzeta, imena protustranaka, tekst potpisanih ugovora, putanje u privatni bizops repo. Taj materijal zivi u privatnom bizops repou: funding/plan-kapaciteta-2026-08.md i funding/podaci-kapacitet.json."
   },
   "podaci": {
     "primarna-prodaja-kreatoru": {
@@ -1128,6 +1130,38 @@
         "€720K"
       ],
       "napomena": "Nakon T4 slajd 16 sam kaze koliko prikazane stavke daju i sto je ostatak."
+    },
+    "konvertibilni-zajam": {
+      "vrijednost": 7000,
+      "jedinica": "EUR",
+      "izvor": "Ugovor o konvertibilnom zajmu, potpisan 29.7.2026. (interni spis kod vlasnika; iznos i cap su ono sto due diligence provjerava)",
+      "datum": "2026-07-29",
+      "izvod": null,
+      "izveden": false,
+      "snaga": "interni-dokument",
+      "slajdovi": [
+        14
+      ],
+      "pojava": [
+        "€7,000"
+      ],
+      "napomena": "Datum je datum potpisa ugovora, ne datum provjere. Spominje se sam na slajdu rizika, prije due diligencea. Ime zajmodavca se namjerno ne upisuje: deck ga ne navodi, a ovaj je fajl u javnom repou. Putanja do ugovora takodjer ne ide ovamo — dokument zivi u privatnom bizops repou i referenca je imenovana, ne putanja."
+    },
+    "konvertibilni-zajam-cap": {
+      "vrijednost": 20000000,
+      "jedinica": "EUR pre-money cap",
+      "izvor": "Ugovor o konvertibilnom zajmu, potpisan 29.7.2026. (interni spis kod vlasnika; iznos i cap su ono sto due diligence provjerava)",
+      "datum": "2026-07-29",
+      "izvod": "7.000 EUR uz pre-money cap od 20.000.000 EUR daje 0,035 % drustva. Cap je GORNJA GRANICA konverzije tog zajmodavca, nije cijena po kojoj je novac uplacen i nije valuacija drustva.",
+      "izveden": true,
+      "snaga": "interni-dokument",
+      "slajdovi": [
+        14
+      ],
+      "pojava": [
+        "€20M"
+      ],
+      "napomena": "Papirnati cap prestaje biti sidro odlukom vlasnika 27.8.2026. Ugovor ostaje valjan. PAZI: 20 M se NE SMIJE citirati kao valuacija drustva — obranjivi pre-money je bitno nizi i vodi se u internom spisu o valuaciji. Ime zajmodavca se namjerno ne upisuje: deck ga ne navodi, a ovaj je fajl u javnom repou. Putanja do ugovora takodjer ne ide ovamo — dokument zivi u privatnom bizops repou i referenca je imenovana, ne putanja."
     }
   },
   "pripremljeno": {
@@ -1314,7 +1348,7 @@
       "snaga": "izvedeno",
       "slajdovi": [],
       "pojava": [],
-      "napomena": "OGRANICENJE: 264,55 EUR je PROSJECNA CIJENA DANA IZ BUDZETA, ne oportunitetni trosak. Formula tretira svaki dan kao slobodan za novu vertikalu, a isti par inzenjera istovremeno duguje cetiri prekretnice plus dovrsetak on-chain isplate kreatorima (slajd 14). Dan na vertikali je dan koji nije otisao na prekretnicu, i model taj gubitak ne racuna. To je isto usko grlo koje slajd 15 priznaje za jednog osnivaca, samo sakriveno iza cistog broja po danu. Ako se stavka od 200 tis. u §2 promijeni, mijenja se i ova brojka."
+      "napomena": "OGRANICENJE: 264,55 EUR je PROSJECNA CIJENA DANA IZ BUDZETA, ne oportunitetni trosak. Formula tretira svaki dan kao slobodan za novu vertikalu, a isti par inzenjera istovremeno duguje cetiri prekretnice plus dovrsetak on-chain isplate kreatorima (slajd 14). Dan na vertikali je dan koji nije otisao na prekretnicu, i model taj gubitak ne racuna. To je isto usko grlo koje slajd 15 priznaje za jednog osnivaca, samo sakriveno iza cistog broja po danu. Ako se stavka od 200 tis. u §2 promijeni, mijenja se i ova brojka. OSNOVICA NAPUSTENA 27.8.2026.: vlasnik je odlucio drugu osnovicu place od one koju §2 implicira, pa je ova brojka i sve izvedeno iz nje zastarjelo i NE SMIJE se koristiti. Aktualna osnovica i preracun vode se u privatnom planu kapaciteta; ovdje se ne navode."
     },
     "inzenjer-dani-po-vertikali": {
       "vrijednost": "15 do 60",
@@ -1338,7 +1372,7 @@
       "snaga": "izvedeno",
       "slajdovi": [],
       "pojava": [],
-      "napomena": "Brojka govori o NOVCU, ne o vremenu. Cijena vertikale je niska, raspolozivost inzenjera nije rijesena — vidi kapacitet-inzenjera. Prekretnica '3 vertikale' = 11.970-50.562 EUR, odnosno 1-4 % traska ali 6-24 % inzenjerskog kapaciteta."
+      "napomena": "Brojka govori o NOVCU, ne o vremenu. Cijena vertikale je niska, raspolozivost inzenjera nije rijesena — vidi kapacitet-inzenjera. Prekretnica '3 vertikale' = 11.970-50.562 EUR, odnosno 1-4 % traska ali 6-24 % inzenjerskog kapaciteta. OSNOVICA NAPUSTENA 27.8.2026.: vlasnik je odlucio drugu osnovicu place od one koju §2 implicira, pa je ova brojka i sve izvedeno iz nje zastarjelo i NE SMIJE se koristiti. Aktualna osnovica i preracun vode se u privatnom planu kapaciteta; ovdje se ne navode."
     },
     "float-izvod": {
       "vrijednost": "219 do 6.569",
@@ -1375,7 +1409,7 @@
       "snaga": "izvedeno",
       "slajdovi": [],
       "pojava": [],
-      "napomena": "Jedino sto se o kapacitetu moze reci bez izmisljanja. Model NE MOZE reci stane li sve obecano u preostalih 76-94 %, jer nijedna od preostale tri prekretnice nije procijenjena u inzenjer-danima. Zatvara to plan kapaciteta: ista razrada od pet poslova iz §4.2 napravljena i za 20 trenutaka, 5 otkupa i on-chain isplatu, pa zbroj usporediti sa 756. Do tada je posten odgovor na pitanje 'koja prekretnica kasni' da ne znamo."
+      "napomena": "Jedino sto se o kapacitetu moze reci bez izmisljanja. Model NE MOZE reci stane li sve obecano u preostalih 76-94 %, jer nijedna od preostale tri prekretnice nije procijenjena u inzenjer-danima. Zatvara to plan kapaciteta: ista razrada od pet poslova iz §4.2 napravljena i za 20 trenutaka, 5 otkupa i on-chain isplatu, pa zbroj usporediti sa 756. Do tada je posten odgovor na pitanje 'koja prekretnica kasni' da ne znamo. OSNOVICA NAPUSTENA 27.8.2026.: vlasnik je odlucio drugu osnovicu place od one koju §2 implicira, pa je ova brojka i sve izvedeno iz nje zastarjelo i NE SMIJE se koristiti. Aktualna osnovica i preracun vode se u privatnom planu kapaciteta; ovdje se ne navode."
     },
     "velicina-vertikale": {
       "vrijednost": "5 do 48",
@@ -1389,6 +1423,45 @@
       "slajdovi": [],
       "pojava": [],
       "napomena": "Broj kanala po scenariju odredjuje raspon troska jednako koliko i inzenjer-dani, pa ne smije sjediti neoznacen uz izmjerenu raspodjelu sati po kanalu."
+    },
+    "aktivni-dani-osnivaca": {
+      "vrijednost": 87,
+      "jedinica": "aktivnih dana od 92 kalendarska",
+      "izvor": "interna mjerna tocka: unija commit-dana u fetch.domovina.tv, domovina.ai i domovina-api",
+      "naredba": "for r in fetch.domovina.tv domovina.ai domovina-api; do (cd ~/git/domovinatv/$r && git log --since=2026-05-27 --format='%ad' --date=short); done | sort -u | wc -l",
+      "datum": "2026-08-27",
+      "izvod": "87 aktivnih od 92 kalendarska dana, 27.5.-27.8.2026., jedna osoba. ~29 aktivnih dana mjesecno, dakle i vikendom.",
+      "izveden": true,
+      "snaga": "interno-mjerenje",
+      "ziva": true,
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "NIJE planska stopa nego mjera danasnjeg opterecenja. Plan kapaciteta svejedno racuna s normom od 21 radnog dana mjesecno jer se runway ne gradi na vikendima. 'Aktivan dan' precjenjuje trud kad je dan podijeljen, a podcjenjuje ga kad jedan commit skriva tjedan rada."
+    },
+    "pinka-znacajka-dani": {
+      "vrijednost": 14,
+      "jedinica": "aktivnih dana",
+      "izvor": "interna mjerna tocka: pinka sloj mjesta + naplata, klijent i API",
+      "naredba": "git -C ~/git/domovinatv/domovina.ai log --format='%ad' --date=short -- lib/pinka_sdk lib/models/pinka.dart | sort -u",
+      "datum": "2026-08-27",
+      "izvod": "Unija aktivnih dana u domovina.ai (8) i domovina-api (10) = 14, 30.5.-8.8.2026. Isporuceno: 21 migracija, 4 edge funkcije, 28 klijentskih datoteka, 6.557 redaka.",
+      "izveden": true,
+      "snaga": "interno-mjerenje",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Sidro za pretvorbu artefakata u dane u planu kapaciteta §2.1. Faza 2 p2p plana je najblize ovoj znacajki po obliku."
+    },
+    "potraznja-inzenjer-dana": {
+      "vrijednost": "262 do 648",
+      "jedinica": "inzenjer-dana kroz 18 mjeseci",
+      "izvor": "interni plan kapaciteta (privatni bizops repo), §2.4 — razrada u inzenjer-danima",
+      "datum": "2026-08-27",
+      "izvod": "mehanizam faze 0-4: 40-85 + 3 vertikale: 45-180 + strana vertikala s visejezicnim izlazom: 20-70 + odrzavanje produkcije: 157-313.",
+      "izveden": true,
+      "snaga": "izvedeno",
+      "slajdovi": [],
+      "pojava": [],
+      "napomena": "Naspram 756 dana kapaciteta iz strategije §2 to je 35-86 %. Na gornjem kraju nema rezerve ni za jednu nepoznanicu koje slajd 14 nabraja; prva stvar koja tada kasni je prekretnica 3. Novcane posljedice i usporedba postava vode se u privatnom planu kapaciteta, ne ovdje."
     }
   },
   "nedokazivo": [
