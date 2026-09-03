@@ -4,6 +4,16 @@
 #1 iz [`vc-pitch-strategija.md`](vc-pitch-strategija.md) §9; skeptik ju je
 označio kao „ubija posao".*
 
+> **OSNOVICA CIJENE RADA JE NAPUŠTENA 27.8.2026. — pročitaj §4.1 prije nego
+> iskoristiš ijednu brojku odavde.** Vlasnik je istog dana odlučio drugu
+> osnovicu plaće od one koju [`vc-pitch-strategija.md`](vc-pitch-strategija.md)
+> §2 implicira. Sve što je u ovom dokumentu izvedeno iz cijene inženjer-dana —
+> §4, §5 i zbirni trošak vertikale iz §0 — time je **zastarjelo i ne smije se
+> citirati**. Mjerenja ostaju valjana: dani, sati, količine i objavljene cijene
+> computea nisu se promijenili, promijenila se samo cijena rada kojom se dani
+> množe. Aktualna osnovica i preračun vode se interno i ovdje se namjerno ne
+> navode.
+
 > **Pravilo po kojem je ovaj dokument pisan.** Model se izvodi **odozdo prema
 > gore**: objavljena cijena × naša izmjerena količina. Nijedna stavka nema
 > vrijednost bez jednog od toga. Gdje ni jedno ni drugo ne postoji, stavka je
@@ -237,6 +247,12 @@ manje od troška četiri inženjer-dana.
 200.000 EUR / 2 inženjera / 18 mjeseci = 5.555,56 EUR po inženjer-mjesecu
 5.555,56 / 21 radni dan                = 264,55 EUR po inženjer-danu
 ```
+
+> **ZASTARJELO — osnovica iz §2 napuštena je odlukom vlasnika 27.8.2026.**
+> Izvod i brojke u ovom odjeljku ostaju zapisani jer dokumentiraju **kako je
+> model bio izveden**, ne kao vrijednosti za upotrebu. Sve izvedeno iz 264,55
+> EUR po inženjer-danu — §5 i zbirni trošak vertikale — pada s njima. Aktualna
+> osnovica vodi se interno i ovdje se ne navodi.
 
 Namjerno se **ne** koristi tržišna satnica: pitanje je što vertikala košta
 **nas, iz ovog budžeta**, a ne koliko bi netko naplatio.
