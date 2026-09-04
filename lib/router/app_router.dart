@@ -47,12 +47,22 @@ GoRouter createRouter() {
       // all_channels_screen.dart; maknuto s home-a radi scroll-perf-a).
       // Na mobitelu se s home-a otvara kao bottom sheet; ova ruta je za
       // desktop / direktni deep-link.
+      // `?prikaz=osobe` otvara katalog s odabranim filtrom „Osobe" — odredište
+      // gumba „Prikaži sve" na home railu osoba. Query param, a NE zasebna
+      // `/osobe` ruta: nova javna content ruta mora u OBA deep-link popisa
+      // (AASA components + Android intent filter), a ovo je isti katalog.
       GoRoute(
         path: '/channels',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          key: ValueKey('all-channels'),
-          child: AllChannelsScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final showPersons = state.uri.queryParameters['prikaz'] == 'osobe';
+          return NoTransitionPage(
+            // Različit key po prikazu: bez toga go_router zadrži isti State pri
+            // prelasku /channels ↔ /channels?prikaz=osobe, pa se `initialFilter`
+            // (čita se samo u initState) nikad ne primijeni.
+            key: ValueKey(showPersons ? 'all-channels-persons' : 'all-channels'),
+            child: AllChannelsScreen(showPersons: showPersons),
+          );
+        },
       ),
       GoRoute(
         path: '/c/:slug',

@@ -33,7 +33,16 @@ import '../home/sort_mode.dart';
 
 /// Full-page varijanta — meta `/channels` rute.
 class AllChannelsScreen extends StatelessWidget {
-  const AllChannelsScreen({super.key});
+  /// Otvori katalog s već odabranim filtrom (`/channels?prikaz=osobe`).
+  ///
+  /// Namjerno query param na POSTOJEĆOJ ruti, a ne nova `/osobe` ruta: nova
+  /// javna content ruta mora u OBA deep-link popisa (AASA `components` u
+  /// `web/_worker.js` + Android intent filter), pa bi „Prikaži sve" na railu
+  /// osoba koštalo dva zaboravljiva upisa i propagaciju AASA cachea. Query
+  /// param ne mijenja rutu ni za jedan popis.
+  final bool showPersons;
+
+  const AllChannelsScreen({super.key, this.showPersons = false});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +52,7 @@ class AllChannelsScreen extends StatelessWidget {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surface,
-        title: Text(l.channelAllChannels),
+        title: Text(showPersons ? l.homePersonsRailTitle : l.channelAllChannels),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: l.commonBack,
@@ -51,7 +60,13 @@ class AllChannelsScreen extends StatelessWidget {
               context.canPop() ? context.pop() : context.go('/'),
         ),
       ),
-      body: const SafeArea(top: false, child: AllChannelsView()),
+      body: SafeArea(
+        top: false,
+        child: AllChannelsView(
+          initialFilter:
+              showPersons ? CatalogFilter.persons : CatalogFilter.all,
+        ),
+      ),
     );
   }
 }
@@ -60,7 +75,7 @@ class AllChannelsScreen extends StatelessWidget {
 /// (odluka O9 u `docs/plans/virtualni-kanali.md`); chip samo suzava prikaz.
 /// Vidljiv je tek kad je `PersonChannelFlag` upaljen I indeks osoba ima barem
 /// jednu osobu — bez toga katalog izgleda točno kao prije.
-enum _CatalogFilter { all, channels, persons }
+enum CatalogFilter { all, channels, persons }
 
 /// Jedan redak kataloga: ILI kanal ILI osoba (nikad oboje). Namjerno nije
 /// zajednički model — `ChannelSummary` nosi `UC…` id, cover dimenzije i
@@ -73,7 +88,11 @@ typedef _CatalogEntry = ({ChannelSummary? channel, PersonSummary? person});
 ///
 /// Self-contained — ucita index kanala, indeks osoba i sort sam.
 class AllChannelsView extends StatefulWidget {
-  const AllChannelsView({super.key});
+  /// Filtar s kojim se katalog otvara. `/channels?prikaz=osobe` i „Prikaži
+  /// sve" na home railu osoba ulaze ovuda; sve ostalo otvara `all`.
+  final CatalogFilter initialFilter;
+
+  const AllChannelsView({super.key, this.initialFilter = CatalogFilter.all});
 
   @override
   State<AllChannelsView> createState() => _AllChannelsViewState();
@@ -92,7 +111,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
 
   // Osobe kao virtualni kanali — prazno dok flag ne stigne ili dok backend
   // nema `/api/persons` (F2). Oba slučaja daju današnji katalog.
-  _CatalogFilter _filter = _CatalogFilter.all;
+  late CatalogFilter _filter = widget.initialFilter;
   bool _flagOn = false;
 
   @override
@@ -172,15 +191,28 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   bool get _personsEnabled =>
       _flagOn && personIndexCache.virtualChannels.isNotEmpty;
 
+  /// Filtar koji se STVARNO primjenjuje.
+  ///
+  /// „Osobe" bez osoba za prikaz nije prazan katalog nego **pun** katalog:
+  /// chipovi se u tom slučaju uopće ne crtaju, pa bi korisnik gledao praznu
+  /// listu bez ijedne kontrole kojom bi je vratio. Dva puta vode ovamo —
+  /// `/channels?prikaz=osobe` kod korisnika s ugašenim flagom, i gašenje flaga
+  /// dok je „Osobe" aktivan (rubni slučaj iz reviewa r3 u
+  /// `docs/plans/virtualni-kanali.md`).
+  CatalogFilter get _effectiveFilter =>
+      (!_personsEnabled && _filter == CatalogFilter.persons)
+          ? CatalogFilter.all
+          : _filter;
+
   bool get _showsPersons =>
-      _personsEnabled && _filter != _CatalogFilter.channels;
+      _personsEnabled && _effectiveFilter != CatalogFilter.channels;
 
   /// Vidljiva lista nakon filtera. Prazan upit → puni (sortirani) popis
   /// kanala pa osobe; inace dijakritik-neosjetljiv match na imenu preko OBA
   /// tipa, najbolji rezultat prvi (pa "sarolic" i "šarolić" nađu osobu i kad
   /// je katalog pun kanala).
   List<_CatalogEntry> get _visible {
-    final channels = _filter == _CatalogFilter.persons
+    final channels = _effectiveFilter == CatalogFilter.persons
         ? const <ChannelSummary>[]
         : _ordered;
     final persons = _showsPersons ? _persons : const <PersonSummary>[];
@@ -357,14 +389,14 @@ class _AllChannelsViewState extends State<AllChannelsView> {
       child: Row(
         children: [
           _filterChip(theme,
-              label: l.channelsFilterAll, value: _CatalogFilter.all),
+              label: l.channelsFilterAll, value: CatalogFilter.all),
           const SizedBox(width: 8),
           _filterChip(theme,
-              label: l.channelsFilterChannels, value: _CatalogFilter.channels),
+              label: l.channelsFilterChannels, value: CatalogFilter.channels),
           const SizedBox(width: 8),
           _filterChip(theme,
               label: l.channelsFilterPersons,
-              value: _CatalogFilter.persons,
+              value: CatalogFilter.persons,
               identifier: 'channels-filter-persons'),
         ],
       ),
@@ -373,9 +405,9 @@ class _AllChannelsViewState extends State<AllChannelsView> {
 
   Widget _filterChip(ThemeData theme,
       {required String label,
-      required _CatalogFilter value,
+      required CatalogFilter value,
       String? identifier}) {
-    final selected = _filter == value;
+    final selected = _effectiveFilter == value;
     // Brand-fill je navy (AppTheme.croBlue) + brandRim — NE cs.primary, koji
     // M3 dark shema izblijedi.
     final chip = ChoiceChip(

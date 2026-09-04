@@ -26,7 +26,19 @@ import 'episodes_rail.dart';
 class PersonsRail extends StatefulWidget {
   final bool isMobile;
 
-  const PersonsRail({super.key, required this.isMobile});
+  /// Koliko osoba stane u rail prije „Prikaži sve".
+  ///
+  /// `EpisodesRail` prima gotovu listu widgeta, pa bi bez kapice home gradio
+  /// karticu za SVAKU osobu u indeksu (74 na dan 4.9.2026.) pri svakom
+  /// buildu — na stranici koja je namjerno olakšana zbog scroll-perfa. Ista
+  /// vrijednost kao `FavoritesRail.limit`.
+  final int limit;
+
+  const PersonsRail({
+    super.key,
+    required this.isMobile,
+    this.limit = 12,
+  });
 
   @override
   State<PersonsRail> createState() => _PersonsRailState();
@@ -86,8 +98,12 @@ class _PersonsRailState extends State<PersonsRail> {
       child: EpisodesRail(
         eyebrow: l.homePersonsRailTitle,
         isMobile: widget.isMobile,
+        // Rail pokazuje samo vrh popisa; „Prikaži sve" vodi u isti katalog u
+        // kojem žive i kanali, s već odabranim filtrom „Osobe".
+        onSeeAll: () => context.go('/channels?prikaz=osobe'),
+        seeAllLabel: l.commonSeeAll,
         cards: [
-          for (final p in persons)
+          for (final p in persons.take(widget.limit))
             _PersonRailTile(
               person: p,
               width: width,
