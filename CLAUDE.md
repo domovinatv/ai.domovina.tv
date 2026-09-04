@@ -651,6 +651,41 @@ traci unutar vertikalne stranice to povuče i stranicu — vlastiti
 `widgets/entities_section.dart`, koji bi inače poništio `_scrollToPersonAnchor`
 u `episode_screen.dart`).
 
+### Virtualni kanali — osoba kao kanal (LIVE od 4.9.2026.)
+
+`/p/:slug` u kanal-formi; osoba je i u `/channels` (filtar „Osobe",
+`?prikaz=osobe`), na home railu, u pretrazi, u TV laneu i u sitemapu.
+`PersonChannelFlag` je default **ON**; `?vk=0` gasi po korisniku i preživljava
+promjenu defaulta — to je rollback bez redeploya. Backend je u `domovina-rag`
+(`/api/persons`, prošireni `/api/person/:slug`, `POST /api/person-report`).
+
+**Rule (pravilo uvrštavanja živi u backendu, na jednom mjestu)**: frontend NE
+preračunava prag — čita `is_virtual_channel`. Pravilo je
+`domovina-rag/services/mcp/src/tools/person-channel.ts` i nije „≥ 3 epizode":
+traži i ≥ 3 kanala, ≤ 60 % epizoda na najvećem kanalu i ≥ 2 tokena u slugu.
+Bez ta tri uvjeta katalog naraste s 74 na 311 osoba i pušta **domaćine praćenih
+kanala** (fra Stjepan Brčina 178 ep / 97 % na jednom kanalu) koji već imaju
+svoju `/c/` stranicu, te rolne oznake („Pjevač", „Svećenik", „Ana").
+
+**Rule (prikaz BEZ kanal-forme mora ostati potpun)**: backend dijeli nastupe na
+`episodes[]` (primary) i `cameo_episodes[]`. Cameo je 31,7 % svih parova
+govornik-epizoda, pa profil bez flaga crta `PersonHub.allAppearances`, NIKAD
+`hub.episodes` — inače gotovo trećina nastupa tiho nestane, bez iznimke i bez
+crvenog testa. Podjela na dvije sekcije postoji samo u kanal-formi.
+
+**Rule (prijava greške nije brisanje)**: „Prijavi grešku" piše u
+`person_channel_overrides` s `confirmed = false`; agregacija čita samo
+`confirmed = true`. Bez te podjele bi javni gumb bez autentikacije bio brisač
+tuđih epizoda iz kataloga. Opt-out (`person_optouts`) gasi kanal, ali
+`/p/{slug}` namjerno ostaje 200 s `optout: true` — 404 bi razbio podijeljene
+linkove, i taj prikaz NIJE iza flaga.
+
+Planovi, mjerenja i naredbe za reprodukciju:
+`docs/plans/virtualni-kanali.md`, `docs/plans/2026-09-03-virtualni-kanal-belavic.md`,
+`docs/plans/2026-09-03-organizacije-kao-kanal.md` (organizacija kao entitet —
+odgođeno). Ugovor prema backendu čuva `test/person_backend_contract_test.dart`
+nad stvarnim odgovorima, ne nad izmišljenim fixtureima.
+
 ### Person hub — osoba postoji i bez gostovanja
 
 `/p/:slug` agregira DVA disjunktna izvora: `episodes[]` (osoba GOVORI,
