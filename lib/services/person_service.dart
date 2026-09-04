@@ -23,6 +23,10 @@ class PersonService {
   /// i [loadIndex] daje `null` (feature ostaje nevidljiv, ništa ne puca).
   static const String _indexEndpoint = 'https://mcp.domovina.ai/api/persons';
 
+  /// Dojava krivo pripisanog govornika (gumb „Prijavi grešku" na profilu).
+  static const String _reportEndpoint =
+      'https://mcp.domovina.ai/api/person-report';
+
   static final http.Client _client = http.Client();
 
   /// Dohvat indeksa osoba. Vraća `null` kad indeks nije dostupan (404 na
@@ -57,6 +61,45 @@ class PersonService {
     } catch (e) {
       log('PersonService: greška na /api/persons: $e');
       return null;
+    }
+  }
+
+  /// Prijava krivo pripisane epizode u virtualnom kanalu.
+  ///
+  /// `POST /api/person-report` upisuje redak u `person_channel_overrides` s
+  /// `confirmed = false`. Prijava se **ne primjenjuje sama** — agregacija čita
+  /// samo potvrđene retke, pa javni gumb bez autentikacije ne može nikome
+  /// obrisati epizodu iz kataloga. Backend zato vraća **202**, ne 200.
+  ///
+  /// Fire-and-forget: vraća `true` samo kad je zapis potvrđeno zaprimljen, ali
+  /// pozivatelj korisniku zahvaljuje u oba slučaja — dojava koja nije stigla
+  /// nije korisnikov problem i nema se što ponoviti.
+  static Future<bool> reportEpisode({
+    required String slug,
+    required String youtubeId,
+    String? reason,
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    final uri = Uri.parse(_reportEndpoint);
+    try {
+      final resp = await _client
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'slug': slug,
+              'youtube_id': youtubeId,
+              if (reason != null && reason.trim().isNotEmpty)
+                'reason': reason.trim(),
+            }),
+          )
+          .timeout(timeout);
+      final ok = resp.statusCode == 202 || resp.statusCode == 200;
+      log('PersonService: prijava $slug/$youtubeId → HTTP ${resp.statusCode}');
+      return ok;
+    } catch (e) {
+      log('PersonService: prijava $slug/$youtubeId nije poslana: $e');
+      return false;
     }
   }
 

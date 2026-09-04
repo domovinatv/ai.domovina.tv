@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "person_count": 74,
+  "persons": [
+    {
+      "slug": "marko-matijasevic",
+      "name": "Marko Matijašević",
+      "avatar_url": null,
+      "episode_count": 22,
+      "channel_count": 9,
+      "total_duration_seconds": 74821,
+      "avg_magisterium_score": null,
+      "first_year": 2020,
+      "last_year": 2026,
+      "is_virtual_channel": true,
+      "latest_episode": {
+        "youtube_id": "WC5K32qbTd0",
+        "date": "2026-07-07",
+        "title": "8. Mladifest Hrvatska | Marko Matijašević"
+      }
+    },
+    {
+      "slug": "don-damir-stojic",
+      "name": "Don Damir Stojić",
+      "avatar_url": null,
+      "episode_count": 20,
+      "channel_count": 11,
+      "total_duration_seconds": 82775,
+      "avg_magisterium_score": null,
+      "first_year": 2019,
+      "last_year": 2026,
+      "is_virtual_channel": true,
+      "latest_episode": {
+        "youtube_id": "lNDdCMgikDo",
+        "date": "2026-02-13",
+        "title": "Don Damir Stojić otvoreno i u sridu: \"to je izopačena religija novog doba\""
+      }
+    },
+    {
+      "slug": "tomislav-belavic",
+      "name": "Tomislav Belavić",
+      "avatar_url": null,
+      "episode_count": 6,
+      "channel_count": 6,
+      "total_duration_seconds": 24481,
+      "avg_magisterium_score": null,
+      "first_year": 2023,
+      "last_year": 2026,
+      "is_virtual_channel": true,
+      "latest_episode": {
+        "youtube_id": "uixJ3kMd0XA",
+        "date": "2026-06-18",
+        "title": "Željka Markić & Narod.hr #156 - Tomislav Belavić"
+      }
+    }
+  ]
+}

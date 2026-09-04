@@ -187,7 +187,16 @@ void main() {
     });
     tearDown(PersonChannelFlag.instance.debugReset);
 
-    test('default je OFF', () async {
+    test('default je ON (od 4.9.2026., backend isporučen)', () async {
+      await PersonChannelFlag.instance.init();
+      expect(PersonChannelFlag.instance.isOn, isTrue);
+    });
+
+    test('izričito gašenje preživljava promjenu defaulta', () async {
+      // Rollback put: tko je ikad poslao ?vk=0, ima spremljenu '0' i mora
+      // ostati bez featurea i nakon što je default postao ON.
+      SharedPreferences.setMockInitialValues({'person_channel_flag': '0'});
+      PersonChannelFlag.instance.debugReset();
       await PersonChannelFlag.instance.init();
       expect(PersonChannelFlag.instance.isOn, isFalse);
     });
@@ -207,15 +216,22 @@ void main() {
       expect(PersonChannelFlag.overrideFromUri(null), isNull);
     });
 
-    test('spremljena vrijednost se dekodira, smeće je OFF', () {
+    test('samo izričito gašenje gasi; ništa i smeće padaju na default', () {
       expect(PersonChannelFlag.decode('1'), isTrue);
       expect(PersonChannelFlag.decode('true'), isTrue);
       expect(PersonChannelFlag.decode('0'), isFalse);
-      expect(PersonChannelFlag.decode(null), isFalse);
-      expect(PersonChannelFlag.decode('smeće'), isFalse);
+      expect(PersonChannelFlag.decode('false'), isFalse);
+      expect(PersonChannelFlag.decode('off'), isFalse);
+      // Ništa spremljeno = korisnik nije odlučio = default (ON).
+      expect(PersonChannelFlag.decode(null), isTrue);
+      expect(PersonChannelFlag.decode('smeće'), isTrue);
     });
 
     test('setOn perzistira i javlja listenerima', () async {
+      // Default je ON, pa se kreće od izričitog gašenja — inače prvi
+      // setOn(true) ne bi bio promjena i ne bi javio listenerima.
+      await PersonChannelFlag.instance.setOn(false);
+
       var notified = 0;
       void listener() => notified++;
       PersonChannelFlag.instance.addListener(listener);

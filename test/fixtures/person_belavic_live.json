@@ -1,0 +1,175 @@
+{
+  "name": "Tomislav Belavić",
+  "slug": "tomislav-belavic",
+  "avatar_url": null,
+  "channel_count": 6,
+  "episode_count": 6,
+  "channels": [
+    {
+      "channel": "40_dana_za_zivot",
+      "count": 1
+    },
+    {
+      "channel": "domovina_tv",
+      "count": 1
+    },
+    {
+      "channel": "mladi_za_domovinu",
+      "count": 1
+    },
+    {
+      "channel": "muzevni_budite",
+      "count": 1
+    },
+    {
+      "channel": "podcast_bitno_net",
+      "count": 1
+    },
+    {
+      "channel": "zeljka_markic_i_narod_hr",
+      "count": 1
+    }
+  ],
+  "episodes": [
+    {
+      "youtube_id": "uixJ3kMd0XA",
+      "title": "Željka Markić & Narod.hr #156 - Tomislav Belavić",
+      "channel": "zeljka_markic_i_narod_hr",
+      "upload_date": "2026-06-18",
+      "first_ts": 6,
+      "deep_link": "https://domovina.ai/v/uixJ3kMd0XA/t/6",
+      "channel_name": "Željka Markić & Narod",
+      "channel_youtube_id": "UCUxKo1ZDaHyXQwr3_w4FZgw",
+      "channel_tracked": true,
+      "duration_seconds": 2865,
+      "speaking_seconds": 1629,
+      "speaking_share": 0.569,
+      "tier": "primary"
+    },
+    {
+      "youtube_id": "JV1vYeN5Hus",
+      "title": "Tomislav Belavić: Muževnost u vezi i braku",
+      "channel": "muzevni_budite",
+      "upload_date": "2026-02-28",
+      "first_ts": 12,
+      "deep_link": "https://domovina.ai/v/JV1vYeN5Hus/t/12",
+      "channel_name": "Muževni budite",
+      "channel_youtube_id": "UCW1tLHKzwWJG34Ss1XnZlMw",
+      "channel_tracked": true,
+      "duration_seconds": 2924,
+      "speaking_seconds": 2912,
+      "speaking_share": 0.996,
+      "tier": "primary"
+    },
+    {
+      "youtube_id": "KvIhy5SESYs",
+      "title": "Katolička udruga \"Prilika za susret\" - Tomislav Belavić i Matija Stepanić",
+      "channel": "domovina_tv",
+      "upload_date": "2026-02-24",
+      "first_ts": 0,
+      "deep_link": "https://domovina.ai/v/KvIhy5SESYs/t/0",
+      "channel_name": "DOMOVINA",
+      "channel_youtube_id": "UCXXhnehl2pss0uYdfLRDtyw",
+      "channel_tracked": true,
+      "duration_seconds": 6220,
+      "speaking_seconds": 3634,
+      "speaking_share": 0.584,
+      "tier": "primary"
+    },
+    {
+      "youtube_id": "O4EjSWPuI64",
+      "title": "PROBLEM SAMAŠTVA U HRVATSKOJ - ŠTO JE RJEŠENJE? | Tomislav Belavić - PODCAST #87",
+      "channel": "mladi_za_domovinu",
+      "upload_date": "2025-12-21",
+      "first_ts": 0,
+      "deep_link": "https://domovina.ai/v/O4EjSWPuI64/t/0",
+      "channel_name": "Mladi za Domovinu",
+      "channel_youtube_id": "UCAcCn67b3O7b1JSISdQNbwA",
+      "channel_tracked": true,
+      "duration_seconds": 5224,
+      "speaking_seconds": 3370,
+      "speaking_share": 0.645,
+      "tier": "primary"
+    },
+    {
+      "youtube_id": "W869S5xB0jo",
+      "title": "Podcast ŽIVOT #5 - Tomislav Belavić: Za Ljubav je potrebna zrelost",
+      "channel": "40_dana_za_zivot",
+      "upload_date": "2024-07-31",
+      "first_ts": 11,
+      "deep_link": "https://domovina.ai/v/W869S5xB0jo/t/11",
+      "channel_name": "40 dana za život - Hrvatska za Život",
+      "channel_youtube_id": "UChgVPEqmTeG0na3u8VfY3PQ",
+      "channel_tracked": true,
+      "duration_seconds": 4612,
+      "speaking_seconds": 2515,
+      "speaking_share": 0.545,
+      "tier": "primary"
+    },
+    {
+      "youtube_id": "s1acPycl61I",
+      "title": "Podcast Bitno.net-a - Belavić: Radim na upoznavanju katoličkih samaca, govorim im da kava nije brak",
+      "channel": "podcast_bitno_net",
+      "upload_date": "2023-02-07",
+      "first_ts": 28,
+      "deep_link": "https://domovina.ai/v/s1acPycl61I/t/28",
+      "channel_name": "Podcast Bitno.net-a",
+      "channel_youtube_id": "UCdeWIIyVKdg9Nq3CK5amFYA",
+      "channel_tracked": true,
+      "duration_seconds": 2636,
+      "speaking_seconds": 1331,
+      "speaking_share": 0.505,
+      "tier": "primary"
+    }
+  ],
+  "timeline": [
+    {
+      "month": "2023-02",
+      "count": 1
+    },
+    {
+      "month": "2024-07",
+      "count": 1
+    },
+    {
+      "month": "2025-12",
+      "count": 1
+    },
+    {
+      "month": "2026-02",
+      "count": 2
+    },
+    {
+      "month": "2026-06",
+      "count": 1
+    }
+  ],
+  "mentions": [
+    {
+      "youtube_id": "JNxtmshvV54",
+      "title": "VELIKE OBITELJI - TEMELJ OBNOVE HRVATSKE | Kristijan Glavaš o odgoju, poduzetništvu i vjeri!",
+      "channel": "mladi_za_domovinu",
+      "upload_date": "2026-01-08",
+      "first_ts": 0,
+      "deep_link": "https://domovina.ai/v/JNxtmshvV54"
+    }
+  ],
+  "mention_episode_count": 1,
+  "mention_channels": [
+    {
+      "channel": "mladi_za_domovinu",
+      "count": 1
+    }
+  ],
+  "mention_timeline": [
+    {
+      "month": "2026-01",
+      "count": 1
+    }
+  ],
+  "is_virtual_channel": true,
+  "ambiguous": false,
+  "optout": false,
+  "cameo_episodes": [],
+  "cameo_episode_count": 0
+}

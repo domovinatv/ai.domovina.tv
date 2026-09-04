@@ -321,6 +321,26 @@ class PersonHub {
         ...cameoEpisodes,
       ];
 
+  /// SVI nastupi u jednom popisu, najnoviji prvo.
+  ///
+  /// Ovo je popis za prikaz **bez** kanal-forme, i mora ostati potpun. Backend
+  /// od 3.9.2026. dijeli nastupe na `episodes[]` (primary) i `cameo_episodes[]`;
+  /// izmjereno tog dana, `cameo` je **31,7 %** svih parova govornik-epizoda.
+  /// Kad bi profil bez flaga crtao samo `episodes`, gotovo trećina nečijih
+  /// nastupa bi tiho nestala s javne stranice — a taj prikaz po definiciji
+  /// mora izgledati točno kao prije uvođenja virtualnih kanala.
+  ///
+  /// Podjela na dvije sekcije postoji SAMO u kanal-formi, gdje je i objašnjena
+  /// („Kratki nastupi").
+  List<PersonEpisode> get allAppearances {
+    if (cameoEpisodes.isEmpty) return episodes;
+    final all = [...episodes, ...cameoEpisodes];
+    // Backend sortira svaki popis zasebno; spojeni popis se mora presortirati
+    // ili bi cameo nastupi svi pali na dno bez obzira na datum.
+    all.sort((a, b) => b.uploadDate.compareTo(a.uploadDate));
+    return all;
+  }
+
   /// "13h 39m" — hero/kartica virtualnog kanala.
   String get durationDisplay => personDurationDisplay(totalDurationSeconds);
 

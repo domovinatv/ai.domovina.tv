@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
 import '../../models/person_hub.dart';
 import '../../services/cdn_config.dart';
 import '../../services/follow_service.dart';
@@ -341,7 +340,7 @@ class _SingleColumn extends StatelessWidget {
     final timeline = mentionOnly ? hub.mentionTimeline : hub.timeline;
     // Bez kanal-forme popis ostaje JEDAN (današnje ponašanje) — cameo se ne
     // izdvaja, da profil bez flaga izgleda točno kao prije.
-    final primary = channelForm ? hub.primaryEpisodes : hub.episodes;
+    final primary = channelForm ? hub.primaryEpisodes : hub.allAppearances;
     final cameo =
         channelForm ? hub.cameoAppearances : const <PersonEpisode>[];
     return Center(
@@ -425,7 +424,7 @@ class _TwoColumn extends StatelessWidget {
     final mentionOnly = hub.isMentionOnly;
     final channels = mentionOnly ? hub.mentionChannels : hub.channels;
     final timeline = mentionOnly ? hub.mentionTimeline : hub.timeline;
-    final primary = channelForm ? hub.primaryEpisodes : hub.episodes;
+    final primary = channelForm ? hub.primaryEpisodes : hub.allAppearances;
     final cameo =
         channelForm ? hub.cameoAppearances : const <PersonEpisode>[];
     // Treći stupac („Spominje se u") traži više širine da sve tri kolone dišu.
@@ -1223,12 +1222,17 @@ class _EpisodeCard extends StatelessWidget {
     this.channelForm = false,
   });
 
-  /// Dojava krivo pripisanog govornika. Backend ručke još nema (override se
-  /// upisuje ručno u `person_channel_overrides`, F2/plan §O3), pa je ovdje
-  /// samo trag u konzoli + potvrda korisniku — SnackBar je dopušten jer
-  /// potvrđuje korisnikovu radnju, ne prekida reprodukciju.
+  /// Dojava krivo pripisanog govornika → `POST /api/person-report`.
+  ///
+  /// Prijava ide u `person_channel_overrides` **nepotvrđena**; epizoda ne
+  /// ispada iz kanala dok je čovjek ne potvrdi. Bez te podjele bi gumb bez
+  /// ikakve autentikacije bio brisač tuđih epizoda iz kataloga.
+  ///
+  /// Potvrda se prikazuje **odmah**, ne nakon odgovora: mreža nije korisnikova
+  /// briga, a čekanje bi na sporoj vezi izgledalo kao da gumb ne radi.
+  /// SnackBar je ovdje dopušten jer potvrđuje korisnikovu radnju i ne prekida
+  /// reprodukciju (pravilo iz CLAUDE.md o nudgeovima).
   void _reportError(BuildContext context) {
-    log('person.report_error slug=$personSlug video=${episode.youtubeId}');
     final l = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1236,6 +1240,10 @@ class _EpisodeCard extends StatelessWidget {
         duration: const Duration(seconds: 3),
       ),
     );
+    unawaited(PersonService.reportEpisode(
+      slug: personSlug,
+      youtubeId: episode.youtubeId,
+    ));
   }
 
   /// Sekunde → "16:45" / "1:05:30" (sat samo kad postoji).

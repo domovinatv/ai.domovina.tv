@@ -217,8 +217,11 @@ void main() {
           semanticsIdentifier: 'person-follow-button',
         ));
 
-    testWidgets('bez flaga se ne prikazuje (ekran izgleda kao danas)',
+    testWidgets('s ugašenim flagom se ne prikazuje (stari izgled profila)',
         (tester) async {
+      // Default je ON od 4.9.2026.; ovo je put korisnika koji je feature
+      // izričito ugasio (?vk=0) i mora dobiti profil kakav je bio prije.
+      await PersonChannelFlag.instance.setOn(false);
       await tester.pumpWidget(button());
       await tester.pumpAndSettle();
       expect(find.text('Prati'), findsNothing);
@@ -292,7 +295,9 @@ void main() {
       expect(find.text('NOVO OD PRAĆENIH'), findsNothing);
     });
 
-    testWidgets('bez flaga rail ostaje skriven i s praćenjem', (tester) async {
+    testWidgets('s ugašenim flagom rail ostaje skriven i s praćenjem',
+        (tester) async {
+      await PersonChannelFlag.instance.setOn(false);
       await FollowService.instance.toggle(personFollowKey('marijana-sarolic-robic'));
       personIndexCache.debugSetIndex(
           _indexWith(slug: 'marijana-sarolic-robic', date: '2026-06-24'));
