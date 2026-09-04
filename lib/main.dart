@@ -28,7 +28,7 @@ const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// App version — prikazuje se u HomeScreen footer.
-const String appVersion = '2.0.146';
+const String appVersion = '2.0.147';
 
 /// Console logger s verzijom — koristi za debug u release web buildovima
 /// gdje su stack traceovi minificirani. Vidi CLAUDE.md za detalje.
