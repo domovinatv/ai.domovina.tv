@@ -1083,7 +1083,18 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// odmah nakon `fling()`, dakle na POČETKU close animacije; sadržaj drawera
   /// se unmounta tek kad kontroler dođe u `dismissed`. Prozor tolerancije
   /// stignemo otvoriti prije framework pauze.
+  /// Je li ijedan drawer otvoren — čita ga `PopScope.canPop` (vidi build).
+  /// Prati se ručno jer `ScaffoldState.isEndDrawerOpen` u trenutku buildanja
+  /// PopScope-a još nije pouzdan (Scaffold je dijete tog PopScope-a).
+  bool _anyDrawerOpen = false;
+
+  void _onDrawerChanged(bool isOpen) {
+    if (_anyDrawerOpen == isOpen) return;
+    setState(() => _anyDrawerOpen = isOpen);
+  }
+
   void _onEndDrawerChanged(bool isOpen) {
+    _onDrawerChanged(isOpen);
     if (isOpen) return;
     // Drawer zatvaramo i sami kad app ide u pozadinu — tada o reprodukciji
     // odlučuje didChangeAppLifecycleState (poštuje i pref „u pozadini"),
@@ -2287,10 +2298,22 @@ class _EpisodeContentState extends State<_EpisodeContent>
     return EpisodeLanguageScope(
       language: _language,
       hasTranslationEn: data.hasTranslationEn,
-      child: Scaffold(
+      child: PopScope(
+        // Back mora prvo zatvoriti otvoreni drawer, pa tek onda napustiti
+        // epizodu. Bez ovoga je korisnik koji je na mobitelu otvorio video u
+        // `endDraweru` i stisnuo Back ISPADAO IZ EPIZODE — Scaffold drawer nije
+        // ruta, pa ga Navigator ne vidi kao nešto što se ima popati.
+        canPop: !_anyDrawerOpen,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop || !mounted) return;
+          _scaffoldKey.currentState?.closeEndDrawer();
+          _scaffoldKey.currentState?.closeDrawer();
+        },
+        child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: theme.colorScheme.surfaceContainerLow,
         onEndDrawerChanged: _onEndDrawerChanged,
+        onDrawerChanged: _onDrawerChanged,
         drawer: isWide
             ? null
             : Drawer(
@@ -2468,6 +2491,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ],
           ),
         ),
+      ),
       ),
     );
   }

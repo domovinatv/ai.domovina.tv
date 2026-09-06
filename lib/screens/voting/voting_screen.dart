@@ -313,6 +313,12 @@ class _VotingScreenState extends State<VotingScreen> {
   }
 
   void _otvoriDetalj(VoteCandidate kandidat) {
+    // Browserov Back mijenja rutu ispod sheeta — vidi `closeOnRouteChange`.
+    final navigator = Navigator.of(context);
+    late final VoidCallback unsubscribe;
+    unsubscribe = closeOnRouteChange(context, () {
+      if (navigator.canPop()) navigator.pop();
+    });
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -331,7 +337,7 @@ class _VotingScreenState extends State<VotingScreen> {
               }
             : null,
       ),
-    );
+    ).whenComplete(unsubscribe);
   }
 
   // ---------------------------------------------------------------------------

@@ -38,6 +38,15 @@ Future<void> showSearchOverlay(
   required void Function(String videoId) onSelectVideo,
   required void Function(String videoId, int seconds) onSelectVideoAt,
 }) async {
+  // Browserov Back mijenja rutu ISPOD modala, a modal ne zna za to (vidi
+  // `closeOnRouteChange`). Bez ovoga bi paleta ostala visjeti preko nove
+  // stranice.
+  final navigator = Navigator.of(context);
+  late final VoidCallback unsubscribe;
+  unsubscribe = closeOnRouteChange(context, () {
+    if (navigator.canPop()) navigator.pop();
+  });
+
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
@@ -62,6 +71,7 @@ Future<void> showSearchOverlay(
       );
     },
   );
+  unsubscribe();
 }
 
 class _SearchOverlay extends StatefulWidget {

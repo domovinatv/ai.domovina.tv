@@ -152,3 +152,25 @@ void backUp(BuildContext context, {String? channelSlug}) {
   final here = GoRouterState.of(context).uri.toString();
   context.go(upTarget(here, channelSlug: channelSlug));
 }
+
+/// Zatvori imperativni modal (dialog, bottom sheet) kad se promijeni ruta.
+///
+/// **Zašto je ovo potrebno na webu:** `showDialog`/`showModalBottomSheet` guraju
+/// rutu kroz IMPERATIVNI `Navigator`, o kojem go_router ne zna ništa i koja ne
+/// proizvodi history entry. Na nativeu je to bezopasno — sistemski Back ide kroz
+/// `popRoute()` → `Navigator.maybePop()`, pa modal uredno padne prvi. Na webu
+/// browserov Back NE ide tim putem nego kroz `popstate` → `setNewRoutePath`, pa
+/// se stranica ISPOD modala promijeni dok modal ostane visjeti preko nje.
+///
+/// Vraća funkciju za odjavu; pozovi je kad modal ionako nestane.
+VoidCallback closeOnRouteChange(BuildContext context, VoidCallback close) {
+  final router = GoRouter.of(context);
+  final startedAt = router.routerDelegate.currentConfiguration.uri.toString();
+  void listener() {
+    final now = router.routerDelegate.currentConfiguration.uri.toString();
+    if (now != startedAt) close();
+  }
+
+  router.routerDelegate.addListener(listener);
+  return () => router.routerDelegate.removeListener(listener);
+}
