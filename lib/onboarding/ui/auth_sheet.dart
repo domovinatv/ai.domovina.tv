@@ -10,13 +10,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show rootScaffoldMessengerKey;
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';
 import 'auth_ui.dart';
+import '../../router/nav.dart';
 
 enum AuthSheetOrigin { account, guest, moment3, handoff }
 
@@ -752,7 +752,7 @@ class _LegalLine extends StatelessWidget {
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
-              onTap: () => context.push(route),
+              onTap: () => drillDown(context, route),
               behavior: HitTestBehavior.opaque,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),

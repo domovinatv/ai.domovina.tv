@@ -17,7 +17,6 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -30,6 +29,7 @@ import '../../services/voting_service.dart';
 import '../../theme/app_theme.dart';
 import 'widgets/candidate_tile.dart';
 import 'widgets/voting_header.dart';
+import '../../router/nav.dart';
 
 class VotingScreen extends StatefulWidget {
   /// `/glasanje/:slug` — deep-link koji nakon učitavanja otvori detalj
@@ -313,6 +313,12 @@ class _VotingScreenState extends State<VotingScreen> {
   }
 
   void _otvoriDetalj(VoteCandidate kandidat) {
+    // Browserov Back mijenja rutu ispod sheeta — vidi `closeOnRouteChange`.
+    final navigator = Navigator.of(context);
+    late final VoidCallback unsubscribe;
+    unsubscribe = closeOnRouteChange(context, () {
+      if (navigator.canPop()) navigator.pop();
+    });
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -331,7 +337,7 @@ class _VotingScreenState extends State<VotingScreen> {
               }
             : null,
       ),
-    );
+    ).whenComplete(unsubscribe);
   }
 
   // ---------------------------------------------------------------------------
@@ -396,7 +402,7 @@ class _VotingScreenState extends State<VotingScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: l.commonBack,
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+          onPressed: () => backUp(context),
         ),
       ),
       body: Column(

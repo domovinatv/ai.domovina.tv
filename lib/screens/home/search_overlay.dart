@@ -22,6 +22,7 @@ import '../../widgets/person_monogram.dart';
 import '../../theme/typography.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/cached_thumbnail.dart';
+import '../../router/nav.dart';
 
 /// Otvori search overlay (modal) povrh home screen-a.
 ///
@@ -37,6 +38,15 @@ Future<void> showSearchOverlay(
   required void Function(String videoId) onSelectVideo,
   required void Function(String videoId, int seconds) onSelectVideoAt,
 }) async {
+  // Browserov Back mijenja rutu ISPOD modala, a modal ne zna za to (vidi
+  // `closeOnRouteChange`). Bez ovoga bi paleta ostala visjeti preko nove
+  // stranice.
+  final navigator = Navigator.of(context);
+  late final VoidCallback unsubscribe;
+  unsubscribe = closeOnRouteChange(context, () {
+    if (navigator.canPop()) navigator.pop();
+  });
+
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
@@ -61,6 +71,7 @@ Future<void> showSearchOverlay(
       );
     },
   );
+  unsubscribe();
 }
 
 class _SearchOverlay extends StatefulWidget {
@@ -314,7 +325,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       final c = _visibleChannels.length;
       final i = _leftSel.clamp(0, _leftCount - 1);
       if (i < p) {
-        router.go(_visiblePersons[i].routePath);
+        drillDownOn(router, _visiblePersons[i].routePath);
       } else if (i < p + c) {
         widget.onSelectChannel(_visibleChannels[i - p]);
       } else {
@@ -758,7 +769,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
         onTap: () {
           final router = GoRouter.of(context);
           Navigator.of(context).pop();
-          router.go(p.routePath);
+          drillDownOn(router, p.routePath);
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1034,7 +1045,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                                 onTap: () {
                                   final router = GoRouter.of(context);
                                   Navigator.of(context).pop();
-                                  router.go(
+                                  drillDownOn(router,
                                       '/p/${personSlug(r.speakers.first)}');
                                 },
                                 child: Row(

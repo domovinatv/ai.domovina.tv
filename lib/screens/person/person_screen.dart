@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
@@ -11,11 +10,13 @@ import '../../services/follow_service.dart';
 import '../../services/page_meta.dart';
 import '../../services/person_channel_flag.dart';
 import '../../services/person_service.dart';
+import '../../services/scroll_memory.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/typography.dart';
 import '../../widgets/follow_button.dart';
 import '../../widgets/person_monogram.dart';
 import '../../widgets/cached_thumbnail.dart';
+import '../../router/nav.dart';
 
 /// Javni profil osobe ("person hub") — /p/:slug.
 ///
@@ -79,13 +80,9 @@ class _PersonScreenState extends State<PersonScreen> {
     return hub;
   }
 
-  void _back() {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
-  }
+  /// ← popa stog; bez stoga (share link, hard refresh) ide na katalog s
+  /// filtrom „Osobe", ne na naslovnicu — vidi `upTarget`.
+  void _back() => backUp(context);
 
   /// Kopira javnu poveznicu na profil (`/p/<slug>`). Worker injecta osobno-
   /// specifične OG tagove na taj path (ime + broj epizoda/kanala) pa WhatsApp/
@@ -324,14 +321,34 @@ class _PersonContent extends StatelessWidget {
 }
 
 /// Mobitel / usko — sve u jednom scroll stupcu.
-class _SingleColumn extends StatelessWidget {
+///
+/// Pamćenje scroll pozicije je OVDJE, a ne na `_TwoColumn`: široki layout ima
+/// dva nezavisna stupca koji scrollaju odvojeno, pa jedan spremljeni offset
+/// nema smisla. Uski layout je i mjesto gdje se problem osjeti — popis nastupa
+/// je dug, a tap na epizodu je najčešća radnja s ovog ekrana.
+class _SingleColumn extends StatefulWidget {
   final PersonHub hub;
   final bool channelForm;
 
   const _SingleColumn({required this.hub, this.channelForm = false});
 
   @override
+  State<_SingleColumn> createState() => _SingleColumnState();
+}
+
+class _SingleColumnState extends State<_SingleColumn> {
+  final _scrollCtrl = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hub = widget.hub;
+    final channelForm = widget.channelForm;
     final l = AppLocalizations.of(context);
     // Osoba bez gostovanja: kanali/timeline dolaze iz spomena (govor-agregacije
     // su prazne), a naslov sekcije kanala se mijenja u „Spominje se na".
@@ -346,7 +363,11 @@ class _SingleColumn extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
-        child: ListView(
+        child: ScrollRestorer(
+          storageKey: '/p/${hub.slug}',
+          controller: _scrollCtrl,
+          child: ListView(
+          controller: _scrollCtrl,
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
             if (channelForm)
@@ -403,6 +424,7 @@ class _SingleColumn extends StatelessWidget {
               ),
             ],
           ],
+        ),
         ),
       ),
     );
@@ -918,7 +940,7 @@ class _ChannelChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => context.go('/c/${channel.channelRouteSlug}'),
+        onTap: () => drillDown(context, '/c/${channel.channelRouteSlug}'),
         child: body,
       ),
     );
@@ -1270,7 +1292,8 @@ class _EpisodeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.go('${episode.routePath}?p=$personSlug'),
+        onTap: () =>
+            drillDown(context, '${episode.routePath}?p=$personSlug'),
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Row(
@@ -1426,7 +1449,7 @@ class _SourceChannelChip extends StatelessWidget {
     }
     return InkWell(
       borderRadius: BorderRadius.circular(6),
-      onTap: () => context.go(route),
+      onTap: () => drillDown(context, route),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
         child: _MetaChip(

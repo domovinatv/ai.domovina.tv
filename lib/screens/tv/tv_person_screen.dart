@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
@@ -13,6 +12,7 @@ import '../../widgets/person_monogram.dart';
 import 'widgets/tv_episode_card.dart';
 import 'widgets/tv_focus.dart';
 import 'widgets/tv_row_traversal.dart';
+import '../../router/nav.dart';
 
 /// TV varijanta person huba (`/p/:slug`) — 10-foot pandan
 /// `lib/screens/person/person_screen.dart`.
@@ -95,14 +95,14 @@ class _TvPersonScreenState extends State<TvPersonScreen> {
   }
 
   void _back() {
-    log('TvPerson: back → /');
-    context.go('/');
+    log('TvPerson: back');
+    backUp(context);
   }
 
   void _openEpisode(PersonEpisode episode) {
     final route = episode.routePath;
     log('TvPerson: open $route');
-    context.go(route);
+    drillDown(context, route);
   }
 
   @override

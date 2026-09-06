@@ -59,6 +59,16 @@ class PersonChannelFlag extends ChangeNotifier {
     return _on;
   }
 
+  /// Vrijednost BEZ pokretanja učitavanja — `null` dok flag nije pročitan.
+  ///
+  /// Postoji zbog railova koji se montiraju više puta u istoj sesiji: na DRUGOM
+  /// montiranju je flag odavno učitan, pa nema razloga da rail krene od `false`
+  /// i jedan frame stoji na `SizedBox.shrink()`. Taj bljesak je mijenjao visinu
+  /// naslovnice nakon povratka, što je pomicalo metu vraćanju scroll pozicije.
+  /// `isOn` se ne može koristiti u `initState` jer prvi pristup može sinkrono
+  /// pozvati `notifyListeners()`.
+  bool? get isOnIfLoaded => _loaded ? _on : null;
+
   /// Učitaj stanje (URL parametar pobjeđuje spremljenu vrijednost).
   /// Idempotentno — višestruki pozivi dijele isti Future.
   Future<void> init() => _loading ??= _load();

@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart' show log;
 import '../../models/episode_status.dart';
@@ -14,6 +13,7 @@ import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/local_prefs.dart';
 import '../../services/page_meta.dart';
+import '../../services/scroll_memory.dart';
 import '../../services/view_mode.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/founder_booking.dart';
@@ -31,6 +31,7 @@ import 'search_overlay.dart';
 import 'skeletons.dart';
 import 'sort_mode.dart';
 import 'voting_rail.dart';
+import '../../router/nav.dart';
 
 const _channelOrderKey = 'channel_order';
 
@@ -69,8 +70,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late Future<ChannelIndex> _indexFuture;
 
-  // Ordered channel list (shuffled once, persisted)
-  List<ChannelSummary>? _orderedChannels;
+  // Ordered channel list (shuffled once, persisted).
+  //
+  // Živi u `ChannelCache` singletonu, NE u ovom State-u — vidi komentar uz
+  // `ChannelCache.orderedChannels`. Time naslovnica u PRVOM frameu nakon
+  // povratka crta puni sadržaj umjesto skeletona, pa joj visina ne raste u
+  // asinkronim skokovima i vraćanje scroll pozicije ima stabilnu metu.
 
   // Simple/Detailed mode — auto-defaults to simple on mobile
   bool _simpleMode = false;
@@ -142,6 +147,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  List<ChannelSummary>? get _orderedChannels => _channelCache.orderedChannels;
+
   void _onCacheUpdate() {
     if (mounted) setState(() {});
   }
@@ -169,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Otvori epizodu na zadanom timestampu (semantic search deep link).
   void _openVideoAt(String videoId, int seconds) {
-    context.go('/v/$videoId/t/$seconds');
+    drillDown(context, '/v/$videoId/t/$seconds');
   }
 
   /// Primijeni aktivni sort mode na kanale. Za 'custom' mode koristi spremljen
@@ -206,15 +213,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _selectChannel(ChannelSummary channel) {
     final slug = channel.id.replaceAll('_', '-');
-    context.go('/c/$slug');
+    drillDown(context, '/c/$slug');
   }
 
+  /// Naslovnica → epizoda je drill-down: `push` zadrži OVAJ ekran živ ispod,
+  /// pa se na `pop()` vraća ista instanca sa svojim scrollom. Prije 6.9.2026.
+  /// je bio `go()`, koji je `HomeScreen` uništio — zato se scroll nije vraćao.
   void _openVideo(String videoId) {
-    if (_simpleMode) {
-      context.go('/m/$videoId');
-    } else {
-      context.go('/v/$videoId');
-    }
+    drillDown(context, _simpleMode ? '/m/$videoId' : '/v/$videoId');
   }
 
   @override
@@ -244,7 +250,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Samo izračun redoslijeda za prikaz. Prefetch je premješten u
                 // initState (vezan na index load) da se ne preskoči zbog race-a.
                 final ordered = await _applyOrder(channels);
-                if (mounted) setState(() => _orderedChannels = ordered);
+                _channelCache.setOrderedChannels(ordered);
+                if (mounted) setState(() {});
               },
               onSearchTap: _openSearchOverlay,
               onVideoTap: _openVideo,
@@ -301,6 +308,12 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
   bool _graceElapsed = false;
   Timer? _graceTimer;
 
+  /// Naslovnica do 6.9.2026. nije imala NIJEDAN `ScrollController` — pa se
+  /// pozicija nije imala odakle ni pročitati. Glavni mehanizam za povratak
+  /// scrolla je `push` (naslovnica ostaje živa ispod), a ovaj kontroler pokriva
+  /// slučajeve u kojima se ekran stvarno gradi iznova — vidi `ScrollMemory`.
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -312,6 +325,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
   @override
   void dispose() {
     _graceTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -336,11 +350,18 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
     final onSearchTap = widget.onSearchTap;
     final onVideoTap = widget.onVideoTap;
 
-    return FutureBuilder<ChannelIndex>(
-      future: indexFuture,
-      builder: (context, snap) {
+    // Restorer omata SVE grane odjednom (loading / greška / skeleton / puni
+    // sadržaj) jer sve dijele isti kontroler — pozicija se ne smije izgubiti
+    // pri prelasku između njih dok podaci pristižu.
+    return ScrollRestorer(
+      storageKey: '/',
+      controller: _scrollController,
+      child: FutureBuilder<ChannelIndex>(
+        future: indexFuture,
+        builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return CustomScrollView(
+            controller: _scrollController,
             slivers: [
               HomeAppBar(onSearchTap: onSearchTap),
               const SliverFillRemaining(
@@ -353,6 +374,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
         if (snap.hasError) {
           log('ChannelIndex ERROR: ${snap.error}');
           return CustomScrollView(
+            controller: _scrollController,
             slivers: [
               HomeAppBar(onSearchTap: onSearchTap),
               SliverFillRemaining(
@@ -380,6 +402,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
             builder: (context, constraints) {
               final isMobile = constraints.maxWidth < 600;
               return CustomScrollView(
+                controller: _scrollController,
                 slivers: [
                   HomeAppBar(onSearchTap: onSearchTap),
                   SliverToBoxAdapter(
@@ -421,6 +444,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                 : const <FeedVideo>[];
 
             return CustomScrollView(
+              controller: _scrollController,
               slivers: [
                 HomeAppBar(onSearchTap: onSearchTap),
                 SliverToBoxAdapter(
@@ -601,8 +625,9 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
               ],
             );
           },
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -650,7 +675,7 @@ class _AllChannelsCta extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => context.go('/channels'),
+              onTap: () => drillDown(context, '/channels'),
               child: Padding(
                 padding: const EdgeInsets.all(18),
                 child: Row(

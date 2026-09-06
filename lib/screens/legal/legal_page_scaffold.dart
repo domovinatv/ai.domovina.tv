@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../../router/nav.dart';
 
 /// Zajednicki scaffold za /privacy i /terms placeholder stranice.
 /// Drzi konzistentan layout (max-width 760, app bar s back na /) dok
@@ -23,11 +23,7 @@ class LegalPageScaffold extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
+            back(context);
           },
         ),
       ),

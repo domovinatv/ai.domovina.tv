@@ -1,10 +1,10 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../models/person_hub.dart';
 import '../models/podcast_summary.dart';
 import '../services/episode_language.dart';
 import '../l10n/app_localizations.dart';
+import '../router/nav.dart';
 
 class EntitiesSection extends StatelessWidget {
   final SummaryContent summary;
@@ -43,7 +43,7 @@ class EntitiesSection extends StatelessWidget {
             // Osobe vode na javni profil govornika (/p/:slug). Oni koji su i
             // govornici dobiju bogat profil; ostali (samo spomenuti) padnu na
             // uredno prazno stanje. Mjesta/organizacije nisu klikabilni.
-            onItemTap: (name) => context.go('/p/${personSlug(name)}'),
+            onItemTap: (name) => drillDown(context, '/p/${personSlug(name)}'),
             isHighlighted: highlightPersonSlug != null
                 ? (name) => personSlug(name) == highlightPersonSlug
                 : null,
@@ -177,7 +177,7 @@ class _PeopleRailState extends State<PeopleRail> {
                   label: name,
                   color: _peopleColor,
                   highlighted: personSlug(name) == slug,
-                  onTap: () => context.go('/p/${personSlug(name)}'),
+                  onTap: () => drillDown(context, '/p/${personSlug(name)}'),
                 ),
                 const SizedBox(width: 6),
               ],

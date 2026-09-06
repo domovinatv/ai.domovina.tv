@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
@@ -9,6 +8,7 @@ import '../../services/channel_cache.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_episode_card.dart';
 import 'widgets/tv_focus.dart';
+import '../../router/nav.dart';
 
 /// TV channel detail screen. Pokazuje sve epizode kanala kao responzivan grid
 /// fokusiranih kartica.
@@ -53,14 +53,17 @@ class _TvChannelScreenState extends State<TvChannelScreen> {
     super.dispose();
   }
 
+  /// D-pad BACK popa stog kad ga ima. Prije 6.9.2026. je uvijek skakao na
+  /// home, pa je korisnik gubio poziciju u gridu — na 10-foot UI-ju to znači
+  /// desetke pritisaka D-pada da se vrati gdje je bio.
   void _back() {
-    log('TvChannel: back → /');
-    context.go('/');
+    log('TvChannel: back');
+    backUp(context);
   }
 
   void _openEpisode(String videoId) {
     log('TvChannel: open /v/$videoId');
-    context.go('/v/$videoId');
+    drillDown(context, '/v/$videoId');
   }
 
   @override

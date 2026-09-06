@@ -3,12 +3,12 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../l10n/app_localizations.dart';
 import '../onboarding/ui/auth_sheet.dart';
 import '../screens/account/account_screen.dart' show confirmAndSignOut;
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../router/nav.dart';
 
 
 class AccountChip extends StatelessWidget {
@@ -248,13 +248,13 @@ class _SignedInChip extends StatelessWidget {
   void _onSelected(BuildContext context, String value) {
     switch (value) {
       case 'account':
-        context.go('/account');
+        drillDown(context, '/account');
         break;
       case 'channels':
-        context.go('/account/channels');
+        drillDown(context, '/account/channels');
         break;
       case 'handoff':
-        context.go('/handoff');
+        drillDown(context, '/handoff');
         break;
       case 'signout':
         confirmAndSignOut(context);

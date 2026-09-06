@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../models/person_hub.dart';
 import '../models/podcast_summary.dart';
+import '../router/nav.dart';
 
 /// Kompaktni chip koji prikazuje govornika kao "Ime · Voditelj/Gost".
 /// Ako pipeline nije izvukao pravo ime (suggested_name == role), prikazuje
@@ -67,7 +67,7 @@ class SpeakerChip extends StatelessWidget {
     if (name == null) return chip;
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () => context.go('/p/${personSlug(name)}'),
+      onTap: () => drillDown(context, '/p/${personSlug(name)}'),
       child: chip,
     );
   }

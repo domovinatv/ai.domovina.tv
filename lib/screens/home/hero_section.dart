@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/cdn_config.dart';
@@ -9,6 +8,7 @@ import '../../services/favorites_service.dart';
 import '../../theme/typography.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'home_feed.dart';
+import '../../router/nav.dart';
 
 /// Editorial hero sekcija — split layout (slika lijevo, tekst desno) na desktop,
 /// stack na mobile. Compact dimenzije — slika je 16:9 ograničena na 480px wide
@@ -657,7 +657,7 @@ class _SaveButtonState extends State<_SaveButton> {
         action: added
             ? SnackBarAction(
                 label: l.commonSeeAll,
-                onPressed: () => context.go('/favorites'),
+                onPressed: () => drillDown(context, '/favorites'),
               )
             : null,
       ),

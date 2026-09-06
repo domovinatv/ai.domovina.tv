@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart' show appVersion;
 import '../../models/channel_index.dart';
@@ -8,6 +7,7 @@ import '../../services/update_notifier.dart';
 import '../../l10n/app_localizations.dart';
 
 import '../../theme/typography.dart';
+import '../../router/nav.dart';
 
 /// 3-kolonski footer na dnu home screen-a.
 ///
@@ -173,13 +173,13 @@ class HomeFooter extends StatelessWidget {
             theme,
             l,
             label: l.homeFooterPrivacy,
-            onTap: () => context.go('/privacy'),
+            onTap: () => drillDown(context, '/privacy'),
           ),
           _link(
             theme,
             l,
             label: l.homeFooterTerms,
-            onTap: () => context.go('/terms'),
+            onTap: () => drillDown(context, '/terms'),
           ),
         ],
       );

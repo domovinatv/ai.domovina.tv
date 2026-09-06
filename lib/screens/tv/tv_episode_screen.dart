@@ -15,6 +15,7 @@ import '../../services/player_resume.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
+import '../../router/nav.dart';
 
 /// Faza 4 — TV episode screen.
 ///
@@ -31,7 +32,7 @@ import 'widgets/tv_focus.dart';
 ///   - OK na playeru = play/pause
 ///   - ◀▲▶▼ = default focus traversal (UP → toolbar Čitaj/Fullscreen)
 ///   - MEDIA_PLAY_PAUSE podržan
-///   - BACK = `context.go('/')` (vraca na TvHomeScreen)
+///   - BACK = popa stog (kanal/osoba s koje si došao); bez stoga → home
 ///
 /// Seek je NAMJERNO maknut s D-pad arrow keys jer je bio nepredvidljiv —
 /// korisnik bi pokušao navigirati do toolbar gumba i slučajno seek-ao.
@@ -449,7 +450,9 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
             _playerFocus.requestFocus();
             return;
           }
-          context.go('/');
+          // Popa stog kad ga ima — epizoda otvorena S KANALA vraća na kanal,
+          // ne na home. Prije 6.9.2026. je uvijek skakalo na home.
+          backUp(context);
         },
         child: SafeArea(
           // Web/Chrome dev: arrow keys ne mapiraju u DirectionalFocusIntent
@@ -581,7 +584,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
           final target = sec > 5
               ? '/v/${widget.youtubeId}/read?t=$sec'
               : '/v/${widget.youtubeId}/read';
-          context.go(target);
+          drillDown(context, target);
         },
         builder: (context, focused) => AnimatedContainer(
           duration: const Duration(milliseconds: 150),

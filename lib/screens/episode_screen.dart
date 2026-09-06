@@ -51,6 +51,7 @@ import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
 import '../widgets/view_mode_toggle_button.dart';
+import '../router/nav.dart';
 
 class EpisodeScreen extends StatefulWidget {
   final String youtubeId;
@@ -87,6 +88,22 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  /// Ruta više ne nosi `startAt`/`person` u `ValueKey`-u (vidi app_router.dart),
+  /// pa isti `State` može dobiti novi `youtubeId` samo kad go_router zadrži
+  /// stranicu istog ključa — a to se događa jedino pri promjeni jezika
+  /// (`/v/<id>` ↔ `/v/<id>/en` imaju RAZLIČIT ključ, dakle ne). Guard je ipak
+  /// tu jer bi tiho prikazivanje stare epizode pod novim ID-em bilo teško uočiti.
+  @override
+  void didUpdateWidget(EpisodeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.youtubeId != widget.youtubeId) {
+      _data = null;
+      _error = null;
+      _assetStatus.clear();
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -807,6 +824,35 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _initVideo();
   }
 
+  /// Ruta zadržava isti `State` kad se promijeni SAMO `startAt` ili `?p=`
+  /// (ključ je od 6.9.2026. `video-<id>-<jezik>` — vidi app_router.dart), pa se
+  /// ta dva propa moraju primijeniti OVDJE. Prije toga je promjena timestampa
+  /// bila novi ključ → novi State → uništen player i ponovno učitavanje svih
+  /// artefakata; sada je to seek na živom playeru.
+  @override
+  void didUpdateWidget(_EpisodeContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Nova ciljna sekunda iz URL-a (share link, tap na moment s /p/ profila).
+    final startAt = widget.startAtSeconds;
+    if (startAt != oldWidget.startAtSeconds && startAt != null) {
+      final player = _player;
+      if (player != null) {
+        // Programski skok — ne smije se ponuditi kao "Vrati me natrag".
+        _seekUndo?.suppress();
+        player.seek(Duration(seconds: startAt));
+      }
+    }
+
+    // Novi (ili maknuti) person-highlight marker.
+    if (widget.highlightPersonSlug != oldWidget.highlightPersonSlug) {
+      _personHighlightTs = null;
+      _personHighlightName = null;
+      _personHighlightSpeaks = false;
+      _initPersonHighlight();
+    }
+  }
+
   /// Primijeni trenutnu globalnu brzinu na player + osvježi media sesiju.
   void _applyPlaybackRate() {
     final player = _player;
@@ -1037,7 +1083,18 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// odmah nakon `fling()`, dakle na POČETKU close animacije; sadržaj drawera
   /// se unmounta tek kad kontroler dođe u `dismissed`. Prozor tolerancije
   /// stignemo otvoriti prije framework pauze.
+  /// Je li ijedan drawer otvoren — čita ga `PopScope.canPop` (vidi build).
+  /// Prati se ručno jer `ScaffoldState.isEndDrawerOpen` u trenutku buildanja
+  /// PopScope-a još nije pouzdan (Scaffold je dijete tog PopScope-a).
+  bool _anyDrawerOpen = false;
+
+  void _onDrawerChanged(bool isOpen) {
+    if (_anyDrawerOpen == isOpen) return;
+    setState(() => _anyDrawerOpen = isOpen);
+  }
+
   void _onEndDrawerChanged(bool isOpen) {
+    _onDrawerChanged(isOpen);
     if (isOpen) return;
     // Drawer zatvaramo i sami kad app ide u pozadinu — tada o reprodukciji
     // odlučuje didChangeAppLifecycleState (poštuje i pref „u pozadini"),
@@ -1674,6 +1731,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
     final appBar = _episodeAppBar(
       twoRow: width < 600,
+      leading: _backLeading(context),
       title: _Breadcrumb(
         channelName: data.info.channel,
         channelSlug: _channelSlug,
@@ -1722,7 +1780,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
             final target = _language == EpisodeLanguage.en
                 ? '/m/${data.youtubeId}/en'
                 : '/m/${data.youtubeId}';
-            context.go(target);
+            // Isti sadržaj, druga prezentacija → NE novi history entry.
+            swapPresentation(context, target);
           },
         ),
         if (_videoReady && !showVideo)
@@ -1762,7 +1821,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
               // on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik.
               PinkaSupportCard.episode(
                 youtubeId: data.youtubeId,
-                onOpen: (_) => context.push(
+                onOpen: (_) => drillDown(
+                  context,
                   Uri(
                     path: '/v/${data.youtubeId}/support',
                     queryParameters: {'name': data.displayTitle},
@@ -1875,7 +1935,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       // "Zid podrške" za epizodu — vidi standardni layout iznad.
                       PinkaSupportCard.episode(
                         youtubeId: data.youtubeId,
-                        onOpen: (_) => context.push(
+                        onOpen: (_) => drillDown(
+                  context,
                           Uri(
                             path: '/v/${data.youtubeId}/support',
                             queryParameters: {'name': data.displayTitle},
@@ -1997,6 +2058,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         slivers: [
           _episodeAppBar(
             twoRow: width < 600,
+            leading: _backLeading(context),
             title: _Breadcrumb(
               channelName: data.info.channel,
               channelSlug: _channelSlug,
@@ -2025,7 +2087,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 onPressed: () async {
                   await saveSimpleModePref(true);
                   if (!context.mounted) return;
-                  context.go('/m/${data.youtubeId}');
+                  swapPresentation(context, '/m/${data.youtubeId}');
                 },
               ),
               if (_videoReady)
@@ -2236,10 +2298,22 @@ class _EpisodeContentState extends State<_EpisodeContent>
     return EpisodeLanguageScope(
       language: _language,
       hasTranslationEn: data.hasTranslationEn,
-      child: Scaffold(
+      child: PopScope(
+        // Back mora prvo zatvoriti otvoreni drawer, pa tek onda napustiti
+        // epizodu. Bez ovoga je korisnik koji je na mobitelu otvorio video u
+        // `endDraweru` i stisnuo Back ISPADAO IZ EPIZODE — Scaffold drawer nije
+        // ruta, pa ga Navigator ne vidi kao nešto što se ima popati.
+        canPop: !_anyDrawerOpen,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop || !mounted) return;
+          _scaffoldKey.currentState?.closeEndDrawer();
+          _scaffoldKey.currentState?.closeDrawer();
+        },
+        child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: theme.colorScheme.surfaceContainerLow,
         onEndDrawerChanged: _onEndDrawerChanged,
+        onDrawerChanged: _onDrawerChanged,
         drawer: isWide
             ? null
             : Drawer(
@@ -2327,7 +2401,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               channelRefs: _channelSupportRefs,
               applyBottomSafeArea: false,
               onOpen: (_, viaChannel) =>
-                  context.push(_supportPath(viaChannel: viaChannel)),
+                  drillDown(context, _supportPath(viaChannel: viaChannel)),
             ),
             if (showMobileBottomBar)
               Material(
@@ -2418,6 +2492,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -2457,6 +2532,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       slivers: [
         _episodeAppBar(
           twoRow: width < 600,
+          leading: _backLeading(context),
           title: _Breadcrumb(
             channelName: data.info.channel,
             channelSlug: _channelSlug,
@@ -2734,7 +2810,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             channelRefs: _channelSupportRefs,
             applyBottomSafeArea: false,
             onOpen: (_, viaChannel) =>
-                context.push(_supportPath(viaChannel: viaChannel)),
+                drillDown(context, _supportPath(viaChannel: viaChannel)),
           ),
           if (!isWide)
             Material(
@@ -2922,17 +2998,38 @@ class _MetaRow extends StatelessWidget {
 /// "većina buttona se ne vidi". Akcije u drugom redu su desno-poravnate i
 /// horizontalno skrolabilne (touch), pa nikad ne overflowaju. Desktop/tablet:
 /// akcije inline kao prije.
+/// [leading] je gumb ← i postoji SAMO kad ima što popati.
+///
+/// Do 6.9.2026. epizoda nije imala gumb „nazad" uopće (`automaticallyImplyLeading:
+/// false`, samo breadcrumb), pa na iOS-u — gdje edge-swipe ne radi jer stog nije
+/// postojao — nije bilo izlaza osim breadcrumba „Početna", koji je na uskom
+/// ekranu često bio odscrollan izvan vidljivog. `automaticallyImplyLeading`
+/// ostaje `false` jer bi Flutterov ugrađeni ← ignorirao `titleSpacing: 0` koji
+/// breadcrumb treba.
+/// Gumb ← samo kad postoji stog. Bez njega breadcrumb ostaje jedini izlaz, a
+/// `titleSpacing: 0` puni rub — pa se ne troši mjesto na prazan slot.
+Widget? _backLeading(BuildContext context) {
+  if (!context.canPop()) return null;
+  return IconButton(
+    icon: const Icon(Icons.arrow_back),
+    tooltip: AppLocalizations.of(context).commonBack,
+    onPressed: () => back(context),
+  );
+}
+
 SliverAppBar _episodeAppBar({
   required Widget title,
   required List<Widget> actions,
   required bool twoRow,
+  Widget? leading,
 }) {
   return SliverAppBar(
     pinned: true,
     automaticallyImplyLeading: false,
+    leading: leading,
     // 0 jer _Breadcrumb nosi vlastiti rubni padding (na mobitelu kao content
     // padding UNUTAR horizontalnog scrolla — vidi komentar u _Breadcrumb).
-    titleSpacing: 0,
+    titleSpacing: leading == null ? 0 : null,
     title: title,
     actions: twoRow ? null : actions,
     bottom: twoRow
