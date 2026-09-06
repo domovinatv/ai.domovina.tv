@@ -870,3 +870,80 @@ aplikacija nema stog, a in-app „nazad" gura novi history entry umjesto da popa
 postojeći. Oboje se rješava istim zahvatom — `push()` na drill-down
 prijelazima — koji prvo traži jednoredni popravak u `url_sync_web.dart`, jer
 on trenutno briše baš onaj history state u koji bi se taj stog serijalizirao.
+
+---
+
+## 13. Ishod migracije — što se saznalo tek pri izvedbi
+
+Dopisano 6.9.2026., nakon što su stavke 1–14 i 16 ušle u v2.0.148. Ovdje je samo
+ono što se **nije** dalo predvidjeti iz analize.
+
+### 13.1 Verifikacija kritičnog puta nije mogla ići kroz browser
+
+Šestostupanjska provjera iz §5.7 (klikni epizodu → pogledaj adresnu traku) je
+**neizvediva** kroz automation Chrome. Izmjereno 6.9.2026., i na produkciji i na
+lokalnom `flutter run -d web-server`:
+
+| Akcija | Ishod |
+|---|---|
+| `left_click` na karticu epizode | `location.pathname` ostaje `/`, `history.length` nepromijenjen |
+| `left_click` na „Slušaj" u herou | isto |
+| `scroll` (wheel, 10 ticks) | stranica se ne pomiče |
+| `key Page_Down` ×4 | stranica se ne pomiče |
+| konzola | čista — nijedna Flutter greška |
+| screenshot | app potpuno učitan, slike renderirane |
+
+Ulazni događaji ne stižu do canvas plohe. Semantics DOM (`?a11y=1`) ne pomaže:
+naslovnica daje 16 `flt-semantics` čvorova, bez ijedne kartice raila.
+
+**Zamjena je bolja od originala.** `test/nav_contract_test.dart` mjeri isto, ali
+determinististički i trajno — kroz
+`routeInformationParser.restoreRouteInformation(routerDelegate.currentConfiguration)`,
+što je **jedini put kojim URL na webu nastaje**. Rezultat: `push('/v/abc')` daje
+`/v/abc`, query preživljava, `pop` vraća baznu rutu. Uz to stoji test koji s
+ISKLJUČENOM zastavicom dokazuje da bi URL ostao na `/` — zastavica je time pod
+regresijskom zaštitom, što ručno mjerenje nikad ne bi dalo.
+
+**Rule**: za interakcijsku logiku u Flutter webu piši widget test, ne browser
+skriptu. Browser drži samo ono što se čita iz DOM-a (`history.state`, `location`,
+`document.title`) — to radi i prije nego canvas išta naslika.
+
+### 13.2 Četiri grane naslovnice dijele jedan `ScrollController`
+
+`_ChannelGridView` ima **četiri** `CustomScrollView`-a (loading, greška, skeleton,
+puni sadržaj) i naslovnica prelazi između njih dok podaci pristižu. Svi moraju
+nositi ISTI kontroler i biti pod ISTIM `ScrollRestorer`-om, inače se pozicija
+izgubi baš pri prelasku iz skeletona u sadržaj — točno u trenutku u kojem je
+restore i potreban. Restorer zato omata `FutureBuilder`, ne pojedinu granu.
+
+Flutter ne dopušta jedan `ScrollController` na dvije **istovremeno žive** pozicije,
+ali ove četiri grane su međusobno isključive, pa je dijeljenje ispravno. Kontrolna
+točka ako se to promijeni: `ScrollController attached to multiple scroll views` u
+konzoli.
+
+### 13.3 `push` je promijenio značenje `_back()` na TV-u
+
+Na TV-u je `BACK` bio `context.go('/')` u sva tri ekrana. Nakon migracije
+`backUp(context)` popa stog, pa epizoda otvorena **s kanala** vraća na kanal.
+To je bio i najveći dobitak po pritisku tipke: 10-foot UI se navigira D-padom, pa
+je „vratio sam se na vrh" značilo desetke pritisaka.
+
+Reader (`/v/:id/read`) je poseban: on je pushan NAD epizodom, pa mu je BACK `pop`
+— epizoda ispod se vraća živa, s playerom na istoj poziciji, umjesto da se gradi
+iznova iz `/v/<id>/t/<sec>`.
+
+### 13.4 Što je ostalo otvoreno
+
+| # | Stavka | Zašto nije napravljeno |
+|---|---|---|
+| 15 | `/glasanje/:slug` sheet kao prava ruta | funkcionalno pokriveno `closeOnRouteChange` (Back ga zatvara); prava ruta traži razdvajanje `VotingScreen` state-a i sheeta, što je zaseban zahvat |
+| 17 | horizontalna pozicija railova | `EpisodesRail` stvara `ScrollController` u `initState`; treba mu ključ po railu, a dobitak je mali dok vertikalna pozicija radi |
+| — | mjerenje na fizičkom Androidu | tvrdnja „Back zatvara aplikaciju" (§4.3) ostala **[H]** — popravak je izveden, ali ni prije ni poslije nije potvrđen na uređaju; recept u §10.4 |
+| — | stvarni klik-tijek na produkciji | vidi §13.1 — nitko ga još nije prošao rukom |
+
+### 13.5 Vezani dokumenti
+
+- `CLAUDE.md` §Routing i navigacijski stog — pravila u kratkom obliku
+- `lib/router/nav.dart` — ugovor s obrazloženjem uz svaki helper
+- `test/nav_contract_test.dart`, `test/nav_up_target_test.dart`,
+  `test/scroll_memory_test.dart` — 35 testova koji drže ugovor
