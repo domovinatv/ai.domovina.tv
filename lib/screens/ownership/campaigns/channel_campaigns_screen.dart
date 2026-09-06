@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_claim.dart';
 import '../../../pinka_sdk/pinka_sdk.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/channel_ownership_service.dart';
+import '../../../router/nav.dart';
 
 /// Lista Pinka kampanja ankeriranih na verificirani kanal (UC… id). Ulaz iz
 /// "Moji kanali". Faza A: pregled + ulaz u upravljanje (bez in-app kreiranja).
@@ -103,7 +103,8 @@ class _ChannelCampaignsScreenState extends State<ChannelCampaignsScreen> {
           '$raisedStr € · ${l.ownershipEpisodesCount(c.episodeRefs.length)}',
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push(
+        onTap: () => drillDown(
+          context,
           '/account/channels/${widget.youtubeChannelId}/campaigns/${c.id}',
         ),
       ),

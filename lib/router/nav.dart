@@ -39,12 +39,13 @@ const int kMaxStackDepth = 8;
 /// Trenutna dubina imperativnog (pushanog) stoga.
 ///
 /// `GoRouterState` ne izlaže broj imperativnih matcheva javno, pa dubinu
-/// računamo iz `RouteMatchList` preko `GoRouter.of(context)`.
-int navStackDepth(BuildContext context) {
-  final matches = GoRouter.of(context).routerDelegate.currentConfiguration;
-  // Bazni match nije "korak unatrag" — dubina je broj ruta IZNAD njega.
-  return matches.matches.length - 1;
-}
+/// računamo iz `RouteMatchList`.
+int navStackDepthOf(GoRouter router) =>
+    router.routerDelegate.currentConfiguration.matches.length - 1;
+
+/// [navStackDepthOf] preko konteksta.
+int navStackDepth(BuildContext context) =>
+    navStackDepthOf(GoRouter.of(context));
 
 /// Drill-down: lista → detalj, ili detalj → dublji detalj.
 ///
@@ -55,12 +56,18 @@ int navStackDepth(BuildContext context) {
 ///
 /// Preko [kMaxStackDepth] prelazi na `pushReplacement` da stog ne raste
 /// neograničeno.
-void drillDown(BuildContext context, String location) {
-  if (navStackDepth(context) >= kMaxStackDepth) {
-    context.pushReplacement(location);
+void drillDown(BuildContext context, String location) =>
+    drillDownOn(GoRouter.of(context), location);
+
+/// [drillDown] za pozivatelje kojima je `BuildContext` već nestao — tipično
+/// modal koji se sam popa PRIJE navigacije (search paleta): nakon `pop()` je
+/// njegov context unmountan, pa se `GoRouter` mora uhvatiti unaprijed.
+void drillDownOn(GoRouter router, String location) {
+  if (navStackDepthOf(router) >= kMaxStackDepth) {
+    router.pushReplacement(location);
     return;
   }
-  context.push(location);
+  router.push(location);
 }
 
 /// Isti sadržaj u drugoj prezentaciji — `/v/<id>` ↔ `/m/<id>`, HR ↔ EN.

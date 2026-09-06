@@ -41,6 +41,7 @@ import '../widgets/resume_hint_banner.dart';
 import '../widgets/speaker_chip.dart';
 import '../widgets/view_mode_toggle_button.dart';
 import '../widgets/youtube_embed.dart';
+import '../router/nav.dart';
 
 /// Pojednostavljeni mobile-first ekran za reprodukciju podcast epizode.
 /// Optimiziran za slušanje u autu — 3 taba: Player, Poglavlja, Info.
@@ -679,7 +680,18 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/'),
+            tooltip: l.commonBack,
+            // Bio tvrdi `go('/')` iako app bar nosi ime kanala. Sada popa stog;
+            // bez stoga ide na kanal preko `upTarget` (razriješen slug niže).
+            onPressed: () => back(
+              context,
+              fallback: upTarget(
+                '/m/${data.youtubeId}',
+                channelSlug:
+                    channelCache.channelIdForName(data.info.channel)
+                        ?.replaceAll('_', '-'),
+              ),
+            ),
           ),
           title: Text(
             data.info.channel,
@@ -746,7 +758,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                 final target = _language == EpisodeLanguage.en
                     ? '/v/${data.youtubeId}/en'
                     : '/v/${data.youtubeId}';
-                context.go(target);
+                // Isti sadržaj, druga prezentacija → NE novi history entry.
+                swapPresentation(context, target);
               },
             ),
           ],
@@ -821,7 +834,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                 ],
                 onOpen: (_, viaChannel) {
                   if (!viaChannel) {
-                    context.push(Uri(
+                    drillDown(context, Uri(
                       path: '/v/${data.youtubeId}/support',
                       queryParameters: {'name': data.displayTitle},
                     ).toString());
@@ -831,7 +844,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                       .channelIdForName(data.info.channel)
                       ?.replaceAll('_', '-');
                   final uc = data.info.youtubeChannelId;
-                  context.push(Uri(
+                  drillDown(context, Uri(
                     path: '/c/${slug ?? 'kanal'}/support',
                     queryParameters: {
                       'uc': ?uc,
@@ -1291,7 +1304,8 @@ class _PlayerTab extends StatelessWidget {
           // pinka kampanju. SEPA QR + on-chain EURe (Gnosis Safe) + in-app wallet.
           PinkaSupportCard.episode(
             youtubeId: data.youtubeId,
-            onOpen: (_) => context.push(
+            onOpen: (_) => drillDown(
+              context,
               Uri(
                 path: '/v/${data.youtubeId}/support',
                 queryParameters: {'name': data.displayTitle},
@@ -1653,7 +1667,8 @@ class _InfoTab extends StatelessWidget {
                   ? row
                   : InkWell(
                       borderRadius: BorderRadius.circular(8),
-                      onTap: () => context.go('/p/${personSlug(name)}'),
+                      onTap: () =>
+                          drillDown(context, '/p/${personSlug(name)}'),
                       child: row,
                     ),
             );

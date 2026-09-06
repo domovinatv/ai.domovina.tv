@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
@@ -10,6 +9,7 @@ import '../../services/person_index_cache.dart';
 import '../../widgets/person_monogram.dart';
 import '../../widgets/share_context_menu.dart';
 import 'episodes_rail.dart';
+import '../../router/nav.dart';
 
 /// Home rail „Osobe" — virtualni kanali (osobe) u istom editorial obliku kao
 /// ostali railovi na naslovnici.
@@ -100,14 +100,14 @@ class _PersonsRailState extends State<PersonsRail> {
         isMobile: widget.isMobile,
         // Rail pokazuje samo vrh popisa; „Prikaži sve" vodi u isti katalog u
         // kojem žive i kanali, s već odabranim filtrom „Osobe".
-        onSeeAll: () => context.go('/channels?prikaz=osobe'),
+        onSeeAll: () => drillDown(context, '/channels?prikaz=osobe'),
         seeAllLabel: l.commonSeeAll,
         cards: [
           for (final p in persons.take(widget.limit))
             _PersonRailTile(
               person: p,
               width: width,
-              onTap: () => context.go(p.routePath),
+              onTap: () => drillDown(context, p.routePath),
             ),
         ],
       ),

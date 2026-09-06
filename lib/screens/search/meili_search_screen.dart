@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/cdn_config.dart';
@@ -13,6 +12,7 @@ import '../../services/meili_client.dart';
 import '../../widgets/em_highlight_text.dart';
 import '../../widgets/episode_age.dart';
 import '../../widgets/cached_thumbnail.dart';
+import '../../router/nav.dart';
 
 /// LOKALNI PoC ekran — instant keyword tražilica nad 2562 epizode preko
 /// Meilisearcha (`localhost:7700`). Komplementarno semantičkoj MCP pretrazi.
@@ -132,7 +132,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/'),
+              back(context),
         ),
       ),
       body: Column(
@@ -309,7 +309,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   Widget _resultCard(ThemeData theme, MeiliHit hit) {
     final snippet = hit.formattedArticleSnippet.trim();
     return InkWell(
-      onTap: () => context.go('/v/${hit.youtubeId}'),
+      onTap: () => drillDown(context, '/v/${hit.youtubeId}'),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

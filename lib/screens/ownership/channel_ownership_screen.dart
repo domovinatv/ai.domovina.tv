@@ -22,6 +22,7 @@ import '../../services/channel_ownership_service.dart';
 import '../../services/data_service.dart';
 import '../../services/locale_service.dart';
 import '../../services/wallet_service.dart';
+import '../../router/nav.dart';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Per-channel claim flow
@@ -367,7 +368,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
       action: locked
           ? null
           : FilledButton.icon(
-              onPressed: _busy ? null : () => context.push('/account/channels'),
+              onPressed: _busy ? null : () => drillDown(context, '/account/channels'),
               icon: const Icon(Icons.account_balance_wallet_outlined),
               label: Text(l.ownershipManageWallet),
             ),
@@ -593,7 +594,8 @@ class _YoutubeClaimCallbackScreenState
               if (_done) ...[
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: () => context.go('/account/channels'),
+                  onPressed: () => back(context,
+                      fallback: '/account/channels'),
                   child: Text(l.ownershipMyChannels),
                 ),
               ],
@@ -799,7 +801,8 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
           tooltip: l.ownershipOptionsTooltip,
           onSelected: (v) {
             if (v == 'campaigns') {
-              context.push('/account/channels/${c.youtubeChannelId}/campaigns');
+              drillDown(context,
+                  '/account/channels/${c.youtubeChannelId}/campaigns');
             }
             if (v == 'reverify') _reverify(c);
             if (v == 'revoke') _confirmRevoke(c);
@@ -823,7 +826,8 @@ class _MyChannelsScreenState extends State<MyChannelsScreen> {
           ],
         ),
         // Otvori per-kanal verifikacijski/upravljački ekran (po UC… ID-u).
-        onTap: () => context.push('/account/channels/${c.youtubeChannelId}'),
+        onTap: () =>
+            drillDown(context, '/account/channels/${c.youtubeChannelId}'),
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/voting_service.dart';
@@ -12,6 +11,7 @@ import '../../widgets/language_toggle_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 import '../../l10n/app_localizations.dart';
 import '../voting/widgets/streak_flags.dart';
+import '../../router/nav.dart';
 
 /// Slim sticky app bar za home screen.
 ///
@@ -210,7 +210,7 @@ class _VotingStreakChipState extends State<VotingStreakChip> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () => context.go('/glasanje'),
+              onTap: () => drillDown(context, '/glasanje'),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -318,7 +318,7 @@ class _VotingDiscoverChip extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () => context.go('/glasanje'),
+              onTap: () => drillDown(context, '/glasanje'),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(

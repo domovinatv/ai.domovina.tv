@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
@@ -16,6 +15,7 @@ import '../../theme/typography.dart';
 import '../../widgets/follow_button.dart';
 import '../../widgets/person_monogram.dart';
 import '../../widgets/cached_thumbnail.dart';
+import '../../router/nav.dart';
 
 /// Javni profil osobe ("person hub") — /p/:slug.
 ///
@@ -79,13 +79,9 @@ class _PersonScreenState extends State<PersonScreen> {
     return hub;
   }
 
-  void _back() {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
-  }
+  /// ← popa stog; bez stoga (share link, hard refresh) ide na katalog s
+  /// filtrom „Osobe", ne na naslovnicu — vidi `upTarget`.
+  void _back() => backUp(context);
 
   /// Kopira javnu poveznicu na profil (`/p/<slug>`). Worker injecta osobno-
   /// specifične OG tagove na taj path (ime + broj epizoda/kanala) pa WhatsApp/
@@ -918,7 +914,7 @@ class _ChannelChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => context.go('/c/${channel.channelRouteSlug}'),
+        onTap: () => drillDown(context, '/c/${channel.channelRouteSlug}'),
         child: body,
       ),
     );
@@ -1270,7 +1266,8 @@ class _EpisodeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.go('${episode.routePath}?p=$personSlug'),
+        onTap: () =>
+            drillDown(context, '${episode.routePath}?p=$personSlug'),
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Row(
@@ -1426,7 +1423,7 @@ class _SourceChannelChip extends StatelessWidget {
     }
     return InkWell(
       borderRadius: BorderRadius.circular(6),
-      onTap: () => context.go(route),
+      onTap: () => drillDown(context, route),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
         child: _MetaChip(

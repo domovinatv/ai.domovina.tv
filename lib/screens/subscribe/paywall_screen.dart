@@ -27,6 +27,7 @@ import '../../services/open_url.dart';
 import '../../services/revenue_cat_service.dart';
 import '../../theme/app_theme.dart';
 import 'upgrade_trigger.dart';
+import '../../router/nav.dart';
 
 /// RevenueCat Web Billing hosted-checkout base URL (no SDK on web). The Supabase
 /// UUID is appended as the customer id: `<base>/<uuid>`. Injected via
@@ -81,7 +82,7 @@ List<String> _plusRoadmap(AppLocalizations l) => [
 /// Open the contextual paywall for a gated feature. Use from any feature gate:
 /// `openPaywall(context, UpgradeTrigger.search)`.
 void openPaywall(BuildContext context, [UpgradeTrigger trigger = UpgradeTrigger.generic]) {
-  context.push('/subscribe?from=${trigger.slug}');
+  drillDown(context, '/subscribe?from=${trigger.slug}');
 }
 
 class PaywallScreen extends StatefulWidget {

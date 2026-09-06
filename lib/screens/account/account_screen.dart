@@ -29,6 +29,7 @@ import '../../widgets/plus_badge.dart';
 import '../subscribe/paywall_screen.dart';
 import '../subscribe/upgrade_trigger.dart';
 import '../voting/widgets/streak_flags.dart';
+import '../../router/nav.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -132,11 +133,7 @@ class _AccountScreenState extends State<AccountScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
+            backUp(context);
           },
         ),
       ),
@@ -359,7 +356,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/favorites'),
+              onTap: () => drillDown(context, '/favorites'),
             ),
           );
         },
@@ -399,7 +396,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => context.go('/glasanje'),
+          onTap: () => drillDown(context, '/glasanje'),
         ),
       );
     }
@@ -449,7 +446,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 const Icon(Icons.chevron_right),
               ],
             ),
-            onTap: () => context.go('/glasanje'),
+            onTap: () => drillDown(context, '/glasanje'),
           ),
         );
       },
@@ -891,7 +888,7 @@ class _AccountScreenState extends State<AccountScreen> {
         title: Text(l.authSwitchDevice),
         subtitle: Text(l.authDevicesSubtitle),
         trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-        onTap: () => context.go('/handoff'),
+        onTap: () => drillDown(context, '/handoff'),
       ),
     );
   }

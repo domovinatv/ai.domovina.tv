@@ -7,10 +7,12 @@ import '../../pinka_sdk/pinka_sdk.dart';
 import '../../services/channel_cache.dart';
 import '../../services/follow_service.dart';
 import '../../services/page_meta.dart';
+import '../../services/view_mode.dart';
 import '../../widgets/follow_button.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
 import '../../widgets/cached_thumbnail.dart';
+import '../../router/nav.dart';
 
 /// Channel detail screen — prikazuje listu video zapisa za određeni kanal.
 ///
@@ -30,6 +32,9 @@ class ChannelScreen extends StatefulWidget {
 
 class _ChannelScreenState extends State<ChannelScreen> {
   late final Future<ChannelDetail> _detailFuture;
+
+  /// Jednostavni prikaz — isti pref koji čita naslovnica (`view_mode.dart`).
+  bool _simpleMode = false;
   String? _resolvedName;
   // Kanonski UC… ID kanala (kad ga channel.json nosi) → otključava "Preuzmi
   // vlasništvo" akciju. Null dok pipeline ne upiše youtube_channel_id.
@@ -39,6 +44,9 @@ class _ChannelScreenState extends State<ChannelScreen> {
   void initState() {
     super.initState();
     _detailFuture = channelCache.loadChannel(widget.channelId);
+    loadSimpleModePref().then((saved) {
+      if (mounted && saved != null) setState(() => _simpleMode = saved);
+    });
     // Runtime <title>/og meta — isti format kao worker edge-inject za /c/.
     _detailFuture.then((d) {
       if (!mounted) return;
@@ -49,12 +57,18 @@ class _ChannelScreenState extends State<ChannelScreen> {
     }).catchError((_) {});
   }
 
-  void _back() {
-    context.go('/');
-  }
+  /// ← popa stog kad ga ima; inače ide na semantičkog roditelja (`/channels`),
+  /// ne na naslovnicu. Prije 6.9.2026. je bio tvrdi `go('/')` — jedini ekran
+  /// koji nije ni provjeravao `canPop()`.
+  void _back() => backUp(context);
 
+  /// Prikaz epizode prati korisnikov pref, isto kao naslovnica.
+  ///
+  /// Do 6.9.2026. je kanal UVIJEK otvarao `/v/` i ignorirao `simpleMode`, pa je
+  /// korisnik koji je odabrao jednostavni prikaz dobivao detaljni čim je ušao
+  /// preko kanala umjesto preko naslovnice.
   void _openVideo(String videoId) {
-    context.go('/v/$videoId');
+    drillDown(context, _simpleMode ? '/m/$videoId' : '/v/$videoId');
   }
 
   @override
@@ -100,7 +114,8 @@ class _ChannelScreenState extends State<ChannelScreen> {
                     IconButton(
                       icon: const Icon(Icons.verified_user_outlined),
                       tooltip: l.channelClaimOwnership,
-                      onPressed: () => context.push(
+                      onPressed: () => drillDown(
+                        context,
                         '/c/${widget.channelId.replaceAll('_', '-')}/claim',
                       ),
                     ),

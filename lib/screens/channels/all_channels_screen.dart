@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
@@ -16,6 +15,7 @@ import '../../utils/text_search.dart';
 import '../home/channel_card.dart';
 import '../home/person_card.dart';
 import '../home/sort_mode.dart';
+import '../../router/nav.dart';
 
 /// Standalone "Svi kanali" ekran — odvojen od home-a (scroll-perf).
 ///
@@ -56,8 +56,7 @@ class AllChannelsScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: l.commonBack,
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/'),
+          onPressed: () => back(context),
         ),
       ),
       body: SafeArea(
@@ -258,11 +257,12 @@ class _AllChannelsViewState extends State<AllChannelsView> {
 
   void _openChannel(ChannelSummary channel) {
     final slug = channel.id.replaceAll('_', '-');
-    context.go('/c/$slug');
+    drillDown(context, '/c/$slug');
   }
 
   /// Person slug ide DOSLOVNO (bez `-`↔`_` pretvorbe koju rade kanali).
-  void _openPerson(PersonSummary person) => context.go(person.routePath);
+  void _openPerson(PersonSummary person) =>
+      drillDown(context, person.routePath);
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +300,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     return Material(
       color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
       child: InkWell(
-        onTap: () => context.go('/glasanje'),
+        onTap: () => drillDown(context, '/glasanje'),
         child: Container(
           decoration: BoxDecoration(
             border: Border(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/cdn_config.dart';
@@ -8,6 +7,7 @@ import '../../services/favorites_service.dart';
 import '../favorites/favorites_resolver.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
+import '../../router/nav.dart';
 
 /// Home rail „Tvoje spremljeno" — epizode koje je korisnik lajkao (srce),
 /// **najnovija prvo**. Isječak; puni popis je na `/favorites`.
@@ -83,7 +83,7 @@ class _FavoritesRailState extends State<FavoritesRail> {
         isMobile: widget.isMobile,
         // Uvijek vidljivo, i kad rail ne reže popis — to je jedini ulaz u
         // policu s naslovnice (drugi je stavka na `/account`).
-        onSeeAll: () => context.go('/favorites'),
+        onSeeAll: () => drillDown(context, '/favorites'),
         seeAllLabel: l.commonSeeAll,
         cards: [
           for (final item in items)

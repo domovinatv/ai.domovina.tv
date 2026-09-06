@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
@@ -17,6 +16,7 @@ import '../../services/watch_progress_service.dart';
 import '../../theme/markdown_brand.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
+import '../../router/nav.dart';
 
 /// "Čitaj kao blog" mode za TV — paginirani reader s PiP videom.
 ///
@@ -312,11 +312,15 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
           if (didPop || !mounted) return;
           // BACK → klasični player screen na trenutnoj poziciji
           // (watch progress je vec spremljen kroz _save).
+          // Reader je pushan NAD epizodom, pa je BACK pop — time se epizoda
+          // ispod vraća živa (player, scroll), umjesto da se gradi iznova.
+          // Bez stoga (deep-link na /read) padamo na epizodu s trenutnom
+          // pozicijom.
           final sec = _position.inSeconds;
           final target = sec > 5
               ? '/v/${widget.youtubeId}/t/$sec'
               : '/v/${widget.youtubeId}';
-          context.go(target);
+          back(context, fallback: target);
         },
         child: SafeArea(
           child: Shortcuts(
@@ -397,7 +401,8 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
             TvFocusable(
               autofocus: true,
               style: TvFocusStyle.primaryButton,
-              onActivate: () => context.go('/v/${widget.youtubeId}'),
+              onActivate: () =>
+                  back(context, fallback: '/v/${widget.youtubeId}'),
               builder: (_, focused) => Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 32, vertical: 16),

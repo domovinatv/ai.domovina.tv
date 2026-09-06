@@ -16,6 +16,7 @@ import '../../services/auth_service.dart';
 import '../../services/handoff_service.dart';
 import '../../services/locale_service.dart';
 import '../ui/auth_sheet.dart';
+import '../../router/nav.dart';
 
 
 class HandoffScreen extends StatefulWidget {
@@ -57,11 +58,7 @@ class _HandoffScreenState extends State<HandoffScreen>
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
+            back(context);
           },
         ),
         bottom: TabBar(

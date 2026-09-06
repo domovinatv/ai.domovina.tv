@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/vote_candidate.dart';
@@ -9,6 +8,7 @@ import '../../services/voting_service.dart';
 import '../../theme/app_theme.dart';
 import '../voting/widgets/candidate_tile.dart' show CandidateAvatar;
 import 'episodes_rail.dart';
+import '../../router/nav.dart';
 
 /// Home rail „Izborni dan" — vrh ljestvice kandidata, javno.
 ///
@@ -80,7 +80,7 @@ class _VotingRailState extends State<VotingRail> {
         // površina u aplikaciji koja nosi zastavice.
         eyebrowAccentColor: AppTheme.croRed,
         isMobile: widget.isMobile,
-        onSeeAll: () => context.go('/glasanje'),
+        onSeeAll: () => drillDown(context, '/glasanje'),
         seeAllLabel: l.votingRailSeeAll,
         cards: [
           for (final c in kandidati.take(widget.limit))
@@ -89,9 +89,9 @@ class _VotingRailState extends State<VotingRail> {
               width: width,
               // Deep-link na kandidata: `/glasanje/:slug` otvara detalj sheet.
               // Slug ide DOSLOVNO (CLAUDE.md / person hub pravilo).
-              onTap: () => context.go('/glasanje/${c.slug}'),
+              onTap: () => drillDown(context, '/glasanje/${c.slug}'),
             ),
-          _VotingRailCta(width: width, onTap: () => context.go('/glasanje')),
+          _VotingRailCta(width: width, onTap: () => drillDown(context, '/glasanje')),
         ],
       ),
     );

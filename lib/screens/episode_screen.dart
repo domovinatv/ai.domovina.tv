@@ -51,6 +51,7 @@ import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
 import '../widgets/video_panel.dart';
 import '../widgets/view_mode_toggle_button.dart';
+import '../router/nav.dart';
 
 class EpisodeScreen extends StatefulWidget {
   final String youtubeId;
@@ -1719,6 +1720,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
     final appBar = _episodeAppBar(
       twoRow: width < 600,
+      leading: _backLeading(context),
       title: _Breadcrumb(
         channelName: data.info.channel,
         channelSlug: _channelSlug,
@@ -1767,7 +1769,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
             final target = _language == EpisodeLanguage.en
                 ? '/m/${data.youtubeId}/en'
                 : '/m/${data.youtubeId}';
-            context.go(target);
+            // Isti sadržaj, druga prezentacija → NE novi history entry.
+            swapPresentation(context, target);
           },
         ),
         if (_videoReady && !showVideo)
@@ -1807,7 +1810,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
               // on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik.
               PinkaSupportCard.episode(
                 youtubeId: data.youtubeId,
-                onOpen: (_) => context.push(
+                onOpen: (_) => drillDown(
+                  context,
                   Uri(
                     path: '/v/${data.youtubeId}/support',
                     queryParameters: {'name': data.displayTitle},
@@ -1920,7 +1924,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       // "Zid podrške" za epizodu — vidi standardni layout iznad.
                       PinkaSupportCard.episode(
                         youtubeId: data.youtubeId,
-                        onOpen: (_) => context.push(
+                        onOpen: (_) => drillDown(
+                  context,
                           Uri(
                             path: '/v/${data.youtubeId}/support',
                             queryParameters: {'name': data.displayTitle},
@@ -2042,6 +2047,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         slivers: [
           _episodeAppBar(
             twoRow: width < 600,
+            leading: _backLeading(context),
             title: _Breadcrumb(
               channelName: data.info.channel,
               channelSlug: _channelSlug,
@@ -2070,7 +2076,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 onPressed: () async {
                   await saveSimpleModePref(true);
                   if (!context.mounted) return;
-                  context.go('/m/${data.youtubeId}');
+                  swapPresentation(context, '/m/${data.youtubeId}');
                 },
               ),
               if (_videoReady)
@@ -2372,7 +2378,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               channelRefs: _channelSupportRefs,
               applyBottomSafeArea: false,
               onOpen: (_, viaChannel) =>
-                  context.push(_supportPath(viaChannel: viaChannel)),
+                  drillDown(context, _supportPath(viaChannel: viaChannel)),
             ),
             if (showMobileBottomBar)
               Material(
@@ -2502,6 +2508,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       slivers: [
         _episodeAppBar(
           twoRow: width < 600,
+          leading: _backLeading(context),
           title: _Breadcrumb(
             channelName: data.info.channel,
             channelSlug: _channelSlug,
@@ -2779,7 +2786,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             channelRefs: _channelSupportRefs,
             applyBottomSafeArea: false,
             onOpen: (_, viaChannel) =>
-                context.push(_supportPath(viaChannel: viaChannel)),
+                drillDown(context, _supportPath(viaChannel: viaChannel)),
           ),
           if (!isWide)
             Material(
@@ -2967,17 +2974,38 @@ class _MetaRow extends StatelessWidget {
 /// "većina buttona se ne vidi". Akcije u drugom redu su desno-poravnate i
 /// horizontalno skrolabilne (touch), pa nikad ne overflowaju. Desktop/tablet:
 /// akcije inline kao prije.
+/// [leading] je gumb ← i postoji SAMO kad ima što popati.
+///
+/// Do 6.9.2026. epizoda nije imala gumb „nazad" uopće (`automaticallyImplyLeading:
+/// false`, samo breadcrumb), pa na iOS-u — gdje edge-swipe ne radi jer stog nije
+/// postojao — nije bilo izlaza osim breadcrumba „Početna", koji je na uskom
+/// ekranu često bio odscrollan izvan vidljivog. `automaticallyImplyLeading`
+/// ostaje `false` jer bi Flutterov ugrađeni ← ignorirao `titleSpacing: 0` koji
+/// breadcrumb treba.
+/// Gumb ← samo kad postoji stog. Bez njega breadcrumb ostaje jedini izlaz, a
+/// `titleSpacing: 0` puni rub — pa se ne troši mjesto na prazan slot.
+Widget? _backLeading(BuildContext context) {
+  if (!context.canPop()) return null;
+  return IconButton(
+    icon: const Icon(Icons.arrow_back),
+    tooltip: AppLocalizations.of(context).commonBack,
+    onPressed: () => back(context),
+  );
+}
+
 SliverAppBar _episodeAppBar({
   required Widget title,
   required List<Widget> actions,
   required bool twoRow,
+  Widget? leading,
 }) {
   return SliverAppBar(
     pinned: true,
     automaticallyImplyLeading: false,
+    leading: leading,
     // 0 jer _Breadcrumb nosi vlastiti rubni padding (na mobitelu kao content
     // padding UNUTAR horizontalnog scrolla — vidi komentar u _Breadcrumb).
-    titleSpacing: 0,
+    titleSpacing: leading == null ? 0 : null,
     title: title,
     actions: twoRow ? null : actions,
     bottom: twoRow

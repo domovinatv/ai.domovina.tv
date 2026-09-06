@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart' show log;
 import '../../models/episode_status.dart';
@@ -31,6 +30,7 @@ import 'search_overlay.dart';
 import 'skeletons.dart';
 import 'sort_mode.dart';
 import 'voting_rail.dart';
+import '../../router/nav.dart';
 
 const _channelOrderKey = 'channel_order';
 
@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Otvori epizodu na zadanom timestampu (semantic search deep link).
   void _openVideoAt(String videoId, int seconds) {
-    context.go('/v/$videoId/t/$seconds');
+    drillDown(context, '/v/$videoId/t/$seconds');
   }
 
   /// Primijeni aktivni sort mode na kanale. Za 'custom' mode koristi spremljen
@@ -206,15 +206,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _selectChannel(ChannelSummary channel) {
     final slug = channel.id.replaceAll('_', '-');
-    context.go('/c/$slug');
+    drillDown(context, '/c/$slug');
   }
 
+  /// Naslovnica → epizoda je drill-down: `push` zadrži OVAJ ekran živ ispod,
+  /// pa se na `pop()` vraća ista instanca sa svojim scrollom. Prije 6.9.2026.
+  /// je bio `go()`, koji je `HomeScreen` uništio — zato se scroll nije vraćao.
   void _openVideo(String videoId) {
-    if (_simpleMode) {
-      context.go('/m/$videoId');
-    } else {
-      context.go('/v/$videoId');
-    }
+    drillDown(context, _simpleMode ? '/m/$videoId' : '/v/$videoId');
   }
 
   @override
@@ -650,7 +649,7 @@ class _AllChannelsCta extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => context.go('/channels'),
+              onTap: () => drillDown(context, '/channels'),
               child: Padding(
                 padding: const EdgeInsets.all(18),
                 child: Row(

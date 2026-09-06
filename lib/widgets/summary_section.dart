@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../models/person_hub.dart';
 import '../models/podcast_summary.dart';
 import '../services/episode_language.dart';
 import '../l10n/app_localizations.dart';
+import '../router/nav.dart';
 
 class SummarySection extends StatelessWidget {
   final PodcastSummary summary;
@@ -97,7 +97,8 @@ class SummarySection extends StatelessWidget {
                   ? row
                   : InkWell(
                       borderRadius: BorderRadius.circular(8),
-                      onTap: () => context.go('/p/${personSlug(name)}'),
+                      onTap: () =>
+                          drillDown(context, '/p/${personSlug(name)}'),
                       child: row,
                     ),
             );

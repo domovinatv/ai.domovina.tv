@@ -4,7 +4,6 @@ import 'dart:math' show Random;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show log;
@@ -25,6 +24,7 @@ import 'widgets/tv_boot_splash.dart';
 import 'widgets/tv_metrics.dart';
 import 'widgets/tv_rail.dart';
 import 'widgets/tv_row_traversal.dart';
+import '../../router/nav.dart';
 
 /// Faza 2 TV home screen.
 ///
@@ -173,19 +173,19 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
 
   void _openEpisode(String videoId) {
     log('TvHome: navigate /v/$videoId');
-    context.go('/v/$videoId');
+    drillDown(context, '/v/$videoId');
   }
 
   void _openChannel(ChannelSummary channel) {
     final slug = channel.id.replaceAll('_', '-');
     log('TvHome: navigate /c/$slug');
-    context.go('/c/$slug');
+    drillDown(context, '/c/$slug');
   }
 
   /// Person slug ide DOSLOVNO (bez `-`↔`_` transformacije koju rade kanali).
   void _openPerson(PersonSummary person) {
     log('TvHome: navigate ${person.routePath}');
-    context.go(person.routePath);
+    drillDown(context, person.routePath);
   }
 
   bool _loggedDimensions = false;

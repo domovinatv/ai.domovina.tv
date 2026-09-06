@@ -10,6 +10,7 @@ import '../../services/view_mode.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'favorites_resolver.dart';
+import '../../router/nav.dart';
 
 /// Puni popis spremljenih (lajkanih) epizoda — najnovija prvo.
 ///
@@ -74,7 +75,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   void _open(String videoId) {
-    context.go(_simpleMode ? '/m/$videoId' : '/v/$videoId');
+    drillDown(context, _simpleMode ? '/m/$videoId' : '/v/$videoId');
   }
 
   Future<void> _remove(ResolvedFavorite item) async {
@@ -116,7 +117,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: l.commonBack,
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+          onPressed: () => back(context),
         ),
       ),
       body: SafeArea(
