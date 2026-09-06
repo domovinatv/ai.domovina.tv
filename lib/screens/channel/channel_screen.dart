@@ -8,6 +8,7 @@ import '../../services/channel_cache.dart';
 import '../../services/follow_service.dart';
 import '../../services/page_meta.dart';
 import '../../services/view_mode.dart';
+import '../../services/scroll_memory.dart';
 import '../../widgets/follow_button.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
@@ -174,6 +175,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
                           videos: detail.videos,
                           onVideoTap: _openVideo,
                           isAudioSource: detail.isAudioSource,
+                          routeKey: '/c/$slug',
                         ),
                       ),
                     ],
@@ -188,28 +190,52 @@ class _ChannelScreenState extends State<ChannelScreen> {
   }
 }
 
-class _ResponsiveVideoList extends StatelessWidget {
+class _ResponsiveVideoList extends StatefulWidget {
   final List<ChannelVideo> videos;
   final void Function(String videoId) onVideoTap;
 
   /// Kanal je audio-only izvor → kartice bez thumbnaila pokazuju "Audio Only".
   final bool isAudioSource;
 
+  /// Ruta kanala — ključ za pamćenje pozicije u listi epizoda.
+  final String routeKey;
+
   const _ResponsiveVideoList({
     required this.videos,
     required this.onVideoTap,
     required this.isAudioSource,
+    required this.routeKey,
   });
 
+  @override
+  State<_ResponsiveVideoList> createState() => _ResponsiveVideoListState();
+}
+
+class _ResponsiveVideoListState extends State<_ResponsiveVideoList> {
   static const double _maxCardWidth = 300;
+
+  final _scrollCtrl = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    final videos = widget.videos;
+    final onVideoTap = widget.onVideoTap;
+    final isAudioSource = widget.isAudioSource;
+    return ScrollRestorer(
+      storageKey: widget.routeKey,
+      controller: _scrollCtrl,
+      child: LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         if (width < 600) {
           return ListView.builder(
+            controller: _scrollCtrl,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             itemCount: videos.length,
             itemBuilder: (context, i) => _VideoCard(
@@ -223,6 +249,7 @@ class _ResponsiveVideoList extends StatelessWidget {
         final columns = (availableWidth / _maxCardWidth).floor().clamp(2, 99);
         final cardWidth = (availableWidth - (columns - 1) * 12) / columns;
         return SingleChildScrollView(
+          controller: _scrollCtrl,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           child: Wrap(
             spacing: 12,
@@ -242,6 +269,7 @@ class _ResponsiveVideoList extends StatelessWidget {
           ),
         );
       },
+      ),
     );
   }
 }

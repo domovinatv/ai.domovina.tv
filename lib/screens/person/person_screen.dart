@@ -10,6 +10,7 @@ import '../../services/follow_service.dart';
 import '../../services/page_meta.dart';
 import '../../services/person_channel_flag.dart';
 import '../../services/person_service.dart';
+import '../../services/scroll_memory.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/typography.dart';
 import '../../widgets/follow_button.dart';
@@ -320,14 +321,34 @@ class _PersonContent extends StatelessWidget {
 }
 
 /// Mobitel / usko — sve u jednom scroll stupcu.
-class _SingleColumn extends StatelessWidget {
+///
+/// Pamćenje scroll pozicije je OVDJE, a ne na `_TwoColumn`: široki layout ima
+/// dva nezavisna stupca koji scrollaju odvojeno, pa jedan spremljeni offset
+/// nema smisla. Uski layout je i mjesto gdje se problem osjeti — popis nastupa
+/// je dug, a tap na epizodu je najčešća radnja s ovog ekrana.
+class _SingleColumn extends StatefulWidget {
   final PersonHub hub;
   final bool channelForm;
 
   const _SingleColumn({required this.hub, this.channelForm = false});
 
   @override
+  State<_SingleColumn> createState() => _SingleColumnState();
+}
+
+class _SingleColumnState extends State<_SingleColumn> {
+  final _scrollCtrl = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hub = widget.hub;
+    final channelForm = widget.channelForm;
     final l = AppLocalizations.of(context);
     // Osoba bez gostovanja: kanali/timeline dolaze iz spomena (govor-agregacije
     // su prazne), a naslov sekcije kanala se mijenja u „Spominje se na".
@@ -342,7 +363,11 @@ class _SingleColumn extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
-        child: ListView(
+        child: ScrollRestorer(
+          storageKey: '/p/${hub.slug}',
+          controller: _scrollCtrl,
+          child: ListView(
+          controller: _scrollCtrl,
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
             if (channelForm)
@@ -399,6 +424,7 @@ class _SingleColumn extends StatelessWidget {
               ),
             ],
           ],
+        ),
         ),
       ),
     );

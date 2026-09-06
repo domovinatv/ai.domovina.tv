@@ -45,7 +45,10 @@ class PersonsRail extends StatefulWidget {
 }
 
 class _PersonsRailState extends State<PersonsRail> {
-  bool _flagOn = false;
+  /// Na PONOVNOM montiranju (povratak na naslovnicu) je flag već učitan, pa
+  /// krećemo od stvarne vrijednosti umjesto od `false` — inače rail jedan frame
+  /// stoji prazan i visina naslovnice poskoči.
+  bool _flagOn = PersonChannelFlag.instance.isOnIfLoaded ?? false;
 
   @override
   void initState() {

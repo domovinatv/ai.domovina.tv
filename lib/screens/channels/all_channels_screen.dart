@@ -9,6 +9,7 @@ import '../../models/channel_index.dart';
 import '../../models/person_hub.dart';
 import '../../services/channel_cache.dart';
 import '../../services/person_channel_flag.dart';
+import '../../services/scroll_memory.dart';
 import '../../services/person_index_cache.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/text_search.dart';
@@ -101,6 +102,10 @@ class _AllChannelsViewState extends State<AllChannelsView> {
   static const double _maxCardWidth = 360;
 
   final _searchCtrl = TextEditingController();
+
+  /// Pozicija u lazy listi kataloga — vidi `ScrollMemory`. Ključ nosi query
+  /// jer `/channels` i `/channels?prikaz=osobe` imaju dvije nezavisne pozicije.
+  final _scrollCtrl = ScrollController();
   String _query = '';
 
   ChannelSortMode _sortMode = ChannelSortMode.newest;
@@ -169,6 +174,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     PersonChannelFlag.instance.removeListener(_onFlagChanged);
     personIndexCache.removeListener(_onIndexChanged);
     _searchCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -239,6 +245,8 @@ class _AllChannelsViewState extends State<AllChannelsView> {
 
   Future<void> _onSortChanged(ChannelSortMode mode) async {
     await saveSortMode(mode);
+    // Naslovnica drži izračunati redoslijed u cacheu — mora ga preračunati.
+    channelCache.invalidateOrder();
     if (mounted) setState(() => _sortMode = mode);
   }
 
@@ -247,6 +255,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
     final ids = shuffled.map((c) => c.id).toList();
     await saveCustomOrder(ids);
     await saveSortMode(ChannelSortMode.custom);
+    channelCache.invalidateOrder();
     if (mounted) {
       setState(() {
         _customOrder = ids;
@@ -494,7 +503,13 @@ class _AllChannelsViewState extends State<AllChannelsView> {
         // SliverGrid forsira uniformnu visinu celije → clipanje. Red drzi
         // prirodne visine (top-aligned), a SliverList recycle-a off-screen
         // redove → lazy paint kakav nam je i bio cilj.
-        return CustomScrollView(
+        return ScrollRestorer(
+          storageKey: widget.initialFilter == CatalogFilter.persons
+              ? '/channels?prikaz=osobe'
+              : '/channels',
+          controller: _scrollCtrl,
+          child: CustomScrollView(
+          controller: _scrollCtrl,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -522,6 +537,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
               ),
             ),
           ],
+          ),
         );
       },
     );

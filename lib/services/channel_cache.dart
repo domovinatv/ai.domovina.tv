@@ -24,6 +24,32 @@ class ChannelCache extends ChangeNotifier {
   /// Cacheirani index — null ako jos nije ucitan.
   ChannelIndex? get index => _index;
 
+  /// Kanali u redoslijedu koji naslovnica prikazuje (aktivni sort mode ili
+  /// spremljeni shuffle). Null dok se prvi put ne izračuna.
+  ///
+  /// **Zašto ovdje, a ne u `_HomeScreenState`:** do 6.9.2026. je redoslijed
+  /// živio u State-u naslovnice, pa je pri svakom povratku bio `null` →
+  /// `_ChannelGridView` je crtao SKELETON u prvom frameu i tek nakon
+  /// `addPostFrameCallback` + async čitanja prefa dobio prave kanale. Podaci su
+  /// bili u ovom singletonu, ali *izračunati redoslijed* nije — pa je naslovnica
+  /// nakon Backa uvijek prolazila kroz skeleton, i visina joj je rasla u više
+  /// asinkronih skokova. To je razlog zbog kojeg nikakvo vraćanje scroll
+  /// pozicije nije moglo pogoditi metu: meta se pomicala ispod njega.
+  List<ChannelSummary>? _orderedChannels;
+  List<ChannelSummary>? get orderedChannels => _orderedChannels;
+
+  /// Zapamti izračunati redoslijed. Ne notifira — pozivatelj je naslovnica koja
+  /// ionako radi `setState` u istom potezu, a notifikacija bi ovdje značila
+  /// rebuild svakog slušatelja cachea bez promjene podataka.
+  void setOrderedChannels(List<ChannelSummary> channels) {
+    _orderedChannels = channels;
+  }
+
+  /// Poništi zapamćeni redoslijed — zove se kad se promijeni sort mode.
+  void invalidateOrder() {
+    _orderedChannels = null;
+  }
+
   /// Ucitaj index (samo jednom, cacheira se).
   Future<ChannelIndex> loadIndex() async {
     if (_index != null) return _index!;
