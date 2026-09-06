@@ -704,10 +704,63 @@ sidro se tada traži po sadržaju (prva sekcija koja referencira osobu), članak
 se doscrolla onamo, ali se video NE seeka (znamo sekciju, ne sekundu). Pill
 bez ciljne sekunde nikad ne tvrdi „govori ovdje", nego „ovdje se spominje".
 
-### Routing
+### Routing i navigacijski stog
 
 Ruting je **go_router 14.8** u `lib/router/app_router.dart` (`createRouter()`).
-Puna tablica ruta: `docs/podcasterium_technical_manual.md` §3.
+Puna tablica ruta: `docs/podcasterium_technical_manual.md` §3. Analiza koja je
+dovela do stoga: `docs/2026-09-04-navigacija-i-scroll-restoration.md`.
+
+**Rule (jedan helper po VRSTI prijelaza — `lib/router/nav.dart`)**: do 6.9.2026.
+je 82 od 98 poziva bilo `context.go()`, koji **zamijeni cijelu listu ruta**. Zbog
+toga aplikacija nije imala stog: svaki ekran s kojeg odeš bio je *uništen*, pa se
+scroll nije imao odakle vratiti, `canPop()` nikad nije bio `true`, a na Androidu
+je sistemski Back zatvarao aplikaciju.
+
+| Prijelaz | Helper |
+|---|---|
+| lista → detalj, detalj → dublji detalj | `drillDown` |
+| isti sadržaj, druga prezentacija (`/v` ↔ `/m`, HR ↔ EN) | `swapPresentation` |
+| peer → peer (epizoda → srodna epizoda) | `goPeer` |
+| povratak na korijen (breadcrumb „Početna") | `context.go('/')` |
+| gumb „nazad" | `back` / `backUp` (+ `upTarget`) |
+
+`context.go('/')` je dopušten SAMO u `nav.dart`, breadcrumbovima i error/prazna
+stanja ekranima. `push` bez ograde je curenje memorije (`NoTransitionPage` ima
+`maintainState: true`, ekrani ostaju živi) — zato `kMaxStackDepth`.
+
+**Rule (`GoRouter.optionURLReflectsImperativeAPIs = true` mora ostati)**:
+`RouteMatchList.uri` po ugovoru odražava samo NE-imperativne matcheve
+(`go_router match.dart:509-511`), a `push` ne prosljeđuje `uri` — bez zastavice
+bi `push('/v/abc')` ostavio adresnu traku na `/`, čime pada „Kopiraj poveznicu",
+worker OG inject i `url_sync`. go_router od nje odgovara jer „URL najgornje rute
+nije uvijek deeplink-abilan"; kod nas vrijedi obratno (nema `ShellRoute`, sve su
+rute top-level i moraju biti dosežne izravnim URL-om). Čuva
+`test/nav_contract_test.dart`, uključujući test koji s ISKLJUČENOM zastavicom
+dokazuje da URL ostane na `/`.
+
+**Rule (`ValueKey` rute ne smije nositi promjenjivo stanje)**: ključ epizode je
+nosio `startAt`, pa je `/v/<id>` → `/v/<id>/t/<sec>` bio novi ključ → novi
+`State` → **uništen player**. Ključ nosi samo identitet ekrana (video + jezik);
+`startAt`/`person` primjenjuje `didUpdateWidget` (seek na živom playeru).
+
+**Rule (`url_sync` mora proslijediti postojeći `history.state`)**: Flutter engine
+u njega omota `{serialCount, state}`, a go_router serijalizira `location` +
+`imperativeMatches`. `replaceState(null, …)` je taj omot brisao — izmjereno na
+produkciji 4.9.2026. S pushanim stogom bi to značilo gubitak cijelog traga.
+
+**Rule (modal na webu ne zna za browserov Back)**: `showDialog`/
+`showModalBottomSheet` guraju IMPERATIVNU rutu bez history entryja. Na nativeu
+Back uredno popa modal; na webu browserov Back promijeni stranicu ISPOD modala,
+a modal ostane visjeti. Novi modal → `closeOnRouteChange` iz `nav.dart`.
+
+**Scroll**: glavni mehanizam je `push` (ekran ispod ostaje živ, pozicija nikad ne
+ode). `services/scroll_memory.dart` pokriva samo remount (deep-link pa ←, hard
+refresh, `go('/')` s breadcrumba) i ima tri obavezna detalja: `jumpTo` a ne
+`animateTo`; čekanje `maxScrollExtent >= offset` uz odustajanje nakon 2 s (inače
+se offset clampa na visinu skeletona); ključ nosi query string. Izračunati
+redoslijed kanala živi u `ChannelCache`, NE u `_HomeScreenState` — inače
+naslovnica u prvom frameu nakon povratka crta skeleton i visina joj raste u
+skokovima, pa vraćanju scrolla meta bježi ispod njega.
 
 *(Povijesno: ovdje je do 15.8.2026. pisalo da `main.dart` koristi
 `onGenerateRoute` s `home: const HomeScreen()` i da `initialRoute` /

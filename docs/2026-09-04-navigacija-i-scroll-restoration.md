@@ -1,7 +1,22 @@
 # Navigacijski sustav — snimka stanja, storyboard i prijedlozi
 
 **Datum:** 4.9.2026. · **Opseg:** web + mobitel + TV, sve rute u `lib/router/app_router.dart`
-**Status:** analiza + prijedlog. Ništa od navedenog nije implementirano ovim dokumentom.
+**Status:** ~~analiza + prijedlog~~ → **IMPLEMENTIRANO 6.9.2026.**
+Stavke 1–14 i 16 iz §8 su u kodu (grana `feat/navigacijski-stog`, 5 commitova).
+Ugovor živi u `lib/router/nav.dart`, sažetak pravila u `CLAUDE.md` §Routing.
+Otvoreno ostaje: **15** (`/glasanje/:slug` sheet kao prava ruta — funkcionalno
+pokriveno `closeOnRouteChange`, ali sheet i dalje nema vlastiti history entry) i
+**17** (horizontalna pozicija railova).
+
+**Ishod kritičnog puta (stavka 2):** zastavica
+`GoRouter.optionURLReflectsImperativeAPIs = true` **radi** — `push('/v/abc')`
+daje adresnu traku `/v/abc`, query preživljava, `pop` vraća baznu rutu.
+Verificirano u `test/nav_contract_test.dart` nad pravim `GoRouter`om, kroz
+`restoreRouteInformation` (jedini put kojim URL na webu nastaje), a NE ručnim
+mjerenjem u browseru: automation Chrome ne isporučuje klik ni scroll Flutterovoj
+canvas plohi, pa je šestostupanjska provjera iz §5.7 ostala neizvediva tim putem.
+Umjesto nje stoji test koji s ISKLJUČENOM zastavicom dokazuje da URL ostane na
+`/` — zastavica je time pod regresijskom zaštitom.
 
 ---
 
