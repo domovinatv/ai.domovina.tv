@@ -75,6 +75,19 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
     _load();
   }
 
+  /// Pandan `_EpisodeScreenState.didUpdateWidget` — ključ rute više ne nosi
+  /// `startAt` (vidi app_router.dart), pa isti State može preživjeti promjenu
+  /// propova. Novi `youtubeId` mora ponovno učitati epizodu.
+  @override
+  void didUpdateWidget(EpisodeSimpleScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.youtubeId != widget.youtubeId) {
+      _data = null;
+      _error = null;
+      _load();
+    }
+  }
+
   Future<void> _load() async {
     try {
       final data = await EpisodeData.load(youtubeId: widget.youtubeId);
@@ -230,6 +243,22 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     // je odavde prenosi na svoj Player. Jedan smjer, bez dvostrukog puta.
     PlaybackSpeed.instance.addListener(_applyPlaybackRate);
     _initVideo();
+  }
+
+  /// Nova ciljna sekunda iz URL-a se primjenjuje na ŽIVOM playeru — ključ rute
+  /// od 6.9.2026. ne nosi `startAt`, pa promjena timestampa više ne remounta
+  /// ekran. Vidi isti komentar u episode_screen.dart.
+  @override
+  void didUpdateWidget(_SimpleEpisodeContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final startAt = widget.startAtSeconds;
+    if (startAt != oldWidget.startAtSeconds && startAt != null) {
+      final player = _player;
+      if (player != null) {
+        _seekUndo?.suppress();
+        player.seek(Duration(seconds: startAt));
+      }
+    }
   }
 
   /// Primijeni trenutnu globalnu brzinu na player + osvježi media sesiju.

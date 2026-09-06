@@ -22,6 +22,24 @@ void replaceTimestampImpl(
   final lang = (langSuffix != null && langSuffix.isNotEmpty) ? langSuffix : '';
   final q = (query != null && query.isNotEmpty) ? '?$query' : '';
   final url = '$basePath$ts$lang$q';
+  // PRVI arg mora biti POSTOJEĆI state, ne `null`.
+  //
+  // Flutter web engine svaki history entry omota u `{serialCount, state}`
+  // (`_engine/engine/navigation/history.dart` → `_tagWithSerialCount`), a
+  // go_router u to `state` polje serijalizira `location` + `imperativeMatches`
+  // — dakle cijeli pushani stog (`RouteMatchListCodec`). `replaceState(null,…)`
+  // je taj omot brisao: izmjereno 4.9.2026. na produkciji, `history.state` je
+  // nakon jednog sync-a bio `null`.
+  //
+  // Posljedice su bile dvije: engine na povratku u takav entry vidi
+  // `!_hasSerialCount(state)` i pretpostavi da je to sljedeći entry UNAPRIJED
+  // (pa mu prepiše brojač u krivom smjeru), a go_router dobije
+  // `pushRouteInformation` bez statea i mora rekonstruirati rutu samo iz
+  // stringa lokacije — **bez stoga ispod**. Dok je sve išlo kroz `go()` to se
+  // nije vidjelo jer je stog ionako bio prazan; otkad drill-down puša
+  // (`lib/router/nav.dart`), svaki povratak u epizodu koja je svirala izgubio
+  // bi cijeli trag ispod sebe.
+  //
   // Treći arg je URL — relativni je OK, browser ga resolva u trenutni origin.
-  web.window.history.replaceState(null, '', url);
+  web.window.history.replaceState(web.window.history.state, '', url);
 }

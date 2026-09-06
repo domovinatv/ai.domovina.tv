@@ -89,6 +89,22 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
     _load();
   }
 
+  /// Ruta više ne nosi `startAt`/`person` u `ValueKey`-u (vidi app_router.dart),
+  /// pa isti `State` može dobiti novi `youtubeId` samo kad go_router zadrži
+  /// stranicu istog ključa — a to se događa jedino pri promjeni jezika
+  /// (`/v/<id>` ↔ `/v/<id>/en` imaju RAZLIČIT ključ, dakle ne). Guard je ipak
+  /// tu jer bi tiho prikazivanje stare epizode pod novim ID-em bilo teško uočiti.
+  @override
+  void didUpdateWidget(EpisodeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.youtubeId != widget.youtubeId) {
+      _data = null;
+      _error = null;
+      _assetStatus.clear();
+      _load();
+    }
+  }
+
   Future<void> _load() async {
     try {
       final data = await EpisodeData.loadWithProgress(
@@ -805,6 +821,35 @@ class _EpisodeContentState extends State<_EpisodeContent>
     // je odavde prenosi na svoj Player. Jedan smjer, bez dvostrukog puta.
     PlaybackSpeed.instance.addListener(_applyPlaybackRate);
     _initVideo();
+  }
+
+  /// Ruta zadržava isti `State` kad se promijeni SAMO `startAt` ili `?p=`
+  /// (ključ je od 6.9.2026. `video-<id>-<jezik>` — vidi app_router.dart), pa se
+  /// ta dva propa moraju primijeniti OVDJE. Prije toga je promjena timestampa
+  /// bila novi ključ → novi State → uništen player i ponovno učitavanje svih
+  /// artefakata; sada je to seek na živom playeru.
+  @override
+  void didUpdateWidget(_EpisodeContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Nova ciljna sekunda iz URL-a (share link, tap na moment s /p/ profila).
+    final startAt = widget.startAtSeconds;
+    if (startAt != oldWidget.startAtSeconds && startAt != null) {
+      final player = _player;
+      if (player != null) {
+        // Programski skok — ne smije se ponuditi kao "Vrati me natrag".
+        _seekUndo?.suppress();
+        player.seek(Duration(seconds: startAt));
+      }
+    }
+
+    // Novi (ili maknuti) person-highlight marker.
+    if (widget.highlightPersonSlug != oldWidget.highlightPersonSlug) {
+      _personHighlightTs = null;
+      _personHighlightName = null;
+      _personHighlightSpeaks = false;
+      _initPersonHighlight();
+    }
   }
 
   /// Primijeni trenutnu globalnu brzinu na player + osvježi media sesiju.

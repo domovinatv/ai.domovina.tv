@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsBinding;
 import 'package:flutter/services.dart' show BrowserContextMenu;
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'l10n/app_localizations.dart';
@@ -46,6 +47,22 @@ void main() async {
   AppTypography.startPreload();
 
   try { usePathUrlStrategy(); } catch (_) {}
+
+  // Adresna traka mora pratiti i `push()`ane rute, ne samo `go()`ane.
+  //
+  // `RouteMatchList.uri` po ugovoru odražava SAMO ne-imperativne matcheve
+  // (`go_router/lib/src/match.dart:509-511`), a `RouteMatchList.push` radi
+  // `copyWith(matches: …)` bez prosljeđivanja `uri` — pa bi bez ove zastavice
+  // `push('/v/abc')` s naslovnice ostavio URL na `/`. Za nas je to rušenje, ne
+  // kozmetika: „Kopiraj poveznicu" bi kopirao krivi URL, worker ne bi injectao
+  // OG tagove epizode, a `url_sync` bi pisao `/t/<sec>` preko krive baze.
+  //
+  // go_router odgovara od ove zastavice uz obrazloženje da „URL najgornje rute
+  // nije uvijek deeplink-abilan" (`router.dart:279-281`). Kod nas to ne vrijedi:
+  // nemamo nijedan `ShellRoute`, sve su rute top-level `GoRoute`, i svaka MORA
+  // biti dosežna izravnim URL-om jer to već traže AASA popis (`web/_worker.js`),
+  // Android intent filteri i OG inject. Provjereno mjerenjem 6.9.2026.
+  GoRouter.optionURLReflectsImperativeAPIs = true;
 
   // Gasi browserov native right-click menu na webu da bi se vidjeli NAŠI custom
   // context menu-i (npr. "Kopiraj poveznicu" na karticama kanala/epizoda —
