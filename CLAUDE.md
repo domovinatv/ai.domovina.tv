@@ -783,3 +783,32 @@ Theme seed: `Color(0xFF002F6C)` (Croatian navy).
 - OG image: `web/og-image.png` (1200x630) generated from `assets/icons/og-image.svg`
 - Test page: `https://domovina.ai/social-test`
 - Test script: `node scripts/test-social-tags.mjs`
+
+**Rule (svaka ruta koju Flutter zna mora znati i worker)**: `/en` sufiks je u
+`app_router.dart` postojao od uvođenja per-epizoda jezika, a u `_worker.js` ga
+nije bilo ni u jednom matcheru — svaki engleski share (`/v/<id>/t/<sec>/en`)
+padao je kroz sve rute na SPA fallback i dobivao **generički OG naslovnice, na
+hrvatskom**. Tiho: stranica se otvarala ispravno, seek je radio, samo je preview
+bio kriv. Izmjereno 15.9.2026. Nova ruta s vlastitim OG-om → dodaj je u OBA
+matchera i pokrij u `test-social-tags.mjs`.
+
+**Rule (EN je zaseban CDN fajl, ne polje)**: prijevod živi u
+`data/<id>/article.en.json` i `summary.en.json` — u njima su i HR i `*_en`
+polja, pa se fallback radi **po polju** (`pickLang`), ne po dokumentu; prijevodi
+su parcijalni. Naslov epizode se NE prevodi (izvorni YouTube naslov), niti
+`inLanguage` u JSON-LD-u — audio ostaje hrvatski. HR i EN imaju svaki svoj
+self-referencing canonical + uzajamni `hreflang`.
+
+**Rule (u OG sliku se ne piše emoji)**: `generate_og_sections.py` je crtao `⏱`
+Helveticom, koja taj glyph nema — Pillow ga je tiho renderirao kao `.notdef`,
+prazan kvadratić, na svih 65 759 postojećih `og-t-*.jpg`. Ikone u kompozitima se
+CRTAJU (`draw_clock_icon`), jer vektor ne može pasti na fallback koji nitko ne
+vidi do WhatsApp previewa. Isto vrijedi za `og-t-<sec>-en.jpg` (subtitle_en).
+
+**Rule (app ključ ≠ pipeline ime)**: `upload_to_r2.js` mapira
+`{base}.og-sections/manifest.json` → `images/{id}/og-sections.json`, pa je
+provjera „je li ovo manifest" po basenameu promašivala i manifest je prvim
+uploadom postao `immutable` na godinu dana — nove sekcije i cijela `sections_en`
+mapa nikad nisu stizale do workera iako su slike bile na R2. Popisi u
+`isContentMutable`/`cacheControlFor` moraju nositi OBA imena. Regeneriranu
+immutable sliku na CDN šalje tek `--force-og` (analogno `--force-mp4`).

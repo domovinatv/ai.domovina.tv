@@ -7,6 +7,11 @@
  *   node scripts/test-social-tags.mjs http://localhost:8080  # lokalni dev
  */
 
+// Epizoda s POTVRĐENIM article.en.json/summary.en.json na CDN-u — bez toga
+// EN test testira samo fallback i tiho prolazi kao da prijevod radi.
+const EN_VIDEO_ID = 'pNSblshqEuU';
+const EN_VIDEO_TSEC = 1185;
+
 const VIDEO_IDS = [
   'H-p2Hl6x7I0',
   'AoXN-3Mkmew',
@@ -428,6 +433,78 @@ async function testVoting(slug) {
   return { ytId: slug ? `glasanje/${slug}` : 'glasanje', passed, failed };
 }
 
+/**
+ * Testira engleski share URL `/v/<id>/t/<sec>/en`.
+ *
+ * Do 15.9.2026. worker NIJE poznavao `/en` sufiks — nijedan matcher ga nije
+ * hvatao, pa je svaki engleski share padao na SPA fallback i dobivao generički
+ * OG naslovnice, na hrvatskom. Ovaj test to hvata: traži da su og:title i
+ * og:description RAZLIČITI od HR varijante istog trenutka.
+ */
+async function testEnglishShare(ytId, tSec) {
+  const urlEn = `${BASE}/v/${ytId}/t/${tSec}/en`;
+  const urlHr = `${BASE}/v/${ytId}/t/${tSec}`;
+  console.log(`\n${BOLD}── ${ytId} @ ${tSec}s (EN)${RESET}  ${urlEn}`);
+
+  const get = async (u) => {
+    const res = await fetch(u, {
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      redirect: 'follow',
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} na ${u}`);
+    return res.text();
+  };
+
+  let htmlEn, htmlHr;
+  try {
+    [htmlEn, htmlHr] = await Promise.all([get(urlEn), get(urlHr)]);
+  } catch (e) {
+    console.log(`  ${fail(e.message)}`);
+    return { ytId: `${ytId}@${tSec}/en`, passed: 0, failed: 1 };
+  }
+
+  let passed = 0;
+  let failed = 0;
+  const check = (label, value, expected) => {
+    const label26 = label.padEnd(26);
+    if (value === null || value.trim() === '') {
+      console.log(`  ${fail(label26)} NEDOSTAJE`);
+      failed++;
+      return;
+    }
+    if (expected !== undefined && !expected(value)) {
+      const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+      console.log(`  ${fail(label26)} "${preview}"`);
+      failed++;
+      return;
+    }
+    const preview = value.length > 70 ? value.slice(0, 67) + '…' : value;
+    console.log(`  ${ok(label26)} "${preview}"`);
+    passed++;
+  };
+
+  const enTitle = extractMeta(htmlEn, 'property', 'og:title');
+  const enDesc  = extractMeta(htmlEn, 'property', 'og:description');
+  const hrTitle = extractMeta(htmlHr, 'property', 'og:title');
+  const hrDesc  = extractMeta(htmlHr, 'property', 'og:description');
+
+  check('og:url (/en)',        extractMeta(htmlEn, 'property', 'og:url'),
+    (v) => v === `https://domovina.ai/v/${ytId}/t/${tSec}/en`);
+  check('canonical (/en)',     extractCanonical(htmlEn),
+    (v) => v === `https://domovina.ai/v/${ytId}/t/${tSec}/en`);
+  check('og:locale',           extractMeta(htmlEn, 'property', 'og:locale'),
+    (v) => v === 'en_US');
+  check('hreflang hr',         htmlEn.includes(`hreflang="hr" href="https://domovina.ai/v/${ytId}/t/${tSec}"`) ? 'da' : '',
+    (v) => v === 'da');
+  // Srž testa: EN nije isti tekst kao HR i nije generički OG naslovnice.
+  check('og:title ≠ HR',       enTitle, (v) => v !== hrTitle && !v.startsWith('DOMOVINA.ai —'));
+  check('og:description ≠ HR', enDesc,  (v) => v !== hrDesc && v.length > 30);
+  check('og:image (section)',  extractMeta(htmlEn, 'property', 'og:image'),
+    (v) => v.includes(`og-t-${tSec}`));
+
+  return { ytId: `${ytId}@${tSec}/en`, passed, failed };
+}
+
 async function main() {
   console.log(`${BOLD}DOMOVINA.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
@@ -444,6 +521,8 @@ async function main() {
   results.push(await testTimestamp(VIDEO_IDS[0], 60));
   // Simple view share (/m/<id>) — isti OG, canonical → /v/, og:url → /m/.
   results.push(await testSimpleView(VIDEO_IDS[0]));
+  // Engleski share (/v/<id>/t/<sec>/en) — prevedeni OG, ne generički naslovnica.
+  results.push(await testEnglishShare(EN_VIDEO_ID, EN_VIDEO_TSEC));
   // „Izborni dan" — javna ruta glasanja + deep-link na kandidata.
   results.push(await testVoting(null));
   results.push(await testVoting(VOTING_SLUG));

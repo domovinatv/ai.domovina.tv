@@ -295,24 +295,41 @@ export default {
     }
 
     // Izvuci YouTube ID iz URL-a:
-    //   /v/<ytId>            — permalink format (detailed view)
-    //   /v/<ytId>/t/<sec>    — timestamp clip share (path-based za pouzdan crawler cache)
-    //   /m/<ytId>            — mobile simplified view (isti OG, canonical → /v/<id>)
-    //   /?v=<ytId>           — query param format
+    //   /v/<ytId>               — permalink format (detailed view)
+    //   /v/<ytId>/t/<sec>       — timestamp clip share (path-based za pouzdan crawler cache)
+    //   /m/<ytId>               — mobile simplified view (isti OG, canonical → /v/<id>)
+    //   /?v=<ytId>              — query param format
+    //   …/en                    — engleska varijanta SVIH gornjih (osim /?v=)
+    //
+    // `/en` sufiks (a ne ?lang=en) postoji upravo zato što crawleri droppaju
+    // query parametre — vidi komentar uz rutu u lib/router/app_router.dart.
+    // Do 15.9.2026. ga je Flutter router imao, a ovaj worker NIJE: svaki
+    // engleski share (/v/<id>/t/<sec>/en) padao je kroz sve matchere na SPA
+    // fallback i dobivao generički OG naslovnice, na hrvatskom.
     let ytId = null;
     let tSec = null;
     let viewMode = 'v'; // 'v' = detailed, 'm' = simple
-    const tMatch = path.match(/^\/v\/([A-Za-z0-9_-]{6,20})\/t\/(\d+)$/);
-    const vMatch = !tMatch && path.match(/^\/v\/([A-Za-z0-9_-]{6,20})$/);
-    const mMatch = !tMatch && !vMatch && path.match(/^\/m\/([A-Za-z0-9_-]{6,20})$/);
+    let lang = 'hr';    // 'hr' = original, 'en' = prijevod iz *.en.json
+    const tMatch = path.match(/^\/v\/([A-Za-z0-9_-]{6,20})\/t\/(\d+)(\/en)?$/);
+    const vMatch = !tMatch && path.match(/^\/v\/([A-Za-z0-9_-]{6,20})(\/en)?$/);
+    const mtMatch = !tMatch && !vMatch && path.match(/^\/m\/([A-Za-z0-9_-]{6,20})\/t\/(\d+)(\/en)?$/);
+    const mMatch = !tMatch && !vMatch && !mtMatch && path.match(/^\/m\/([A-Za-z0-9_-]{6,20})(\/en)?$/);
     if (tMatch) {
       ytId = tMatch[1];
       tSec = parseInt(tMatch[2], 10);
+      if (tMatch[3]) lang = 'en';
     } else if (vMatch) {
       ytId = vMatch[1];
+      if (vMatch[2]) lang = 'en';
+    } else if (mtMatch) {
+      ytId = mtMatch[1];
+      tSec = parseInt(mtMatch[2], 10);
+      viewMode = 'm';
+      if (mtMatch[3]) lang = 'en';
     } else if (mMatch) {
       ytId = mMatch[1];
       viewMode = 'm';
+      if (mMatch[2]) lang = 'en';
     } else if (path === '/' || path === '') {
       ytId = url.searchParams.get('v');
     }
@@ -328,24 +345,39 @@ export default {
       // ih možda nemaju) — fetchJson vraća null na 404 pa fallback radi sam.
       // og-sections.json je Tier B manifest: { sections: { "<sec>": "og-t-<sec>.jpg" } }
       // — file po section-u, 1200×630 JPEG ~100KB (WhatsApp-safe < 600KB).
-      const [info, summary, article, ogSections, hasOgShare] = await Promise.all([
+      // EN varijante su ZASEBNI fajlovi (summary.en.json / article.en.json), a u
+      // njima su i HR i *_en polja — pa je fallback na HR unutar istog dokumenta.
+      // Fajl ne postoji za neprevedene epizode → fetchJson vraća null i padamo
+      // na hrvatski original.
+      const summaryPath = lang === 'en' ? 'summary.en.json' : 'summary.json';
+      const articlePath = lang === 'en' ? 'article.en.json' : 'article.json';
+      const [info, summaryLocalized, summaryHr, articleLocalized, articleHr, ogSections, hasOgShare] = await Promise.all([
         fetchJson(`${CDN}/data/${ytId}/info.json`),
-        fetchJson(`${CDN}/data/${ytId}/summary.json`),
+        fetchJson(`${CDN}/data/${ytId}/${summaryPath}`),
+        lang === 'en' ? fetchJson(`${CDN}/data/${ytId}/summary.json`) : Promise.resolve(null),
         // article + og-sections fetchamo SAMO za timestamp shareove — base
         // /v/<id> koristi episode-level og-share.jpg.
-        (typeof tSec === 'number') ? fetchJson(`${CDN}/data/${ytId}/article.json`) : Promise.resolve(null),
+        (typeof tSec === 'number') ? fetchJson(`${CDN}/data/${ytId}/${articlePath}`) : Promise.resolve(null),
+        (typeof tSec === 'number' && lang === 'en') ? fetchJson(`${CDN}/data/${ytId}/article.json`) : Promise.resolve(null),
         (typeof tSec === 'number') ? fetchJson(`${CDN}/images/${ytId}/og-sections.json`) : Promise.resolve(null),
         headOk(`${CDN}/images/${ytId}/og-share.jpg`),
       ]);
+      const summary = summaryLocalized || summaryHr;
+      const article = articleLocalized || articleHr;
 
-      // Section-specific og:image override. Manifest mapa: { "<startSec>": "og-t-<sec>.jpg" }.
+      // Section-specific og:image override. Manifest mape:
+      //   sections    → { "<startSec>": "og-t-<sec>.jpg" }
+      //   sections_en → { "<startSec>": "og-t-<sec>-en.jpg" }  (manifest v1.1+)
       // findArticleSection vraća section s _start poljem koji odgovara ključu u manifestu.
-      // Ako manifest postoji i sadrži file za taj section start → koristi ga.
+      // EN bez svoje slike pada na HR sliku — pogrešan jezik u slici je i dalje
+      // bolji od generičkog og-share.jpg bez tog trenutka.
       let sectionImageUrl = null;
       if (info && article && ogSections && typeof tSec === 'number') {
         const sec = findArticleSection(article, tSec, info.duration);
         if (sec && typeof sec._start === 'number') {
-          const filename = ogSections.sections?.[String(sec._start)];
+          const key = String(sec._start);
+          const filename = (lang === 'en' ? ogSections.sections_en?.[key] : null)
+            || ogSections.sections?.[key];
           if (filename) {
             sectionImageUrl = `${CDN}/images/${ytId}/${filename}`;
           }
@@ -354,7 +386,7 @@ export default {
 
       if (info) {
         const indexHtml = await (await indexPromise).text();
-        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl), 'public, max-age=3600, s-maxage=3600');
+        return htmlResponse(injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl, lang), 'public, max-age=3600, s-maxage=3600');
       }
       // info ne postoji — Flutter će prikazati grešku, servamo plain index
       return htmlResponse(await (await indexPromise).text(), 'no-store');
@@ -703,11 +735,53 @@ function xmlEscape(s) {
  *   1. summary.summary.abstract_hr  (AI sažetak na hrvatskom — najbolja kvaliteta)
  *   2. info.description             (sirov YouTube opis — često sadrži linkove/hashtagove)
  */
-function pickDescription(info, summary) {
-  const abstract = summary?.summary?.abstract_hr;
+function pickDescription(info, summary, lang) {
+  const abstract = (lang === 'en' ? summary?.summary?.abstract_en : null)
+    || summary?.summary?.abstract_hr;
   if (abstract && abstract.trim().length > 50) return abstract.trim();
   return (info.description || '').replace(/\s+/g, ' ').trim();
 }
+
+/**
+ * EN polje ako postoji i nije prazno, inače HR — isti ugovor kao `pickLang`
+ * u lib/services/episode_language.dart. Prijevodi su parcijalni (sekcija može
+ * imati subtitle_en a nemati screenshot_description_en), pa se fallback radi
+ * PO POLJU, ne po dokumentu.
+ */
+function pickLang(lang, hr, en) {
+  if (lang === 'en' && typeof en === 'string' && en.trim().length > 0) return en;
+  return hr;
+}
+
+/** List-varijanta `pickLang`. */
+function pickLangList(lang, hr, en) {
+  if (lang === 'en' && Array.isArray(en) && en.length > 0) return en;
+  return hr;
+}
+
+/** Copy koji nije iz podataka nego iz chrome-a — po jeziku share URL-a. */
+const SHARE_COPY = {
+  hr: {
+    from: (t) => `iz "${t}"`,
+    chapterPart: (title, range, t) => `Dio "${title}" (${range}) iz: ${t}.`,
+    moment: (clock, t) => `Trenutak na ${clock} iz: ${t}.`,
+    momentTitle: (clock) => `Trenutak na ${clock}`,
+    channelLabel: 'Kanal',
+    durationLabel: 'Trajanje',
+    locale: 'hr_HR',
+    htmlLang: 'hr',
+  },
+  en: {
+    from: (t) => `from "${t}"`,
+    chapterPart: (title, range, t) => `Part "${title}" (${range}) of: ${t}.`,
+    moment: (clock, t) => `Moment at ${clock} from: ${t}.`,
+    momentTitle: (clock) => `Moment at ${clock}`,
+    channelLabel: 'Channel',
+    durationLabel: 'Duration',
+    locale: 'en_US',
+    htmlLang: 'en',
+  },
+};
 
 /** "20260319" → "2026-03-19" */
 function formatUploadDate(yyyymmdd) {
@@ -792,9 +866,12 @@ function isoDuration(seconds) {
   return out;
 }
 
-function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl) {
+function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, tSec, viewMode, sectionImageUrl, lang = 'hr') {
+  const copy = SHARE_COPY[lang] || SHARE_COPY.hr;
+  // Naslov epizode NIJE preveden — to je izvorni YouTube naslov (pipeline ga ne
+  // prevodi). Prevodi se samo AI-generirani sloj: abstract, subtitle, opisi.
   const baseTitle = info.title || 'DOMOVINA.ai';
-  const rawDesc = pickDescription(info, summary);
+  const rawDesc = pickDescription(info, summary, lang);
   const baseDesc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
 
   // Match prioritet za timestamp share:
@@ -816,26 +893,34 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   if (section) {
     // Section subtitle je već specifičan ("Uvod i predstavljanje X"), ne treba mu cijeli baseTitle.
     // Skratimo subtitle ako je predug, da stane u 95 chara s clock+epname.
-    const sub = (section.subtitle || '').replace(/\s+/g, ' ').trim();
-    const subShort = sub.length > 80 ? sub.slice(0, 77) + '…' : sub;
+    const sub = pickLang(lang, section.subtitle, section.subtitle_en)
+      || '';
+    const subClean = sub.replace(/\s+/g, ' ').trim();
+    const subShort = subClean.length > 80 ? subClean.slice(0, 77) + '…' : subClean;
     title = `⏱ ${clock} · ${subShort}`;
     const range = `${formatClock(section._start)}–${formatClock(section._end)}`;
-    const sectionDesc = (section.screenshot_description || section.content || '').replace(/\s+/g, ' ').trim();
-    desc = `${sectionDesc} — iz "${baseTitle}" (${range})`;
+    const sectionDesc = (
+      pickLang(lang, section.screenshot_description, section.screenshot_description_en)
+      || pickLang(lang, section.content, section.content_en)
+      || ''
+    ).replace(/\s+/g, ' ').trim();
+    desc = `${sectionDesc} — ${copy.from(baseTitle)} (${range})`;
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
     // Bogatiji article:tag-ovi za ovaj specifični trenutak.
     const tags = [];
-    if (Array.isArray(section.keywords)) tags.push(...section.keywords);
-    if (Array.isArray(section.entities)) tags.push(...section.entities);
+    const kw = pickLangList(lang, section.keywords, section.keywords_en);
+    const ent = pickLangList(lang, section.entities, section.entities_en);
+    if (Array.isArray(kw)) tags.push(...kw);
+    if (Array.isArray(ent)) tags.push(...ent);
     if (tags.length > 0) overrideTopicTags = tags.slice(0, 8);
   } else if (chapter) {
     title = `⏱ ${clock} · ${chapter.title} — ${baseTitle}`;
     const range = `${formatClock(chapter.start_time)}–${formatClock(chapter.end_time)}`;
-    desc = `Dio "${chapter.title}" (${range}) iz: ${baseTitle}. ${baseDesc}`;
+    desc = `${copy.chapterPart(chapter.title, range, baseTitle)} ${baseDesc}`;
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
   } else if (typeof tSec === 'number') {
     title = `⏱ ${clock} — ${baseTitle}`;
-    desc = `Trenutak na ${clock} iz: ${baseTitle}. ${baseDesc}`;
+    desc = `${copy.moment(clock, baseTitle)} ${baseDesc}`;
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
   }
 
@@ -868,12 +953,22 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   // Canonical uvijek pokazuje na /v/ (ne /m/) — SEO konsolidacija: /m/ je samo
   // alternativni view, ne distinct content. og:url, pak, prati share URL da
   // crawleri ne dignu canonical preko og:url-a i poremete cache.
-  const canonical = (typeof tSec === 'number')
-    ? `${SITE}/v/${ytId}/t/${tSec}`
-    : `${SITE}/v/${ytId}`;
+  // `/en` je zasebna jezična varijanta ISTOG sadržaja — svaka ima svoj canonical
+  // (self-referencing) i obje se međusobno navode preko hreflang. Da EN pokazuje
+  // canonical na HR, tražili bismo od Googlea da EN varijantu ne indeksira.
+  const langSuffix = lang === 'en' ? '/en' : '';
+  const basePath = (typeof tSec === 'number')
+    ? `/v/${ytId}/t/${tSec}`
+    : `/v/${ytId}`;
+  const canonical = `${SITE}${basePath}${langSuffix}`;
   const ogUrl = (viewMode === 'm')
-    ? `${SITE}/m/${ytId}`
+    ? `${SITE}/m/${ytId}${typeof tSec === 'number' ? `/t/${tSec}` : ''}${langSuffix}`
     : canonical;
+  const altLinks = [
+    `  <link rel="alternate" hreflang="hr" href="${SITE}${basePath}">`,
+    `  <link rel="alternate" hreflang="en" href="${SITE}${basePath}/en">`,
+    `  <link rel="alternate" hreflang="x-default" href="${SITE}${basePath}">`,
+  ].join('\n');
   const channel = info.channel || 'DOMOVINA.ai';
   const releaseDate = formatUploadDate(info.upload_date);
   const isoDur = isoDuration(info.duration);
@@ -892,9 +987,11 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   <title>${x(title)} – DOMOVINA.ai</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
+${altLinks}
 
   <meta property="og:type" content="video.other">
-  <meta property="og:locale" content="hr_HR">
+  <meta property="og:locale" content="${copy.locale}">
+  <meta property="og:locale:alternate" content="${lang === 'en' ? 'hr_HR' : 'en_US'}">
   <meta property="og:site_name" content="DOMOVINA.ai">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
@@ -924,13 +1021,13 @@ ${articleTags}
   <meta name="twitter:description" content="${x(desc)}">
   <meta name="twitter:image" content="${thumb}">
   <meta name="twitter:image:alt" content="${x(title)}">
-  <meta name="twitter:label1" content="Kanal">
+  <meta name="twitter:label1" content="${copy.channelLabel}">
   <meta name="twitter:data1" content="${x(channel)}">${
-    info.duration_string ? `\n  <meta name="twitter:label2" content="Trajanje">\n  <meta name="twitter:data2" content="${x(info.duration_string)}">` : ''
+    info.duration_string ? `\n  <meta name="twitter:label2" content="${copy.durationLabel}">\n  <meta name="twitter:data2" content="${x(info.duration_string)}">` : ''
   }
 
   <script type="application/ld+json">
-${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId })}
+${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId, lang })}
   </script>`;
 
   // Ukloni default tagove + bilo koji prethodni JSON-LD; pa injectaj video-specifične.
@@ -940,7 +1037,11 @@ ${jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channe
     .replace(/<title>[^<]*<\/title>/gi, '')
     .replace(/<meta\s[^>]*(?:property|name)=["'](?:og:|twitter:|article:|description)[^"']*["'][^>]*>/gi, '')
     .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/<link\s[^>]*rel=["']alternate["'][^>]*hreflang=[^>]*>/gi, '')
     .replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
+  // <html lang> mora pratiti jezik stranice — čitaju ga tražilice, prevoditelji
+  // i screen readeri. index.html je statično `hr`.
+  html = html.replace(/<html([^>]*?)\slang=["'][^"']*["']/i, `<html$1 lang="${copy.htmlLang}"`);
   return html.replace('</head>', `${tags}\n</head>`);
 }
 
@@ -1450,7 +1551,8 @@ ${jsonLd}
   return stripHeadMeta(indexHtml).replace('</head>', `${tags}\n</head>`);
 }
 
-function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId }) {
+function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur, channel, ytUrl, videoUrl, tSec, chapter, section, baseTitle, ytId, lang = 'hr' }) {
+  const copy = SHARE_COPY[lang] || SHARE_COPY.hr;
   const obj = {
     '@context': 'https://schema.org',
     '@type': 'VideoObject',
@@ -1461,6 +1563,8 @@ function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur,
     embedUrl: typeof tSec === 'number' ? `${SITE}/v/${ytId}` : canonical,
     url: typeof tSec === 'number' ? `${SITE}/v/${ytId}` : canonical,
     sameAs: ytUrl,
+    // Govorni sadržaj je hrvatski bez obzira na jezik stranice — toggle prevodi
+    // samo AI-generirani tekst (vidi lib/services/episode_language.dart).
     inLanguage: 'hr',
     publisher: {
       '@type': 'Organization',
@@ -1482,7 +1586,8 @@ function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur,
     let clipName;
     let clipEnd;
     if (section) {
-      clipName = (section.subtitle || '').replace(/\s+/g, ' ').trim() || `Trenutak na ${formatClock(tSec)}`;
+      clipName = (pickLang(lang, section.subtitle, section.subtitle_en) || '')
+        .replace(/\s+/g, ' ').trim() || copy.momentTitle(formatClock(tSec));
       if (typeof section._end === 'number' && Number.isFinite(section._end)) {
         clipEnd = Math.floor(section._end);
       }
@@ -1490,7 +1595,7 @@ function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur,
       clipName = chapter.title;
       if (typeof chapter.end_time === 'number') clipEnd = Math.floor(chapter.end_time);
     } else {
-      clipName = `Trenutak na ${formatClock(tSec)}`;
+      clipName = copy.momentTitle(formatClock(tSec));
     }
     const clip = {
       '@type': 'Clip',
