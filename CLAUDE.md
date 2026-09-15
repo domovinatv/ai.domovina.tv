@@ -792,6 +792,18 @@ hrvatskom**. Tiho: stranica se otvarala ispravno, seek je radio, samo je preview
 bio kriv. Izmjereno 15.9.2026. Nova ruta s vlastitim OG-om → dodaj je u OBA
 matchera i pokrij u `test-social-tags.mjs`.
 
+**Rule (share URL se NE sastavlja ručno)**: ide kroz `episodeShareUrl`
+(`lib/services/share_links.dart`), jer je jezik dio PUTANJE — ručni string ga
+tiho gubi. „Kopiraj poveznicu" na poglavlju davalo je hrvatski URL i kad je
+korisnik čitao engleski; na webu se to nije vidjelo jer se link dao prepisati iz
+adresne trake (koju `url_sync` održava), a u iOS/Android aplikaciji adresne
+trake nema pa je gubitak bio potpun. Redoslijed `/v/<id>/t/<sec>/en` mora ostati
+usklađen na TRI mjesta: matcheri u `_worker.js`, `url_sync`, i ovaj builder —
+čuva `test/share_links_test.dart`. Kartice u railovima namjerno ostaju na HR:
+izvan episode ekrana nema `EpisodeLanguageScope`, a preferirani jezik se čita
+asinkrono, pa bi `/en` ondje bio nagađanje (i za neprevedenu epizodu obećanje
+koje worker mora poništiti fallbackom).
+
 **Rule (EN je zaseban CDN fajl, ne polje)**: prijevod živi u
 `data/<id>/article.en.json` i `summary.en.json` — u njima su i HR i `*_en`
 polja, pa se fallback radi **po polju** (`pickLang`), ne po dokumentu; prijevodi

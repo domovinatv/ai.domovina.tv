@@ -1,0 +1,51 @@
+/// Apsolutne poveznice za dijeljenje (`https://domovina.ai/...`).
+///
+/// **Rule**: share URL epizode se NE sastavlja ručno — ide kroz `episodeShareUrl`.
+///
+/// Jezik sadržaja je dio PUTANJE (`/en` sufiks, a ne `?lang=en`, jer crawleri
+/// droppaju query parametre pri normalizaciji — vidi `web/_worker.js` i rutu u
+/// `lib/router/app_router.dart`). Svaki ručno sastavljen string zato tiho gubi
+/// jezik: dijeliš engleski trenutak, a primatelj dobije hrvatski.
+///
+/// Na webu se to nije vidjelo jer adresna traka ima `url_sync` (koji `/en`
+/// uredno održava), pa je ručno kopiranje iz trake davalo ispravan link. Na
+/// iOS/Android aplikaciji adresne trake nema i „Kopiraj poveznicu" je jedini
+/// izvor linka — ondje je gubitak bio potpun. Prijavljeno 15.9.2026.
+library;
+
+import 'episode_language.dart';
+
+/// Kanonski origin aplikacije. Share linkovi su uvijek apsolutni — kopiraju se
+/// u tuđe aplikacije, gdje relativna putanja ne znači ništa.
+const String kShareOrigin = 'https://domovina.ai';
+
+/// Poveznica na epizodu, po potrebi na točan trenutak i/ili jezik.
+///
+/// Redoslijed segmenata je `/v/<id>/t/<sec>/en` — isti koji `_worker.js`
+/// matcha i koji `url_sync` piše u adresnu traku. Ne mijenjati bez oba.
+///
+/// [seconds] ≤ [minSeconds] daje link na cijelu epizodu: prvih nekoliko
+/// sekundi nije „trenutak", a `/t/0` bi crawleru bio zaseban cache unos za
+/// isti sadržaj.
+///
+/// [personSlug] je oznaka govornika (`?p=<slug>`) — query je ovdje u redu jer
+/// je čisto in-app sidro; izgubi li ga crawler, preview je i dalje točan.
+String episodeShareUrl(
+  String youtubeId, {
+  int? seconds,
+  EpisodeLanguage lang = EpisodeLanguage.hr,
+  String? personSlug,
+  int minSeconds = 5,
+}) {
+  final buf = StringBuffer('$kShareOrigin/v/$youtubeId');
+  if (seconds != null && seconds > minSeconds) {
+    buf.write('/t/$seconds');
+  }
+  if (lang == EpisodeLanguage.en) {
+    buf.write('/en');
+  }
+  if (personSlug != null && personSlug.isNotEmpty) {
+    buf.write('?p=${Uri.encodeComponent(personSlug)}');
+  }
+  return buf.toString();
+}

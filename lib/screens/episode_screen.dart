@@ -16,6 +16,7 @@ import '../models/podcast_article.dart' show PodcastSection;
 import '../services/background_audio.dart';
 import '../services/background_playback.dart';
 import '../services/episode_language.dart';
+import '../services/share_links.dart';
 import '../services/media_session.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
@@ -1631,9 +1632,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
   void _copyMomentLink(BuildContext context, String youtubeId) {
     final pos = _player?.state.position ?? Duration.zero;
     final sec = pos.inSeconds;
-    final url = sec > 5
-        ? 'https://domovina.ai/v/$youtubeId/t/$sec'
-        : 'https://domovina.ai/v/$youtubeId';
+    final url = episodeShareUrl(youtubeId, seconds: sec, lang: _language);
     Clipboard.setData(ClipboardData(text: url));
     final l = AppLocalizations.of(context);
     final label = sec > 5 ? _formatClock(sec) : l.episodeWholeEpisode;

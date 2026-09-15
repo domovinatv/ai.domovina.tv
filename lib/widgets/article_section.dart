@@ -8,6 +8,7 @@ import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
+import '../services/share_links.dart';
 import 'magisterium_section.dart';
 import 'person_needle_highlight.dart';
 import 'citation_helpers.dart';
@@ -295,9 +296,13 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
   void _copyShareLink(BuildContext context) {
     final l = AppLocalizations.of(context);
     final seconds = _tsToSeconds(widget.section.screenshotTimestamp);
-    // Path-based URL → distinct crawler cache entry po timestampu.
-    // Vidi web/_worker.js — chapter-aware OG injection na ovaj path.
-    final url = 'https://domovina.ai/v/${widget.youtubeId}/t/$seconds';
+    // Path-based URL → distinct crawler cache entry po timestampu, i `/en` kad
+    // korisnik čita engleski — vidi services/share_links.dart.
+    final url = episodeShareUrl(
+      widget.youtubeId,
+      seconds: seconds,
+      lang: EpisodeLanguageScope.of(context),
+    );
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
