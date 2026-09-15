@@ -15,6 +15,7 @@ import '../../services/player_resume.dart';
 import '../../services/watch_progress_service.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
+import 'widgets/tv_key_hint.dart';
 import '../../router/nav.dart';
 
 /// Faza 4 — TV episode screen.
@@ -1103,12 +1104,18 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            _fullscreen ? l.tvPlayerHintFullscreen : l.tvPlayerHint,
+          TvKeyHint(
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.white.withValues(alpha: 0.7),
               letterSpacing: 0.5,
             ),
+            entries: [
+              TvHintEntry(const ['OK'], l.tvHintPlayPause),
+              if (_fullscreen)
+                TvHintEntry(const ['BACK', '/', 'F'], l.tvHintExit)
+              else
+                TvHintEntry(const [Icons.expand_less], l.tvHintRead),
+            ],
           ),
         ],
       ),

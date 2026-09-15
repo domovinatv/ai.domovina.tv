@@ -651,6 +651,29 @@ Dart literali.
 stranama** (npr. `ownershipInviteMessage` vlasniku kanala) i pravni/formalni tekst —
 tu je „Vi" ispravno. Ne miješaj registar unutar istog konteksta.
 
+**Rule (bez emojija u sučelju)**: user-facing string ne nosi emoji ni
+piktograf. Dva razloga, oba izmjerena. Estetski: emoji u proizvodu čita se kao
+AI-generirana ispuna. Tehnički: glif ovisi o fontu koji ga na kraju dobije —
+`🇭🇷` nema glifa u Windows Chromeu (zato je `HrvatskaZastavica` `CustomPaint`),
+a `⏱` je Pillow tiho nacrtao kao `.notdef` kvadratić na svih 65 759 OG slika.
+
+Zamjena je **`Icons.*`** na pozivnom mjestu (vektor iz fonta koji putuje s
+aplikacijom, prati `IconTheme` boju i veličinu), a ne drugi znak. Ako uz string
+već stoji ikona, emoji se samo briše — `🙏` ispod `Icons.check_circle` je bio
+čista redundancija. Smjer na D-padu crta `TvKeyHint`
+(`lib/screens/tv/widgets/tv_key_hint.dart`), pa u ARB idu **samo riječi**
+(„odlomci"), nikad tipke — inače svaki novi jezik prepisuje glifove i prva
+greška u prijepisu je nevidljiva dok je netko ne ugleda na televizoru.
+
+Iznimka su znakovi koji imenuju **fizičku tipku**: `⌘` (U+2318, otisnut na Apple
+tipki) i `↑ ↓ ← → ↵` u legendi tipkovnice. Ikona bi ih učinila manje jasnima, ne
+više. Oznaka prečice mora pratiti platformu (`theme.platform`) jer
+`home_screen.dart` veže i `meta:` i `control:` — do 15.9.2026. je Windows
+korisnik čitao `⌘K`.
+
+Kontrakt čuva `test/no_emoji_in_strings_test.dart` (ARB vrijednosti + Dart
+literali u `lib/`; komentari su izuzeti jer ih korisnik ne vidi).
+
 **Rule (lektor)**: svaki user-facing string mora imati ispravne dijakritike
 (č/ć/š/ž/đ), gramatiku i pravopis (Hrvatski pravopis IHJJ — npr. „sažetci", „pogreške",
 „adresa e-pošte"). Bez ALL-CAPS u ARB vrijednostima; vizualni caps radi se u kodu preko

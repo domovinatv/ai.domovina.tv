@@ -1659,7 +1659,7 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get mediaYouTubeQualityHint =>
-      'YouTube player — kvalitetu biraš u ⚙ postavkama playera';
+      'YouTube player — kvalitetu biraš u postavkama playera';
 
   @override
   String get mediaNativePlayerLabel => 'DOMOVINA player';
@@ -2508,7 +2508,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaAwaitingPayment => 'Čekam potvrdu plaćanja…';
 
   @override
-  String get pinkaThanksForSupportEmoji => 'Hvala na podršci! 🙏';
+  String get pinkaThanksForSupport => 'Hvala na podršci!';
 
   @override
   String get pinkaPaymentConfirmedOnchain => 'Plaćanje je potvrđeno na lancu.';
@@ -3105,8 +3105,13 @@ class AppLocalizationsHr extends AppLocalizations {
   String get tvReaderOpenFullCommentary => 'OK — otvori cijeli osvrt';
 
   @override
-  String get tvReaderControlsHint =>
-      'OK = sviraj/pauza   ◀ ▶ = odlomci   ▼ = Magisterium   BACK = video';
+  String get tvHintPlayPause => 'sviraj/pauza';
+
+  @override
+  String get tvHintSections => 'odlomci';
+
+  @override
+  String get tvHintVideo => 'video';
 
   @override
   String get tvReaderHeadingAssessment => 'Procjena';
@@ -3150,10 +3155,10 @@ class AppLocalizationsHr extends AppLocalizations {
   String get tvBufferFilling => 'Punjenje međuspremnika…';
 
   @override
-  String get tvPlayerHint => 'OK = sviraj/pauza     ▲ = Čitaj / Cijeli zaslon';
+  String get tvHintRead => 'Čitaj / Cijeli zaslon';
 
   @override
-  String get tvPlayerHintFullscreen => 'OK = sviraj/pauza     BACK / F = izađi';
+  String get tvHintExit => 'izađi';
 
   @override
   String tvChaptersWithCount(int count) {

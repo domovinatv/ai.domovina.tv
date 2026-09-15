@@ -16,6 +16,7 @@ import '../../services/watch_progress_service.dart';
 import '../../theme/markdown_brand.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'widgets/tv_focus.dart';
+import 'widgets/tv_key_hint.dart';
 import '../../router/nav.dart';
 
 /// "Čitaj kao blog" mode za TV — paginirani reader s PiP videom.
@@ -1064,25 +1065,33 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
           Expanded(
             child: _NavLabel(
               theme: theme,
-              prefix: '◀',
+              icon: Icons.chevron_left,
               text: prevSub,
               align: TextAlign.left,
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Text(
-              l.tvReaderControlsHint,
+            child: TvKeyHint(
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 letterSpacing: 0.4,
               ),
+              entries: [
+                TvHintEntry(const ['OK'], l.tvHintPlayPause),
+                TvHintEntry(
+                  const [Icons.chevron_left, Icons.chevron_right],
+                  l.tvHintSections,
+                ),
+                TvHintEntry(const [Icons.expand_more], 'Magisterium'),
+                TvHintEntry(const ['BACK'], l.tvHintVideo),
+              ],
             ),
           ),
           Expanded(
             child: _NavLabel(
               theme: theme,
-              prefix: '▶',
+              icon: Icons.chevron_right,
               text: nextSub,
               align: TextAlign.right,
               suffix: true,
@@ -1094,16 +1103,19 @@ class _TvEpisodeReaderScreenState extends State<TvEpisodeReaderScreen> {
   }
 }
 
+/// Susjedni odlomak u footeru čitača — strelica + njegov podnaslov.
+///
+/// Strelica je [Icon], ne znak `◀`/`▶` u stringu: vidi `TvKeyHint` za razlog.
 class _NavLabel extends StatelessWidget {
   final ThemeData theme;
-  final String prefix;
+  final IconData icon;
   final String? text;
   final TextAlign align;
   final bool suffix;
 
   const _NavLabel({
     required this.theme,
-    required this.prefix,
+    required this.icon,
     required this.text,
     required this.align,
     this.suffix = false,
@@ -1115,18 +1127,30 @@ class _NavLabel extends StatelessWidget {
     final color = label == null
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35)
         : theme.colorScheme.onSurface;
-    final display = label == null
-        ? '—'
-        : (suffix ? '$label  $prefix' : '$prefix  $label');
-    return Text(
-      display,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      textAlign: align,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: color,
-        fontWeight: FontWeight.w700,
+    final style = theme.textTheme.bodyMedium?.copyWith(
+      color: color,
+      fontWeight: FontWeight.w700,
+    );
+    // Nema susjeda: crtica stoji sama, bez strelice koja nikamo ne vodi.
+    if (label == null) {
+      return Text('—', textAlign: align, style: style);
+    }
+    final arrow = Icon(icon, size: 20, color: color);
+    final title = Flexible(
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: align,
+        style: style,
       ),
+    );
+    return Row(
+      mainAxisAlignment:
+          suffix ? MainAxisAlignment.end : MainAxisAlignment.start,
+      children: suffix
+          ? [title, const SizedBox(width: 6), arrow]
+          : [arrow, const SizedBox(width: 6), title],
     );
   }
 }

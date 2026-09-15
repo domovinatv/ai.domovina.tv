@@ -1193,7 +1193,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       children: [
         Icon(Icons.check_circle, color: theme.colorScheme.tertiary, size: 40),
         const SizedBox(height: 10),
-        Text(l.pinkaThanksForSupportEmoji,
+        Text(l.pinkaThanksForSupport,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),

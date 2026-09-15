@@ -1642,7 +1642,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaYouTubeQualityHint =>
-      'YouTube player — choose quality in the ⚙ player settings';
+      'YouTube player — choose quality in the player settings';
 
   @override
   String get mediaNativePlayerLabel => 'DOMOVINA player';
@@ -2484,7 +2484,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinkaAwaitingPayment => 'Waiting for payment confirmation…';
 
   @override
-  String get pinkaThanksForSupportEmoji => 'Thank you for your support! 🙏';
+  String get pinkaThanksForSupport => 'Thank you for your support!';
 
   @override
   String get pinkaPaymentConfirmedOnchain =>
@@ -3087,8 +3087,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tvReaderOpenFullCommentary => 'OK — open full commentary';
 
   @override
-  String get tvReaderControlsHint =>
-      'OK = play/pause   ◀ ▶ = sections   ▼ = Magisterium   BACK = video';
+  String get tvHintPlayPause => 'play/pause';
+
+  @override
+  String get tvHintSections => 'sections';
+
+  @override
+  String get tvHintVideo => 'video';
 
   @override
   String get tvReaderHeadingAssessment => 'Assessment';
@@ -3132,10 +3137,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tvBufferFilling => 'Buffering…';
 
   @override
-  String get tvPlayerHint => 'OK = play/pause     ▲ = Read / Fullscreen';
+  String get tvHintRead => 'Read / Fullscreen';
 
   @override
-  String get tvPlayerHintFullscreen => 'OK = play/pause     BACK / F = exit';
+  String get tvHintExit => 'exit';
 
   @override
   String tvChaptersWithCount(int count) {

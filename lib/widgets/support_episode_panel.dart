@@ -293,7 +293,7 @@ class _SupportEpisodePanelState extends State<SupportEpisodePanel> {
       children: [
         Icon(Icons.check_circle, color: theme.colorScheme.tertiary, size: 40),
         const SizedBox(height: 10),
-        Text('${l.commonThanksForSupport} 🙏',
+        Text(l.commonThanksForSupport,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),

@@ -877,7 +877,7 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   // Match prioritet za timestamp share:
   //   1. Article section — najbogatiji (AI subtitle + screenshot_description + keywords)
   //   2. info.chapters    — basic (samo title + range)
-  //   3. Plain timestamp  — samo ⏱ marker
+  //   3. Plain timestamp  — samo sat (mm:ss)
   const section = (typeof tSec === 'number')
     ? findArticleSection(article, tSec, info.duration)
     : null;
@@ -897,7 +897,7 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
       || '';
     const subClean = sub.replace(/\s+/g, ' ').trim();
     const subShort = subClean.length > 80 ? subClean.slice(0, 77) + '…' : subClean;
-    title = `⏱ ${clock} · ${subShort}`;
+    title = `${clock} · ${subShort}`;
     const range = `${formatClock(section._start)}–${formatClock(section._end)}`;
     const sectionDesc = (
       pickLang(lang, section.screenshot_description, section.screenshot_description_en)
@@ -914,12 +914,12 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
     if (Array.isArray(ent)) tags.push(...ent);
     if (tags.length > 0) overrideTopicTags = tags.slice(0, 8);
   } else if (chapter) {
-    title = `⏱ ${clock} · ${chapter.title} — ${baseTitle}`;
+    title = `${clock} · ${chapter.title} — ${baseTitle}`;
     const range = `${formatClock(chapter.start_time)}–${formatClock(chapter.end_time)}`;
     desc = `${copy.chapterPart(chapter.title, range, baseTitle)} ${baseDesc}`;
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
   } else if (typeof tSec === 'number') {
-    title = `⏱ ${clock} — ${baseTitle}`;
+    title = `${clock} — ${baseTitle}`;
     desc = `${copy.moment(clock, baseTitle)} ${baseDesc}`;
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
   }

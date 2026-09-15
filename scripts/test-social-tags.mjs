@@ -307,10 +307,11 @@ async function testTimestamp(ytId, tSec) {
   check('og:url path-based',  ogUrl,     (v) => v === expectedCanonical);
   check('canonical path-based', canonical, (v) => v === expectedCanonical);
   check('og:video:start_time', ogStart,  (v) => v === String(tSec));
-  // Title/desc moraju biti chapter-aware (sadrže ⏱ marker ili timestamp).
-  check('og:title (clip marker)', ogTitle, (v) => v.includes('⏱') || v.includes(':'));
+  // Title/desc moraju biti chapter-aware (nose sat mm:ss na početku).
+  // Marker više NIJE ⏱ (U+23F1): emoji u share previewu je maknut 15.9.2026.
+  check('og:title (clip marker)', ogTitle, (v) => /\d+:\d{2}/.test(v));
   check('og:description (clip)', ogDesc, (v) => v.length > 30);
-  check('<title> (clip)',       title,    (v) => v.includes('⏱') || v.includes('DOMOVINA.ai'));
+  check('<title> (clip)',       title,    (v) => /\d+:\d{2}/.test(v) || v.includes('DOMOVINA.ai'));
 
   return { ytId: `${ytId}@${tSec}`, passed, failed };
 }

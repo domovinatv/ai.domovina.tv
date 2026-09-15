@@ -2765,7 +2765,7 @@ abstract class AppLocalizations {
   /// Napomena u traci dok je aktivan YouTube embed mod.
   ///
   /// In hr, this message translates to:
-  /// **'YouTube player — kvalitetu biraš u ⚙ postavkama playera'**
+  /// **'YouTube player — kvalitetu biraš u postavkama playera'**
   String get mediaYouTubeQualityHint;
 
   /// Oznaka gumba za povratak s YouTube embeda na ugrađeni DOMOVINA player (DOMOVINA = brend).
@@ -4142,11 +4142,11 @@ abstract class AppLocalizations {
   /// **'Čekam potvrdu plaćanja…'**
   String get pinkaAwaitingPayment;
 
-  /// Poruka zahvale nakon uspješne uplate (s emojijem).
+  /// Poruka zahvale nakon uspješne uplate. Bez emojija — iznad nje stoji Icons.check_circle.
   ///
   /// In hr, this message translates to:
-  /// **'Hvala na podršci! 🙏'**
-  String get pinkaThanksForSupportEmoji;
+  /// **'Hvala na podršci!'**
+  String get pinkaThanksForSupport;
 
   /// Potvrda da je uplata zabilježena na lancu.
   ///
@@ -5018,11 +5018,23 @@ abstract class AppLocalizations {
   /// **'OK — otvori cijeli osvrt'**
   String get tvReaderOpenFullCommentary;
 
-  /// Footer D-pad controls hint on the TV reader screen.
+  /// Radnja tipke OK u legendi daljinskog. Bez znaka tipke — tipku crta TvKeyHint.
   ///
   /// In hr, this message translates to:
-  /// **'OK = sviraj/pauza   ◀ ▶ = odlomci   ▼ = Magisterium   BACK = video'**
-  String get tvReaderControlsHint;
+  /// **'sviraj/pauza'**
+  String get tvHintPlayPause;
+
+  /// Radnja lijevo/desno na D-padu u čitaču (prethodni/sljedeći odlomak).
+  ///
+  /// In hr, this message translates to:
+  /// **'odlomci'**
+  String get tvHintSections;
+
+  /// Radnja tipke BACK u čitaču — povratak na video.
+  ///
+  /// In hr, this message translates to:
+  /// **'video'**
+  String get tvHintVideo;
 
   /// Magisterium overlay heading for the assessment section.
   ///
@@ -5102,17 +5114,17 @@ abstract class AppLocalizations {
   /// **'Punjenje međuspremnika…'**
   String get tvBufferFilling;
 
-  /// Player overlay D-pad hint (windowed mode).
+  /// Radnja gore na D-padu u playeru — otvara čitač ili cijeli zaslon.
   ///
   /// In hr, this message translates to:
-  /// **'OK = sviraj/pauza     ▲ = Čitaj / Cijeli zaslon'**
-  String get tvPlayerHint;
+  /// **'Čitaj / Cijeli zaslon'**
+  String get tvHintRead;
 
-  /// Player overlay D-pad hint (fullscreen mode).
+  /// Radnja tipke BACK / F u playeru na cijelom zaslonu.
   ///
   /// In hr, this message translates to:
-  /// **'OK = sviraj/pauza     BACK / F = izađi'**
-  String get tvPlayerHintFullscreen;
+  /// **'izađi'**
+  String get tvHintExit;
 
   /// Header of the chapter side-rail on the TV episode screen (rendered uppercase).
   ///
@@ -5939,13 +5951,13 @@ abstract class AppLocalizations {
   /// **'Ljestvica se nije učitala.'**
   String get votingLoadFailed;
 
-  /// Gumb 👍 na kartici kandidata.
+  /// Gumb za glas ZA na kartici kandidata (Icons.thumb_up_outlined).
   ///
   /// In hr, this message translates to:
   /// **'Glasaj za'**
   String get votingVoteUp;
 
-  /// Gumb 👎 na kartici kandidata.
+  /// Gumb za glas PROTIV na kartici kandidata (Icons.thumb_down_outlined).
   ///
   /// In hr, this message translates to:
   /// **'Glasaj protiv'**

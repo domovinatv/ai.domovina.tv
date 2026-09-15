@@ -2051,7 +2051,7 @@
   "@mediaChapters": {
     "description": "Naslov liste poglavlja u video panelu."
   },
-  "mediaYouTubeQualityHint": "YouTube player — kvalitetu biraš u ⚙ postavkama playera",
+  "mediaYouTubeQualityHint": "YouTube player — kvalitetu biraš u postavkama playera",
   "@mediaYouTubeQualityHint": {
     "description": "Napomena u traci dok je aktivan YouTube embed mod."
   },
@@ -3113,9 +3113,9 @@
   "@pinkaAwaitingPayment": {
     "description": "Status dok se čeka potvrda SEPA uplate."
   },
-  "pinkaThanksForSupportEmoji": "Hvala na podršci! 🙏",
-  "@pinkaThanksForSupportEmoji": {
-    "description": "Poruka zahvale nakon uspješne uplate (s emojijem)."
+  "pinkaThanksForSupport": "Hvala na podršci!",
+  "@pinkaThanksForSupport": {
+    "description": "Poruka zahvale nakon uspješne uplate. Bez emojija — iznad nje stoji Icons.check_circle."
   },
   "pinkaPaymentConfirmedOnchain": "Plaćanje je potvrđeno na lancu.",
   "@pinkaPaymentConfirmedOnchain": {
@@ -3820,9 +3820,17 @@
   "@tvReaderOpenFullCommentary": {
     "description": "Hint on the Magisterium card to open the full-screen commentary (OK = remote select button)."
   },
-  "tvReaderControlsHint": "OK = sviraj/pauza   ◀ ▶ = odlomci   ▼ = Magisterium   BACK = video",
-  "@tvReaderControlsHint": {
-    "description": "Footer D-pad controls hint on the TV reader screen."
+  "tvHintPlayPause": "sviraj/pauza",
+  "@tvHintPlayPause": {
+    "description": "Radnja tipke OK u legendi daljinskog. Bez znaka tipke — tipku crta TvKeyHint."
+  },
+  "tvHintSections": "odlomci",
+  "@tvHintSections": {
+    "description": "Radnja lijevo/desno na D-padu u čitaču (prethodni/sljedeći odlomak)."
+  },
+  "tvHintVideo": "video",
+  "@tvHintVideo": {
+    "description": "Radnja tipke BACK u čitaču — povratak na video."
   },
   "tvReaderHeadingAssessment": "Procjena",
   "@tvReaderHeadingAssessment": {
@@ -3881,13 +3889,13 @@
   "@tvBufferFilling": {
     "description": "Buffer-ring hint during mid-playback re-buffering."
   },
-  "tvPlayerHint": "OK = sviraj/pauza     ▲ = Čitaj / Cijeli zaslon",
-  "@tvPlayerHint": {
-    "description": "Player overlay D-pad hint (windowed mode)."
+  "tvHintRead": "Čitaj / Cijeli zaslon",
+  "@tvHintRead": {
+    "description": "Radnja gore na D-padu u playeru — otvara čitač ili cijeli zaslon."
   },
-  "tvPlayerHintFullscreen": "OK = sviraj/pauza     BACK / F = izađi",
-  "@tvPlayerHintFullscreen": {
-    "description": "Player overlay D-pad hint (fullscreen mode)."
+  "tvHintExit": "izađi",
+  "@tvHintExit": {
+    "description": "Radnja tipke BACK / F u playeru na cijelom zaslonu."
   },
   "tvChaptersWithCount": "Poglavlja ({count})",
   "@tvChaptersWithCount": {
@@ -4617,11 +4625,11 @@
   },
   "votingVoteUp": "Glasaj za",
   "@votingVoteUp": {
-    "description": "Gumb 👍 na kartici kandidata."
+    "description": "Gumb za glas ZA na kartici kandidata (Icons.thumb_up_outlined)."
   },
   "votingVoteDown": "Glasaj protiv",
   "@votingVoteDown": {
-    "description": "Gumb 👎 na kartici kandidata."
+    "description": "Gumb za glas PROTIV na kartici kandidata (Icons.thumb_down_outlined)."
   },
   "votingNetLabel": "Neto rezultat {value}",
   "@votingNetLabel": {
