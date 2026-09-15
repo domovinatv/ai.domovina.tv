@@ -784,6 +784,9 @@ Theme seed: `Color(0xFF002F6C)` (Croatian navy).
 - Test page: `https://domovina.ai/social-test`
 - Test script: `node scripts/test-social-tags.mjs`
 
+> Puna slika (četiri tiha kvara, mjerenja, zamka u verifikaciji purgea) —
+> `docs/2026-09-15-engleski-share-i-og-slike.md`.
+
 **Rule (svaka ruta koju Flutter zna mora znati i worker)**: `/en` sufiks je u
 `app_router.dart` postojao od uvođenja per-epizoda jezika, a u `_worker.js` ga
 nije bilo ni u jednom matcheru — svaki engleski share (`/v/<id>/t/<sec>/en`)
