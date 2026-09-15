@@ -439,7 +439,11 @@ class _SearchTrigger extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // ⌘K placeholder hint — funkcionira tek u Korak 9.
+              // Oznaka prečice. `home_screen.dart` veže OBA modifikatora
+              // (`meta: true` i `control: true`), pa oznaka mora pratiti
+              // platformu — inače Windows/Linux korisnik čita uputu za tipku
+              // koju na tipkovnici nema. `⌘` NIJE emoji nego znak otisnut na
+              // Apple tipki (U+2318), zato ostaje kao tekst, a ne ikona.
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -449,7 +453,10 @@ class _SearchTrigger extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  '⌘K',
+                  switch (theme.platform) {
+                    TargetPlatform.macOS || TargetPlatform.iOS => '\u2318K',
+                    _ => 'Ctrl K',
+                  },
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant.withValues(
                       alpha: 0.6,
