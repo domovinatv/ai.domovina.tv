@@ -197,12 +197,23 @@ class VideoPipeline {
   final bool hasArticle;
   final bool hasMagisterium;
 
+  /// Postoji li engleski prijevod članka.
+  ///
+  /// Jedina zastavica iz ovog bloka kojoj se smije vjerovati kad je PODIGNUTA:
+  /// izmjereno 15.9.2026. nad svim kanalima — 42 epizode s podignutom zastavicom,
+  /// od toga 0 bez `article.en.json` na CDN-u, ali 5 epizoda ima prijevod a
+  /// zastavica šuti. Dakle: `true` ⇒ prijevod postoji, `false` ⇒ ne znamo.
+  /// Zato je koristi samo za NUĐENJE engleske varijante (`share_language.dart`),
+  /// nikad za tvrdnju da prijevoda nema.
+  final bool hasArticleEn;
+
   const VideoPipeline({
     required this.hasTranscript,
     required this.hasDiarized,
     required this.hasSummary,
     required this.hasArticle,
     required this.hasMagisterium,
+    this.hasArticleEn = false,
   });
 
   factory VideoPipeline.fromJson(Map<String, dynamic> json) {
@@ -212,6 +223,11 @@ class VideoPipeline {
       hasSummary: json['has_summary'] as bool? ?? false,
       hasArticle: json['has_article'] as bool? ?? false,
       hasMagisterium: json['has_magisterium'] as bool? ?? false,
+      // Pipeline piše oba polja; `has_article_en` je ono koje stvarno prati
+      // postojanje `article.en.json`, `has_translation_en` je njegov stariji
+      // sinonim. Dovoljno je da JEDNO bude podignuto.
+      hasArticleEn: (json['has_article_en'] as bool? ?? false) ||
+          (json['has_translation_en'] as bool? ?? false),
     );
   }
 }

@@ -14,6 +14,8 @@ import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
 import '../../widgets/cached_thumbnail.dart';
 import '../../router/nav.dart';
+import '../../services/share_language.dart';
+import '../../services/share_links.dart';
 
 /// Channel detail screen — prikazuje listu video zapisa za određeni kanal.
 ///
@@ -295,8 +297,9 @@ class _VideoCard extends StatelessWidget {
         ? audioPlaceholder(theme, l, 120, 68)
         : videoPlaceholder(theme, 120, 68);
 
-    return ShareContextMenu(
-      url: 'https://domovina.ai/v/${video.id}',
+    return ShareContextMenu.lazy(
+      urlBuilder: () =>
+          episodeShareUrl(video.id, lang: shareLanguageForVideo(video.id)),
       child: Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
@@ -350,8 +353,9 @@ class _VideoGridCard extends StatelessWidget {
     Widget placeholder() =>
         isAudioSource ? audioPlaceholder(theme, l) : videoPlaceholder(theme);
 
-    return ShareContextMenu(
-      url: 'https://domovina.ai/v/${video.id}',
+    return ShareContextMenu.lazy(
+      urlBuilder: () =>
+          episodeShareUrl(video.id, lang: shareLanguageForVideo(video.id)),
       child: Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(

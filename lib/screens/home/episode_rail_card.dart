@@ -26,7 +26,10 @@ class EpisodeRailCard extends StatelessWidget {
 
   /// Poveznica za "Kopiraj poveznicu" u context menu-u (desni-klik / long-press).
   /// Null = bez context menu-a.
-  final String? shareUrl;
+  ///
+  /// Lijeno: jezik linka ovisi o preferenciji koja se može promijeniti dok
+  /// kartica stoji živa ispod u navigacijskom stogu.
+  final String Function()? shareUrl;
 
   const EpisodeRailCard({
     super.key,
@@ -126,7 +129,7 @@ class EpisodeRailCard extends StatelessWidget {
     );
 
     if (shareUrl == null) return card;
-    return ShareContextMenu(url: shareUrl!, child: card);
+    return ShareContextMenu.lazy(urlBuilder: shareUrl!, child: card);
   }
 
   Widget _coverImage(ThemeData theme) {

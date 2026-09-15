@@ -32,6 +32,8 @@ import 'skeletons.dart';
 import 'sort_mode.dart';
 import 'voting_rail.dart';
 import '../../router/nav.dart';
+import '../../services/share_language.dart';
+import '../../services/share_links.dart';
 
 const _channelOrderKey = 'channel_order';
 
@@ -514,8 +516,10 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                     ? wp.positionSeconds / wp.durationSeconds
                                     : null,
                                 width: isMobile ? 180 : 220,
-                                shareUrl:
-                                    'https://domovina.ai/v/${wp.episodeId}',
+                                shareUrl: () => episodeShareUrl(
+                                  wp.episodeId,
+                                  lang: shareLanguageForVideo(wp.episodeId),
+                                ),
                                 onTap: () => onVideoTap(wp.episodeId),
                               ))
                           .toList(),
@@ -551,8 +555,10 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                 dateLabel: fv.video.date,
                                 magisteriumScore: fv.video.magisteriumScore,
                                 width: isMobile ? 180 : 220,
-                                shareUrl:
-                                    'https://domovina.ai/v/${fv.video.id}',
+                                shareUrl: () => episodeShareUrl(
+                                  fv.video.id,
+                                  lang: shareLanguageForVideo(fv.video.id),
+                                ),
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
                           .toList(),
@@ -589,8 +595,10 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                             .badge(l) ??
                                         l.homeStatusProcessing,
                                 width: isMobile ? 180 : 220,
-                                shareUrl:
-                                    'https://domovina.ai/v/${fv.video.id}',
+                                shareUrl: () => episodeShareUrl(
+                                  fv.video.id,
+                                  lang: shareLanguageForVideo(fv.video.id),
+                                ),
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
                           .toList(),

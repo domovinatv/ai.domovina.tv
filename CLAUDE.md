@@ -799,10 +799,28 @@ korisnik čitao engleski; na webu se to nije vidjelo jer se link dao prepisati i
 adresne trake (koju `url_sync` održava), a u iOS/Android aplikaciji adresne
 trake nema pa je gubitak bio potpun. Redoslijed `/v/<id>/t/<sec>/en` mora ostati
 usklađen na TRI mjesta: matcheri u `_worker.js`, `url_sync`, i ovaj builder —
-čuva `test/share_links_test.dart`. Kartice u railovima namjerno ostaju na HR:
-izvan episode ekrana nema `EpisodeLanguageScope`, a preferirani jezik se čita
-asinkrono, pa bi `/en` ondje bio nagađanje (i za neprevedenu epizodu obećanje
-koje worker mora poništiti fallbackom).
+čuva `test/share_links_test.dart`.
+
+**Rule (izvan episode ekrana jezik se NAGAĐA, pa traži dva uvjeta)**: kartice u
+railovima nemaju `EpisodeLanguageScope`, pa jezik dolazi iz
+`shareLanguageForVideo` (`services/share_language.dart`), koji nudi EN samo kad
+vrijedi **oboje**: korisnik je izabrao engleski (`PreferredEpisodeLanguage` —
+sinkroni singleton, jer odluka pada u trenutku klika) I listing za tu epizodu
+ima podignut `pipeline.has_article_en`. Drugi uvjet nije formalnost: `/v/<id>/en`
+za neprevedenu epizodu tehnički radi (padne na HR), pa bi bez njega link
+obećavao engleski i otvarao hrvatski — gore nego da je odmah hrvatski.
+
+Zastavici se ovdje vjeruje samo u JEDNOM smjeru, u skladu s pravilom da
+izostanak zastavice nije informacija. Mjereno 15.9.2026. nad svim kanalima:
+42 epizode s podignutom zastavicom, 0 bez `article.en.json` (nikad ne laže
+pozitivno), ali 5 epizoda ima prijevod uz zastavicu koja šuti. Te 5 dobiju
+hrvatski link — svjesna cijena za nula lažnih obećanja.
+
+**Rule (share URL kartice se gradi pri KLIKU)**: `ShareContextMenu.lazy`
+(`urlBuilder`), ne `ShareContextMenu(url:)`. `push` drži ekran ispod
+montiranim, pa kartica preživi promjenu jezika na ekranu iznad bez rebuilda —
+URL izračunat u `build` ostao bi na starom jeziku. Fiksne poveznice (kanal,
+osoba) i dalje koriste obični konstruktor.
 
 **Rule (EN je zaseban CDN fajl, ne polje)**: prijevod živi u
 `data/<id>/article.en.json` i `summary.en.json` — u njima su i HR i `*_en`

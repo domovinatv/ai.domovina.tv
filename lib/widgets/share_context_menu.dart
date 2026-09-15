@@ -16,19 +16,36 @@ import '../l10n/app_localizations.dart';
 class ShareContextMenu extends StatelessWidget {
   /// Poveznica koja se kopira (npr. `https://domovina.ai/c/<slug>` ili
   /// `https://domovina.ai/v/<id>`).
-  final String url;
+  ///
+  /// Gradi se u trenutku KLIKA, ne u buildu: jezik share linka ovisi o
+  /// preferenciji koja se može promijeniti dok kartica stoji živa ispod u
+  /// navigacijskom stogu (`push` drži ekran ispod montiranim — vidi CLAUDE.md
+  /// „Routing i navigacijski stog"). Da se URL računao u buildu, kartica bi do
+  /// idućeg rebuilda kopirala jezik koji korisnik više ne koristi.
+  final String Function() url;
 
   /// Opcionalna specifična snackbar poruka; default `commonLinkCopied`.
   final String? copiedMessage;
 
   final Widget child;
 
-  const ShareContextMenu({
+  /// [url] je fiksan string koji se ne mijenja kroz život widgeta
+  /// (npr. poveznica kanala ili osobe).
+  ShareContextMenu({
     super.key,
-    required this.url,
+    required String url,
     required this.child,
     this.copiedMessage,
-  });
+  }) : url = (() => url);
+
+  /// [urlBuilder] se zove pri svakom kopiranju — za poveznice čiji sadržaj
+  /// ovisi o stanju koje se mijenja (jezik, pozicija playera).
+  const ShareContextMenu.lazy({
+    super.key,
+    required String Function() urlBuilder,
+    required this.child,
+    this.copiedMessage,
+  }) : url = urlBuilder;
 
   Future<void> _show(BuildContext context, Offset globalPosition) async {
     final l = AppLocalizations.of(context);
@@ -59,7 +76,7 @@ class ShareContextMenu extends StatelessWidget {
   }
 
   void _copy(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: url));
+    Clipboard.setData(ClipboardData(text: url()));
     final l = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

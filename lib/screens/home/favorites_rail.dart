@@ -8,6 +8,8 @@ import '../favorites/favorites_resolver.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
 import '../../router/nav.dart';
+import '../../services/share_language.dart';
+import '../../services/share_links.dart';
 
 /// Home rail „Tvoje spremljeno" — epizode koje je korisnik lajkao (srce),
 /// **najnovija prvo**. Isječak; puni popis je na `/favorites`.
@@ -95,7 +97,10 @@ class _FavoritesRailState extends State<FavoritesRail> {
               dateLabel: item.date,
               magisteriumScore: item.magisteriumScore,
               width: widget.isMobile ? 180 : 220,
-              shareUrl: 'https://domovina.ai/v/${item.episodeId}',
+              shareUrl: () => episodeShareUrl(
+                item.episodeId,
+                lang: shareLanguageForVideo(item.episodeId),
+              ),
               onTap: () => widget.onVideoTap(item.episodeId),
             ),
         ],

@@ -131,6 +131,23 @@ class ChannelCache extends ChangeNotifier {
     return null;
   }
 
+  /// Ubaci kanal u cache bez mrežnog dohvata — samo za testove.
+  @visibleForTesting
+  void seedForTest(ChannelDetail detail) {
+    _cache[detail.id] = detail;
+  }
+
+  /// Isprazni cache — samo za testove (singleton je globalan, pa bi stanje
+  /// curilo između test slučajeva).
+  @visibleForTesting
+  void resetForTest() {
+    _cache.clear();
+    _index = null;
+    _loaded = 0;
+    _total = 0;
+    _done = false;
+  }
+
   /// Isto, ali dohvati kanale dok epizoda ne bude nadena.
   ///
   /// Zasto uopce: epizoda kojoj `info.json` jos nije na CDN-u ("u redu

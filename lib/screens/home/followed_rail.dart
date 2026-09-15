@@ -9,6 +9,8 @@ import '../../services/channel_cache.dart';
 import '../../services/follow_service.dart';
 import '../../services/person_channel_flag.dart';
 import '../../services/person_index_cache.dart';
+import '../../services/share_language.dart';
+import '../../services/share_links.dart';
 import 'episode_rail_card.dart';
 import 'episodes_rail.dart';
 
@@ -165,7 +167,10 @@ class _FollowedRailState extends State<FollowedRail> {
               thumbnailUrl: CdnConfig.thumbnailUrl(item.videoId),
               dateLabel: item.date,
               width: widget.isMobile ? 180 : 220,
-              shareUrl: 'https://domovina.ai/v/${item.videoId}',
+              shareUrl: () => episodeShareUrl(
+                item.videoId,
+                lang: shareLanguageForVideo(item.videoId),
+              ),
               onTap: () => unawaited(_open(item)),
             ),
         ],

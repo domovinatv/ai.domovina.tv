@@ -19,6 +19,7 @@ import 'services/theme_mode_service.dart';
 import 'services/tv_mode.dart';
 import 'services/update_notifier.dart';
 import 'services/watch_progress_service.dart';
+import 'services/episode_language.dart';
 import 'theme/app_theme.dart';
 import 'theme/typography.dart';
 
@@ -149,6 +150,12 @@ void main() async {
   await BackgroundPlayback.instance.init();
   // Ucitaj spremljenu brzinu reprodukcije (default 1.0x, pamti se globalno).
   await PlaybackSpeed.instance.init();
+
+  // Preferirani jezik sadržaja mora biti poznat SINKRONO prije prvog frame-a:
+  // share link na kartici epizode odlučuje jezik u trenutku klika, a na nativeu
+  // je čitanje (SharedPreferences) asinkrono. Na webu je localStorage sinkron
+  // pa ovo ondje samo ubrza prvi pristup.
+  await PreferredEpisodeLanguage.instance.init();
 
   // Uhvati Flutter greske i ispisi u console (vidljivo i u minified buildu)
   FlutterError.onError = (details) {
