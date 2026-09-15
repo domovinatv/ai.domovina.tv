@@ -672,7 +672,11 @@ više. Oznaka prečice mora pratiti platformu (`theme.platform`) jer
 korisnik čitao `⌘K`.
 
 Kontrakt čuva `test/no_emoji_in_strings_test.dart` (ARB vrijednosti + Dart
-literali u `lib/`; komentari su izuzeti jer ih korisnik ne vidi).
+literali u `lib/`; komentari su izuzeti jer ih korisnik ne vidi). Inventura
+cijelog stabla: `python3 scripts/scan-emoji.py --summary` — ide preko
+`git ls-files`, jer `rglob` ubroji i `ios/Pods/` pa brojka govori o tuđem SDK-u.
+Odluka o icon setu (Lucide razmotren i odbačen), mjerenja i otvoreno:
+`docs/2026-09-15-emoji-u-sucelju.md`.
 
 **Rule (lektor)**: svaki user-facing string mora imati ispravne dijakritike
 (č/ć/š/ž/đ), gramatiku i pravopis (Hrvatski pravopis IHJJ — npr. „sažetci", „pogreške",
