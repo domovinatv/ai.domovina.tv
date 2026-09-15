@@ -583,6 +583,9 @@ tiho odbiti). `share_plus` je u projektu SAMO zbog nativea; ovisi o `web: ^1.1.1
 dijakritike i interpunkciju. Datoteka putuje kroz WhatsApp, e-poštu i tuđe
 datotečne sustave, gdje „č" i „?" završe kao smeće ili odbijen upload.
 
+Mjerenja, odbačene alternative i otvoreni dug (backfill, EN izdanje, `epubcheck`):
+`docs/2026-09-15-ebook-epub-na-frontendu.md`.
+
 ## Logging
 
 `main.dart` exports a `log()` function that prefixes messages with `[DOMOVINA v{version}]`. Use it throughout the app for console debugging:
