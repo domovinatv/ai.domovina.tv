@@ -13,6 +13,7 @@ import '../pinka_sdk/pinka_sdk.dart';
 import '../services/background_audio.dart';
 import '../services/background_playback.dart';
 import '../services/cdn_config.dart';
+import '../services/ebook_service.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/episode_language.dart';
@@ -29,6 +30,7 @@ import '../services/seek_undo.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
+import '../widgets/ebook_sheet.dart';
 import '../widgets/episode_status_card.dart';
 import '../widgets/anonymous_signin_bar.dart';
 import '../widgets/audio_poster.dart';
@@ -224,11 +226,19 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   late final List<({String timestamp, String topic, int totalSeconds})>
   _chapters;
 
+  /// EPUB e-knjiga — MJERI se HEAD probe-om (vidi [EbookService]), izvan
+  /// kritičnog puta učitavanja epizode.
+  EbookAvailability _ebook = EbookAvailability.none;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _chapters = _buildChapters();
+    EbookService.probe(widget.data.youtubeId).then((found) {
+      if (!mounted || !found.any) return;
+      setState(() => _ebook = found);
+    });
 
     if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
       _language = EpisodeLanguage.en;
@@ -641,7 +651,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       ),
       if (magV2 != null)
         SingleChildScrollView(child: MagisteriumV2View(data: magV2)),
-      _InfoTab(data: data),
+      _InfoTab(data: data, ebook: _ebook),
     ];
 
     final destinations = <NavigationDestination>[
@@ -728,6 +738,12 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
                   ),
                 ),
               ),
+            EbookAction(
+              availability: _ebook,
+              title: data.displayTitle,
+              preferEn: _language == EpisodeLanguage.en,
+              episodeUrl: episodeShareUrl(data.youtubeId, lang: _language),
+            ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: l.episodeCopyMomentLink,
@@ -1473,8 +1489,9 @@ class _ChaptersTab extends StatelessWidget {
 
 class _InfoTab extends StatelessWidget {
   final EpisodeData data;
+  final EbookAvailability ebook;
 
-  const _InfoTab({required this.data});
+  const _InfoTab({required this.data, required this.ebook});
 
   @override
   Widget build(BuildContext context) {
@@ -1502,6 +1519,15 @@ class _InfoTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+
+        // E-knjiga: ista ponuda kao na detaljnom ekranu, pa oba pogleda o istoj
+        // epizodi nude isto. Kartica se sama sakrije kad knjige nema.
+        EbookCard(
+          availability: ebook,
+          title: displayTitle,
+          preferEn: isEn,
+          episodeUrl: episodeShareUrl(data.youtubeId, lang: lang),
+        ),
 
         // Napredak obrade — ista kartica kao na detaljnom ekranu, pa oba
         // pogleda o istoj epizodi kazu istu stvar.

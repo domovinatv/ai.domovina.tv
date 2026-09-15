@@ -1009,5 +1009,20 @@
   "votingRailCtaTitle": "Vote for what comes next",
   "votingRailCtaBody": "The leaderboard is decided by citizens verified with eID.",
   "votingAccountVerifyTitle": "Vote for the next podcast",
-  "votingAccountVerifyBody": "Verify with your eID and you get one vote every day."
+  "votingAccountVerifyBody": "Verify with your eID and you get one vote every day.",
+  "ebookTooltip": "Episode ebook",
+  "ebookSheetTitle": "Ebook",
+  "ebookEditionHr": "Croatian edition",
+  "ebookEditionEn": "English edition",
+  "ebookShareHint": "Shared as a file — WhatsApp, email, Books.",
+  "ebookDownloadHint": "Downloads to your device.",
+  "ebookPreparing": "Preparing the book…",
+  "ebookDownloaded": "Downloaded: {file}",
+  "ebookFailed": "The book could not be fetched. Please try again.",
+  "ebookCopyLink": "Copy link to the book",
+  "ebookLinkCopied": "Link to the book copied",
+  "ebookRights": "This edition is derived from the episode; rights to the spoken content remain with the original channel.",
+  "ebookCardTitle": "Take the episode with you",
+  "ebookCardBody": "The whole episode as an ebook: chapters, images and links back to the recording. Reads in Books, Play Books or Kindle.",
+  "ebookCardAction": "Ebook (EPUB)"
 }

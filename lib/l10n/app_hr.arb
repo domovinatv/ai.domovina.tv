@@ -4812,5 +4812,68 @@
   "votingAccountVerifyBody": "Potvrdi se e-Osobnom i dobivaš jedan glas svaki dan.",
   "@votingAccountVerifyBody": {
     "description": "Tijelo kartice na /account za korisnika bez potvrde e-Osobnom."
+  },
+  "ebookTooltip": "E-knjiga epizode",
+  "@ebookTooltip": {
+    "description": "Tooltip ikone u app baru epizode koja otvara sheet s e-knjigom."
+  },
+  "ebookSheetTitle": "E-knjiga",
+  "@ebookSheetTitle": {
+    "description": "Oznaka iznad naslova epizode u sheetu e-knjige; caps se radi u kodu (.toUpperCase())."
+  },
+  "ebookEditionHr": "Hrvatsko izdanje",
+  "@ebookEditionHr": {
+    "description": "Redak u sheetu: hrvatska verzija EPUB knjige."
+  },
+  "ebookEditionEn": "Englesko izdanje",
+  "@ebookEditionEn": {
+    "description": "Redak u sheetu: engleska verzija EPUB knjige."
+  },
+  "ebookShareHint": "Šalje se kao datoteka — WhatsApp, e-pošta, Knjige.",
+  "@ebookShareHint": {
+    "description": "Podnaslov retka kad platforma zna podijeliti datoteku (mobitel)."
+  },
+  "ebookDownloadHint": "Preuzima se na uređaj.",
+  "@ebookDownloadHint": {
+    "description": "Podnaslov retka kad platforma ne zna dijeliti datoteke (desktop browser)."
+  },
+  "ebookPreparing": "Pripremam knjigu…",
+  "@ebookPreparing": {
+    "description": "Stanje retka dok se EPUB preuzima s CDN-a."
+  },
+  "ebookDownloaded": "Preuzeto: {file}",
+  "@ebookDownloaded": {
+    "description": "Snackbar nakon preuzimanja knjige.",
+    "placeholders": {
+      "file": { "type": "String" }
+    }
+  },
+  "ebookFailed": "Knjigu nije bilo moguće dohvatiti. Pokušaj ponovno.",
+  "@ebookFailed": {
+    "description": "Snackbar kad preuzimanje ili dijeljenje knjige ne uspije."
+  },
+  "ebookCopyLink": "Kopiraj poveznicu na knjigu",
+  "@ebookCopyLink": {
+    "description": "Zadnja stavka u sheetu — kopira izravni CDN URL knjige."
+  },
+  "ebookLinkCopied": "Poveznica na knjigu je kopirana",
+  "@ebookLinkCopied": {
+    "description": "Snackbar potvrda kopiranja poveznice na knjigu."
+  },
+  "ebookRights": "Izdanje je izvedeno iz epizode; prava na izgovoreni sadržaj ostaju izvornom kanalu.",
+  "@ebookRights": {
+    "description": "Napomena na dnu sheeta e-knjige, ista tvrdnja kao kolofon u samoj knjizi."
+  },
+  "ebookCardTitle": "Ponesi epizodu sa sobom",
+  "@ebookCardTitle": {
+    "description": "Naslov kartice u epizodi koja nudi e-knjigu."
+  },
+  "ebookCardBody": "Cijela epizoda kao e-knjiga: poglavlja, slike i poveznice natrag na snimku. Čita se u Knjigama, Play Books ili Kindleu.",
+  "@ebookCardBody": {
+    "description": "Tijelo kartice koja nudi e-knjigu."
+  },
+  "ebookCardAction": "E-knjiga (EPUB)",
+  "@ebookCardAction": {
+    "description": "Gumb na kartici koji otvara sheet s e-knjigom."
   }
 }

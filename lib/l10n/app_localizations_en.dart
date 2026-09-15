@@ -3899,4 +3899,53 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get votingAccountVerifyBody =>
       'Verify with your eID and you get one vote every day.';
+
+  @override
+  String get ebookTooltip => 'Episode ebook';
+
+  @override
+  String get ebookSheetTitle => 'Ebook';
+
+  @override
+  String get ebookEditionHr => 'Croatian edition';
+
+  @override
+  String get ebookEditionEn => 'English edition';
+
+  @override
+  String get ebookShareHint => 'Shared as a file — WhatsApp, email, Books.';
+
+  @override
+  String get ebookDownloadHint => 'Downloads to your device.';
+
+  @override
+  String get ebookPreparing => 'Preparing the book…';
+
+  @override
+  String ebookDownloaded(String file) {
+    return 'Downloaded: $file';
+  }
+
+  @override
+  String get ebookFailed => 'The book could not be fetched. Please try again.';
+
+  @override
+  String get ebookCopyLink => 'Copy link to the book';
+
+  @override
+  String get ebookLinkCopied => 'Link to the book copied';
+
+  @override
+  String get ebookRights =>
+      'This edition is derived from the episode; rights to the spoken content remain with the original channel.';
+
+  @override
+  String get ebookCardTitle => 'Take the episode with you';
+
+  @override
+  String get ebookCardBody =>
+      'The whole episode as an ebook: chapters, images and links back to the recording. Reads in Books, Play Books or Kindle.';
+
+  @override
+  String get ebookCardAction => 'Ebook (EPUB)';
 }

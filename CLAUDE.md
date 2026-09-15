@@ -552,6 +552,37 @@ WebP radi svugdje; na webu podrška prati browser (Chrome 32+, Firefox 65+,
 Safari/iOS Safari **14+**). Ne tvrditi da je "Flutter neovisan o browseru" — to
 vrijedi samo za native.
 
+### E-knjiga epizode (EPUB) — preuzimanje i slanje datoteke
+
+Pipeline (`fetch.domovina.tv`, KORAK 9.8 `generate_ebook.js`) slaže cijelu
+epizodu u EPUB i uploada ga kao `data/<id>/book.epub` te — kad postoji
+`article.en.json` — `data/<id>/book.en.epub`. Frontend ga nudi na dva mjesta:
+`EbookCard` (iza sažetka, u oba prikaza) i `EbookAction` (ikona otvorene knjige
+u app baru); oba otvaraju `showEbookSheet` iz `lib/widgets/ebook_sheet.dart`.
+
+**Rule (postojanje se MJERI, nema zastavice)**: `EbookService.probe` radi HEAD
+na URL **s cache-busterom** i tek na 200 prikazuje ponudu. Channel listing nema
+`has_ebook`, a i da ga dobije, vrijedi pravilo „pipeline zastavice ≠ stvarnost".
+Cache-buster nije kozmetika: CDN cachira 404 četiri sata, a knjiga se generira
+NAKON članka (englesko izdanje tek nakon prijevoda) — jedan prerani probe bez
+njega sakrio bi knjigu do kraja tog prozora.
+
+**Rule (bajtovi se predpreuzimaju na otvaranje sheeta)**: `navigator.share`
+mora pasti unutar korisnikove geste, a knjiga je ~2,5 MB. Preuzimanje usred tapa
+na iOS-u istekne (`NotAllowedError`), pa `_EbookSheet.initState` odmah povuče
+izdanje na jeziku koji korisnik čita; tap tada samo preda gotove bajtove.
+
+**Rule (jedan poziv, dvije platforme)**: sve ide kroz `services/file_share.dart`
+— web preko `navigator.share({files})` iz `package:web`, native preko
+`share_plus` (datoteka u temp direktorij pa sistemski sheet). Web ispad je
+**blob URL + `<a download>`**, nikad `data:` URL (2,5 MB u base64 browseri znaju
+tiho odbiti). `share_plus` je u projektu SAMO zbog nativea; ovisi o `web: ^1.1.1`
+(ne o `dart:html`) pa ne ruši `--wasm` build — provjeriti pri svakom bumpu.
+
+**Rule (ime datoteke se transliterira)**: `EbookService.fileName` miče
+dijakritike i interpunkciju. Datoteka putuje kroz WhatsApp, e-poštu i tuđe
+datotečne sustave, gdje „č" i „?" završe kao smeće ili odbijen upload.
+
 ## Logging
 
 `main.dart` exports a `log()` function that prefixes messages with `[DOMOVINA v{version}]`. Use it throughout the app for console debugging:

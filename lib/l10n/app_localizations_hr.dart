@@ -3941,4 +3941,55 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get votingAccountVerifyBody =>
       'Potvrdi se e-Osobnom i dobivaš jedan glas svaki dan.';
+
+  @override
+  String get ebookTooltip => 'E-knjiga epizode';
+
+  @override
+  String get ebookSheetTitle => 'E-knjiga';
+
+  @override
+  String get ebookEditionHr => 'Hrvatsko izdanje';
+
+  @override
+  String get ebookEditionEn => 'Englesko izdanje';
+
+  @override
+  String get ebookShareHint =>
+      'Šalje se kao datoteka — WhatsApp, e-pošta, Knjige.';
+
+  @override
+  String get ebookDownloadHint => 'Preuzima se na uređaj.';
+
+  @override
+  String get ebookPreparing => 'Pripremam knjigu…';
+
+  @override
+  String ebookDownloaded(String file) {
+    return 'Preuzeto: $file';
+  }
+
+  @override
+  String get ebookFailed =>
+      'Knjigu nije bilo moguće dohvatiti. Pokušaj ponovno.';
+
+  @override
+  String get ebookCopyLink => 'Kopiraj poveznicu na knjigu';
+
+  @override
+  String get ebookLinkCopied => 'Poveznica na knjigu je kopirana';
+
+  @override
+  String get ebookRights =>
+      'Izdanje je izvedeno iz epizode; prava na izgovoreni sadržaj ostaju izvornom kanalu.';
+
+  @override
+  String get ebookCardTitle => 'Ponesi epizodu sa sobom';
+
+  @override
+  String get ebookCardBody =>
+      'Cijela epizoda kao e-knjiga: poglavlja, slike i poveznice natrag na snimku. Čita se u Knjigama, Play Books ili Kindleu.';
+
+  @override
+  String get ebookCardAction => 'E-knjiga (EPUB)';
 }

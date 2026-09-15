@@ -80,6 +80,12 @@ dependencies:
   # bez dart:html → provjereno siguran za --wasm build (spike 8.8.2026.).
   flutter_staggered_grid_view: ^0.7.0
   floating: ^6.0.0
+  # Native share sheet (iOS/Android/macOS) za dijeljenje EPUB e-knjige kao
+  # DATOTEKE — WhatsApp, Mail, Files. Na webu se NE koristi: tamo ide vlastiti
+  # `file_share_web.dart` nad `navigator.share` iz package:web (vidi
+  # lib/services/file_share.dart). share_plus 13 ovisi o `web: ^1.1.1`, ne o
+  # `dart:html`, pa ne ruši --wasm build (ista provjera kao za passkeys).
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

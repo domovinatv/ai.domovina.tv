@@ -56,6 +56,23 @@ class CdnConfig {
       '$base/data/$ytId/article.magisterium_full_v2.en.json';
   static String diarizedSrtUrl(String ytId) => '$base/data/$ytId/diarized.srt';
 
+  /// EPUB e-knjiga epizode (pipeline KORAK 9.8, `generate_ebook.js`).
+  /// Postoji samo za epizode koje imaju članak; englesko izdanje samo kad
+  /// postoji i `article.en.json`. Ime na CDN-u je `book.epub` / `book.en.epub`
+  /// bez obzira na ime datoteke u pipelineu (`upload_to_r2.js` ih mapira).
+  static String ebookUrl(String ytId) => '$base/data/$ytId/book.epub';
+  static String ebookEnUrl(String ytId) => '$base/data/$ytId/book.en.epub';
+
+  /// Probe URL-ovi za postojanje knjige — cache-buster je OBAVEZAN: CDN cachira
+  /// 404 četiri sata, a knjiga se generira nakon članka (i englesko izdanje tek
+  /// nakon prijevoda), pa bi jedan prerani probe sakrio knjigu do kraja tog
+  /// prozora. Ista zamka kao kod [videoH264ProbeUrl].
+  /// Preuzimanje ide preko čistog URL-a (immutable cache je tu poželjan).
+  static String ebookProbeUrl(String ytId) =>
+      '$base/data/$ytId/book.epub?${_channelCacheBuster()}';
+  static String ebookEnProbeUrl(String ytId) =>
+      '$base/data/$ytId/book.en.epub?${_channelCacheBuster()}';
+
   /// Video MP4 — CDN podržava HTTP 206 range requeste za seeking.
   /// Ovo je izvorni codec (može biti AV1/VP9 — ne dekodira se HW svugdje).
   static String videoUrl(String ytId) => '$base/data/$ytId/video.mp4';

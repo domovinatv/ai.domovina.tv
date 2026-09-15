@@ -21,6 +21,7 @@ import '../services/media_session.dart';
 import '../services/channel_cache.dart';
 import '../services/data_service.dart';
 import '../services/cdn_config.dart';
+import '../services/ebook_service.dart';
 import '../services/notification_art.dart';
 import '../services/open_url.dart';
 import '../services/player_resume.dart';
@@ -46,6 +47,7 @@ import '../widgets/magisterium_v2_view.dart';
 import '../widgets/parallel_article_view.dart';
 import '../widgets/person_needle_highlight.dart' show hasPersonMention;
 import '../widgets/entities_section.dart';
+import '../widgets/ebook_sheet.dart';
 import '../widgets/episode_status_card.dart';
 import '../widgets/youtube_embed.dart';
 import '../widgets/resume_hint_banner.dart';
@@ -765,11 +767,21 @@ class _EpisodeContentState extends State<_EpisodeContent>
   String? _personHighlightName;
   bool _personHighlightSpeaks = false;
 
+  /// EPUB e-knjiga epizode — MJERI se HEAD probe-om (vidi [EbookService]), pa
+  /// je do odgovora prazna i nijedna ebook površina se ne prikazuje. Nije u
+  /// [EpisodeData.load] da ne produžuje kritični put ekrana: knjiga je dodatak,
+  /// a ne uvjet da se epizoda prikaže.
+  EbookAvailability _ebook = EbookAvailability.none;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _resolveChannelSlug();
+    EbookService.probe(widget.data.youtubeId).then((found) {
+      if (!mounted || !found.any) return;
+      setState(() => _ebook = found);
+    });
 
     // 1) URL forsiranje (npr. /v/<id>/en) — najjaci signal.
     if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
@@ -1765,6 +1777,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
               ),
             ),
           ),
+        EbookAction(
+          availability: _ebook,
+          title: data.displayTitle,
+          preferEn: _language == EpisodeLanguage.en,
+          episodeUrl: episodeShareUrl(data.youtubeId, lang: _language),
+        ),
         IconButton(
           icon: const Icon(Icons.share_outlined),
           tooltip: l.episodeCopyMomentLink,
@@ -1849,6 +1867,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 ),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               SummarySection(summary: summaryForUi),
+              // E-knjiga ide iza sažetka, prije poglavlja: tu je korisnik već
+              // odlučio zanima li ga epizoda, a još nije ušao u dugi članak.
+              EbookCard(
+                availability: _ebook,
+                title: data.displayTitle,
+                preferEn: _language == EpisodeLanguage.en,
+                episodeUrl: episodeShareUrl(data.youtubeId, lang: _language),
+              ),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
               ChaptersSection(
@@ -1966,6 +1992,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         color: theme.colorScheme.outlineVariant,
                       ),
                       SummarySection(summary: summaryForUi),
+                      // E-knjiga — isto mjesto kao u standardnom layoutu.
+                      EbookCard(
+                        availability: _ebook,
+                        title: data.displayTitle,
+                        preferEn: _language == EpisodeLanguage.en,
+                        episodeUrl: episodeShareUrl(
+                          data.youtubeId,
+                          lang: _language,
+                        ),
+                      ),
                       Divider(
                         height: 1,
                         color: theme.colorScheme.outlineVariant,

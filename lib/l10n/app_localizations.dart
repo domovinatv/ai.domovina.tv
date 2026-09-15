@@ -6166,6 +6166,96 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Potvrdi se e-Osobnom i dobivaš jedan glas svaki dan.'**
   String get votingAccountVerifyBody;
+
+  /// Tooltip ikone u app baru epizode koja otvara sheet s e-knjigom.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-knjiga epizode'**
+  String get ebookTooltip;
+
+  /// Oznaka iznad naslova epizode u sheetu e-knjige; caps se radi u kodu (.toUpperCase()).
+  ///
+  /// In hr, this message translates to:
+  /// **'E-knjiga'**
+  String get ebookSheetTitle;
+
+  /// Redak u sheetu: hrvatska verzija EPUB knjige.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hrvatsko izdanje'**
+  String get ebookEditionHr;
+
+  /// Redak u sheetu: engleska verzija EPUB knjige.
+  ///
+  /// In hr, this message translates to:
+  /// **'Englesko izdanje'**
+  String get ebookEditionEn;
+
+  /// Podnaslov retka kad platforma zna podijeliti datoteku (mobitel).
+  ///
+  /// In hr, this message translates to:
+  /// **'Šalje se kao datoteka — WhatsApp, e-pošta, Knjige.'**
+  String get ebookShareHint;
+
+  /// Podnaslov retka kad platforma ne zna dijeliti datoteke (desktop browser).
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzima se na uređaj.'**
+  String get ebookDownloadHint;
+
+  /// Stanje retka dok se EPUB preuzima s CDN-a.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pripremam knjigu…'**
+  String get ebookPreparing;
+
+  /// Snackbar nakon preuzimanja knjige.
+  ///
+  /// In hr, this message translates to:
+  /// **'Preuzeto: {file}'**
+  String ebookDownloaded(String file);
+
+  /// Snackbar kad preuzimanje ili dijeljenje knjige ne uspije.
+  ///
+  /// In hr, this message translates to:
+  /// **'Knjigu nije bilo moguće dohvatiti. Pokušaj ponovno.'**
+  String get ebookFailed;
+
+  /// Zadnja stavka u sheetu — kopira izravni CDN URL knjige.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kopiraj poveznicu na knjigu'**
+  String get ebookCopyLink;
+
+  /// Snackbar potvrda kopiranja poveznice na knjigu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica na knjigu je kopirana'**
+  String get ebookLinkCopied;
+
+  /// Napomena na dnu sheeta e-knjige, ista tvrdnja kao kolofon u samoj knjizi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izdanje je izvedeno iz epizode; prava na izgovoreni sadržaj ostaju izvornom kanalu.'**
+  String get ebookRights;
+
+  /// Naslov kartice u epizodi koja nudi e-knjigu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ponesi epizodu sa sobom'**
+  String get ebookCardTitle;
+
+  /// Tijelo kartice koja nudi e-knjigu.
+  ///
+  /// In hr, this message translates to:
+  /// **'Cijela epizoda kao e-knjiga: poglavlja, slike i poveznice natrag na snimku. Čita se u Knjigama, Play Books ili Kindleu.'**
+  String get ebookCardBody;
+
+  /// Gumb na kartici koji otvara sheet s e-knjigom.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-knjiga (EPUB)'**
+  String get ebookCardAction;
 }
 
 class _AppLocalizationsDelegate
