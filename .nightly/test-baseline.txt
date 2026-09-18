@@ -4,6 +4,7 @@
 #
 # widget_test.dart      — smoke test gradi PodcastApp; puca na HttpClient u
 #                         TestWidgetsFlutterBinding (mreža vraća 400).
-# home_feed_test.dart   — pickFeatured očekuje hiQualityRecent, dobiva hiQuality.
+#
+# home_feed_test.dart maknut 2026-09-18: fixture s apsolutnim datumom je
+# nakon 14 dana ispadao iz tiera 1; ranker sada prima `now`.
 test/widget_test.dart
-test/home_feed_test.dart
