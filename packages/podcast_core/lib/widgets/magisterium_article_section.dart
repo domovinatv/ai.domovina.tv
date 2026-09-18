@@ -201,7 +201,7 @@ class _IterationArticle extends StatelessWidget {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: AppTheme.croBlue,
+                    color: AppTheme.brandPrimary,
                     borderRadius: BorderRadius.circular(5),
                     border: Border.fromBorderSide(
                       AppTheme.brandRim(theme.brightness),

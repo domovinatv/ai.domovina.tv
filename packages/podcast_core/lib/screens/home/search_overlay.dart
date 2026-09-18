@@ -1191,7 +1191,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                   FilledButton(
                     onPressed: _openVideoId,
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.croBlue,
+                      backgroundColor: AppTheme.brandPrimary,
                       foregroundColor: Colors.white,
                     ),
                     child: const Icon(Icons.play_arrow, size: 18),

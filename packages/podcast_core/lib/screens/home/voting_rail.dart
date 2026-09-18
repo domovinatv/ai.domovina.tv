@@ -78,7 +78,7 @@ class _VotingRailState extends State<VotingRail> {
         eyebrow: l.votingTitle,
         // Brand crvena kao naglasak trake — izborni dan je jedina hrvatska
         // površina u aplikaciji koja nosi zastavice.
-        eyebrowAccentColor: AppTheme.croRed,
+        eyebrowAccentColor: AppTheme.brandAccent,
         isMobile: widget.isMobile,
         onSeeAll: () => drillDown(context, '/glasanje'),
         seeAllLabel: l.votingRailSeeAll,
@@ -120,14 +120,14 @@ class _VotingRailTile extends StatelessWidget {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final net = candidate.net;
-    // Pozitivan neto ide u `cs.primary`, NE u `AppTheme.croBlue`: pravilo
+    // Pozitivan neto ide u `cs.primary`, NE u `AppTheme.brandPrimary`: pravilo
     // „navy = croBlue" vrijedi za POVRŠINE koje se boje (fill + rim), a #002F6C
     // kao 11 dp tekst na tamnoj podlozi je nečitljiv. `cs.primary` je izveden
     // iz istog brand sjemena, pa je u svijetloj temi ta ista navy, a u tamnoj
     // njezina svijetla varijanta.
     final bojaNeto = net > 0
         ? theme.colorScheme.primary
-        : (net < 0 ? AppTheme.croRed : theme.colorScheme.onSurfaceVariant);
+        : (net < 0 ? AppTheme.brandAccent : theme.colorScheme.onSurfaceVariant);
 
     return Semantics(
       identifier: 'voting-rail-card-${candidate.slug}',
@@ -220,7 +220,7 @@ class _VotingRailCta extends StatelessWidget {
                 decoration: BoxDecoration(
                   // Brand navy fill + rim, nikad cs.primary (M3 ga u dark temi
                   // izblijedi pa bijeli sadržaj izgleda isprano).
-                  color: AppTheme.croBlue,
+                  color: AppTheme.brandPrimary,
                   borderRadius: BorderRadius.circular(width / 4),
                   border: Border.fromBorderSide(
                     AppTheme.brandRim(theme.brightness),

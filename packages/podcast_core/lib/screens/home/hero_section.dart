@@ -156,8 +156,8 @@ class HeroSection extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.croBlue,
-            AppTheme.croBlue.withValues(alpha: 0.7),
+            AppTheme.brandPrimary,
+            AppTheme.brandPrimary.withValues(alpha: 0.7),
           ],
         ),
       ),
@@ -236,7 +236,7 @@ class HeroSection extends StatelessWidget {
               icon: const Icon(Icons.play_arrow, size: 20),
               label: Text(l.homeHeroListen),
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.croBlue,
+                backgroundColor: AppTheme.brandPrimary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 18, vertical: 12),
@@ -672,7 +672,7 @@ class _SaveButtonState extends State<_SaveButton> {
       icon: Icon(
         _saved ? Icons.favorite : Icons.favorite_border,
         size: 18,
-        color: _saved ? AppTheme.croRed : widget.textColor,
+        color: _saved ? AppTheme.brandAccent : widget.textColor,
       ),
       label: Text(_saved ? l.favoritesSaved : l.commonSave),
       style: widget.style,

@@ -276,7 +276,7 @@ class _VotingScreenState extends State<VotingScreen> {
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.croBlue,
+              backgroundColor: AppTheme.brandPrimary,
               foregroundColor: Colors.white,
               side: AppTheme.brandRim(theme.brightness),
             ),
@@ -477,7 +477,7 @@ class _VotingScreenState extends State<VotingScreen> {
                   // neuspjeha ne bi ponovio.
                   onPressed: _ponoviUcitavanje,
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.croBlue,
+                    backgroundColor: AppTheme.brandPrimary,
                     foregroundColor: Colors.white,
                     side: AppTheme.brandRim(theme.brightness),
                   ),
@@ -643,7 +643,7 @@ class _TagChips extends StatelessWidget {
   }
 }
 
-/// Brand-fill je navy (`AppTheme.croBlue`) + `brandRim()` — nikad `cs.primary`,
+/// Brand-fill je navy (`AppTheme.brandPrimary`) + `brandRim()` — nikad `cs.primary`,
 /// koji M3 u dark shemi izblijedi.
 class _BrandChip extends StatelessWidget {
   final String label;
@@ -667,7 +667,7 @@ class _BrandChip extends StatelessWidget {
         labelStyle: theme.textTheme.labelMedium?.copyWith(
           color: selected ? Colors.white : theme.colorScheme.onSurfaceVariant,
         ),
-        selectedColor: AppTheme.croBlue,
+        selectedColor: AppTheme.brandPrimary,
         side: selected ? AppTheme.brandRim(theme.brightness) : BorderSide.none,
         showCheckmark: false,
         visualDensity: VisualDensity.compact,
@@ -805,7 +805,7 @@ class _CandidateSheet extends StatelessWidget {
                         l.votingYourVoteToday,
                         style: theme.textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.croBlue,
+                          color: AppTheme.brandPrimary,
                         ),
                       )
                     else if (mode == CandidateActionMode.vote &&
@@ -814,7 +814,7 @@ class _CandidateSheet extends StatelessWidget {
                         onPressed: () => onVote?.call(kVoteDirectionUp),
                         icon: const Icon(Icons.thumb_up_outlined),
                         tooltip: l.votingVoteUp,
-                        color: AppTheme.croBlue,
+                        color: AppTheme.brandPrimary,
                       ),
                       IconButton(
                         onPressed: () => onVote?.call(kVoteDirectionDown),

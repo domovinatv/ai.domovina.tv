@@ -89,7 +89,7 @@ class _HeroSectionState extends State<HeroSection> {
                       color: Colors.white,
                     ),
                   ),
-                  backgroundColor: AppTheme.croBlue,
+                  backgroundColor: AppTheme.brandPrimary,
                   side: AppTheme.brandRim(theme.brightness),
                   padding: EdgeInsets.zero,
                 ),

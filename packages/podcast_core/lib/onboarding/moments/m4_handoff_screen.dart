@@ -147,7 +147,7 @@ class _SendTabState extends State<_SendTab> {
                     : const Icon(Icons.bolt),
                 label: Text(l.authGenerateCode),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.croBlue,
+                  backgroundColor: AppTheme.brandPrimary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 28, vertical: 14),
@@ -498,7 +498,7 @@ class _ConsumedSuccess extends StatelessWidget {
             FilledButton(
               onPressed: () => context.go('/'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.croBlue,
+                backgroundColor: AppTheme.brandPrimary,
                 foregroundColor: Colors.white,
               ),
               child: Text(l.commonGoHome),
@@ -546,7 +546,7 @@ class _NotSignedInPrompt extends StatelessWidget {
               icon: const Icon(Icons.login),
               label: Text(l.commonSignIn),
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.croBlue,
+                backgroundColor: AppTheme.brandPrimary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 14),

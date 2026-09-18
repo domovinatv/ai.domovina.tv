@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../brand/app_brand.dart';
 import 'typography.dart';
 
-/// Centralizirani ThemeData za DOMOVINA.ai.
+/// Centralizirani ThemeData aplikacije (boje iz `AppBrand.config`).
 ///
 /// Korak 1 redizajna — premiestio iz inline definicija u main.dart.
 /// Croatian navy (#002F6C) kao seed, crveni akcent (#FF0000) za call-to-action.
@@ -9,9 +10,11 @@ import 'typography.dart';
 class AppTheme {
   AppTheme._();
 
-  /// Croatian flag colours.
-  static const Color croRed = Color(0xFFFF0000);
-  static const Color croBlue = Color(0xFF002F6C);
+  /// Naglasna (tertiary) boja — iz branda (`accent`).
+  static Color get brandAccent => AppBrand.config.accent;
+
+  /// Seed boja Material 3 sheme — iz branda (`seed`).
+  static Color get brandPrimary => AppBrand.config.seed;
 
   /// Off-white pozadina za editorial light mode — toplija od bijelog,
   /// daje "papir" osjećaj koji odgovara serif typography-ju.
@@ -27,7 +30,7 @@ class AppTheme {
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: croBlue,
+      seedColor: brandPrimary,
       brightness: Brightness.light,
     ).copyWith(
       // Surface tonovi — cream papir za editorial look.
@@ -36,7 +39,7 @@ class AppTheme {
       surfaceContainerLow: const Color(0xFFF5F1EA),
       surfaceContainer: const Color(0xFFEEE9DF),
       // Crveni akcent za CTA ostaje (.ai sufiks, hero "Slušaj" gumb).
-      tertiary: croRed,
+      tertiary: brandAccent,
       onTertiary: Colors.white,
     );
     return _build(scheme);
@@ -44,10 +47,10 @@ class AppTheme {
 
   static ThemeData dark() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: croBlue,
+      seedColor: brandPrimary,
       brightness: Brightness.dark,
     ).copyWith(
-      tertiary: croRed,
+      tertiary: brandAccent,
       onTertiary: Colors.white,
     );
     return _build(scheme);
@@ -61,10 +64,10 @@ class AppTheme {
   /// u lib/screens/tv/ — theme samo daje tokeni i tipografski skok.
   static ThemeData tv() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: croBlue,
+      seedColor: brandPrimary,
       brightness: Brightness.dark,
     ).copyWith(
-      tertiary: croRed,
+      tertiary: brandAccent,
       onTertiary: Colors.white,
     );
     final base = _build(scheme);
@@ -114,7 +117,7 @@ class AppTheme {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: croBlue,
+          backgroundColor: brandPrimary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(

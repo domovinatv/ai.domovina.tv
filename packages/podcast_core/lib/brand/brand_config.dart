@@ -1,0 +1,160 @@
+import 'package:flutter/painting.dart' show Color;
+
+/// Sve što jedan brend (DOMOVINA.ai, Podcasterium…) razlikuje od drugoga,
+/// a živi u Dart kodu. Jedina dopuštena mjesta s imenom brenda, hostovima,
+/// identifikatorima trgovina i bojama u `lib/` su ova datoteka i
+/// `domovina_brand.dart`; ostatak jezgre čita `AppBrand.config`.
+///
+/// Sve što NIJE Dart (ikone, splash, manifest.json, colors.xml, index.html)
+/// dolazi iz brand manifesta ljuske, ne odavde.
+class BrandConfig {
+  const BrandConfig({
+    required this.appName,
+    required this.wordmark,
+    this.wordmarkAccent = '',
+    required this.plusDisplayName,
+    required this.logPrefix,
+    required this.urlScheme,
+    required this.androidPackage,
+    required this.iosBundleId,
+    required this.iosAppStoreId,
+    required this.entitlement,
+    required this.seed,
+    required this.accent,
+    required this.logoAsset,
+    required this.splashAsset,
+    this.defaultLocale = 'en',
+    this.defaultEpisodeLanguage = 'en',
+    required this.endpoints,
+    this.flags = const FeatureFlags(),
+  });
+
+  /// Puno ime proizvoda, npr. `DOMOVINA.ai` — naslovi, page meta, obavijesti.
+  final String appName;
+
+  /// Wordmark u app baru i auth sheetu; [wordmarkAccent] je sufiks u
+  /// naglašenoj boji (`.ai`), prazan string = bez naglaska.
+  final String wordmark;
+  final String wordmarkAccent;
+
+  /// Ime pretplate, npr. `DOMOVINA Plus`.
+  final String plusDisplayName;
+
+  /// Prefiks u `log()` — `[DOMOVINA v2.0.153] …`.
+  final String logPrefix;
+
+  /// Custom URL shema za auth callback i deep linkove (`ai.domovina`).
+  final String urlScheme;
+
+  /// Android applicationId; koristi se i za kanal audio obavijesti.
+  final String androidPackage;
+  final String iosBundleId;
+
+  /// Numerički App Store ID (bez `id` prefiksa).
+  final String iosAppStoreId;
+
+  /// RevenueCat entitlement koji otključava Plus.
+  final String entitlement;
+
+  /// Seed boja Material 3 sheme i naglasna (tertiary) boja.
+  final Color seed;
+  final Color accent;
+
+  /// Putanje asseta u bundleu LJUSKE (korijenski pubspec), ne paketa.
+  final String logoAsset;
+  final String splashAsset;
+
+  /// Zadani jezik sučelja i zadani jezik sadržaja za nove korisnike.
+  final String defaultLocale;
+  final String defaultEpisodeLanguage;
+
+  final Endpoints endpoints;
+  final FeatureFlags flags;
+
+  /// App Store poveznica na native aplikaciju.
+  String get iosAppStoreUrl =>
+      'https://apps.apple.com/app/id$iosAppStoreId';
+
+  /// Google Play poveznica na native aplikaciju.
+  String get androidPlayStoreUrl =>
+      'https://play.google.com/store/apps/details?id=$androidPackage';
+
+  /// Apsolutni URL javne stranice (share, OG, pravni dokumenti).
+  /// [path] počinje kosom crtom, npr. `/v/abc123`.
+  String shareUrl(String path) => '${endpoints.site}$path';
+}
+
+/// Hostovi backend servisa jednog brenda. Bez završne kose crte.
+class Endpoints {
+  const Endpoints({
+    required this.site,
+    required this.cdn,
+    required this.rag,
+    required this.meili,
+    required this.cutter,
+    this.certilia = '',
+    this.wallet = '',
+    this.paymentIntents = '',
+  });
+
+  /// Javna web stranica — baza za share linkove i OG.
+  final String site;
+
+  /// Statični CDN s JSON-om, slikama i medijima (`CdnConfig`).
+  final String cdn;
+
+  /// Person hub / semantičko pretraživanje (MCP).
+  final String rag;
+
+  /// Meilisearch (keyword pretraga).
+  final String meili;
+
+  /// Servis za rezanje klipova.
+  final String cutter;
+
+  /// Certilia (e-Osobna) OAuth posrednik; prazno kad je flag ugašen.
+  final String certilia;
+
+  /// Pinka wallet SDK host i intent-status API; prazno kad je pinka ugašena.
+  final String wallet;
+  final String paymentIntents;
+}
+
+/// Značajke koje brend uključuje. Zadano je sve UGAŠENO osim onoga što je
+/// brand-neutralno; DOMOVINA pali svoje domenske značajke eksplicitno.
+class FeatureFlags {
+  const FeatureFlags({
+    this.certilia = false,
+    this.voting = false,
+    this.pinka = false,
+    this.channelOwnership = false,
+    this.domainScore = false,
+    this.calBooking = false,
+    this.handoff = true,
+    this.tv = true,
+  });
+
+  /// Prijava e-Osobnom (Certilia OAuth).
+  final bool certilia;
+
+  /// Glasanje za podcaste (`/glasanje*`, rail na naslovnici).
+  final bool voting;
+
+  /// Pinka podrška (SEPA doniranje, zid podrške, kampanje).
+  final bool pinka;
+
+  /// Vlasništvo kanala (claim, KYC, isplate) — ovisi o pinki.
+  final bool channelOwnership;
+
+  /// Domenska ocjena epizoda (Magisterium) — ranker, sort, značke.
+  final bool domainScore;
+
+  /// „15 min s osnivačem” (Cal.com).
+  final bool calBooking;
+
+  /// Handoff web ↔ native.
+  final bool handoff;
+
+  /// Android TV / Leanback sučelje.
+  final bool tv;
+}

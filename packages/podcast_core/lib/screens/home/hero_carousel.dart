@@ -235,7 +235,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
                     height: 7,
                     decoration: BoxDecoration(
                       color: active
-                          ? AppTheme.croBlue
+                          ? AppTheme.brandPrimary
                           : cs.onSurfaceVariant.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                       border: active
@@ -270,7 +270,7 @@ class _RotationBadge extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
-          color: AppTheme.croBlue.withValues(alpha: 0.10),
+          color: AppTheme.brandPrimary.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(20),
           border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
         ),

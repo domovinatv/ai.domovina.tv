@@ -6,7 +6,7 @@
 /// Avatar ide isključivo kroz [CachedThumbnail] s **CDN-a**
 /// (`cdn.domovina.ai/registry/avatars/<slug>.jpg`) — nikad izravno s YouTubea,
 /// gdje CORS puca (isto pravilo kao `CdnConfig.thumbnailUrl`). Kandidat bez
-/// avatara dobiva monogram na `AppTheme.croBlue` + `brandRim()`.
+/// avatara dobiva monogram na `AppTheme.brandPrimary` + `brandRim()`.
 library;
 
 import 'package:flutter/material.dart';
@@ -226,7 +226,7 @@ class _Monogram extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         // Brand navy fill + rim (theme_and_view_mode_ux pravilo).
-        color: AppTheme.croBlue,
+        color: AppTheme.brandPrimary,
         borderRadius: radius,
         border: Border.fromBorderSide(AppTheme.brandRim(brightness)),
       ),
@@ -253,14 +253,14 @@ class _NetScore extends StatelessWidget {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final net = candidate.net;
-    // `cs.primary`, NE `AppTheme.croBlue`: pravilo „navy = croBlue" vrijedi za
+    // `cs.primary`, NE `AppTheme.brandPrimary`: pravilo „navy = croBlue" vrijedi za
     // POVRŠINE koje se boje (fill + rim), a #002F6C kao tekst na tamnoj podlozi
     // je nečitljiv — vodeći kandidat je time izgubio jedinu brojku koja ga
     // razlikuje. `cs.primary` je iz istog brand sjemena: navy u svijetloj temi,
     // njezina svijetla varijanta u tamnoj.
     final boja = net > 0
         ? theme.colorScheme.primary
-        : (net < 0 ? AppTheme.croRed : theme.colorScheme.onSurfaceVariant);
+        : (net < 0 ? AppTheme.brandAccent : theme.colorScheme.onSurfaceVariant);
 
     return Semantics(
       label: l.votingNetLabel(net),
@@ -320,7 +320,7 @@ class _Actions extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.croBlue,
+          color: AppTheme.brandPrimary,
           borderRadius: BorderRadius.circular(20),
           border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
         ),
@@ -359,7 +359,7 @@ class _Actions extends StatelessWidget {
           icon: const Icon(Icons.thumb_up_outlined, size: 20),
           tooltip: l.votingVoteUp,
           visualDensity: VisualDensity.compact,
-          color: AppTheme.croBlue.withValues(alpha: neprozirnost),
+          color: AppTheme.brandPrimary.withValues(alpha: neprozirnost),
         ),
         IconButton(
           onPressed: () => tap(kVoteDirectionDown),
@@ -397,7 +397,7 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: istaknuto
-            ? AppTheme.croRed.withValues(alpha: 0.12)
+            ? AppTheme.brandAccent.withValues(alpha: 0.12)
             : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(6),
       ),
@@ -405,7 +405,7 @@ class _StatusBadge extends StatelessWidget {
         tekst,
         style: theme.textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w700,
-          color: istaknuto ? AppTheme.croRed : theme.colorScheme.onSurfaceVariant,
+          color: istaknuto ? AppTheme.brandAccent : theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

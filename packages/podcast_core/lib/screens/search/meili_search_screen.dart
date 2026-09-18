@@ -268,7 +268,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
                 ? Colors.white
                 : theme.colorScheme.onSurfaceVariant,
           ),
-          selectedColor: AppTheme.croBlue,
+          selectedColor: AppTheme.brandPrimary,
           side: selected
               ? AppTheme.brandRim(theme.brightness)
               : BorderSide.none,

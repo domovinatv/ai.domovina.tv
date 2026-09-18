@@ -120,12 +120,12 @@ class _HeaderShell extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: BoxDecoration(
         color: alarm
-            ? AppTheme.croRed.withValues(alpha: 0.08)
+            ? AppTheme.brandAccent.withValues(alpha: 0.08)
             : cs.surfaceContainerHighest.withValues(alpha: 0.35),
         border: Border(
           bottom: BorderSide(
             color: alarm
-                ? AppTheme.croRed.withValues(alpha: 0.35)
+                ? AppTheme.brandAccent.withValues(alpha: 0.35)
                 : cs.outlineVariant,
           ),
         ),
@@ -331,7 +331,7 @@ class VotingHeaderVoted extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Icon(Icons.check_circle, size: 18, color: AppTheme.croBlue),
+            Icon(Icons.check_circle, size: 18, color: AppTheme.brandPrimary),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -349,7 +349,7 @@ class VotingHeaderVoted extends StatelessWidget {
               Icon(
                 glas.isUp ? Icons.thumb_up : Icons.thumb_down,
                 size: 14,
-                color: glas.isUp ? AppTheme.croBlue : cs.onSurfaceVariant,
+                color: glas.isUp ? AppTheme.brandPrimary : cs.onSurfaceVariant,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -411,7 +411,7 @@ class VotingHeaderAtRisk extends StatelessWidget {
           l.votingAtRiskTitle(niz),
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: AppTheme.croRed,
+            color: AppTheme.brandAccent,
           ),
         ),
         const SizedBox(height: 2),
@@ -466,7 +466,7 @@ class VotingHeaderBroken extends StatelessWidget {
               : l.votingBrokenTitleUnknown,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: AppTheme.croRed,
+            color: AppTheme.brandAccent,
           ),
         ),
         const SizedBox(height: 2),
@@ -479,7 +479,7 @@ class VotingHeaderBroken extends StatelessWidget {
         FilledButton(
           onPressed: onStart,
           style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.croBlue,
+            backgroundColor: AppTheme.brandPrimary,
             foregroundColor: Colors.white,
             side: AppTheme.brandRim(theme.brightness),
           ),
@@ -556,7 +556,7 @@ class VotingVerifyBar extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
               child: Row(
                 children: [
-                  Icon(Icons.badge_outlined, color: AppTheme.croRed, size: 20),
+                  Icon(Icons.badge_outlined, color: AppTheme.brandAccent, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -587,7 +587,7 @@ class VotingVerifyBar extends StatelessWidget {
                   FilledButton(
                     onPressed: onVerify,
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.croBlue,
+                      backgroundColor: AppTheme.brandPrimary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       side: AppTheme.brandRim(theme.brightness),

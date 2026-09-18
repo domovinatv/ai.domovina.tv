@@ -192,7 +192,7 @@ class ArticleIterationHeader extends StatelessWidget {
             width: 22,
             height: 22,
             decoration: BoxDecoration(
-              color: AppTheme.croBlue,
+              color: AppTheme.brandPrimary,
               borderRadius: BorderRadius.circular(4),
               border: Border.fromBorderSide(
                 AppTheme.brandRim(theme.brightness),

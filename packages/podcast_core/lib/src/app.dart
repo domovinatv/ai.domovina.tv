@@ -21,6 +21,8 @@ import '../services/update_notifier.dart';
 import '../services/watch_progress_service.dart';
 import '../services/episode_language.dart';
 import '../theme/app_theme.dart';
+import '../brand/app_brand.dart';
+import '../brand/brand_config.dart';
 import '../theme/typography.dart';
 import 'log.dart';
 
@@ -30,10 +32,12 @@ import 'log.dart';
 const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-/// Pokreće aplikaciju: inicijalizacija servisa u obveznom redoslijedu pa
-/// `runApp`. Ljuska (`lib/main.dart`) ne radi ništa osim poziva ove funkcije;
-/// tako će DOMOVINA i Podcasterium dijeliti isti core (docs/podcasterium_*).
-Future<void> runPodcastApp() async {
+/// Pokreće aplikaciju za zadani [brand]: inicijalizacija servisa u obveznom
+/// redoslijedu pa `runApp`. Ljuska (`lib/main.dart`) ne radi ništa osim
+/// poziva ove funkcije; tako DOMOVINA i Podcasterium dijele isti core.
+Future<void> runPodcastApp(BrandConfig brand) async {
+  // Prije prvog log() poziva — prefiks loga dolazi iz branda.
+  AppBrand.init(brand);
   log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -213,7 +217,7 @@ class _PodcastAppState extends State<PodcastApp> {
     if (isTv) {
       return MaterialApp.router(
         scaffoldMessengerKey: _messengerKey,
-        title: 'DOMOVINA.ai',
+        title: AppBrand.config.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.tv(),
         darkTheme: AppTheme.tv(),
@@ -232,7 +236,7 @@ class _PodcastAppState extends State<PodcastApp> {
       ),
       builder: (context, _) => MaterialApp.router(
         scaffoldMessengerKey: _messengerKey,
-        title: 'DOMOVINA.ai',
+        title: AppBrand.config.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),

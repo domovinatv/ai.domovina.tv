@@ -78,8 +78,8 @@ class PersonMonogram extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.croBlue,
-            AppTheme.croBlue.withValues(alpha: 0.75),
+            AppTheme.brandPrimary,
+            AppTheme.brandPrimary.withValues(alpha: 0.75),
           ],
         ),
         borderRadius: BorderRadius.circular(radius),

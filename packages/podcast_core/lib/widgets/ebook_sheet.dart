@@ -146,7 +146,7 @@ class _BookBadge extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         // Brand-fill je uvijek croBlue + rim, nikad cs.primary (vidi CLAUDE.md).
-        color: AppTheme.croBlue,
+        color: AppTheme.brandPrimary,
         borderRadius: BorderRadius.circular(6),
         border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
       ),

@@ -311,24 +311,24 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     final badge = _lastUsed == p
         ? l.authBadgeLastUsed
         : (primary ? l.authBadgeRecommended : null);
-    final badgeColor = _lastUsed == p ? AppTheme.croBlue : AppTheme.croRed;
+    final badgeColor = _lastUsed == p ? AppTheme.brandPrimary : AppTheme.brandAccent;
 
     final (Widget icon, Color iconBg, String label, String? sub) = switch (p) {
       AuthProvider.passkey => (
           Icon(Icons.fingerprint,
-              color: primary ? Colors.white : AppTheme.croBlue, size: 22),
+              color: primary ? Colors.white : AppTheme.brandPrimary, size: 22),
           primary
               ? Colors.white.withValues(alpha: 0.16)
-              : AppTheme.croBlue.withValues(alpha: 0.10),
+              : AppTheme.brandPrimary.withValues(alpha: 0.10),
           l.authSignInWithPasskey,
           l.authPasskeyTileSub,
         ),
       AuthProvider.certilia => (
           Icon(Icons.badge_outlined,
-              color: primary ? Colors.white : AppTheme.croRed, size: 22),
+              color: primary ? Colors.white : AppTheme.brandAccent, size: 22),
           primary
               ? Colors.white.withValues(alpha: 0.16)
-              : AppTheme.croRed.withValues(alpha: 0.10),
+              : AppTheme.brandAccent.withValues(alpha: 0.10),
           l.authSignInWithEid,
           l.authProviderCertilia,
         ),
@@ -352,10 +352,10 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
         ),
       AuthProvider.email => (
           Icon(Icons.alternate_email,
-              color: primary ? Colors.white : AppTheme.croBlue, size: 21),
+              color: primary ? Colors.white : AppTheme.brandPrimary, size: 21),
           primary
               ? Colors.white.withValues(alpha: 0.16)
-              : AppTheme.croBlue.withValues(alpha: 0.10),
+              : AppTheme.brandPrimary.withValues(alpha: 0.10),
           l.authEmailMagicLink,
           l.authEmailTileSub,
         ),

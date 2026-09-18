@@ -698,7 +698,7 @@ class _MentionOnlyNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.croBlue.withValues(alpha: 0.08),
+        color: AppTheme.brandPrimary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
         border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
       ),
@@ -736,7 +736,7 @@ class _Avatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppTheme.croBlue,
+        color: AppTheme.brandPrimary,
         shape: BoxShape.circle,
         border: Border.fromBorderSide(
           AppTheme.brandRim(Theme.of(context).brightness),
@@ -786,7 +786,7 @@ class _StatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.croBlue.withValues(alpha: 0.10),
+        color: AppTheme.brandPrimary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
         border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
       ),
@@ -993,7 +993,7 @@ class _TimelineSection extends StatelessWidget {
                           color: m.count == 0
                               ? theme.colorScheme.onSurfaceVariant
                                   .withValues(alpha: 0.14)
-                              : AppTheme.croBlue.withValues(alpha: 0.72),
+                              : AppTheme.brandPrimary.withValues(alpha: 0.72),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(2),
                           ),

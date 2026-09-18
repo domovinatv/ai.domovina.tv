@@ -417,7 +417,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
       required CatalogFilter value,
       String? identifier}) {
     final selected = _effectiveFilter == value;
-    // Brand-fill je navy (AppTheme.croBlue) + brandRim — NE cs.primary, koji
+    // Brand-fill je navy (AppTheme.brandPrimary) + brandRim — NE cs.primary, koji
     // M3 dark shema izblijedi.
     final chip = ChoiceChip(
       label: Text(label),
@@ -426,7 +426,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
       labelStyle: theme.textTheme.labelMedium?.copyWith(
         color: selected ? Colors.white : theme.colorScheme.onSurfaceVariant,
       ),
-      selectedColor: AppTheme.croBlue,
+      selectedColor: AppTheme.brandPrimary,
       side: selected ? AppTheme.brandRim(theme.brightness) : BorderSide.none,
       showCheckmark: false,
       visualDensity: VisualDensity.compact,

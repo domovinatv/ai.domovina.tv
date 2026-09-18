@@ -268,7 +268,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               IconButton(
                 tooltip: l.mediaRemoveFavorite,
                 icon: const Icon(Icons.favorite),
-                color: AppTheme.croRed,
+                color: AppTheme.brandAccent,
                 onPressed: () => _remove(item),
               ),
             ],

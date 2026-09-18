@@ -44,7 +44,7 @@ class _AnonymousChip extends StatelessWidget {
     // izgleda isprano. Fiksna zastavna navy + svjetliji rub da se odvoji od
     // tamne pozadine; u light temi rub se ne crta (navy na cream-u već čita).
     return Material(
-      color: AppTheme.croBlue,
+      color: AppTheme.brandPrimary,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(22),
@@ -210,7 +210,7 @@ class _SignedInChip extends StatelessWidget {
               ),
               child: CircleAvatar(
                 radius: 14,
-                backgroundColor: AppTheme.croBlue,
+                backgroundColor: AppTheme.brandPrimary,
                 child: Text(
                   initial,
                   style: const TextStyle(

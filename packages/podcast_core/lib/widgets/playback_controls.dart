@@ -175,7 +175,7 @@ class MuteToggleButton extends StatelessWidget {
           tooltip: muted ? l.mediaBoostVolume : l.mediaMute,
           style: highlight
               ? IconButton.styleFrom(
-                  backgroundColor: AppTheme.croBlue,
+                  backgroundColor: AppTheme.brandPrimary,
                   foregroundColor: Colors.white,
                   side: AppTheme.brandRim(theme.brightness),
                 )
@@ -229,7 +229,7 @@ class UnmuteOverlay extends StatelessWidget {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: AppTheme.croBlue,
+                      color: AppTheme.brandPrimary,
                       shape: BoxShape.circle,
                       border: Border.fromBorderSide(
                         AppTheme.brandRim(theme.brightness),

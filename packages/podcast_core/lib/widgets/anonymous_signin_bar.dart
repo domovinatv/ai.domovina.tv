@@ -93,7 +93,7 @@ class _Bar extends StatelessWidget {
                     onPressed: () =>
                         showAuthSheet(context, origin: AuthSheetOrigin.guest),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.croBlue,
+                      backgroundColor: AppTheme.brandPrimary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       side: AppTheme.brandRim(theme.brightness),

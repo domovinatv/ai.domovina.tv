@@ -1,6 +1,6 @@
 /// Supporter identity reward — a small "PLUS" chip shown for DOMOVINA Plus
 /// subscribers. Brand navy fill + brandRim per theme conventions (navy FILL =
-/// AppTheme.croBlue, never cs.primary). Additive only — never gates content.
+/// AppTheme.brandPrimary, never cs.primary). Additive only — never gates content.
 library;
 
 import 'package:flutter/material.dart';
@@ -17,7 +17,7 @@ class PlusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppTheme.croBlue,
+        color: AppTheme.brandPrimary,
         borderRadius: BorderRadius.circular(999),
         border: Border.fromBorderSide(AppTheme.brandRim(Theme.of(context).brightness)),
       ),

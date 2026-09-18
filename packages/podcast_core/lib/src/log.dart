@@ -1,3 +1,5 @@
+import '../brand/app_brand.dart';
+
 /// Verzija aplikacije — prikazuje se u footeru naslovnice.
 ///
 /// Konstantu mehanički bumpa `scripts/deploy.sh` (sed na ovu datoteku); ne
@@ -8,5 +10,6 @@ const String appVersion = '2.0.153';
 
 /// Console logger s verzijom — koristi za debug u release web buildovima
 /// gdje su stack traceovi minificirani. Vidi CLAUDE.md, odjeljak Logging.
-// ignore: avoid_print
-void log(String msg) => print('[DOMOVINA v$appVersion] $msg');
+void log(String msg) =>
+    // ignore: avoid_print
+    print('[${AppBrand.config.logPrefix} v$appVersion] $msg');

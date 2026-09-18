@@ -19,7 +19,7 @@ class FounderBookingBubble extends StatelessWidget {
     return FloatingActionButton(
       heroTag: 'founder-booking',
       onPressed: () => showFounderBookingSheet(context),
-      backgroundColor: AppTheme.croBlue,
+      backgroundColor: AppTheme.brandPrimary,
       foregroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
@@ -429,7 +429,7 @@ class _Header extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppTheme.croBlue,
+            color: AppTheme.brandPrimary,
             shape: BoxShape.circle,
             border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
           ),
@@ -498,7 +498,7 @@ class _DayChip extends StatelessWidget {
     final theme = Theme.of(context);
     final d = DateTime.parse(dayKey);
     final bg = selected
-        ? AppTheme.croBlue
+        ? AppTheme.brandPrimary
         : theme.colorScheme.surfaceContainerLow;
     final fg = selected ? Colors.white : theme.colorScheme.onSurface;
     return InkWell(
@@ -561,7 +561,7 @@ class _TimeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: selected
-              ? AppTheme.croBlue
+              ? AppTheme.brandPrimary
               : theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(

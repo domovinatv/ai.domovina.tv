@@ -165,7 +165,7 @@ class EpisodeRailCard extends StatelessWidget {
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
         widthFactor: progress!.clamp(0.0, 1.0),
-        child: Container(color: AppTheme.croRed),
+        child: Container(color: AppTheme.brandAccent),
       ),
     );
   }

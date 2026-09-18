@@ -262,7 +262,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppTheme.croBlue,
+              color: AppTheme.brandPrimary,
               borderRadius: BorderRadius.circular(999),
               border: Border.fromBorderSide(
                   AppTheme.brandRim(Theme.of(context).brightness)),
@@ -388,7 +388,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: highlight ? AppTheme.croBlue : cs.surfaceContainerHighest,
+        color: highlight ? AppTheme.brandPrimary : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -441,7 +441,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: highlight ? AppTheme.croBlue : cs.surfaceContainerHighest,
+        color: highlight ? AppTheme.brandPrimary : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -478,7 +478,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppTheme.croRed,
+                                color: AppTheme.brandAccent,
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(p.note!,

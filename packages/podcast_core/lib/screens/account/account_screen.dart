@@ -389,7 +389,7 @@ class _AccountScreenState extends State<AccountScreen> {
         child: ListTile(
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-          leading: Icon(Icons.how_to_vote_outlined, color: AppTheme.croRed),
+          leading: Icon(Icons.how_to_vote_outlined, color: AppTheme.brandAccent),
           title: Text(l.votingAccountVerifyTitle),
           subtitle: Text(
             l.votingAccountVerifyBody,
@@ -430,7 +430,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
             leading: Icon(
               niz > 0 ? Icons.local_fire_department : Icons.how_to_vote_outlined,
-              color: ugrozen ? AppTheme.croRed : cs.primary,
+              color: ugrozen ? AppTheme.brandAccent : cs.primary,
             ),
             title: Text(niz > 0 ? l.votingStreakDays(niz) : l.votingStreakNone),
             subtitle: Text(
@@ -572,7 +572,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               child: CircleAvatar(
                 radius: 26,
-                backgroundColor: AppTheme.croBlue,
+                backgroundColor: AppTheme.brandPrimary,
                 child: Text(
                   initial,
                   style: const TextStyle(

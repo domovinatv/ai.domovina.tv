@@ -141,7 +141,7 @@ class MagisteriumSection extends StatelessWidget {
                         width: 20,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: AppTheme.croBlue,
+                          color: AppTheme.brandPrimary,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.fromBorderSide(
                             AppTheme.brandRim(theme.brightness),

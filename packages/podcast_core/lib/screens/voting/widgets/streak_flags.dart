@@ -27,7 +27,7 @@ class StreakBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
-    final boja = ugrozen ? AppTheme.croRed : theme.colorScheme.onSurface;
+    final boja = ugrozen ? AppTheme.brandAccent : theme.colorScheme.onSurface;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

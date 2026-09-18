@@ -7,7 +7,7 @@ import 'app_theme.dart';
 ///
 /// flutter_markdown default je `Colors.blue.shade100` (baby-blue) fill, na
 /// kojem je tekst u dark temi (bijeli bodyMedium) nečitljiv. Navy brand-fill
-/// pravilo: `AppTheme.croBlue` + `brandRim()`, nikad `cs.primary`.
+/// pravilo: `AppTheme.brandPrimary` + `brandRim()`, nikad `cs.primary`.
 extension BrandBlockquote on MarkdownStyleSheet {
   MarkdownStyleSheet withBrandBlockquote(ThemeData theme) => copyWith(
         blockquote: (blockquote ?? theme.textTheme.bodyMedium)?.copyWith(
@@ -15,7 +15,7 @@ extension BrandBlockquote on MarkdownStyleSheet {
           height: 1.55,
         ),
         blockquoteDecoration: BoxDecoration(
-          color: AppTheme.croBlue,
+          color: AppTheme.brandPrimary,
           borderRadius: BorderRadius.circular(8),
           border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
         ),

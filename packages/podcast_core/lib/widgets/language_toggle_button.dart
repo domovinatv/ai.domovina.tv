@@ -87,7 +87,7 @@ class _Segment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bg = isSelected ? AppTheme.croBlue : Colors.transparent;
+    final bg = isSelected ? AppTheme.brandPrimary : Colors.transparent;
     final fg =
         isSelected ? Colors.white : theme.colorScheme.onSurface.withAlpha(160);
 

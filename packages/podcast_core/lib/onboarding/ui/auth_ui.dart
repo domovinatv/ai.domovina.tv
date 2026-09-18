@@ -43,7 +43,7 @@ class DomovinaWordmark extends StatelessWidget {
         style: base,
         children: [
           const TextSpan(text: 'DOMOVINA'),
-          TextSpan(text: '.ai', style: TextStyle(color: AppTheme.croRed)),
+          TextSpan(text: '.ai', style: TextStyle(color: AppTheme.brandAccent)),
         ],
       ),
     );
@@ -65,9 +65,9 @@ class TricolorAccent extends StatelessWidget {
         height: height,
         child: Row(
           children: [
-            Expanded(child: ColoredBox(color: AppTheme.croRed)),
+            Expanded(child: ColoredBox(color: AppTheme.brandAccent)),
             const Expanded(child: ColoredBox(color: Colors.white)),
-            Expanded(child: ColoredBox(color: AppTheme.croBlue)),
+            Expanded(child: ColoredBox(color: AppTheme.brandPrimary)),
           ],
         ),
       ),
@@ -221,7 +221,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
     final hover = (_hover || _focused) && interactive;
 
     final bg = primary
-        ? AppTheme.croBlue
+        ? AppTheme.brandPrimary
         : cs.surfaceContainerLowest;
     final fg = primary ? Colors.white : cs.onSurface;
     final subFg = primary
@@ -254,7 +254,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
           boxShadow: primary
               ? [
                   BoxShadow(
-                    color: AppTheme.croBlue.withValues(alpha: hover ? 0.34 : 0.24),
+                    color: AppTheme.brandPrimary.withValues(alpha: hover ? 0.34 : 0.24),
                     blurRadius: hover ? 22 : 16,
                     offset: const Offset(0, 6),
                   ),
@@ -330,7 +330,7 @@ class _AuthProviderTileState extends State<AuthProviderTile> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: widget.badgeColor ?? AppTheme.croRed,
+                        color: widget.badgeColor ?? AppTheme.brandAccent,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(

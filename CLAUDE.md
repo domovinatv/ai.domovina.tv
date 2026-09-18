@@ -864,11 +864,14 @@ go_router se dogodila u međuvremenu, a ova sekcija nije bila ažurirana.)*
 ### Croatian flag theme
 
 Colors from the logo SVG:
-- Red: `#FF0000` (`_croRed`)
+- Red: `#FF0000` — `AppTheme.brandAccent` (tertiary)
 - White: `#FFFFFF`
-- Navy blue: `#002F6C` (`_croBlue`)
+- Navy blue: `#002F6C` — `AppTheme.brandPrimary` (M3 seed)
 
-Theme seed: `Color(0xFF002F6C)` (Croatian navy).
+Od 18. 9. 2026. obje boje čitaju `AppBrand.config` (`seed` / `accent` u
+`packages/podcast_core/lib/brand/domovina_brand.dart`); u kodu NEMA hex
+literala brenda. Komentari po kodu još spominju stara imena `croBlue` /
+`croRed` — isto značenje.
 
 ### Social sharing
 

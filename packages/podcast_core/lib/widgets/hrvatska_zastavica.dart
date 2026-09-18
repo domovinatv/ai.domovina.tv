@@ -8,7 +8,7 @@
 ///   (CLAUDE.md). `CustomPaint` je jedina putanja bez zajedničke točke i bez
 ///   web zamke — usput je i rezolucijski neovisan.
 ///
-/// Boje su brand tokeni (`AppTheme.croRed` / `AppTheme.croBlue`) — isti izvor
+/// Boje su brand tokeni (`AppTheme.brandAccent` / `AppTheme.brandPrimary`) — isti izvor
 /// kao logo, pa se zastavica i brand ne raziđu.
 library;
 
@@ -85,9 +85,9 @@ class _ZastavicaPainter extends CustomPainter {
     canvas.save();
     canvas.clipRRect(okvir);
 
-    final crvena = ispunjena ? AppTheme.croRed : prigusena;
+    final crvena = ispunjena ? AppTheme.brandAccent : prigusena;
     final bijela = ispunjena ? Colors.white : prigusena.withValues(alpha: 0.12);
-    final plava = ispunjena ? AppTheme.croBlue : prigusena;
+    final plava = ispunjena ? AppTheme.brandPrimary : prigusena;
 
     final p = Paint()..style = PaintingStyle.fill;
     canvas.drawRect(Rect.fromLTWH(0, 0, w, traka), p..color = crvena);
@@ -108,7 +108,7 @@ class _ZastavicaPainter extends CustomPainter {
       p..color = ispunjena ? Colors.white : prigusena.withValues(alpha: 0.20),
     );
 
-    p.color = ispunjena ? AppTheme.croRed : prigusena.withValues(alpha: 0.55);
+    p.color = ispunjena ? AppTheme.brandAccent : prigusena.withValues(alpha: 0.55);
     for (var red = 0; red < 5; red++) {
       for (var stupac = 0; stupac < 5; stupac++) {
         if ((red + stupac).isEven) continue;

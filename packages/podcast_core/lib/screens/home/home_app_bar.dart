@@ -196,7 +196,7 @@ class _VotingStreakChipState extends State<VotingStreakChip> {
     final zastavice = _service.state?.flags ?? 0;
     final ugrozen = display?.streakAtRisk ?? false;
     final neiskoristen = _service.hasUnusedVote;
-    final boja = ugrozen ? AppTheme.croRed : theme.colorScheme.onSurface;
+    final boja = ugrozen ? AppTheme.brandAccent : theme.colorScheme.onSurface;
 
     return Tooltip(
       message: neiskoristen ? l.votingUnusedVote : l.votingHomeChipTooltip,
@@ -260,7 +260,7 @@ class _VotingStreakChipState extends State<VotingStreakChip> {
                         width: 9,
                         height: 9,
                         decoration: BoxDecoration(
-                          color: AppTheme.croRed,
+                          color: AppTheme.brandAccent,
                           shape: BoxShape.circle,
                           // Prsten u boji podloge — točka mora čitati i kad
                           // padne preko obruba chipa.
@@ -336,7 +336,7 @@ class _VotingDiscoverChip extends StatelessWidget {
                     Icon(
                       Icons.how_to_vote_outlined,
                       size: 16,
-                      color: AppTheme.croRed,
+                      color: AppTheme.brandAccent,
                     ),
                     if (sirok) ...[
                       const SizedBox(width: 5),

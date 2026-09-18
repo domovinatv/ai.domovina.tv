@@ -1,9 +1,12 @@
-/// Centralna definicija svih CDN URL-ova za cdn.domovina.ai.
+import '../brand/app_brand.dart';
+
+/// Centralna definicija svih CDN URL-ova (host iz branda, npr. cdn.domovina.ai).
 ///
 /// Svi asseti (JSON podaci, slike, video) loadaju se u runtimeu iz CDN-a
 /// na temelju YouTube ID-a epizode — bez lokalnih bundlanih fajlova.
 class CdnConfig {
-  static const String base = 'https://cdn.domovina.ai';
+  /// Host CDN-a aktivnog brenda (`AppBrand.config.endpoints.cdn`).
+  static String get base => AppBrand.config.endpoints.cdn;
 
   // Channel listing files se mijenjaju kako stižu novi videi, ali backend
   // uploader trenutno postavlja Cache-Control: immutable na sve fajlove.
