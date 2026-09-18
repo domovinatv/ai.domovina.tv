@@ -44,6 +44,11 @@ Posljedice za dnevni rad:
   `scripts/deploy.sh` ga bumpa ondje.
 - Dokumenti i dalje citiraju `lib/…` bez prefiksa; `verify-doc-refs.sh`
   to prihvaća kad datoteka postoji u `packages/podcast_core/`.
+- **Tripwire**: `scripts/build-podcasterium-shell.sh` gradi Podcasterium
+  ljusku (sestrinski repo `../../podcasterium/podcasterium-app`) nad zadanim
+  `packages/podcast_core`; nightly ga vrti nakon testova kao tvrda vrata
+  (preskače samo ako ljuske nema na disku). Promjena jezgre koja lomi
+  white-label pada ovdje, prije taga.
 
 ## Build & Deploy
 

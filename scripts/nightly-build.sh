@@ -313,6 +313,19 @@ if [[ ${#BASE_TESTS[@]} -gt 0 ]]; then
 fi
 cd "$WT"
 
+# ── 4b. tripwire: Podcasterium ljuska nad ovim coreom ───────────────────────
+# Druga ljuska (sestrinski repo) mora se graditi nad PR-ovim podcast_core;
+# ako je nema na disku, korak se preskače (izlaz 2), inače je tvrda vrata.
+PODCASTERIUM_RC=0
+"$ROOT/scripts/build-podcasterium-shell.sh" "$WT/packages/podcast_core" || PODCASTERIUM_RC=$?
+if [[ $PODCASTERIUM_RC -eq 2 ]]; then
+  REPORT+=("➖ Podcasterium ljuska: nije na disku, tripwire preskočen")
+elif [[ $PODCASTERIUM_RC -ne 0 ]]; then
+  finish_fail "Podcasterium ljuska (white-label tripwire)" $PODCASTERIUM_RC
+else
+  REPORT+=("✅ Podcasterium ljuska se gradi nad ovim coreom")
+fi
+
 # ── 5. build broj ────────────────────────────────────────────────────────────
 BUILD_NAME="$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)"
 PUB_BUILD="$(grep '^version:' pubspec.yaml | sed 's/.*+//')"
