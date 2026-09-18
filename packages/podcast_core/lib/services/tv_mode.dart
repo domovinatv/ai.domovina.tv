@@ -17,7 +17,8 @@ import '../src/log.dart' show log;
 class TvMode {
   TvMode._();
 
-  static const _channel = MethodChannel('ai.domovina/tv_mode');
+  /// Brand-neutralno ime kanala — mora odgovarati `MainActivity.kt` ljuske.
+  static const _channel = MethodChannel('app/tv_mode');
   static const _forceTv =
       bool.fromEnvironment('FORCE_TV', defaultValue: false);
 

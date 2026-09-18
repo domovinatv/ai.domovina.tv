@@ -15,7 +15,7 @@ main()                                            lib/main.dart
   └─ await TvMode.init()                          lib/services/tv_mode.dart
        ├─ if (FORCE_TV dart-define) → isTv=true
        ├─ if (kIsWeb || !Android)    → isTv=false
-       └─ else MethodChannel("ai.domovina/tv_mode").invokeMethod("isLeanback")
+       └─ else MethodChannel("app/tv_mode").invokeMethod("isLeanback")
             └─ MainActivity.kt
                  packageManager.hasSystemFeature(FEATURE_LEANBACK) → true/false
 ```

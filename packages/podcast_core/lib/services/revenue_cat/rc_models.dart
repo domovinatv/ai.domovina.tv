@@ -6,10 +6,13 @@
 /// into these; the paywall and the rest of the app only ever see these types.
 library;
 
+import '../../brand/app_brand.dart';
+
 /// The single entitlement the whole app gates on. Must match the RevenueCat
 /// entitlement `lookup_key` and the value the webhook writes into
 /// `domovina_ai.subscriptions.entitlement`. Never gate on a product id.
-const String kDomovinaPlusEntitlement = 'domovina_plus';
+/// Read from the brand at runtime (`domovina_plus` for DOMOVINA.ai).
+String get kDomovinaPlusEntitlement => AppBrand.config.entitlement;
 
 /// The RevenueCat offering we render packages from.
 const String kDefaultOfferingId = 'default';

@@ -10,6 +10,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 import '../src/app.dart' show rootScaffoldMessengerKey;
 import '../onboarding/ui/auth_ui.dart';
@@ -26,6 +27,11 @@ import 'watch_progress_service.dart';
 /// account-u. Stavi se prije OAuth redirecta, čita se nakon signedIn evenata.
 /// Brišemo postavljanjem na prazan string (vidi local_prefs API).
 const String _anonPendingMigrationKey = 'auth_anon_pending_migration_id';
+
+/// Native povratni URL za OAuth i magic link — custom shema brenda
+/// (`ai.domovina://auth/callback` za DOMOVINA.ai).
+String get _nativeAuthCallback =>
+    '${AppBrand.config.urlScheme}://auth/callback';
 
 /// localStorage ključ — zadnja uspješno korištena metoda prijave
 /// (AuthProvider.name). Auth sheet ju ističe "ZADNJI PUT" badgeom da
@@ -335,7 +341,7 @@ class AuthService extends ChangeNotifier {
             oauth,
             redirectTo: kIsWeb
                 ? '${Uri.base.origin}/auth/callback'
-                : 'ai.domovina://auth/callback',
+                : _nativeAuthCallback,
           );
           // Web: slijedi full-page redirect (session listener iz init()
           // handla state + migraciju po povratku). Native: otvoren je
@@ -498,7 +504,7 @@ class AuthService extends ChangeNotifier {
       await client.auth.signInWithOtp(
         email: email,
         shouldCreateUser: true,
-        emailRedirectTo: kIsWeb ? null : 'ai.domovina://auth/callback',
+        emailRedirectTo: kIsWeb ? null : _nativeAuthCallback,
       );
       return AuthFlowResult(AuthFlowStatus.emailSent, email);
     } on sb.AuthException catch (e) {

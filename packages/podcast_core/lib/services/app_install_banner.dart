@@ -1,17 +1,16 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import '../brand/app_brand.dart';
 import '../l10n/app_localizations.dart';
 import '../src/log.dart' show log;
 import 'local_prefs.dart';
 import 'mobile_web_detect.dart';
 import 'open_url.dart';
 
-/// App Store / Google Play poveznice na native aplikaciju.
-const String iosAppStoreUrl =
-    'https://apps.apple.com/us/app/domovina-ai/id6781716801';
-const String androidPlayStoreUrl =
-    'https://play.google.com/store/apps/details?id=ai.domovina';
+/// App Store / Google Play poveznice na native aplikaciju aktivnog brenda.
+String get iosAppStoreUrl => AppBrand.config.iosAppStoreUrl;
+String get androidPlayStoreUrl => AppBrand.config.androidPlayStoreUrl;
 
 /// localStorage flag — pamti da je banner već pokazan pa ne gnjavimo korisnika
 /// pri svakom učitavanju.
