@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../models/channel_index.dart';
 import '../../models/person_hub.dart';
 import '../../services/channel_cache.dart';

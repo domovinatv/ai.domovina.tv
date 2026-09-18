@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
 import '../../services/entitlement_service.dart';

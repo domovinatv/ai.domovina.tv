@@ -9,7 +9,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:purchases_flutter/purchases_flutter.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../locale_service.dart';
 import '../tv_mode.dart';
 import 'rc_models.dart';

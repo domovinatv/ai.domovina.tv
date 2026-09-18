@@ -24,7 +24,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import '../models/vote_candidate.dart';
 import '../models/vote_round.dart';
 import '../models/voting_state.dart';

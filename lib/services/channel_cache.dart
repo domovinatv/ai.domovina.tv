@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
 import 'data_service.dart';

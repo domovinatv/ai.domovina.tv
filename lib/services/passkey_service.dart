@@ -22,7 +22,7 @@ import 'package:passkeys_platform_interface/passkeys_platform_interface.dart';
 import 'package:passkeys_platform_interface/types/types.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:url_launcher/url_launcher.dart';
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'locale_service.dart';
 
 /// Greška mapirana na hrvatski tekst + zastavica je li login pao zato što na

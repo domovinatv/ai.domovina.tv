@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 
 class InviteScreen extends StatefulWidget {
   final String? token;

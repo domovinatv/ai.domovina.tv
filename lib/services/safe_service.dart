@@ -9,7 +9,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import '../models/episode_safe.dart';
 import 'locale_service.dart';
 

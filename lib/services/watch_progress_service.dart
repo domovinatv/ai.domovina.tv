@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart'
     show ChangeNotifier, TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'local_prefs.dart';
 
 const _kKey = 'watch_progress_v1';

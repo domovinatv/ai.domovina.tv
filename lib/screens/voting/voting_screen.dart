@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../models/vote_candidate.dart';
 import '../../models/vote_round.dart';
 import '../../services/auth_service.dart';

@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
-import '../../../../main.dart' show log;
+import '../../../../src/log.dart' show log;
 import '../../../../theme/app_theme.dart';
 import '../models/pinka_public_contribution.dart';
 import '../models/pinka_slot.dart';

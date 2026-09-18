@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 
 /// Klijent za Cal.com booking ("15 min DOMOVINA.ai" / stepanic/15min).
 ///

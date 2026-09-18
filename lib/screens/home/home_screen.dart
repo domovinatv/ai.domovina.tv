@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../models/episode_status.dart';
 import '../../models/channel_index.dart';
 import '../../services/app_install_banner.dart';

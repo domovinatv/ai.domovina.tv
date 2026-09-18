@@ -17,7 +17,7 @@ library;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'revenue_cat_service.dart';
 
 class EntitlementService {

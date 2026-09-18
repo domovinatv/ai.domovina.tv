@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 
 /// Klijent za Meilisearch keyword (egzaktna riječ + typo-tolerant) pretragu
 /// podcast epizoda. KOMPLEMENTARNO semantičkoj MCP pretrazi (vidi

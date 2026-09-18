@@ -8,7 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import 'rc_models.dart';
 
 class RevenueCatService {

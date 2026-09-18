@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/services.dart';
 
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 
 /// Detects whether the app is running on an Android TV (Leanback) device.
 ///

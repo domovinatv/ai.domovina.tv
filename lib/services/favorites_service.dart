@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart'
     show ChangeNotifier, kIsWeb, visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'local_prefs.dart';
 
 /// v1 = gola JSON lista episode ID-eva (bez vremena). Čita se samo pri migraciji.

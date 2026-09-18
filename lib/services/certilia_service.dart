@@ -9,7 +9,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_certilia/flutter_certilia.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'locale_service.dart';
 
 /// URL certilia-server proxyja. Override preko --dart-define (deploy.sh embeda).

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../main.dart' show appVersion;
+import '../../src/log.dart' show appVersion;
 import '../../models/channel_index.dart';
 import '../../services/update_notifier.dart';
 import '../../l10n/app_localizations.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'local_prefs.dart';
 import 'mobile_web_detect.dart';
 import 'open_url.dart';

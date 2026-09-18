@@ -11,7 +11,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show rootScaffoldMessengerKey;
+import '../../src/app.dart' show rootScaffoldMessengerKey;
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';

@@ -12,7 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../models/channel_claim.dart';
 import '../../models/channel_detail.dart';
 import '../../models/owner_wallet.dart';

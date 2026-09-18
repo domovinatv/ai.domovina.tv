@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import '../models/person_hub.dart';
 
 /// Klijent za javni person-hub endpoint (domovina-rag).

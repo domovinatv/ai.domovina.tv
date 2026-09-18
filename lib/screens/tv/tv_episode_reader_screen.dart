@@ -7,7 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../models/magisterium_data.dart';
 import '../../models/podcast_article.dart';
 import '../../services/cdn_config.dart';

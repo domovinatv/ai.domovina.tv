@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:url_launcher/url_launcher.dart';
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'auth_service.dart';
 import 'locale_service.dart';
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../models/channel_detail.dart';
 import '../../services/channel_cache.dart';
 import '../../widgets/cached_thumbnail.dart';

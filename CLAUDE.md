@@ -167,7 +167,7 @@ postojali SharedPreferences/flutter_svg crashevi na minificiranom buildu.
 
 Semantics ipak NIJE uključen svima uvijek, zbog poznatih **bihevioralnih**
 web bugova (flutter/flutter#163576 P1 — click-through kroz preklapajuće
-widgete). Trenutni mehanizam u `main.dart`:
+widgete). Trenutni mehanizam u `lib/src/app.dart` (`runPodcastApp`):
 
 - `?a11y=1` query param → `ensureSemantics()` odmah (za Playwright/Cypress
   e2e i ručnu inspekciju a11y DOM-a).
@@ -588,10 +588,10 @@ Mjerenja, odbačene alternative i otvoreni dug (backfill, EN izdanje, `epubcheck
 
 ## Logging
 
-`main.dart` exports a `log()` function that prefixes messages with `[DOMOVINA v{version}]`. Use it throughout the app for console debugging:
+`lib/src/log.dart` exports a `log()` function that prefixes messages with `[DOMOVINA v{version}]` (and the `appVersion` constant that `scripts/deploy.sh` bumps). Use it throughout the app for console debugging:
 
 ```dart
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 
 log('MyWidget.build()');
 log('fetch complete: ${items.length} items');

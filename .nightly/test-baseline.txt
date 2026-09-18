@@ -2,7 +2,7 @@
 # trajno blokirali svaki upload. Provjereno 2026-08-13 na 52629e7 (226/228).
 # Nightly ih SVEJEDNO vrti i javi u Telegram ako prorade → tada ih makni odavde.
 #
-# widget_test.dart      — smoke test gradi DominovinaApp; puca na HttpClient u
+# widget_test.dart      — smoke test gradi PodcastApp; puca na HttpClient u
 #                         TestWidgetsFlutterBinding (mreža vraća 400).
 # home_feed_test.dart   — pickFeatured očekuje hiQualityRecent, dobiva hiQuality.
 test/widget_test.dart

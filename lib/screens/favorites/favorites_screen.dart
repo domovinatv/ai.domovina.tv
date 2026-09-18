@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show log;
+import '../../src/log.dart' show log;
 import '../../services/cdn_config.dart';
 import '../../services/channel_cache.dart';
 import '../../services/favorites_service.dart';

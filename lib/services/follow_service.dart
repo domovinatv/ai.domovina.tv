@@ -23,7 +23,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../main.dart' show log;
+import '../src/log.dart' show log;
 import 'local_prefs.dart';
 
 /// Popis praćenih entiteta (JSON lista ključeva).
