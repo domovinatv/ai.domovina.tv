@@ -1,3 +1,32 @@
 name = "domovina-ai"
 pages_build_output_dir = "build/web"
 compatibility_date = "2026-01-01"
+
+# --- Brend workera (web/_worker.js) — env bindinzi po Pages projektu ----------
+# Jedan _worker.js služi više brendova; svaki Pages projekt postavlja svoje
+# vrijednosti u Cloudflare dashboardu (Settings → Environment variables) ili
+# kroz `wrangler pages secret`/`[vars]` u SVOM wrangler.toml-u. Ovdje NIŠTA nije
+# postavljeno: bez bindinga vrijede defaulti u nastavku = današnji DOMOVINA.ai,
+# pa je izlaz workera bajt-identičan. Popis održavaj usklađen s brandFromEnv()
+# u web/_worker.js; opis ruta koje svaki binding dira: docs/worker-env-bindings.md.
+#
+# [vars]
+# SITE             = "https://domovina.ai"
+# CDN              = "https://cdn.domovina.ai"
+# PERSON_API       = "https://mcp.domovina.ai/api/person"
+# PERSONS_API      = "https://mcp.domovina.ai/api/persons"
+# APP_NAME         = "DOMOVINA.ai"
+# APPLE_TEAM_ID    = "6SCK58757K"
+# IOS_BUNDLE_ID    = "ai.domovina"
+# ANDROID_PACKAGE  = "ai.domovina"
+# # zarezom odvojeni SHA-256 otisci (Play App Signing key, upload key)
+# ANDROID_SHA256   = "15:C6:2D:19:7B:A1:37:66:3D:07:43:99:B0:DF:C0:66:FA:9B:18:0E:3E:A7:43:34:CD:C4:7A:77:13:16:80:A8,F6:2C:30:D2:83:FB:BF:E4:B4:2C:51:AC:A8:08:AD:94:55:FB:1E:78:94:72:D9:30:73:96:AE:05:67:13:A1:3A"
+# # zarezom odvojeni WebAuthn Related Origins (/.well-known/webauthn)
+# WEBAUTHN_ORIGINS = "https://domovina.ai,https://www.domovina.ai,https://wallet.domovina.ai,https://pay.domovina.ai,https://mpt.domovina.ai,https://pinka.finance,https://www.pinka.finance,https://app.pinka.finance,https://pinka-app.pages.dev,https://pinka.io,https://www.pinka.io,https://domovina.energy,https://www.domovina.energy,https://domovina.tv,https://www.domovina.tv"
+# # zastavice — stringovi; samo točno "true" uključuje
+# FEATURE_VOTING   = "true"   # „Izborni dan" /glasanje* (OG + AASA unosi)
+# FEATURE_CAL      = "true"   # Cal.com proxy /api/cal/slots i /api/cal/book
+# FEATURE_AIRKUNA  = "true"   # airKUNA wallet unosi u assetlinks + AASA
+#
+# Tajne koje worker već čita iz env-a i NISU brend (ostaju Pages secrets):
+# CAL_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY.
