@@ -4,6 +4,8 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 
+import '../brand/app_brand.dart';
+
 /// Background audio/video playback — drzi media_kit Player zivim s OS-level
 /// media sessionom dok je app u backgroundu (zakljucan zaslon, druga app, etc.).
 ///
@@ -40,9 +42,12 @@ class BackgroundAudio {
     try {
       instance._handler = await AudioService.init(
         builder: () => _MediaKitHandler(),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'ai.domovina.audio',
-          androidNotificationChannelName: 'DOMOVINA.ai player',
+        // Nije const: ID kanala i ime dolaze iz brenda u runtimeu.
+        config: AudioServiceConfig(
+          androidNotificationChannelId:
+              '${AppBrand.config.androidPackage}.audio',
+          androidNotificationChannelName:
+              '${AppBrand.config.appName} player',
           androidNotificationOngoing: true,
           androidStopForegroundOnPause: true,
           androidNotificationIcon: 'mipmap/ic_launcher',

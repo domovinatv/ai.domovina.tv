@@ -9,7 +9,8 @@ import io.flutter.plugin.common.MethodChannel
 // plugin can attach its FlutterEngine for background playback. Required by
 // lib/services/background_audio.dart.
 class MainActivity : AudioServiceActivity() {
-    private val tvModeChannel = "ai.domovina/tv_mode"
+    // Brand-neutral channel name; must match lib/services/tv_mode.dart.
+    private val tvModeChannel = "app/tv_mode"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
