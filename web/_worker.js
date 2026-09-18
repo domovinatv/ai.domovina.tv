@@ -19,16 +19,79 @@
  * index.html bez OG injection.
  */
 
-const CDN = 'https://cdn.domovina.ai';
-const SITE = 'https://domovina.ai';
-// Person-hub agregat (domovina-rag) — isti no-auth/CORS JSON wrapper kao /api/search.
-// GET .../api/person/<slug> → { name, slug, avatar_url, channel_count, episode_count, ... }.
-// Vidi lib/services/person_service.dart + lib/models/person_hub.dart.
-const PERSON_API = 'https://mcp.domovina.ai/api/person';
-// Enumerabilan popis osoba za sitemap (virtualni kanali). Isporučuje ga F2 u
-// domovina-rag; dok ga nema, fetchJson vrati null i /p/ unosi jednostavno
-// izostanu iz sitemapa. Vidi docs/plans/virtualni-kanali.md §4.1.
-const PERSONS_API = 'https://mcp.domovina.ai/api/persons';
+// --- Brend iz env bindinga ------------------------------------------------
+// Jedan worker, više Pages projekata: svaki brend (DOMOVINA.ai, Podcasterium…)
+// postavlja svoje bindinge u vlastitom Pages projektu (Settings → Variables).
+// Bez ijednog bindinga vrijede današnje DOMOVINA.ai vrijednosti, pa je izlaz
+// workera bez env-a bajt-identičan onome prije parametrizacije. Popis
+// bindinga s defaultima: wrangler.toml i docs/worker-env-bindings.md.
+//
+// Zastavice (FEATURE_*) su stringovi 'true'/'false' — Pages env bindinzi su
+// uvijek stringovi, pa se uspoređuju kao string, ne kao boolean. Popisi
+// (ANDROID_SHA256, WEBAUTHN_ORIGINS) su zarezom odvojeni stringovi.
+function brandFromEnv(env) {
+  const e = env || {};
+  const flag = (name) => (e[name] ?? 'true') === 'true';
+  const list = (value, fallback) => (typeof value === 'string' && value.trim()
+    ? value.split(',').map((s) => s.trim()).filter(Boolean)
+    : fallback);
+  return {
+    SITE: e.SITE ?? 'https://domovina.ai',
+    CDN: e.CDN ?? 'https://cdn.domovina.ai',
+    // Person-hub agregat (domovina-rag) — isti no-auth/CORS JSON wrapper kao /api/search.
+    // GET .../api/person/<slug> → { name, slug, avatar_url, channel_count, episode_count, ... }.
+    // Vidi lib/services/person_service.dart + lib/models/person_hub.dart.
+    PERSON_API: e.PERSON_API ?? 'https://mcp.domovina.ai/api/person',
+    // Enumerabilan popis osoba za sitemap (virtualni kanali). Isporučuje ga F2 u
+    // domovina-rag; dok ga nema, fetchJson vrati null i /p/ unosi jednostavno
+    // izostanu iz sitemapa. Vidi docs/plans/virtualni-kanali.md §4.1.
+    PERSONS_API: e.PERSONS_API ?? 'https://mcp.domovina.ai/api/persons',
+    // Ime brenda: <title> sufiks, og:site_name, JSON-LD publisher/provider i
+    // fallback za naslov/kanal epizode.
+    APP_NAME: e.APP_NAME ?? 'DOMOVINA.ai',
+    // Universal/App Links (.well-known) — vidi komentare uz assetlinksJson i
+    // aasaJson ispod.
+    APPLE_TEAM_ID: e.APPLE_TEAM_ID ?? '6SCK58757K',
+    IOS_BUNDLE_ID: e.IOS_BUNDLE_ID ?? 'ai.domovina',
+    ANDROID_PACKAGE: e.ANDROID_PACKAGE ?? 'ai.domovina',
+    // SHA-256 otisci potpisnih certifikata (velika slova, ":"-odvojeni), više
+    // njih odvojeno zarezom. Redoslijed: Play App Signing key, pa upload key.
+    ANDROID_SHA256: list(e.ANDROID_SHA256, [
+      '15:C6:2D:19:7B:A1:37:66:3D:07:43:99:B0:DF:C0:66:FA:9B:18:0E:3E:A7:43:34:CD:C4:7A:77:13:16:80:A8',
+      'F6:2C:30:D2:83:FB:BF:E4:B4:2C:51:AC:A8:08:AD:94:55:FB:1E:78:94:72:D9:30:73:96:AE:05:67:13:A1:3A',
+    ]),
+    // WebAuthn Related Origins (/.well-known/webauthn) — vidi webauthnJson.
+    WEBAUTHN_ORIGINS: list(e.WEBAUTHN_ORIGINS, [
+      'https://domovina.ai',
+      'https://www.domovina.ai',
+      'https://wallet.domovina.ai',
+      'https://pay.domovina.ai',
+      'https://mpt.domovina.ai',
+      'https://pinka.finance',
+      'https://www.pinka.finance',
+      'https://app.pinka.finance',
+      'https://pinka-app.pages.dev',
+      'https://pinka.io',
+      'https://www.pinka.io',
+      'https://domovina.energy',
+      'https://www.domovina.energy',
+      'https://domovina.tv',
+      'https://www.domovina.tv',
+    ]),
+    // Brend-specifični blokovi; 'false' ih isključuje.
+    FEATURE_VOTING: flag('FEATURE_VOTING'),   // „Izborni dan" /glasanje* (OG + AASA)
+    FEATURE_CAL: flag('FEATURE_CAL'),         // Cal.com proxy /api/cal/*
+    FEATURE_AIRKUNA: flag('FEATURE_AIRKUNA'), // airKUNA wallet u assetlinks + AASA
+  };
+}
+
+// Aktivni brend. fetch() ga na početku SVAKOG zahtjeva postavi iz env-a. Env
+// je isti za sve zahtjeve jednog deploya (Pages bindinzi), pa je ponovna
+// dodjela modulnim varijablama idempotentna — i jeftinija od provlačenja
+// brenda kroz svaki inject*/sitemap helper ispod. Modulni default (bez env-a)
+// pokriva samo pozive helpera mimo fetch() (Node harness).
+let BRAND = brandFromEnv();
+let { SITE, CDN, PERSON_API, PERSONS_API, APP_NAME } = BRAND;
 // Kvadratni avatar osobe na CDN-u (900×900 PNG); produkcija slike je posao
 // fetch.domovina.tv — worker ga samo koristi ako postoji (HEAD provjera).
 const personAvatarUrl = (slug) => `${CDN}/persons/images/${slug}/avatar_square.png`;
@@ -125,7 +188,10 @@ async function handleCalProxy(request, env, path) {
 //   2. Upload key (android/upload-keystore.jks) — lokalno buildani release
 //      APK-ovi (adb install na EON/test uređaje).
 // Apple Team ID (6SCK58757K) je već upisan.
-const ASSETLINKS_JSON = JSON.stringify([
+//
+// Vrijednosti dolaze iz brenda (ANDROID_PACKAGE, ANDROID_SHA256); airKUNA
+// unos postoji samo uz FEATURE_AIRKUNA.
+const assetlinksJson = (b) => JSON.stringify([
   {
     relation: [
       'delegate_permission/common.handle_all_urls',
@@ -133,14 +199,11 @@ const ASSETLINKS_JSON = JSON.stringify([
     ],
     target: {
       namespace: 'android_app',
-      package_name: 'ai.domovina',
-      sha256_cert_fingerprints: [
-        '15:C6:2D:19:7B:A1:37:66:3D:07:43:99:B0:DF:C0:66:FA:9B:18:0E:3E:A7:43:34:CD:C4:7A:77:13:16:80:A8',
-        'F6:2C:30:D2:83:FB:BF:E4:B4:2C:51:AC:A8:08:AD:94:55:FB:1E:78:94:72:D9:30:73:96:AE:05:67:13:A1:3A',
-      ],
+      package_name: b.ANDROID_PACKAGE,
+      sha256_cert_fingerprints: b.ANDROID_SHA256,
     },
   },
-  {
+  ...(b.FEATURE_AIRKUNA ? [{
     // airKUNA wallet — App Links za /c/* donacijske rute (path scope je u
     // appu, assetlinks verificira samo app↔domena vezu). Otisak = EAS-managed
     // keystore @airkuna/airkuna (Build Credentials 5E0UbnSkow, 2026-07-22).
@@ -152,7 +215,7 @@ const ASSETLINKS_JSON = JSON.stringify([
         '4F:E5:92:94:62:BE:29:59:57:44:B1:56:56:73:85:13:FA:D2:80:B6:A8:AB:A4:CA:F0:69:49:63:66:33:C9:C7',
       ],
     },
-  },
+  }] : []),
 ], null, 2);
 
 // Auth callback rute su ISKLJUČENE iz universal linkova: OAuth/magic-link
@@ -161,12 +224,15 @@ const ASSETLINKS_JSON = JSON.stringify([
 // prijava završi u Safariju. Native app ima vlastiti flow (ai.domovina://).
 // NB: Apple CDN + uređaji cachiraju AASA — promjena se propagira tek nakon
 // reinstalacije appa ili refresha (do ~tjedan dana).
-const AASA_JSON = JSON.stringify({
+//
+// appID = APPLE_TEAM_ID.IOS_BUNDLE_ID iz brenda; /glasanje* unosi samo uz
+// FEATURE_VOTING, airKUNA unos samo uz FEATURE_AIRKUNA.
+const aasaJson = (b) => JSON.stringify({
   applinks: {
     apps: [],
     details: [
       {
-        appID: '6SCK58757K.ai.domovina',
+        appID: `${b.APPLE_TEAM_ID}.${b.IOS_BUNDLE_ID}`,
         components: [
           { '/': '/auth/*', exclude: true, comment: 'web OAuth/magic-link callback ostaje u browseru' },
           { '/': '/login-callback', exclude: true, comment: 'isti AuthCallbackScreen (legacy ruta)' },
@@ -176,27 +242,29 @@ const AASA_JSON = JSON.stringify({
           // nema exclude sintaksu pa mora biti allowlist). CLAUDE.md: nova
           // javna ruta ide u OBA popisa. Stoji NAKON exclusiona — auth rute
           // ostaju isključene jer components matcha prvo pravilo.
-          { '/': '/glasanje', comment: 'Izborni dan — javna ljestvica glasanja' },
-          { '/': '/glasanje/*', comment: 'deep-link/share na kandidata' },
+          ...(b.FEATURE_VOTING ? [
+            { '/': '/glasanje', comment: 'Izborni dan — javna ljestvica glasanja' },
+            { '/': '/glasanje/*', comment: 'deep-link/share na kandidata' },
+          ] : []),
           { '/': '*' },
         ],
         // Legacy fallback za iOS < 13 (noviji iOS čita components).
         paths: ['NOT /auth/*', 'NOT /login-callback', 'NOT /youtube-claim/*', '*'],
       },
-      {
+      ...(b.FEATURE_AIRKUNA ? [{
         // airKUNA wallet — hvata SAMO donacijske linkove (/c/<slug>/...).
         // Naveden nakon ai.domovina: kad su oba appa instalirana, glavni app
         // ima prednost; airkuna-only korisnici dobivaju Doniraj flow.
         // Android assetlinks za com.airkuna.wallet čeka signing cert prvog
         // EAS builda (airkuna A4).
-        appID: '6SCK58757K.com.airkuna.wallet',
-        components: [{ '/': '/c/*', comment: 'domovina.ai kampanje → airKUNA Doniraj' }],
+        appID: `${b.APPLE_TEAM_ID}.com.airkuna.wallet`,
+        components: [{ '/': '/c/*', comment: `${new URL(b.SITE).host} kampanje → airKUNA Doniraj` }],
         paths: ['/c/*'],
-      },
+      }] : []),
     ],
   },
   webcredentials: {
-    apps: ['6SCK58757K.ai.domovina'],
+    apps: [`${b.APPLE_TEAM_ID}.${b.IOS_BUNDLE_ID}`],
   },
 }, null, 2);
 
@@ -206,24 +274,9 @@ const AASA_JSON = JSON.stringify({
 // subdomains. Each listed origin may request assertions with RP ID domovina.ai.
 // Served at https://domovina.ai/.well-known/webauthn.
 // See pay.domovina.ai/docs/plans/cross-domain-wallet-passkey.md (Phase D).
-const WEBAUTHN_JSON = JSON.stringify({
-  origins: [
-    'https://domovina.ai',
-    'https://www.domovina.ai',
-    'https://wallet.domovina.ai',
-    'https://pay.domovina.ai',
-    'https://mpt.domovina.ai',
-    'https://pinka.finance',
-    'https://www.pinka.finance',
-    'https://app.pinka.finance',
-    'https://pinka-app.pages.dev',
-    'https://pinka.io',
-    'https://www.pinka.io',
-    'https://domovina.energy',
-    'https://www.domovina.energy',
-    'https://domovina.tv',
-    'https://www.domovina.tv',
-  ],
+// Origins list comes from the brand (WEBAUTHN_ORIGINS).
+const webauthnJson = (b) => JSON.stringify({
+  origins: b.WEBAUTHN_ORIGINS,
 }, null, 2);
 
 function wellKnownResponse(body) {
@@ -238,13 +291,17 @@ function wellKnownResponse(body) {
 
 export default {
   async fetch(request, env) {
+    // Brend za ovaj zahtjev — iz Pages env bindinga, defaulti = DOMOVINA.ai.
+    BRAND = brandFromEnv(env);
+    ({ SITE, CDN, PERSON_API, PERSONS_API, APP_NAME } = BRAND);
+
     const url = new URL(request.url);
     const path = url.pathname;
 
     // .well-known (App Links + passkey/WebAuthn) — prije svega ostalog.
-    if (path === '/.well-known/assetlinks.json') return wellKnownResponse(ASSETLINKS_JSON);
-    if (path === '/.well-known/apple-app-site-association') return wellKnownResponse(AASA_JSON);
-    if (path === '/.well-known/webauthn') return wellKnownResponse(WEBAUTHN_JSON);
+    if (path === '/.well-known/assetlinks.json') return wellKnownResponse(assetlinksJson(BRAND));
+    if (path === '/.well-known/apple-app-site-association') return wellKnownResponse(aasaJson(BRAND));
+    if (path === '/.well-known/webauthn') return wellKnownResponse(webauthnJson(BRAND));
 
     // Sitemap — MORA biti prije ASSETS grane ispod: `/sitemap.xml` ima
     // ekstenziju pa bi ga `/\.\w{1,8}$/` poslao u env.ASSETS.fetch() i dobio
@@ -254,7 +311,8 @@ export default {
     // Cal.com booking proxy — drži CAL_API_KEY server-side (env secret), NIKAD
     // u web bundleu. Slotovi su javni (reflektiraju Google Calendar kolizije),
     // booking POST traži ključ. Flutter app zove same-origin /api/cal/*.
-    if (path === '/api/cal/slots' || path === '/api/cal/book') {
+    // Bez FEATURE_CAL ruta pada dalje kao svaka nepoznata (SPA fallback).
+    if (BRAND.FEATURE_CAL && (path === '/api/cal/slots' || path === '/api/cal/book')) {
       return handleCalProxy(request, env, path);
     }
 
@@ -454,8 +512,9 @@ export default {
     // Ruta je javna i dijeljiva (plan §8.1), pa crawler mora dobiti smislen
     // preview i kad kandidat nije razrješiv (baza nedostupna, nepoznat slug,
     // buduća /glasanje/kola arhiva) — tada se servira opći OG glasanja.
+    // Bez FEATURE_VOTING ruta pada dalje na SPA fallback (generički OG).
     const gSlugMatch = path.match(/^\/glasanje\/([a-z0-9][a-z0-9-]{0,79})$/);
-    if (path === '/glasanje' || gSlugMatch) {
+    if (BRAND.FEATURE_VOTING && (path === '/glasanje' || gSlugMatch)) {
       const slug = gSlugMatch ? gSlugMatch[1] : null;
       const candidate = slug ? await fetchVoteCandidate(env, slug) : null;
       const indexHtml = await (await indexPromise).text();
@@ -523,8 +582,8 @@ async function headOk(url) {
 // POTPUN build (`__cache/sitemap-last.xml`, 24 h); ako ni njega nema, servira se
 // djelomičan XML s eksplicitnim XML komentarom i taj se NE sprema kao potpun.
 // Sljedeći zahtjev nastavlja gdje je stao — nema tihog capa.
-const SITEMAP_CACHE_URL = `${SITE}/__cache/sitemap.xml`;
-const SITEMAP_LAST_CACHE_URL = `${SITE}/__cache/sitemap-last.xml`;
+const sitemapCacheUrl = () => `${SITE}/__cache/sitemap.xml`;
+const sitemapLastCacheUrl = () => `${SITE}/__cache/sitemap-last.xml`;
 const sitemapFragmentUrl = (channelId, stamp) =>
   `${SITE}/__cache/sitemap-frag/${channelId}/${stamp}`;
 // Koliko kanala smije dohvatiti JEDNA invokacija: 40 → 42 subrequesta (od 1000
@@ -570,7 +629,7 @@ async function cachePutText(cache, key, text, maxAge) {
 /** GET /sitemap.xml — cache-first, build tek na promašaj. */
 async function handleSitemap() {
   const cache = edgeCache();
-  const cached = await cacheGetText(cache, SITEMAP_CACHE_URL);
+  const cached = await cacheGetText(cache, sitemapCacheUrl());
   if (cached) return xmlResponse(cached);
   return buildSitemap(cache);
 }
@@ -660,12 +719,12 @@ async function buildSitemap(cache) {
 
   if (holes > 0) {
     // Radije zadnji POTPUN build (stariji, ali cjelovit) nego djelomičan.
-    const last = await cacheGetText(cache, SITEMAP_LAST_CACHE_URL);
+    const last = await cacheGetText(cache, sitemapLastCacheUrl());
     return xmlResponse(last || xml);
   }
 
-  await cachePutText(cache, SITEMAP_CACHE_URL, xml, SITEMAP_TTL);
-  await cachePutText(cache, SITEMAP_LAST_CACHE_URL, xml, SITEMAP_LAST_TTL);
+  await cachePutText(cache, sitemapCacheUrl(), xml, SITEMAP_TTL);
+  await cachePutText(cache, sitemapLastCacheUrl(), xml, SITEMAP_LAST_TTL);
   return xmlResponse(xml);
 }
 
@@ -870,7 +929,7 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   const copy = SHARE_COPY[lang] || SHARE_COPY.hr;
   // Naslov epizode NIJE preveden — to je izvorni YouTube naslov (pipeline ga ne
   // prevodi). Prevodi se samo AI-generirani sloj: abstract, subtitle, opisi.
-  const baseTitle = info.title || 'DOMOVINA.ai';
+  const baseTitle = info.title || APP_NAME;
   const rawDesc = pickDescription(info, summary, lang);
   const baseDesc = rawDesc.length > 300 ? rawDesc.slice(0, 297) + '…' : rawDesc;
 
@@ -969,7 +1028,7 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
     `  <link rel="alternate" hreflang="en" href="${SITE}${basePath}/en">`,
     `  <link rel="alternate" hreflang="x-default" href="${SITE}${basePath}">`,
   ].join('\n');
-  const channel = info.channel || 'DOMOVINA.ai';
+  const channel = info.channel || APP_NAME;
   const releaseDate = formatUploadDate(info.upload_date);
   const isoDur = isoDuration(info.duration);
   const videoUrl = `${CDN}/data/${ytId}/video.mp4`;
@@ -984,7 +1043,7 @@ function injectEpisodeTags(indexHtml, ytId, info, summary, article, hasOgShare, 
   const articleTags = topicTags.map((t) => `  <meta property="article:tag" content="${x(t)}">`).join('\n');
 
   const tags = `
-  <title>${x(title)} – DOMOVINA.ai</title>
+  <title>${x(title)} – ${APP_NAME}</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
 ${altLinks}
@@ -992,7 +1051,7 @@ ${altLinks}
   <meta property="og:type" content="video.other">
   <meta property="og:locale" content="${copy.locale}">
   <meta property="og:locale:alternate" content="${lang === 'en' ? 'hr_HR' : 'en_US'}">
-  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:site_name" content="${APP_NAME}">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
@@ -1088,9 +1147,9 @@ function injectPersonTags(indexHtml, slug, person, hasCdnAvatar) {
   const desc = mentionOnly
     ? `Gdje se u podcastima spominje ${name} — ${mentionCount} ${mEpWord} `
       + `na ${mentionChCount} ${mChWord}, sa skokom na točan trenutak spomena. `
-      + 'AI sažetci, transkripti i analiza podcasta na DOMOVINA.ai.'
+      + `AI sažetci, transkripti i analiza podcasta na ${APP_NAME}.`
     : `Sve epizode u kojima ${name} govori — gost u ${epCount} ${epWord} `
-      + `na ${chCount} ${chWord}. AI sažetci, transkripti i analiza podcasta na DOMOVINA.ai.`;
+      + `na ${chCount} ${chWord}. AI sažetci, transkripti i analiza podcasta na ${APP_NAME}.`;
 
   const canonical = `${SITE}/p/${slug}`;
 
@@ -1133,25 +1192,25 @@ function injectPersonTags(indexHtml, slug, person, hasCdnAvatar) {
     },
     publisher: {
       '@type': 'Organization',
-      name: 'DOMOVINA.ai',
+      name: APP_NAME,
       logo: { '@type': 'ImageObject', url: `${SITE}/icons/Icon-512.png` },
     },
   }, null, 2);
 
   const tags = `
-  <title>${x(title)} – DOMOVINA.ai</title>
+  <title>${x(title)} – ${APP_NAME}</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
 
   <meta property="og:type" content="profile">
   <meta property="og:locale" content="hr_HR">
-  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:site_name" content="${APP_NAME}">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(name)}">
   <meta property="og:description" content="${x(desc)}">
   <meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${x(image)}">
-  <meta property="og:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta property="og:image:alt" content="${x(name)} — ${APP_NAME}">
   <meta property="profile:first_name" content="${x(firstName)}">${
     lastName ? `\n  <meta property="profile:last_name" content="${x(lastName)}">` : ''
   }
@@ -1161,7 +1220,7 @@ function injectPersonTags(indexHtml, slug, person, hasCdnAvatar) {
   <meta name="twitter:title" content="${x(name)}">
   <meta name="twitter:description" content="${x(desc)}">
   <meta name="twitter:image" content="${x(image)}">
-  <meta name="twitter:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta name="twitter:image:alt" content="${x(name)} — ${APP_NAME}">
   <meta name="twitter:label1" content="Epizode">
   <meta name="twitter:data1" content="${epCount}">
   <meta name="twitter:label2" content="Kanali">
@@ -1296,7 +1355,7 @@ function injectVotingTags(indexHtml, slug, candidate) {
       : '';
     title = `Glasaj za ${name} — Izborni dan`;
     desc = `${name}${hosts ? ` (${hosts})` : ''} je kandidat za sljedeći kanal `
-      + `koji ulazi u AI obradu na DOMOVINA.ai. ${baseDesc}`;
+      + `koji ulazi u AI obradu na ${APP_NAME}. ${baseDesc}`;
     if (desc.length > 300) desc = desc.slice(0, 297) + '…';
   }
 
@@ -1330,19 +1389,19 @@ function injectVotingTags(indexHtml, slug, candidate) {
     } : {}),
     publisher: {
       '@type': 'Organization',
-      name: 'DOMOVINA.ai',
+      name: APP_NAME,
       logo: { '@type': 'ImageObject', url: `${SITE}/icons/Icon-512.png` },
     },
   }, null, 2);
 
   const tags = `
-  <title>${x(title)} – DOMOVINA.ai</title>
+  <title>${x(title)} – ${APP_NAME}</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="hr_HR">
-  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:site_name" content="${APP_NAME}">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
@@ -1396,7 +1455,7 @@ function injectChannelTags(indexHtml, slug, ch) {
   let desc = chDesc
     || `AI-obrađene epizode kanala ${name}: ${epCount} ${epWord}`
       + `${hours > 0 ? `, ≈ ${hours} ${hourWord} sadržaja` : ''}. `
-      + 'Sažetci, transkripti, poglavlja i Magisterium analiza na DOMOVINA.ai.';
+      + `Sažetci, transkripti, poglavlja i Magisterium analiza na ${APP_NAME}.`;
   if (desc.length > 300) desc = desc.slice(0, 297) + '…';
 
   const canonical = `${SITE}/c/${slug}`;
@@ -1417,7 +1476,7 @@ function injectChannelTags(indexHtml, slug, ch) {
     ...(ch.youtube_channel_url ? { sameAs: ch.youtube_channel_url } : {}),
     publisher: {
       '@type': 'Organization',
-      name: 'DOMOVINA.ai',
+      name: APP_NAME,
       logo: { '@type': 'ImageObject', url: `${SITE}/icons/Icon-512.png` },
     },
     workExample: episodes.map((v) => ({
@@ -1431,25 +1490,25 @@ function injectChannelTags(indexHtml, slug, ch) {
   }, null, 2);
 
   const tags = `
-  <title>${x(title)} – DOMOVINA.ai</title>
+  <title>${x(title)} – ${APP_NAME}</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="hr_HR">
-  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:site_name" content="${APP_NAME}">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
   <meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${x(image)}">
-  <meta property="og:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta property="og:image:alt" content="${x(name)} — ${APP_NAME}">
 
   <meta name="twitter:card" content="${twitterCard}">
   <meta name="twitter:title" content="${x(title)}">
   <meta name="twitter:description" content="${x(desc)}">
   <meta name="twitter:image" content="${x(image)}">
-  <meta name="twitter:image:alt" content="${x(name)} — DOMOVINA.ai">
+  <meta name="twitter:image:alt" content="${x(name)} — ${APP_NAME}">
   <meta name="twitter:label1" content="Epizode">
   <meta name="twitter:data1" content="${epCount}">${
     hours > 0 ? `\n  <meta name="twitter:label2" content="Sadržaj">\n  <meta name="twitter:data2" content="≈ ${hours} ${hourWord}">` : ''
@@ -1516,17 +1575,17 @@ function injectSupportTags(indexHtml, slug, variant, ch, campaign) {
         'https://schema.org/MobileWebPlatform',
       ],
     },
-    provider: { '@type': 'Organization', name: 'DOMOVINA.ai', url: SITE },
+    provider: { '@type': 'Organization', name: APP_NAME, url: SITE },
   }, null, 2);
 
   const tags = `
-  <title>${x(title)} – DOMOVINA.ai</title>
+  <title>${x(title)} – ${APP_NAME}</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${canonical}">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="hr_HR">
-  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:site_name" content="${APP_NAME}">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
@@ -1568,7 +1627,7 @@ function jsonLdVideoObject({ title, desc, thumb, canonical, releaseDate, isoDur,
     inLanguage: 'hr',
     publisher: {
       '@type': 'Organization',
-      name: 'DOMOVINA.ai',
+      name: APP_NAME,
       logo: {
         '@type': 'ImageObject',
         url: `${SITE}/icons/Icon-512.png`,
