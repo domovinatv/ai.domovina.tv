@@ -282,7 +282,10 @@ cd "$WT"
 step "pub get" 10 flutter pub get || finish_fail "pub get" $?
 step "flutter analyze" 10 flutter analyze || finish_fail "flutter analyze" $?
 
-mapfile -t ALL_TESTS < <(find test -name '*_test.dart' | sort)
+# Testovi žive u paketu packages/podcast_core (pub workspace); putanje u
+# .nightly/test-baseline.txt su relativne na taj direktorij.
+CORE_DIR="packages/podcast_core"
+mapfile -t ALL_TESTS < <(cd "$CORE_DIR" && find test -name '*_test.dart' | sort)
 BASE_TESTS=(); GATED_TESTS=()
 if [[ -f "$BASELINE" ]]; then
   mapfile -t BASE_TESTS < <(grep -vE '^\s*(#|$)' "$BASELINE" | tr -d '\r')
@@ -296,6 +299,7 @@ for t in "${ALL_TESTS[@]}"; do
 done
 echo "testovi u vratima: ${#GATED_TESTS[@]} · baseline (izuzeti): ${#BASE_TESTS[@]}"
 
+cd "$CORE_DIR"
 step "testovi (${#GATED_TESTS[@]} fajlova)" 25 flutter test "${GATED_TESTS[@]}" \
   || finish_fail "testovi" $?
 
@@ -307,6 +311,7 @@ if [[ ${#BASE_TESTS[@]} -gt 0 ]]; then
     REPORT+=("➖ baseline: ${#BASE_TESTS[@]} poznato crvenih (izuzeti iz vrata)")
   fi
 fi
+cd "$WT"
 
 # ── 5. build broj ────────────────────────────────────────────────────────────
 BUILD_NAME="$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)"

@@ -27,7 +27,7 @@ PAT = re.compile(
     "]"
 )
 
-ROOTS = ["lib", "web", "assets", "android", "ios", "macos", "test", "scripts"]
+ROOTS = ["lib", "packages", "web", "assets", "android", "ios", "macos", "test", "scripts"]
 SKIP_SUFFIX = {".png", ".jpg", ".jpeg", ".webp", ".ico", ".ttf", ".otf",
                ".woff", ".woff2", ".mp3", ".mp4", ".zip", ".jar", ".keystore"}
 

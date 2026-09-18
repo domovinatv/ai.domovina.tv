@@ -192,7 +192,7 @@ while :; do
     appfiles=$(git -C "$ROOT" show --name-only --format= HEAD 2>/dev/null \
       | grep -vE '^scripts/tim|^\.claude/commands/|^docs/ai-tim-tmux\.md$' | grep -v '^$' | head -5)
     # Ni release commit: deploy.sh mehanički bumpa verziju u pubspec.yaml i
-    # appVersion konstantu u lib/src/log.dart — nema što recenzirati.
+    # appVersion konstantu u packages/podcast_core/lib/src/log.dart — nema što recenzirati.
     # Commit koji ne dira kod (samo dokumentacija) također ne treba verdikt.
     codefiles=$(printf '%s' "$appfiles" | grep -vE '^docs/|\.md$' || true)
     [ -z "$codefiles" ] && appfiles=""

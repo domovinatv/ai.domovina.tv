@@ -91,7 +91,7 @@ prati napredak:
 **Deploy i push NE radiš ti.** Ako korisnik ovdje kaže „deployaj", proslijedi
 to orkestratoru (`./scripts/tim-send.sh orkestrator 'deployaj'`) i javi
 korisniku da si delegirao. Razlog nije formalnost: `deploy.sh` mijenja praćene
-fajlove (bump verzije u `pubspec.yaml` i `appVersion` u `lib/main.dart`), pa
+fajlove (bump verzije u `pubspec.yaml` i `appVersion` u `packages/podcast_core/lib/src/log.dart`), pa
 ostavlja necommitane izmjene u zajedničkom radnom stablu — a integracija i
 commit su orkestratorov posao. Uz to ti build output nepotrebno puni kontekst.
 

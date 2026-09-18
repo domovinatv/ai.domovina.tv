@@ -64,12 +64,21 @@ for doc in "${files[@]}"; do
       if [[ "$ref" == *'*'* ]]; then
         matches=( $ref )
         [ ${#matches[@]} -gt 0 ] && continue
+        if [[ "$ref" =~ ^(lib|test)/ ]]; then
+          matches=( packages/podcast_core/$ref )
+          [ ${#matches[@]} -gt 0 ] && continue
+        fi
       elif [ -e "$ref" ]; then
+        continue
+      # `lib/…` i `test/…` od 18. 9. 2026. žive u packages/podcast_core
+      # (pub workspace, vidi CLAUDE.md „Raspored”). Stari dokumenti ih citiraju
+      # bez prefiksa; to je i dalje jednoznačno pa se prihvaća.
+      elif [[ "$ref" =~ ^(lib|test)/ ]] && [ -e "packages/podcast_core/$ref" ]; then
         continue
       fi
 
       base=$(basename "$ref")
-      hint=$(find lib test web scripts -name "$base" 2>/dev/null | head -3 | tr '\n' ' ')
+      hint=$(find lib packages/podcast_core/lib packages/podcast_core/test web scripts -name "$base" 2>/dev/null | head -3 | tr '\n' ' ')
       if [ $doc_header_printed -eq 0 ]; then
         printf '\n\033[1m%s\033[0m\n' "$doc"
         doc_header_printed=1

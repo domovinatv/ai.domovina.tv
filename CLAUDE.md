@@ -9,6 +9,39 @@ All data loads from CDN (`cdn.domovina.ai`). Deployed on Cloudflare Pages.
 - **Display name**: `DOMOVINA.ai`
 - **Platforms**: Web (primary), Android (+ Android TV / Leanback), iOS, macOS
 
+## Raspored: `podcast_core` + ljuska (od 18. 9. 2026.)
+
+Repo je pub workspace s dva paketa:
+
+- **`packages/podcast_core/`** — SAV kod aplikacije (`lib/`, `test/`,
+  `l10n.yaml`, ARB-ovi). Ovo je jezgra koju dijele DOMOVINA.ai i
+  [Podcasterium](https://github.com/podcasterium/podcasterium-app); ljuska
+  je uvozi samo kroz `package:podcast_core/podcast_core.dart` i poziva
+  `runPodcastApp()`.
+- **korijen** — DOMOVINA ljuska: `lib/main.dart` (jedan poziv), `android/`,
+  `ios/`, `web/`, `macos/`, `assets/` (brend), `integration_test/`, skripte,
+  deploy. Sve runtime ovisnosti navodi paket; korijen navodi samo
+  `podcast_core` (path) i platformske dev alate.
+
+Posljedice za dnevni rad:
+
+- **Testovi se pokreću iz paketa**: `cd packages/podcast_core && flutter test`.
+  `.nightly/test-baseline.txt` je relativan na taj direktorij; nightly to zna.
+- `flutter analyze` iz korijena analizira i paket (provjereno: greška u
+  `packages/podcast_core/lib/src/log.dart` obara root analyze).
+- **ARB i `flutter gen-l10n`**: u `packages/podcast_core/`. Generirani Dart je
+  u gitu jer se paket gradi kao ovisnost, pa ga build ljuske ne regenerira.
+- **Asset ugovor**: jezgra učitava `assets/icons/domovina_ai_logo_1024.png`,
+  `assets/icons/google_g_logo.png` i `assets/splash/splash_full_1.png` iz
+  bundlea LJUSKE (korijenski `pubspec.yaml`). Testovi paketa ih nemaju, pa
+  widget testovi koji crtaju te slike koriste
+  `test/support/fake_asset_bundle.dart`. Privremeno — `BrandConfig` (plan
+  Podcasterium, korak A1) preuzima brend assete.
+- `appVersion` (footer) je u `packages/podcast_core/lib/src/log.dart`;
+  `scripts/deploy.sh` ga bumpa ondje.
+- Dokumenti i dalje citiraju `lib/…` bez prefiksa; `verify-doc-refs.sh`
+  to prihvaća kad datoteka postoji u `packages/podcast_core/`.
+
 ## Build & Deploy
 
 ```bash

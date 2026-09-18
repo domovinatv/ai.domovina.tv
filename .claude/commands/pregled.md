@@ -25,7 +25,8 @@ tvoj output je verdikt.
    flutter analyze
    ```
    plus ciljane testove ako plan/diff dira pokriveni kod
-   (`flutter test test/<x>_test.dart`). **Poznati padovi**:
+   (`cd packages/podcast_core && flutter test test/<x>_test.dart` — kod i testovi
+   žive u tom paketu). **Poznati padovi**:
    `test/widget_test.dart` (HttpClient smoke) i `home_feed_test`
    (datum-ovisan) padaju i na čistom mainu — nisu regresija, ne prijavljuj ih.
 4. **Provjeri po ovom redoslijedu** (prvo ono što stvarno lomi korisnika):
