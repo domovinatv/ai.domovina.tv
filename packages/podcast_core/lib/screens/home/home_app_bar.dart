@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
+import '../../brand/app_brand.dart';
 import '../../services/voting_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/account_chip.dart';
@@ -68,8 +69,10 @@ class HomeAppBar extends StatelessWidget {
                     onPressed: onSearchTap,
                   ),
                   const SizedBox(width: 4),
-                  const VotingStreakChip(),
-                  const SizedBox(width: 4),
+                  if (AppBrand.config.flags.voting) ...[
+                    const VotingStreakChip(),
+                    const SizedBox(width: 4),
+                  ],
                   const LanguageToggleButton(),
                   const SizedBox(width: 4),
                   const ThemeToggleButton(),
@@ -94,8 +97,10 @@ class HomeAppBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const VotingStreakChip(),
-                const SizedBox(width: 4),
+                if (AppBrand.config.flags.voting) ...[
+                  const VotingStreakChip(),
+                  const SizedBox(width: 4),
+                ],
                 const LanguageToggleButton(),
                 const SizedBox(width: 4),
                 const ThemeToggleButton(),

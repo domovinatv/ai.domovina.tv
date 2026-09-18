@@ -78,6 +78,7 @@ class _AccountScreenState extends State<AccountScreen> {
   /// prikazuje ljestvicu pa nema razloga vući 181 kandidata. Microtask jer
   /// `refresh` na pogodak lokalnog cachea notifira sinkrono.
   void _mozdaUcitajGlasanje() {
+    if (!AppBrand.config.flags.voting) return;
     if (_votingZatrazeno) return;
     if (!(AuthService.instance.currentUser?.isVerified ?? false)) return;
     _votingZatrazeno = true;
@@ -234,9 +235,11 @@ class _AccountScreenState extends State<AccountScreen> {
               // prijave, pa je najbliži trenutak da dozna da glasanje postoji.
               // (Do 25.8.2026. je kartica bila skrivena neverificiranima —
               // vidi _VotingDiscoverChip u home_app_bar.dart.)
-              _sectionLabel(theme, l.votingTitle),
-              _votingCard(theme),
-              const SizedBox(height: 16),
+              if (AppBrand.config.flags.voting) ...[
+                _sectionLabel(theme, l.votingTitle),
+                _votingCard(theme),
+                const SizedBox(height: 16),
+              ],
               _sectionLabel(theme, l.authSectionLibrary),
               _favoritesCard(theme),
               const SizedBox(height: 16),

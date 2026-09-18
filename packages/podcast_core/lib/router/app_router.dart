@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import '../brand/app_brand.dart';
 import '../onboarding/moments/m4_handoff_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/channels/all_channels_screen.dart';
@@ -31,6 +32,9 @@ import '../services/tv_mode.dart';
 /// App router — go_router s NoTransitionPage za instant navigaciju.
 /// Svaka ruta ima ValueKey da go_router zna rebuildat kad se mijenja path.
 GoRouter createRouter() {
+  // Značajke koje brend nije uključio NEMAJU rutu: deep-link na ugašenu
+  // značajku pada u `errorPageBuilder` (naslovnica), isto kao nepoznat URL.
+  final flags = AppBrand.config.flags;
   return GoRouter(
     routes: [
       GoRoute(
@@ -101,8 +105,9 @@ GoRouter createRouter() {
       // matcha na UC… id ILI interni channel id. Episode varijanta
       // (/v/:id/support) je vizija — vidi PinkaCampaignScreen.episode.
       // Dvije rute za isti ekran: /support (EN share link) i /doniraj (HR).
-      for (final path in const ['/c/:slug/support', '/c/:slug/doniraj'])
-        GoRoute(
+      if (flags.pinka)
+        for (final path in const ['/c/:slug/support', '/c/:slug/doniraj'])
+          GoRoute(
           path: path,
           pageBuilder: (context, state) {
             final slug = state.pathParameters['slug']!;
@@ -118,71 +123,77 @@ GoRouter createRouter() {
           },
         ),
       // Channel ownership claim flow (vidi docs/channel-ownership-and-safe-payout-plan.md)
-      GoRoute(
-        path: '/c/:slug/claim',
-        pageBuilder: (context, state) {
-          final slug = state.pathParameters['slug']!;
-          final channelId = slug.replaceAll('-', '_');
-          return NoTransitionPage(
-            key: ValueKey('claim-$slug'),
-            child: ChannelOwnershipScreen(channelId: channelId),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/youtube-claim/callback',
-        pageBuilder: (context, state) => NoTransitionPage(
-          key: const ValueKey('youtube-claim-callback'),
-          child: YoutubeClaimCallbackScreen(
-            code: state.uri.queryParameters['code'],
-            state: state.uri.queryParameters['state'],
+      if (flags.channelOwnership)
+        GoRoute(
+          path: '/c/:slug/claim',
+          pageBuilder: (context, state) {
+            final slug = state.pathParameters['slug']!;
+            final channelId = slug.replaceAll('-', '_');
+            return NoTransitionPage(
+              key: ValueKey('claim-$slug'),
+              child: ChannelOwnershipScreen(channelId: channelId),
+            );
+          },
+        ),
+      if (flags.channelOwnership)
+        GoRoute(
+          path: '/youtube-claim/callback',
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: const ValueKey('youtube-claim-callback'),
+            child: YoutubeClaimCallbackScreen(
+              code: state.uri.queryParameters['code'],
+              state: state.uri.queryParameters['state'],
+            ),
           ),
         ),
-      ),
-      GoRoute(
-        path: '/account/channels',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          key: ValueKey('my-channels'),
-          child: MyChannelsScreen(),
+      if (flags.channelOwnership)
+        GoRoute(
+          path: '/account/channels',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            key: ValueKey('my-channels'),
+            child: MyChannelsScreen(),
+          ),
         ),
-      ),
       // Pinka kampanje za verificirani kanal (vlasnik administrira) — vidi
       // lib/screens/ownership/campaigns/. Faza A: upravljanje postojećima.
-      GoRoute(
-        path: '/account/channels/:ucId/campaigns',
-        pageBuilder: (context, state) {
-          final ucId = state.pathParameters['ucId']!;
-          return NoTransitionPage(
-            key: ValueKey('channel-campaigns-$ucId'),
-            child: ChannelCampaignsScreen(youtubeChannelId: ucId),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/account/channels/:ucId/campaigns/:campaignId',
-        pageBuilder: (context, state) {
-          final ucId = state.pathParameters['ucId']!;
-          final campaignId = state.pathParameters['campaignId']!;
-          return NoTransitionPage(
-            key: ValueKey('campaign-manage-$campaignId'),
-            child: CampaignManageScreen(
-              youtubeChannelId: ucId,
-              campaignId: campaignId,
-            ),
-          );
-        },
-      ),
+      if (flags.pinka && flags.channelOwnership)
+        GoRoute(
+          path: '/account/channels/:ucId/campaigns',
+          pageBuilder: (context, state) {
+            final ucId = state.pathParameters['ucId']!;
+            return NoTransitionPage(
+              key: ValueKey('channel-campaigns-$ucId'),
+              child: ChannelCampaignsScreen(youtubeChannelId: ucId),
+            );
+          },
+        ),
+      if (flags.pinka && flags.channelOwnership)
+        GoRoute(
+          path: '/account/channels/:ucId/campaigns/:campaignId',
+          pageBuilder: (context, state) {
+            final ucId = state.pathParameters['ucId']!;
+            final campaignId = state.pathParameters['campaignId']!;
+            return NoTransitionPage(
+              key: ValueKey('campaign-manage-$campaignId'),
+              child: CampaignManageScreen(
+                youtubeChannelId: ucId,
+                campaignId: campaignId,
+              ),
+            );
+          },
+        ),
       // Per-kanal verifikacija/upravljanje otvoreno po UC… ID-u (iz "Moji kanali").
-      GoRoute(
-        path: '/account/channels/:ucId',
-        pageBuilder: (context, state) {
-          final ucId = state.pathParameters['ucId']!;
-          return NoTransitionPage(
-            key: ValueKey('manage-$ucId'),
-            child: ChannelOwnershipScreen(youtubeChannelId: ucId),
-          );
-        },
-      ),
+      if (flags.channelOwnership)
+        GoRoute(
+          path: '/account/channels/:ucId',
+          pageBuilder: (context, state) {
+            final ucId = state.pathParameters['ucId']!;
+            return NoTransitionPage(
+              key: ValueKey('manage-$ucId'),
+              child: ChannelOwnershipScreen(youtubeChannelId: ucId),
+            );
+          },
+        ),
       // **Rule (ključ NE smije nositi `startAt` ni `person`)**: do 6.9.2026. je
       // ključ bio `video-$id-$startAt-hr-$person`, pa je svaki prijelaz
       // `/v/<id>` → `/v/<id>/t/<sec>` bio NOVI ključ → novi `State` → uništen
@@ -223,8 +234,9 @@ GoRouter createRouter() {
       // epizodi. Subjekt = podcast_episode; ref = YouTube video id. SEPA (EPC
       // QR) + on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik. Sam se
       // sakrije/prazni ako epizoda nema aktivnu kampanju. Pandan /c/:slug/support.
-      for (final path in const ['/v/:videoId/support', '/v/:videoId/doniraj'])
-        GoRoute(
+      if (flags.pinka)
+        for (final path in const ['/v/:videoId/support', '/v/:videoId/doniraj'])
+          GoRoute(
           path: path,
           pageBuilder: (context, state) {
             final videoId = state.pathParameters['videoId']!;
@@ -428,25 +440,27 @@ GoRouter createRouter() {
       // potvrđen e-Osobnom. `/glasanje/:slug` je deep-link na detalj kandidata
       // (isti ekran + sheet), pa share link ne otvara prazan ekran.
       // Plan: docs/plans/2026-08-08-glasanje-o-kanalima.md §8.1.
-      GoRoute(
-        path: '/glasanje',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          key: ValueKey('voting'),
-          child: VotingScreen(),
+      if (flags.voting)
+        GoRoute(
+          path: '/glasanje',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            key: ValueKey('voting'),
+            child: VotingScreen(),
+          ),
         ),
-      ),
-      GoRoute(
-        path: '/glasanje/:slug',
-        pageBuilder: (context, state) {
-          // Registry slug ide DOSLOVNO (primarni ključ u bazi) — nikad
-          // `-`↔`_` transformacija kao kod /c/:slug.
-          final slug = state.pathParameters['slug']!;
-          return NoTransitionPage(
-            key: ValueKey('voting-$slug'),
-            child: VotingScreen(focusSlug: slug),
-          );
-        },
-      ),
+      if (flags.voting)
+        GoRoute(
+          path: '/glasanje/:slug',
+          pageBuilder: (context, state) {
+            // Registry slug ide DOSLOVNO (primarni ključ u bazi) — nikad
+            // `-`↔`_` transformacija kao kod /c/:slug.
+            final slug = state.pathParameters['slug']!;
+            return NoTransitionPage(
+              key: ValueKey('voting-$slug'),
+              child: VotingScreen(focusSlug: slug),
+            );
+          },
+        ),
       // Moj račun — account management (identiteti, passkeyji, brisanje)
       GoRoute(
         path: '/account',

@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../models/channel_index.dart';
 import '../../models/person_hub.dart';
@@ -287,7 +288,7 @@ class _AllChannelsViewState extends State<AllChannelsView> {
               ? const Center(child: CircularProgressIndicator())
               : _list(),
         ),
-        _votingBar(theme),
+        if (AppBrand.config.flags.voting) _votingBar(theme),
       ],
     );
   }

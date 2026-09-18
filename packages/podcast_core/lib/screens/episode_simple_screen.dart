@@ -8,6 +8,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../l10n/app_localizations.dart';
+import '../brand/app_brand.dart';
 import '../models/person_hub.dart';
 import '../pinka_sdk/pinka_sdk.dart';
 import '../services/background_audio.dart';
@@ -839,35 +840,36 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
             mainAxisSize: MainAxisSize.min,
             children: [
               const AnonymousSignInBar(applyBottomSafeArea: false),
-              PinkaSupportBar.episode(
-                youtubeId: data.youtubeId,
-                applyBottomSafeArea: false,
-                // Fallback na kampanju kanala — vidi episode_screen.dart.
-                channelRefs: [
-                  ?data.info.youtubeChannelId,
-                  ?channelCache.channelIdForName(data.info.channel),
-                ],
-                onOpen: (_, viaChannel) {
-                  if (!viaChannel) {
+              if (AppBrand.config.flags.pinka)
+                PinkaSupportBar.episode(
+                  youtubeId: data.youtubeId,
+                  applyBottomSafeArea: false,
+                  // Fallback na kampanju kanala — vidi episode_screen.dart.
+                  channelRefs: [
+                    ?data.info.youtubeChannelId,
+                    ?channelCache.channelIdForName(data.info.channel),
+                  ],
+                  onOpen: (_, viaChannel) {
+                    if (!viaChannel) {
+                      drillDown(context, Uri(
+                        path: '/v/${data.youtubeId}/support',
+                        queryParameters: {'name': data.displayTitle},
+                      ).toString());
+                      return;
+                    }
+                    final slug = channelCache
+                        .channelIdForName(data.info.channel)
+                        ?.replaceAll('_', '-');
+                    final uc = data.info.youtubeChannelId;
                     drillDown(context, Uri(
-                      path: '/v/${data.youtubeId}/support',
-                      queryParameters: {'name': data.displayTitle},
+                      path: '/c/${slug ?? 'kanal'}/support',
+                      queryParameters: {
+                        'uc': ?uc,
+                        'name': data.info.channel,
+                      },
                     ).toString());
-                    return;
-                  }
-                  final slug = channelCache
-                      .channelIdForName(data.info.channel)
-                      ?.replaceAll('_', '-');
-                  final uc = data.info.youtubeChannelId;
-                  drillDown(context, Uri(
-                    path: '/c/${slug ?? 'kanal'}/support',
-                    queryParameters: {
-                      'uc': ?uc,
-                      'name': data.info.channel,
-                    },
-                  ).toString());
-                },
-              ),
+                  },
+                ),
             ],
           ),
         ),
@@ -1317,16 +1319,17 @@ class _PlayerTab extends StatelessWidget {
           const SizedBox(height: 8),
           // "Zid podrške" za epizodu — sam se sakrije ako epizoda nema aktivnu
           // pinka kampanju. SEPA QR + on-chain EURe (Gnosis Safe) + in-app wallet.
-          PinkaSupportCard.episode(
-            youtubeId: data.youtubeId,
-            onOpen: (_) => drillDown(
-              context,
-              Uri(
-                path: '/v/${data.youtubeId}/support',
-                queryParameters: {'name': data.displayTitle},
-              ).toString(),
+          if (AppBrand.config.flags.pinka)
+            PinkaSupportCard.episode(
+              youtubeId: data.youtubeId,
+              onOpen: (_) => drillDown(
+                context,
+                Uri(
+                  path: '/v/${data.youtubeId}/support',
+                  queryParameters: {'name': data.displayTitle},
+                ).toString(),
+              ),
             ),
-          ),
 
           const SizedBox(height: 24),
         ],
