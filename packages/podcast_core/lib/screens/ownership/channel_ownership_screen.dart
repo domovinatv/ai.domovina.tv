@@ -13,7 +13,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
-import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../models/channel_claim.dart';
 import '../../models/channel_detail.dart';

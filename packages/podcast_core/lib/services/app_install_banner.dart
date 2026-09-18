@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../brand/app_brand.dart';
 import '../l10n/app_localizations.dart';
-import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 import 'local_prefs.dart';
 import 'mobile_web_detect.dart';
