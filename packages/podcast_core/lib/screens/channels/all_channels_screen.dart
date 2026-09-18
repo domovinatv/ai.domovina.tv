@@ -591,7 +591,7 @@ class ChannelSortDropdown extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        for (final m in ChannelSortMode.values)
+        for (final m in ChannelSortMode.offered)
           PopupMenuItem<String>(
             value: m.name,
             child: Row(

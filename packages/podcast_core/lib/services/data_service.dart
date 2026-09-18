@@ -11,6 +11,7 @@ import '../models/magisterium_full_data.dart';
 import '../models/episode_status.dart';
 import '../models/magisterium_full_v2_data.dart';
 import '../models/speaker_timeline.dart';
+import '../brand/app_brand.dart';
 import 'cdn_config.dart';
 
 /// Bačen kad info.json za dani YouTube ID ne postoji na CDN-u (HTTP 404).
@@ -51,6 +52,12 @@ class DataService {
   final String youtubeId;
 
   const DataService({required this.youtubeId});
+
+  /// Brend bez domenske ocjene (`flags.domainScore == false`) ne dohvaća
+  /// `article.magisterium*` assete — svaki `loadMagisterium*` odmah vraća
+  /// `null`, pa je `EpisodeData.hasMagisterium` false bez ijednog zahtjeva
+  /// (9 od 17 paralelnih dohvata po epizodi manje).
+  static bool get domainScoreEnabled => AppBrand.config.flags.domainScore;
 
   Future<String> _fetch(String url) async {
     final response = await http.get(Uri.parse(url));
@@ -141,6 +148,7 @@ class DataService {
 
   /// Magisterium teološko obogaćivanje — opcionalno (nije obavezan asset).
   Future<MagisteriumData?> loadMagisterium() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumUrl(youtubeId));
       return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
@@ -151,6 +159,7 @@ class DataService {
 
   /// EN-overlay verzija article.magisterium.json — opcionalno.
   Future<MagisteriumData?> loadMagisteriumEn() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumEnUrl(youtubeId));
       return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
@@ -161,6 +170,7 @@ class DataService {
 
   /// Magisterium batch varijanta — opcionalno.
   Future<MagisteriumData?> loadMagisteriumBatch() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumBatchUrl(youtubeId));
       return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
@@ -171,6 +181,7 @@ class DataService {
 
   /// EN-overlay verzija article.magisterium_batch.json — opcionalno.
   Future<MagisteriumData?> loadMagisteriumBatchEn() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumBatchEnUrl(youtubeId));
       return MagisteriumData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
@@ -181,6 +192,7 @@ class DataService {
 
   /// Magisterium full evaluacija (Magisterium AI API) — opcionalno.
   Future<MagisteriumFullData?> loadMagisteriumFull() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullUrl(youtubeId));
       return MagisteriumFullData.fromJson(
@@ -193,6 +205,7 @@ class DataService {
 
   /// Magisterium full prompt (markdown) — opcionalno.
   Future<String?> loadMagisteriumFullPrompt() async {
+    if (!domainScoreEnabled) return null;
     try {
       return await _fetch(CdnConfig.magisteriumFullPromptUrl(youtubeId));
     } catch (_) {
@@ -202,6 +215,7 @@ class DataService {
 
   /// Magisterium full v2 evaluacija — novi format s `prompt_version`. Opcionalno.
   Future<MagisteriumFullV2Data?> loadMagisteriumFullV2() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullV2Url(youtubeId));
       return MagisteriumFullV2Data.fromJson(
@@ -214,6 +228,7 @@ class DataService {
 
   /// EN-overlay verzija article.magisterium_full_v2.json — opcionalno.
   Future<MagisteriumFullV2Data?> loadMagisteriumFullV2En() async {
+    if (!domainScoreEnabled) return null;
     try {
       final raw = await _fetch(CdnConfig.magisteriumFullV2EnUrl(youtubeId));
       return MagisteriumFullV2Data.fromJson(
@@ -226,6 +241,7 @@ class DataService {
 
   /// Magisterium full v2 prompt (markdown) — opcionalno.
   Future<String?> loadMagisteriumFullV2Prompt() async {
+    if (!domainScoreEnabled) return null;
     try {
       return await _fetch(CdnConfig.magisteriumFullV2PromptUrl(youtubeId));
     } catch (_) {
@@ -563,24 +579,29 @@ class EpisodeData {
     final summaryF = trackOptional('Sažetak', svc.loadSummary());
     final outlineF = trackOptional('Poglavlja', svc.loadOutline());
     final articleF = trackOptional('Članak', svc.loadArticle());
-    final magF = trackOptional('Magisterium', svc.loadMagisterium());
-    final magBatchF = trackOptional(
+    // Magisterium redovi se ne prijavljuju kad brend nema domensku ocjenu —
+    // loader bi ih inače prikazao kao „nedostaje”.
+    final domainScore = DataService.domainScoreEnabled;
+    Future<T?> trackDomain<T>(String name, Future<T?> future) =>
+        domainScore ? trackOptional(name, future) : future;
+    final magF = trackDomain('Magisterium', svc.loadMagisterium());
+    final magBatchF = trackDomain(
       'Magisterium batch',
       svc.loadMagisteriumBatch(),
     );
-    final magFullF = trackOptional(
+    final magFullF = trackDomain(
       'Magisterium full',
       svc.loadMagisteriumFull(),
     );
-    final magPromptF = trackOptional(
+    final magPromptF = trackDomain(
       'Magisterium prompt',
       svc.loadMagisteriumFullPrompt(),
     );
-    final magFullV2F = trackOptional(
+    final magFullV2F = trackDomain(
       'Magisterium v2',
       svc.loadMagisteriumFullV2(),
     );
-    final magV2PromptF = trackOptional(
+    final magV2PromptF = trackDomain(
       'Magisterium v2 prompt',
       svc.loadMagisteriumFullV2Prompt(),
     );
@@ -588,12 +609,12 @@ class EpisodeData {
     // EN overlays — kreni paralelno; 404 → null kad prijevod nije producran.
     final summaryEnF = trackOptional('Sažetak (EN)', svc.loadSummaryEn());
     final articleEnF = trackOptional('Članak (EN)', svc.loadArticleEn());
-    final magEnF = trackOptional('Magisterium (EN)', svc.loadMagisteriumEn());
-    final magBatchEnF = trackOptional(
+    final magEnF = trackDomain('Magisterium (EN)', svc.loadMagisteriumEn());
+    final magBatchEnF = trackDomain(
       'Magisterium batch (EN)',
       svc.loadMagisteriumBatchEn(),
     );
-    final magFullV2EnF = trackOptional(
+    final magFullV2EnF = trackDomain(
       'Magisterium v2 (EN)',
       svc.loadMagisteriumFullV2En(),
     );

@@ -1,3 +1,4 @@
+import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/channel_detail.dart';
 import '../../services/channel_cache.dart';
@@ -5,15 +6,25 @@ import '../../services/channel_cache.dart';
 /// Cross-channel video s denormaliziranim channel kontekstom.
 typedef FeedVideo = ({String channelId, String channelName, ChannelVideo video});
 
+/// Domenska ocjena epizode (0–100) za ranker naslovnice, ili `null` kad
+/// epizoda NIJE ocijenjena. Brend s `flags.domainScore` daje
+/// [HomeFeed.magisteriumScore]; brend bez domenske ocjene ne daje ništa
+/// (`score == null`) i ranker pada na potpunost obrade + svježinu.
+typedef ScoreFn = int? Function(FeedVideo v);
+
 /// Razlog zbog kojeg je epizoda izabrana kao featured.
 enum FeaturedReason {
-  /// Tier 1: hasMagisterium, score ≥ 70, ≤ 14 dana. Najbolji slučaj.
+  /// Tier 1: ocijenjena, score ≥ 70, ≤ 14 dana. Najbolji slučaj.
+  /// Bez domenske ocjene: potpuno obrađena (članak + poglavlja + govornici)
+  /// i ≤ 14 dana.
   hiQualityRecent,
 
-  /// Tier 2: hasMagisterium, score ≥ 70, bilo koji datum.
+  /// Tier 2: ocijenjena, score ≥ 70, bilo koji datum.
+  /// Bez domenske ocjene: potpuno obrađena, bilo koji datum.
   hiQuality,
 
-  /// Tier 3: bilo koja epizoda s AI obradom (hasMagisterium).
+  /// Tier 3: bilo koja ocijenjena epizoda (hasMagisterium).
+  /// Bez domenske ocjene: članak + bar jedno od poglavlja/govornika.
   anyMagisterium,
 
   /// Tier 4: najnovija epizoda bez ikakve obrade.
@@ -75,23 +86,65 @@ class HomeFeed {
   static bool isFreshUnprocessed(FeedVideo v) =>
       !(v.video.pipeline?.hasArticle ?? false);
 
+  /// Zadana domenska ocjena aktivnog brenda: Magisterium score kad je
+  /// `flags.domainScore` upaljen, inače `null` (ranker pada na potpunost
+  /// obrade). Čita se pri svakom pozivu, pa test smije mijenjati brend kroz
+  /// `AppBrand.init`.
+  static ScoreFn? get defaultScore =>
+      AppBrand.config.flags.domainScore ? magisteriumScore : null;
+
+  /// Magisterium ocjena iz channel listinga. Ocijenjena je samo epizoda s
+  /// `has_magisterium`; njoj `magisterium_score` po pipelineu uvijek postoji
+  /// (izmjereno 18. 9. 2026. nad 49 kanala / 3227 epizoda: 316 s oznakom,
+  /// 0 bez ocjene), a `?? 0` čuva staro pravilo „oznaka bez ocjene = tier 3”.
+  static int? magisteriumScore(FeedVideo v) =>
+      (v.video.pipeline?.hasMagisterium ?? false)
+          ? (v.video.magisteriumScore ?? 0)
+          : null;
+
+  /// Epizoda ima poglavlja — channel listing nema zasebnu outline zastavicu
+  /// (ključevi `pipeline` bloka izmjereni 18. 9. 2026.: transcript, diarized,
+  /// summary, article, magisterium + EN varijante), pa je `has_summary`
+  /// (sažetak s pregledom tema) najbliži signal.
+  static bool hasChapters(FeedVideo v) => v.video.pipeline?.hasSummary ?? false;
+
+  /// Epizoda ima identificirane govornike — diarizacija ili popis govornika
+  /// u listingu.
+  static bool hasSpeakers(FeedVideo v) =>
+      (v.video.pipeline?.hasDiarized ?? false) || v.video.speakers.isNotEmpty;
+
+  /// Potpunost obrade 0–3: članak, poglavlja, govornici. Bez članka je 0 bez
+  /// obzira na ostalo — članak je gate za naslovnicu ([isReadyForHome]).
+  static int completeness(FeedVideo v) {
+    if (!isReadyForHome(v)) return 0;
+    return 1 + (hasChapters(v) ? 1 : 0) + (hasSpeakers(v) ? 1 : 0);
+  }
+
   /// Featured pick s razlogom. Algoritam (4-tier fallback):
   ///
-  /// 1. **Hi-quality recent** — `hasMagisterium && score≥70 && ≤14 dana`,
-  ///    sortirano po `score*0.6 + recencyScore*0.4`. Najbolji izbor jer
-  ///    kombinira kvalitetu i svjezinu.
-  /// 2. **Hi-quality** — `hasMagisterium && score≥70`, bilo koji datum.
-  ///    Sortirano po score desc.
-  /// 3. **Any magisterium** — bilo koja epizoda s AI obradom, sortirano
+  /// 1. **Hi-quality recent** — `score≥70 && ≤14 dana`, sortirano po
+  ///    `score*0.6 + recencyScore*0.4`. Najbolji izbor jer kombinira
+  ///    kvalitetu i svjezinu.
+  /// 2. **Hi-quality** — `score≥70`, bilo koji datum. Sortirano po score desc.
+  /// 3. **Any magisterium** — bilo koja ocijenjena epizoda, sortirano
   ///    po datumu desc.
   /// 4. **Newest** — najnovija epizoda uopce.
+  ///
+  /// Bez domenske ocjene (`score == null`) tierovi 1–3 rangiraju po potpunosti
+  /// obrade — vidi [pickFeaturedCarousel].
   ///
   /// Vraca null ako je `all` prazan.
   ///
   /// Implementiran kao prvi element [pickFeaturedCarousel] — time je jedan-pick
   /// (npr. TV hero) uvijek identičan prvom slideu web hero karusela.
-  static FeaturedPick? pickFeatured(List<FeedVideo> all) {
-    final picks = pickFeaturedCarousel(all);
+  static FeaturedPick? pickFeatured(
+    List<FeedVideo> all, {
+    ScoreFn? score,
+    bool useDefaultScore = true,
+    DateTime? now,
+  }) {
+    final picks = pickFeaturedCarousel(all,
+        score: score, useDefaultScore: useDefaultScore, now: now);
     return picks.isEmpty ? null : picks.first;
   }
 
@@ -99,24 +152,57 @@ class HomeFeed {
   /// (poredanih) umjesto jednog picka. Prvi element je isti kao [pickFeatured]
   /// (današnji dnevni pick), ostali slijede po rangu pa rotiraju natrag.
   ///
-  /// Isti 4-tier fallback kao [pickFeatured]:
-  /// 1. **Hi-quality recent** — `hasMagisterium && score≥70 && ≤14 dana`,
-  ///    sortirano po `score*0.6 + recencyScore*0.4`; dnevna rotacija određuje
-  ///    koji je kandidat prvi (hero se mijenja u ponoc, deterministicki).
-  /// 2. **Hi-quality** — `hasMagisterium && score≥70`, sortirano po score desc.
-  /// 3. **Any magisterium** — bilo koja AI-obrađena, sortirano po datumu desc.
+  /// [score] je domenska ocjena; kad nije zadan, a [useDefaultScore] je
+  /// `true`, uzima se [defaultScore] aktivnog brenda. `useDefaultScore: false`
+  /// bez [score] znači „bez domenske ocjene” (testovi, brendovi bez ocjene).
+  /// [now] je referentno vrijeme za svježinu i dnevnu rotaciju — zadano
+  /// `DateTime.now()`; testovi ga zadaju da budu deterministički.
+  ///
+  /// S domenskom ocjenom (DOMOVINA, `flags.domainScore`):
+  /// 1. **Hi-quality recent** — `score≥70 && ≤14 dana`, sortirano po
+  ///    `score*0.6 + recencyScore*0.4`; dnevna rotacija određuje koji je
+  ///    kandidat prvi (hero se mijenja u ponoc, deterministicki).
+  /// 2. **Hi-quality** — `score≥70`, sortirano po score desc (datum desc za
+  ///    jednake ocjene).
+  /// 3. **Any magisterium** — bilo koja ocijenjena, sortirano po datumu desc.
   /// 4. **Newest** — najnovije spremne epizode.
   ///
+  /// Bez domenske ocjene (`score == null`) ocjenu zamjenjuje potpunost obrade
+  /// ([completeness]: članak + poglavlja + govornici), preslikana na 0–100
+  /// (3 → 100, 2 → 50; samo članak ili bez članka → neocijenjena):
+  /// 1. **Hi-quality recent** — potpuno obrađena i ≤ 14 dana, sortirano po
+  ///    svježini (formula je ista, ocjena je svima 100) + dnevna rotacija.
+  /// 2. **Hi-quality** — potpuno obrađena, bilo koji datum, datum desc.
+  /// 3. **Any magisterium** — članak + bar jedno od poglavlja/govornika,
+  ///    datum desc.
+  /// 4. **Newest** — najnovije spremne epizode (nepromijenjeno).
+  ///
   /// Vraca praznu listu ako je `all` prazan.
-  static List<FeaturedPick> pickFeaturedCarousel(List<FeedVideo> all,
-      {int limit = 5}) {
+  static List<FeaturedPick> pickFeaturedCarousel(
+    List<FeedVideo> all, {
+    int limit = 5,
+    ScoreFn? score,
+    bool useDefaultScore = true,
+    DateTime? now,
+  }) {
     if (all.isEmpty) return const [];
 
-    final now = DateTime.now();
+    final scoreFn = score ?? (useDefaultScore ? defaultScore : null);
+    final ref = now ?? DateTime.now();
+
+    // Kvaliteta 0–100 ili null (neocijenjena) — domenska ocjena ili
+    // potpunost obrade kad ocjene nema.
+    int? qualityOf(FeedVideo v) {
+      if (scoreFn != null) return scoreFn(v);
+      // Samo članak (c == 1) je „neocijenjena” → tier 4, ne tier 3.
+      final c = completeness(v);
+      return c <= 1 ? null : (c - 1) * 50;
+    }
+
     int? daysAgoFor(String? date) {
       if (date == null) return null;
       try {
-        return now.difference(DateTime.parse(date)).inDays;
+        return ref.difference(DateTime.parse(date)).inDays;
       } catch (_) {
         return null;
       }
@@ -129,80 +215,74 @@ class HomeFeed {
       return 100 - (daysAgo * 7).toDouble();
     }
 
+    double combinedFor(FeedVideo v) =>
+        (qualityOf(v) ?? 0) * 0.6 + recencyScore(daysAgoFor(v.video.date)) * 0.4;
+
+    int byDateDesc(FeedVideo a, FeedVideo b) =>
+        (b.video.date ?? '').compareTo(a.video.date ?? '');
+
     // Tier 1 — Najbolji izbor, s dnevnom rotacijom kroz top N kandidata.
     final hiQualityRecent = all.where((v) {
-      final score = v.video.magisteriumScore ?? 0;
-      final hasMag = v.video.pipeline?.hasMagisterium ?? false;
+      final q = qualityOf(v) ?? 0;
       final d = daysAgoFor(v.video.date);
-      return hasMag && score >= 70 && d != null && d <= 14;
+      return q >= 70 && d != null && d <= 14;
     }).toList();
 
     if (hiQualityRecent.isNotEmpty) {
       hiQualityRecent.sort((a, b) {
-        final aScore = (a.video.magisteriumScore ?? 0) * 0.6 +
-            recencyScore(daysAgoFor(a.video.date)) * 0.4;
-        final bScore = (b.video.magisteriumScore ?? 0) * 0.6 +
-            recencyScore(daysAgoFor(b.video.date)) * 0.4;
-        return bScore.compareTo(aScore);
+        final cmp = combinedFor(b).compareTo(combinedFor(a));
+        return cmp != 0 ? cmp : byDateDesc(a, b);
       });
       // Izvuci top N i seedaj početak po danu u godini. Karusel počinje od
       // današnjeg dnevnog picka pa nastavlja po rangu (i rotira natrag), tako
       // da je prvi slide deterministicki isti tijekom dana.
       final topN = hiQualityRecent.take(limit).toList();
-      final dayOfYear = now.difference(DateTime(now.year)).inDays;
+      final dayOfYear = ref.difference(DateTime(ref.year)).inDays;
       final start = dayOfYear % topN.length;
       final ordered = [...topN.sublist(start), ...topN.sublist(0, start)];
       return ordered.map((v) {
-        final d = daysAgoFor(v.video.date);
-        final combined =
-            (v.video.magisteriumScore ?? 0) * 0.6 + recencyScore(d) * 0.4;
         return FeaturedPick(
           video: v,
           reason: FeaturedReason.hiQualityRecent,
-          magisteriumScore: v.video.magisteriumScore,
-          daysAgo: d,
-          combinedScore: combined,
+          magisteriumScore: scoreFn?.call(v),
+          daysAgo: daysAgoFor(v.video.date),
+          combinedScore: combinedFor(v),
           candidatePool: hiQualityRecent.length,
         );
       }).toList();
     }
 
     // Tier 2
-    final hiQuality = all.where((v) {
-      final score = v.video.magisteriumScore ?? 0;
-      final hasMag = v.video.pipeline?.hasMagisterium ?? false;
-      return hasMag && score >= 70;
-    }).toList();
+    final hiQuality = all.where((v) => (qualityOf(v) ?? 0) >= 70).toList();
     if (hiQuality.isNotEmpty) {
-      hiQuality.sort((a, b) => (b.video.magisteriumScore ?? 0)
-          .compareTo(a.video.magisteriumScore ?? 0));
+      hiQuality.sort((a, b) {
+        final cmp = (qualityOf(b) ?? 0).compareTo(qualityOf(a) ?? 0);
+        return cmp != 0 ? cmp : byDateDesc(a, b);
+      });
       return hiQuality
           .take(limit)
           .map((v) => FeaturedPick(
                 video: v,
                 reason: FeaturedReason.hiQuality,
-                magisteriumScore: v.video.magisteriumScore,
+                magisteriumScore: scoreFn?.call(v),
                 daysAgo: daysAgoFor(v.video.date),
                 candidatePool: hiQuality.length,
               ))
           .toList();
     }
 
-    // Tier 3
-    final magisterium = all
-        .where((v) => v.video.pipeline?.hasMagisterium ?? false)
-        .toList();
-    if (magisterium.isNotEmpty) {
-      magisterium.sort((a, b) =>
-          (b.video.date ?? '').compareTo(a.video.date ?? ''));
-      return magisterium
+    // Tier 3 — bilo koja ocijenjena (ili, bez ocjene, djelomično obrađena).
+    final scored = all.where((v) => qualityOf(v) != null).toList();
+    if (scored.isNotEmpty) {
+      scored.sort(byDateDesc);
+      return scored
           .take(limit)
           .map((v) => FeaturedPick(
                 video: v,
                 reason: FeaturedReason.anyMagisterium,
-                magisteriumScore: v.video.magisteriumScore,
+                magisteriumScore: scoreFn?.call(v),
                 daysAgo: daysAgoFor(v.video.date),
-                candidatePool: magisterium.length,
+                candidatePool: scored.length,
               ))
           .toList();
     }
@@ -213,14 +293,13 @@ class HomeFeed {
     // da homepage ipak nije prazan.
     final readyPool = all.where(isReadyForHome).toList();
     final pool = readyPool.isNotEmpty ? readyPool : all;
-    final sorted = List<FeedVideo>.from(pool)
-      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+    final sorted = List<FeedVideo>.from(pool)..sort(byDateDesc);
     return sorted
         .take(limit)
         .map((v) => FeaturedPick(
               video: v,
               reason: FeaturedReason.newest,
-              magisteriumScore: v.video.magisteriumScore,
+              magisteriumScore: scoreFn?.call(v),
               daysAgo: daysAgoFor(v.video.date),
               candidatePool: pool.length,
             ))
