@@ -9,14 +9,19 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_certilia/flutter_certilia.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 import 'locale_service.dart';
 
-/// URL certilia-server proxyja. Override preko --dart-define (deploy.sh embeda).
-const String certiliaServerUrl = String.fromEnvironment(
-  'CERTILIA_SERVER_URL',
-  defaultValue: 'https://certilia.domovina.ai',
-);
+/// Override preko --dart-define (deploy.sh embeda); prazno = brend.
+const String _certiliaServerUrlOverride =
+    String.fromEnvironment('CERTILIA_SERVER_URL');
+
+/// URL certilia-server proxyja: dart-define override ili
+/// `AppBrand.config.endpoints.certilia`.
+String get certiliaServerUrl => _certiliaServerUrlOverride.isNotEmpty
+    ? _certiliaServerUrlOverride
+    : AppBrand.config.endpoints.certilia;
 
 class CertiliaFailure implements Exception {
   final String message;

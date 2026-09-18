@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 import '../models/person_hub.dart';
 
@@ -15,17 +16,18 @@ import '../models/person_hub.dart';
 /// Endpoint vraća `Cache-Control: public, max-age=300` — profil je
 /// deterministički do sljedećeg ingesta.
 class PersonService {
-  /// Base URL person API-ja. Mijenja se ovdje ako se host promijeni.
-  static const String _endpoint = 'https://mcp.domovina.ai/api/person';
+  /// Base URL person API-ja — host je `endpoints.rag` aktivnog brenda.
+  static String get _endpoint => '${AppBrand.config.endpoints.rag}/api/person';
 
   /// Indeks svih osoba koje se prikazuju kao virtualni kanal (§4.1 plana
   /// `docs/plans/virtualni-kanali.md`). Endpoint stiže s F2 — dotad vraća 404
   /// i [loadIndex] daje `null` (feature ostaje nevidljiv, ništa ne puca).
-  static const String _indexEndpoint = 'https://mcp.domovina.ai/api/persons';
+  static String get _indexEndpoint =>
+      '${AppBrand.config.endpoints.rag}/api/persons';
 
   /// Dojava krivo pripisanog govornika (gumb „Prijavi grešku" na profilu).
-  static const String _reportEndpoint =
-      'https://mcp.domovina.ai/api/person-report';
+  static String get _reportEndpoint =>
+      '${AppBrand.config.endpoints.rag}/api/person-report';
 
   static final http.Client _client = http.Client();
 

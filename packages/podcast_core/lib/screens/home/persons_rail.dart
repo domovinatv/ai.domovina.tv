@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
 import '../../services/person_channel_flag.dart';
@@ -142,7 +143,7 @@ class _PersonRailTile extends StatelessWidget {
       identifier: 'person-card-${person.slug}',
       container: true,
       child: ShareContextMenu(
-        url: 'https://domovina.ai/p/${person.slug}',
+        url: AppBrand.config.shareUrl('/p/${person.slug}'),
         child: SizedBox(
           width: width,
           child: Material(

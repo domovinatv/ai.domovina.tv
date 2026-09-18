@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
 import '../../theme/typography.dart';
@@ -64,7 +65,8 @@ class _PersonCardState extends State<PersonCard> {
 
   /// Javna poveznica na profil — `/p/<slug>`, slug DOSLOVNO (bez `-`↔`_`
   /// pretvorbe koju rade kanali).
-  String get _shareUrl => 'https://domovina.ai/p/${widget.person.slug}';
+  String get _shareUrl =>
+      AppBrand.config.shareUrl('/p/${widget.person.slug}');
 
   @override
   Widget build(BuildContext context) {

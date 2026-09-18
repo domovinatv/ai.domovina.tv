@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../brand/app_brand.dart';
 import '../../theme/app_theme.dart';
 import '../../models/channel_index.dart';
 
@@ -55,7 +56,7 @@ class _ChannelCardState extends State<ChannelCard> {
   /// Javna poveznica na kanal — `/c/<slug>` (slug koristi `-`, ne `_`).
   String get _shareUrl {
     final slug = widget.channel.id.replaceAll('_', '-');
-    return 'https://domovina.ai/c/$slug';
+    return AppBrand.config.shareUrl('/c/$slug');
   }
 
   @override

@@ -962,7 +962,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          'cdn.domovina.ai',
+          Uri.parse(CdnConfig.base).host,
           style: theme.textTheme.bodySmall?.copyWith(
             color: Colors.white.withValues(alpha: 0.55),
             fontFamily: 'monospace',

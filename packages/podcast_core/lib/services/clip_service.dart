@@ -1,3 +1,5 @@
+import '../brand/app_brand.dart';
+
 /// On-demand chapter clip URLs served by `cutter.domovina.ai` (the standalone
 /// `domovina-cutter` service). The cutter lazily cuts an article iteration out
 /// of the full episode with ffmpeg, caches it on R2, and 302-redirects warm
@@ -15,7 +17,8 @@
 /// shown in the UI is therefore ESTIMATED from the chapter duration, never
 /// fetched.
 class ClipService {
-  static const _base = 'https://cutter.domovina.ai';
+  /// Cutter host aktivnog brenda (`endpoints.cutter`).
+  static String get _base => AppBrand.config.endpoints.cutter;
 
   /// Inline/streamable clip URL (302 → CDN). Pasteable into a message — plays
   /// inline in clients whose size limit allows it (Telegram, iMessage), and

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 
 /// Klijent za Cal.com booking ("15 min DOMOVINA.ai" / stepanic/15min).
@@ -18,10 +19,13 @@ class CalConfig {
   /// Apsolutni base radi na svim platformama: web (same-origin u prod),
   /// native (iOS/Android/macOS) i lokalni dev (worker ima permisivni CORS).
   /// Override za staging/self-host: --dart-define=CAL_PROXY_BASE=...
-  static const String proxyBase = String.fromEnvironment(
-    'CAL_PROXY_BASE',
-    defaultValue: 'https://domovina.ai/api/cal',
-  );
+  static const String _proxyBaseOverride =
+      String.fromEnvironment('CAL_PROXY_BASE');
+
+  /// Bez override-a: `<endpoints.site>/api/cal` aktivnog brenda.
+  static String get proxyBase => _proxyBaseOverride.isNotEmpty
+      ? _proxyBaseOverride
+      : '${AppBrand.config.endpoints.site}/api/cal';
 
   /// Vremenska zona event-typea (host = Europe/Zagreb). Slotovi i booking
   /// se računaju u njoj; UI prikazuje wall-clock iz ISO stringa direktno.

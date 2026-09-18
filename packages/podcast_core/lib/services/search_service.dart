@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 
 /// Jedan rezultat semantičke pretrage (chunk transkripta/sažetka).
@@ -82,8 +83,8 @@ class SemanticResult {
 /// NE koristi LLM — vraća rankirane chunkove direktno iz vektorskog indeksa.
 /// Endpoint je čisti HTTP GET, pa radi i na webu (--wasm) i na native-u.
 class SearchService {
-  /// Base URL semantic search API-ja. Mijenja se ovdje ako se host promijeni.
-  static const String _endpoint = 'https://mcp.domovina.ai/api/search';
+  /// Base URL semantic search API-ja — host je `endpoints.rag` aktivnog brenda.
+  static String get _endpoint => '${AppBrand.config.endpoints.rag}/api/search';
 
   static final http.Client _client = http.Client();
 

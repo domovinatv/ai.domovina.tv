@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/person_hub.dart';
 import '../../services/cdn_config.dart';
@@ -88,7 +89,7 @@ class _PersonScreenState extends State<PersonScreen> {
   /// specifične OG tagove na taj path (ime + broj epizoda/kanala) pa WhatsApp/
   /// Facebook preview pokaže osobu, ne generički domovina.ai — vidi web/_worker.js.
   void _shareProfile() {
-    final url = 'https://domovina.ai/p/${widget.slug}';
+    final url = AppBrand.config.shareUrl('/p/${widget.slug}');
     Clipboard.setData(ClipboardData(text: url));
     if (!mounted) return;
     final l = AppLocalizations.of(context);

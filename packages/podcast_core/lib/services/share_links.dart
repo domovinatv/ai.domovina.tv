@@ -13,11 +13,14 @@
 /// izvor linka — ondje je gubitak bio potpun. Prijavljeno 15.9.2026.
 library;
 
+import '../brand/app_brand.dart';
 import 'episode_language.dart';
 
-/// Kanonski origin aplikacije. Share linkovi su uvijek apsolutni — kopiraju se
-/// u tuđe aplikacije, gdje relativna putanja ne znači ništa.
-const String kShareOrigin = 'https://domovina.ai';
+/// Kanonski origin aplikacije (`AppBrand.config.endpoints.site`). Share
+/// linkovi su uvijek apsolutni — kopiraju se u tuđe aplikacije, gdje
+/// relativna putanja ne znači ništa. Getter, ne const: brend se postavlja u
+/// runtimeu.
+String get kShareOrigin => AppBrand.config.endpoints.site;
 
 /// Poveznica na epizodu, po potrebi na točan trenutak i/ili jezik.
 ///

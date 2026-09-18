@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
 import '../../src/log.dart' show log;
 import '../../models/channel_claim.dart';
@@ -287,7 +288,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     String channelTitle,
     String slugDashed,
   ) async {
-    final link = 'https://domovina.ai/c/$slugDashed';
+    final link = AppBrand.config.shareUrl('/c/$slugDashed');
     final msg = appStrings.ownershipInviteMessage(channelTitle, link);
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
     await launchUrl(

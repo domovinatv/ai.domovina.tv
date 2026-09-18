@@ -1,5 +1,7 @@
 library;
 
+import '../../brand/app_brand.dart';
+
 /// Konfiguracija Pinka SDK-a — chain konstante, edge-fn imena, schema.
 ///
 /// Defaulti zrcale **produkcijski pinka.io** stack: Monerium EURe V2 na Gnosis
@@ -9,6 +11,12 @@ library;
 /// SDK je dizajniran kao samostalan feature (budući "Pinka Flutter SDK"): sve
 /// vanjske ovisnosti idu kroz [PinkaConfig] + [PinkaClient] da se folder
 /// `lib/pinka_sdk/` može jednog dana podići u zaseban package bez izmjena.
+///
+/// Jedina ovisnost o host aplikaciji: hostovi ([walletSdkUrl],
+/// [shareBaseUrl], [intentStatusBase]) se, kad nisu eksplicitno zadani,
+/// čitaju iz `AppBrand.config.endpoints` — `defaults` mora ostati `const`
+/// (default vrijednost parametara), a brend nije compile-time konstanta. Pri
+/// izdvajanju u paket host app ih proslijedi eksplicitno.
 class PinkaConfig {
   const PinkaConfig({
     this.schema = 'pinka_finance',
@@ -24,11 +32,13 @@ class PinkaConfig {
     this.eureAddress = '0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430',
     this.gnosisChainId = 100,
     this.explorerBase = 'https://gnosisscan.io',
-    this.walletSdkUrl = 'https://wallet.domovina.ai/sdk.js',
+    String? walletSdkUrl,
     this.gnosisRpcUrl = 'https://rpc.gnosischain.com',
-    this.shareBaseUrl = 'https://domovina.ai',
-    this.intentStatusBase = 'https://mpt.domovina.ai/api/intents/',
-  });
+    String? shareBaseUrl,
+    String? intentStatusBase,
+  })  : _walletSdkUrl = walletSdkUrl,
+        _shareBaseUrl = shareBaseUrl,
+        _intentStatusBase = intentStatusBase;
 
   /// Postgres schema u domovina-api backendu (dijeljen s pinka.io).
   final String schema;
@@ -68,23 +78,29 @@ class PinkaConfig {
   /// Block explorer baza (Gnosisscan) za "Provjeri na lancu" linkove.
   final String explorerBase;
 
-  /// DOMOVINA wallet iframe SDK (`wallet.domovina.ai/sdk.js`) — in-app EURe
+  /// DOMOVINA wallet iframe SDK (`<endpoints.wallet>/sdk.js`) — in-app EURe
   /// send preko WebAuthn passkeya. Web-only (vidi `wallet/pinka_wallet.dart`).
-  final String walletSdkUrl;
+  String get walletSdkUrl =>
+      _walletSdkUrl ?? '${AppBrand.config.endpoints.wallet}/sdk.js';
+  final String? _walletSdkUrl;
 
   /// Javni Gnosis JSON-RPC za client-side čitanja (npr. live EURe saldo
   /// campaign Safe-a u verify kartici). Read-only, bez ključa.
   final String gnosisRpcUrl;
 
   /// Baza javnih share linkova na Zid podrške ("Podijeli" gumb) — host app
-  /// domena; rute su `/c/<slug>/support` i `/v/<id>/support`.
-  final String shareBaseUrl;
+  /// domena (`endpoints.site`); rute su `/c/<slug>/support` i `/v/<id>/support`.
+  String get shareBaseUrl => _shareBaseUrl ?? AppBrand.config.endpoints.site;
+  final String? _shareBaseUrl;
 
   /// MPT rail status endpoint (`GET <base><sid>`) — živi per-step progress
   /// SEPA intenta (awaiting → processing → minted → forwarding → settled).
   /// Fallback kad `pinka-contribute` ne vrati `status_url`. CORS dopušta
-  /// domovina.ai origin.
-  final String intentStatusBase;
+  /// origin host aplikacije. Host je `endpoints.paymentIntents`.
+  String get intentStatusBase =>
+      _intentStatusBase ??
+      '${AppBrand.config.endpoints.paymentIntents}/api/intents/';
+  final String? _intentStatusBase;
 
   static const PinkaConfig defaults = PinkaConfig();
 
