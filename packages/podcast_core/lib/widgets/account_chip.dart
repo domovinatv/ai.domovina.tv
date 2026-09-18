@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
+import '../brand/app_brand.dart';
 import '../onboarding/ui/auth_sheet.dart';
 import '../screens/account/account_screen.dart' show confirmAndSignOut;
 import '../services/auth_service.dart';
@@ -169,14 +170,16 @@ class _SignedInChip extends StatelessWidget {
             dense: true,
           ),
         ),
-        PopupMenuItem(
-          value: 'channels',
-          child: ListTile(
-            leading: const Icon(Icons.smart_display_outlined),
-            title: Text(l.mediaMyChannels),
-            dense: true,
+        // „Moji kanali” postoje samo uz vlasništvo kanala (claim flow).
+        if (AppBrand.config.flags.channelOwnership)
+          PopupMenuItem(
+            value: 'channels',
+            child: ListTile(
+              leading: const Icon(Icons.smart_display_outlined),
+              title: Text(l.mediaMyChannels),
+              dense: true,
+            ),
           ),
-        ),
         PopupMenuItem(
           value: 'handoff',
           child: ListTile(

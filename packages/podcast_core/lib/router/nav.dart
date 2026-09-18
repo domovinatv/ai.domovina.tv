@@ -25,6 +25,8 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import '../brand/app_brand.dart';
+
 /// Najveća dubina imperativnog stoga prije nego [drillDown] prijeđe na
 /// `pushReplacement`.
 ///
@@ -130,9 +132,16 @@ String upTarget(String location, {String? channelSlug}) {
     case 'p':
       return '/channels?prikaz=osobe';
     // Detalj kandidata → ljestvica.
+    // Bez `voting` flaga `/glasanje` ne postoji, pa je roditelj naslovnica.
     case 'glasanje':
-      return segs.length > 1 ? '/glasanje' : '/';
+      return AppBrand.config.flags.voting && segs.length > 1
+          ? '/glasanje'
+          : '/';
     case 'account':
+      // Bez `channelOwnership` flaga `/account/channels*` ne postoji.
+      if (!AppBrand.config.flags.channelOwnership) {
+        return segs.length > 1 ? '/account' : '/';
+      }
       // /account/channels/<uc>/campaigns/... → jedan korak gore.
       if (segs.length > 3) return '/account/channels/${segs[2]}';
       if (segs.length > 2) return '/account/channels';

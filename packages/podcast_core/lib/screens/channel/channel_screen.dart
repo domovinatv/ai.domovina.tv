@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../models/episode_status.dart';
 import '../../models/channel_detail.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
@@ -113,7 +114,8 @@ class _ChannelScreenState extends State<ChannelScreen> {
                   ),
                   // "Preuzmi vlasništvo" — vidljivo samo kad kanal ima kanonski
                   // UC… ID (Faza 0). Vodi na claim flow (/c/<slug>/claim).
-                  if (_resolvedUcId != null)
+                  if (AppBrand.config.flags.channelOwnership &&
+                      _resolvedUcId != null)
                     IconButton(
                       icon: const Icon(Icons.verified_user_outlined),
                       tooltip: l.channelClaimOwnership,
@@ -158,20 +160,21 @@ class _ChannelScreenState extends State<ChannelScreen> {
                       // "Zid podrške" — sama se sakrije ako kanal nema aktivnu
                       // pinka kampanju (vidi lib/pinka_sdk/). Match po internom
                       // channel id-u ILI kanonskom UC… id-u.
-                      PinkaSupportCard.channel(
-                        channelId: widget.channelId,
-                        youtubeChannelId: detail.youtubeChannelId,
-                        onOpen: (_) => context.push(
-                          Uri(
-                            path: '/c/$slug/support',
-                            queryParameters: {
-                              if (detail.youtubeChannelId != null)
-                                'uc': detail.youtubeChannelId!,
-                              'name': detail.name,
-                            },
-                          ).toString(),
+                      if (AppBrand.config.flags.pinka)
+                        PinkaSupportCard.channel(
+                          channelId: widget.channelId,
+                          youtubeChannelId: detail.youtubeChannelId,
+                          onOpen: (_) => context.push(
+                            Uri(
+                              path: '/c/$slug/support',
+                              queryParameters: {
+                                if (detail.youtubeChannelId != null)
+                                  'uc': detail.youtubeChannelId!,
+                                'name': detail.name,
+                              },
+                            ).toString(),
+                          ),
                         ),
-                      ),
                       Expanded(
                         child: _ResponsiveVideoList(
                           videos: detail.videos,

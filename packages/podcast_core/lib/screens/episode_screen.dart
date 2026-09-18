@@ -8,6 +8,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../l10n/app_localizations.dart';
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 import '../models/channel_detail.dart' show ChannelVideo;
 import '../models/episode_status.dart';
@@ -1836,16 +1837,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
               // "Zid podrške" za epizodu — sam se sakrije ako epizoda nema
               // aktivnu pinka kampanju (vidi lib/pinka_sdk/). SEPA QR +
               // on-chain EURe (Gnosis Safe) + in-app DOMOVINA novčanik.
-              PinkaSupportCard.episode(
-                youtubeId: data.youtubeId,
-                onOpen: (_) => drillDown(
-                  context,
-                  Uri(
-                    path: '/v/${data.youtubeId}/support',
-                    queryParameters: {'name': data.displayTitle},
-                  ).toString(),
+              if (AppBrand.config.flags.pinka)
+                PinkaSupportCard.episode(
+                  youtubeId: data.youtubeId,
+                  onOpen: (_) => drillDown(
+                    context,
+                    Uri(
+                      path: '/v/${data.youtubeId}/support',
+                      queryParameters: {'name': data.displayTitle},
+                    ).toString(),
+                  ),
                 ),
-              ),
               if (data.hasTranslationEn)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -1958,16 +1960,17 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         highlightPersonSlug: widget.highlightPersonSlug,
                       ),
                       // "Zid podrške" za epizodu — vidi standardni layout iznad.
-                      PinkaSupportCard.episode(
-                        youtubeId: data.youtubeId,
-                        onOpen: (_) => drillDown(
-                  context,
-                          Uri(
-                            path: '/v/${data.youtubeId}/support',
-                            queryParameters: {'name': data.displayTitle},
-                          ).toString(),
+                      if (AppBrand.config.flags.pinka)
+                        PinkaSupportCard.episode(
+                          youtubeId: data.youtubeId,
+                          onOpen: (_) => drillDown(
+                    context,
+                            Uri(
+                              path: '/v/${data.youtubeId}/support',
+                              queryParameters: {'name': data.displayTitle},
+                            ).toString(),
+                          ),
                         ),
-                      ),
                       if (data.hasTranslationEn)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -2431,13 +2434,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
           mainAxisSize: MainAxisSize.min,
           children: [
             const AnonymousSignInBar(applyBottomSafeArea: false),
-            PinkaSupportBar.episode(
-              youtubeId: data.youtubeId,
-              channelRefs: _channelSupportRefs,
-              applyBottomSafeArea: false,
-              onOpen: (_, viaChannel) =>
-                  drillDown(context, _supportPath(viaChannel: viaChannel)),
-            ),
+            if (AppBrand.config.flags.pinka)
+              PinkaSupportBar.episode(
+                youtubeId: data.youtubeId,
+                channelRefs: _channelSupportRefs,
+                applyBottomSafeArea: false,
+                onOpen: (_, viaChannel) =>
+                    drillDown(context, _supportPath(viaChannel: viaChannel)),
+              ),
             if (showMobileBottomBar)
               Material(
                 color: theme.colorScheme.surface,
@@ -2840,13 +2844,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
         mainAxisSize: MainAxisSize.min,
         children: [
           const AnonymousSignInBar(applyBottomSafeArea: false),
-          PinkaSupportBar.episode(
-            youtubeId: data.youtubeId,
-            channelRefs: _channelSupportRefs,
-            applyBottomSafeArea: false,
-            onOpen: (_, viaChannel) =>
-                drillDown(context, _supportPath(viaChannel: viaChannel)),
-          ),
+          if (AppBrand.config.flags.pinka)
+            PinkaSupportBar.episode(
+              youtubeId: data.youtubeId,
+              channelRefs: _channelSupportRefs,
+              applyBottomSafeArea: false,
+              onOpen: (_, viaChannel) =>
+                  drillDown(context, _supportPath(viaChannel: viaChannel)),
+            ),
           if (!isWide)
             Material(
               color: theme.colorScheme.surface,

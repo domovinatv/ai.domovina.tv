@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../src/log.dart' show log;
+import '../../brand/app_brand.dart';
 import '../../models/episode_status.dart';
 import '../../models/channel_index.dart';
 import '../../services/app_install_banner.dart';
@@ -231,7 +232,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      floatingActionButton: const FounderBookingBubble(),
+      // „15 min s osnivačem” — samo brendovi s Cal.com integracijom.
+      floatingActionButton: AppBrand.config.flags.calBooking
+          ? const FounderBookingBubble()
+          : null,
       body: SafeArea(
         child: CallbackShortcuts(
           bindings: {
@@ -496,7 +500,8 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                 // inače dostupan samo s trake na dnu `/channels`, a chip u
                 // zaglavlju vidi tek onaj tko je već potvrđen e-Osobnom. Sam
                 // se sakrije kad kola nema ili ljestvica ne stigne.
-                SliverToBoxAdapter(child: VotingRail(isMobile: isMobile)),
+                if (AppBrand.config.flags.voting)
+                  SliverToBoxAdapter(child: VotingRail(isMobile: isMobile)),
 
                 // "Nastavi slušati" rail — samo ako ima itema.
                 // Thumbnail uvijek konstruiramo iz CDN-a (ignoriraj denorm
