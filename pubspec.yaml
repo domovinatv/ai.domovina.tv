@@ -41,6 +41,13 @@ dependencies:
   # dolaze tranzitivno iz paketa; ljuska ih ne navodi da se ne bi razišle.
   podcast_core:
     path: packages/podcast_core
+  # DOMOVINA-specifično: e-Osobna (Certilia) prijava kao AuthProviderPlugin
+  # u lib/certilia/. Podcasterium ljuska ovu ovisnost nema.
+  flutter_certilia:
+    path: ../../stepanic/flutter_certilia
+  # Plugin izravno koristi Supabase klijent (bridge verifyOTP); ista verzija
+  # kao u paketu (workspace rješava jednu).
+  supabase_flutter: ^2.5.0
 
 dev_dependencies:
   flutter_test:

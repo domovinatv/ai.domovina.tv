@@ -15,7 +15,7 @@ import '../src/log.dart' show log;
 import '../src/app.dart' show rootScaffoldMessengerKey;
 import '../onboarding/ui/auth_ui.dart';
 import 'auth_return_path.dart';
-import 'certilia_service.dart';
+import '../auth/auth_provider_plugin.dart';
 import 'favorites_service.dart';
 import 'local_prefs.dart';
 import 'locale_service.dart';
@@ -362,7 +362,7 @@ class AuthService extends ChangeNotifier {
           return await _registerPasskey(context);
 
         case AuthProvider.certilia:
-          return await signInWithCertilia(context);
+          return await signInWithPlugin(AuthProvider.certilia.name, context);
       }
     } on sb.AuthException catch (e) {
       log('linkIdentity AuthException: ${e.message} '
@@ -458,10 +458,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Prijava hrvatskom eOsobnom (Certilia/NIAS). Spremi anon UUID za migraciju
-  /// pa pokreni Certilia OIDC flow + bridge. Po uspjehu je sesija već
-  /// postavljena (verifyOTP unutar CertiliaService).
-  Future<AuthFlowResult> signInWithCertilia(BuildContext context) async {
+  /// Prijava kroz vanjski plugin (npr. e-Osobna/Certilia u DOMOVINA ljusci).
+  /// Spremi anon UUID za migraciju pa prepusti pluginu; po uspjehu je sesija
+  /// već postavljena (plugin radi verifyOTP bridge).
+  Future<AuthFlowResult> signInWithPlugin(
+      String pluginId, BuildContext context) async {
+    final plugin = AuthPlugins.byId(pluginId);
+    if (plugin == null) {
+      log('signInWithPlugin: nema plugina "$pluginId"');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
+    }
     final client = _client();
     if (client == null) {
       return AuthFlowResult.failure(appStrings.serviceUnavailable);
@@ -471,17 +477,22 @@ class AuthService extends ChangeNotifier {
     if (current?.isAnonymous == true && current != null) {
       anonId = current.id;
       setLocalStorageString(_anonPendingMigrationKey, current.id);
-      log('signInWithCertilia: saved pending anon=${current.id}');
+      log('signInWithPlugin($pluginId): saved pending anon=${current.id}');
     }
     try {
-      await CertiliaService.instance
-          .signInWithCertilia(context, anonId: anonId);
+      await plugin.signIn(context, anonId: anonId);
       return AuthFlowResult.success;
-    } on CertiliaFailure catch (e) {
-      log('signInWithCertilia CertiliaFailure: ${e.message}');
+    } on AuthPluginFailure catch (e) {
+      log('signInWithPlugin($pluginId) failure: ${e.message}');
       return AuthFlowResult.failure(e.message);
     }
   }
+
+  /// Kompatibilni ulaz za ekrane DOMOVINA značajki (glasanje, vlasništvo
+  /// kanala) koji traže e-Osobnu izravno: isti tok kao [signInWithPlugin]
+  /// s id-om `certilia`; bez registriranog plugina vraća neuspjeh.
+  Future<AuthFlowResult> signInWithCertilia(BuildContext context) =>
+      signInWithPlugin(AuthProvider.certilia.name, context);
 
   /// Pošalje magic link + 6-znamenkasti kod na [email] i spremi anon UUID
   /// za migraciju. Sheet zatim vodi korisnika kroz [verifyEmailOtp] (ručni

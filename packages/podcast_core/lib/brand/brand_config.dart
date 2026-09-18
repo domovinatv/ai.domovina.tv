@@ -122,9 +122,12 @@ class Endpoints {
 
 /// Značajke koje brend uključuje. Zadano je sve UGAŠENO osim onoga što je
 /// brand-neutralno; DOMOVINA pali svoje domenske značajke eksplicitno.
+///
+/// Prijava e-Osobnom (Certilia) NIJE zastavica: ljuska registrira
+/// `AuthProviderPlugin` kroz `runPodcastApp(authPlugins:)`, a bez plugina
+/// jezgra nema ni SDK ni gumb.
 class FeatureFlags {
   const FeatureFlags({
-    this.certilia = false,
     this.voting = false,
     this.pinka = false,
     this.channelOwnership = false,
@@ -133,9 +136,6 @@ class FeatureFlags {
     this.handoff = true,
     this.tv = true,
   });
-
-  /// Prijava e-Osobnom (Certilia OAuth).
-  final bool certilia;
 
   /// Glasanje za podcaste (`/glasanje*`, rail na naslovnici).
   final bool voting;

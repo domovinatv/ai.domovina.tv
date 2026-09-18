@@ -21,6 +21,7 @@ import '../services/update_notifier.dart';
 import '../services/watch_progress_service.dart';
 import '../services/episode_language.dart';
 import '../theme/app_theme.dart';
+import '../auth/auth_provider_plugin.dart';
 import '../brand/app_brand.dart';
 import '../brand/brand_config.dart';
 import '../theme/typography.dart';
@@ -35,9 +36,18 @@ const String _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 /// Pokreće aplikaciju za zadani [brand]: inicijalizacija servisa u obveznom
 /// redoslijedu pa `runApp`. Ljuska (`lib/main.dart`) ne radi ništa osim
 /// poziva ove funkcije; tako DOMOVINA i Podcasterium dijele isti core.
-Future<void> runPodcastApp(BrandConfig brand) async {
+///
+/// [authPlugins] su vanjski načini prijave koje ljuska donosi (DOMOVINA:
+/// Certilia); jezgra ih samo registrira i nudi u auth sheetu.
+Future<void> runPodcastApp(
+  BrandConfig brand, {
+  List<AuthProviderPlugin> authPlugins = const [],
+}) async {
   // Prije prvog log() poziva — prefiks loga dolazi iz branda.
   AppBrand.init(brand);
+  for (final plugin in authPlugins) {
+    AuthPlugins.register(plugin);
+  }
   log('main() start');
   WidgetsFlutterBinding.ensureInitialized();
 

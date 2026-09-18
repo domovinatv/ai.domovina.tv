@@ -32,7 +32,6 @@ const BrandConfig domovinaBrand = BrandConfig(
     paymentIntents: 'https://mpt.domovina.ai',
   ),
   flags: FeatureFlags(
-    certilia: true,
     voting: true,
     pinka: true,
     channelOwnership: true,

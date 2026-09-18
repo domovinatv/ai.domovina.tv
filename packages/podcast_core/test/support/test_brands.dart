@@ -29,7 +29,6 @@ BrandConfig brandWithoutDomainScore() {
     defaultEpisodeLanguage: d.defaultEpisodeLanguage,
     endpoints: d.endpoints,
     flags: FeatureFlags(
-      certilia: f.certilia,
       voting: f.voting,
       pinka: f.pinka,
       channelOwnership: f.channelOwnership,

@@ -46,7 +46,6 @@ FeatureFlags domovinaFlagsExcept({
   bool calBooking = true,
 }) =>
     FeatureFlags(
-      certilia: true,
       voting: voting,
       pinka: pinka,
       channelOwnership: channelOwnership,

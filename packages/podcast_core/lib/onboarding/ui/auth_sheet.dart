@@ -14,6 +14,7 @@ import '../../l10n/app_localizations.dart';
 import '../../brand/app_brand.dart';
 import '../../src/app.dart' show rootScaffoldMessengerKey;
 import '../../theme/app_theme.dart';
+import '../../auth/auth_provider_plugin.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';
 import 'auth_ui.dart';
@@ -278,13 +279,22 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     AuthProvider.email,
   ];
 
+  static bool _isOffered(AuthProvider p) =>
+      p != AuthProvider.certilia || AuthPlugins.has(AuthProvider.certilia.name);
+
   List<Widget> _providerChildren() {
     // Returning user: metoda kojom se zadnji put prijavio ide na vrh kao
     // istaknuti tile. Bez toga bi mu passkey (koji možda nema) bio primarni
     // CTA, a njegova stvarna metoda peta u nizu — glavni uzrok "slučajno sam
     // otvorio drugi račun".
-    final lead = _lastUsed ?? AuthProvider.passkey;
-    final rest = _defaultOrder.where((p) => p != lead);
+    // Provider iz plugina (certilia) nudi se samo kad ga je ljuska
+    // registrirala; zadnje korištena metoda koja više nije dostupna pada
+    // na passkey.
+    final offered = _defaultOrder.where(_isOffered).toList();
+    final last = _lastUsed;
+    final lead =
+        (last != null && _isOffered(last)) ? last : AuthProvider.passkey;
+    final rest = offered.where((p) => p != lead);
     return [
       _providerTile(lead, primary: true),
       const SizedBox(height: 12),

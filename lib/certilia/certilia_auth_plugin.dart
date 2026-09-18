@@ -1,4 +1,6 @@
-/// Certilia / NIAS eID login → Supabase sesija.
+/// Certilia / NIAS eID login → Supabase sesija. DOMOVINA-specifičan
+/// `AuthProviderPlugin`: živi u ljusci (ne u jezgri) jer vuče
+/// `flutter_certilia` SDK i hrvatski eID; Podcasterium ga ne registrira.
 ///
 /// flutter_certilia SDK (proxy-only) odradi OIDC flow preko certilia.domovina.ai
 /// i vrati CertiliaUser + idToken. idToken šaljemo edge fn-u `certilia` koji ga
@@ -8,10 +10,8 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_certilia/flutter_certilia.dart';
+import 'package:podcast_core/podcast_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import '../brand/app_brand.dart';
-import '../src/log.dart' show log;
-import 'locale_service.dart';
 
 /// Override preko --dart-define (deploy.sh embeda); prazno = brend.
 const String _certiliaServerUrlOverride =
@@ -23,11 +23,9 @@ String get certiliaServerUrl => _certiliaServerUrlOverride.isNotEmpty
     ? _certiliaServerUrlOverride
     : AppBrand.config.endpoints.certilia;
 
-class CertiliaFailure implements Exception {
-  final String message;
-  const CertiliaFailure(this.message);
-  @override
-  String toString() => message;
+/// Poruka za korisnika; jezgra je hvata kao [AuthPluginFailure].
+class CertiliaFailure extends AuthPluginFailure {
+  const CertiliaFailure(super.message);
 }
 
 class CertiliaService {
@@ -111,4 +109,16 @@ class CertiliaService {
       _ => appStrings.serviceCertiliaLinkFailedWithStatus('${e.status}'),
     };
   }
+}
+
+/// Registracija u jezgru: `runPodcastApp(domovinaBrand, authPlugins: [CertiliaAuthPlugin()])`.
+class CertiliaAuthPlugin implements AuthProviderPlugin {
+  const CertiliaAuthPlugin();
+
+  @override
+  String get id => 'certilia';
+
+  @override
+  Future<void> signIn(BuildContext context, {String? anonId}) =>
+      CertiliaService.instance.signInWithCertilia(context, anonId: anonId);
 }

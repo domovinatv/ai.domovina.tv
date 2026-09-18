@@ -18,10 +18,12 @@ Repo je pub workspace s dva paketa:
   [Podcasterium](https://github.com/podcasterium/podcasterium-app); ljuska
   je uvozi samo kroz `package:podcast_core/podcast_core.dart` i poziva
   `runPodcastApp()`.
-- **korijen** — DOMOVINA ljuska: `lib/main.dart` (jedan poziv), `android/`,
-  `ios/`, `web/`, `macos/`, `assets/` (brend), `integration_test/`, skripte,
-  deploy. Sve runtime ovisnosti navodi paket; korijen navodi samo
-  `podcast_core` (path) i platformske dev alate.
+- **korijen** — DOMOVINA ljuska: `lib/main.dart` (jedan poziv),
+  `lib/certilia/` (e-Osobna kao `AuthProviderPlugin` — DOMOVINA-specifično,
+  vuče `flutter_certilia`), `android/`, `ios/`, `web/`, `macos/`, `assets/`
+  (brend), `integration_test/`, skripte, deploy. Runtime ovisnosti navodi
+  paket; korijen navodi `podcast_core` (path), `flutter_certilia`,
+  `supabase_flutter` (za plugin) i platformske dev alate.
 
 Posljedice za dnevni rad:
 
