@@ -13,6 +13,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../brand/app_brand.dart';
 import '../services/open_url.dart';
 import 'cached_thumbnail.dart';
 import 'youtube_embed_web.dart'
@@ -73,7 +74,7 @@ class YouTubeModeBar extends StatelessWidget {
           TextButton.icon(
             onPressed: onExit,
             icon: const Icon(Icons.replay, size: 16),
-            label: Text(l.mediaNativePlayerLabel),
+            label: Text(l.mediaNativePlayerLabel(AppBrand.config.wordmark)),
             style: TextButton.styleFrom(
               visualDensity: VisualDensity.compact,
               textStyle: theme.textTheme.labelSmall,

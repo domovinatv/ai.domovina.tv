@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../../brand/app_brand.dart';
 import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_contribution_intent.dart';
@@ -818,7 +819,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
               _WalletPhase.sending => l.pinkaWalletOpening,
               _WalletPhase.confirming => l.pinkaWalletConfirming,
               _WalletPhase.idle =>
-                l.pinkaPayFromDomovinaWallet(fmtEur(_amountCents)),
+                l.pinkaPayFromDomovinaWallet(
+                    fmtEur(_amountCents), AppBrand.config.wordmark),
             }),
           ),
           if (_walletNote != null) ...[

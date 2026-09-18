@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../models/channel_index.dart';
 import '../../models/person_hub.dart';
@@ -444,7 +445,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       child: Row(
         children: [
           Text(
-            'DOMOVINA.ai',
+            AppBrand.config.appName,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface,

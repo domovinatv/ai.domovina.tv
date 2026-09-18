@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../brand/app_brand.dart';
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../models/channel_claim.dart';
 import '../../models/channel_detail.dart';
@@ -271,7 +272,7 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 4),
-            Text(l.ownershipNotOwnerBody),
+            Text(l.ownershipNotOwnerBody(AppBrand.config.appName)),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => _inviteOwnerWhatsApp(channelTitle, slugDashed),
@@ -289,7 +290,8 @@ class _ChannelOwnershipScreenState extends State<ChannelOwnershipScreen> {
     String slugDashed,
   ) async {
     final link = AppBrand.config.shareUrl('/c/$slugDashed');
-    final msg = appStrings.ownershipInviteMessage(channelTitle, link);
+    final msg = appStrings.ownershipInviteMessage(
+        channelTitle, link, AppBrand.config.appName);
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
     await launchUrl(
       uri,

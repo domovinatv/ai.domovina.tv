@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import 'legal_page_scaffold.dart';
 
 /// Placeholder za /privacy — potreban za Google OAuth consent screen.
@@ -24,7 +25,7 @@ class PrivacyScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          l.legalPrivacyIntro,
+          l.legalPrivacyIntro(AppBrand.config.appName),
           style: body,
         ),
         const SizedBox(height: 24),

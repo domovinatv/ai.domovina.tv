@@ -9,6 +9,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -128,7 +129,7 @@ class _SendTabState extends State<_SendTab> {
             ),
             const SizedBox(height: 8),
             Text(
-              l.authHandoffSendBody,
+              l.authHandoffSendBody(AppBrand.config.appName),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

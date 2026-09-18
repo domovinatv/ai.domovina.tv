@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/voting_service.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/typography.dart';
 import '../../widgets/account_chip.dart';
+import '../../widgets/brand_wordmark.dart';
 import '../../widgets/language_toggle_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 import '../../l10n/app_localizations.dart';
@@ -16,7 +16,7 @@ import '../../router/nav.dart';
 /// Slim sticky app bar za home screen.
 ///
 /// Layout:
-/// [Logo "DOMOVINA.ai"]  [Pretraži ⌘K placeholder]  [AccountChip]
+/// [Wordmark brenda]  [Pretraži ⌘K placeholder]  [AccountChip]
 ///
 /// Search trigger je placeholder za sada — modal overlay dolazi u Korak 9.
 /// Klik vodi na isti search field u headeru ispod (scroll + focus).
@@ -359,8 +359,9 @@ class _VotingDiscoverChip extends StatelessWidget {
   }
 }
 
-/// Wordmark "DOMOVINA.ai" — Playfair serif za premium editorial vibe.
-/// `.ai` sufiks je u croRed kao Croatian flag akcent.
+/// Wordmark brenda u app baru — [BrandWordmark] (Playfair serif za premium
+/// editorial vibe; sufiks u tertiary boji). Osnovna boja: bijela u tamnoj
+/// temi, `primary` u svijetloj.
 class _Wordmark extends StatelessWidget {
   final bool isDark;
 
@@ -372,23 +373,7 @@ class _Wordmark extends StatelessWidget {
         ? Colors.white
         : Theme.of(context).colorScheme.primary;
 
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: 'DOMOVINA',
-            style: AppTypography.wordmarkStyle(color: baseColor, fontSize: 22),
-          ),
-          TextSpan(
-            text: '.ai',
-            style: AppTypography.wordmarkStyle(
-              color: Theme.of(context).colorScheme.tertiary,
-              fontSize: 22,
-            ),
-          ),
-        ],
-      ),
-    );
+    return BrandWordmark(color: baseColor, fontSize: 22);
   }
 }
 

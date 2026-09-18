@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../models/podcast_outline.dart';
 import '../../services/cdn_config.dart';
@@ -1048,7 +1049,7 @@ class _TvEpisodeScreenState extends State<TvEpisodeScreen> {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 color: theme.colorScheme.tertiary,
                 child: Text(
-                  'DOMOVINA.ai',
+                  AppBrand.config.appName,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onTertiary,
                     fontWeight: FontWeight.w800,

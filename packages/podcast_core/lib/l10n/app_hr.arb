@@ -1,8 +1,13 @@
 {
   "@@locale": "hr",
-  "appTitle": "DOMOVINA.ai",
+  "appTitle": "{app}",
   "@appTitle": {
-    "description": "Naziv aplikacije (brand) — ne prevodi se."
+    "description": "Naziv aplikacije — dolazi iz BrandConfig.appName, ne prevodi se.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "updateAvailable": "Dostupna je nova verzija",
   "@updateAvailable": {
@@ -117,9 +122,14 @@
   "@authAnonSubtitle": {
     "description": "Podnaslov praznog stanja na ekranu računa."
   },
-  "authLearnAboutPlus": "Saznaj više o DOMOVINA Plus",
+  "authLearnAboutPlus": "Saznaj više o {plus}",
   "@authLearnAboutPlus": {
-    "description": "Gumb koji otvara paywall s informacijama o pretplati."
+    "description": "Gumb koji otvara paywall s informacijama o pretplati.",
+    "placeholders": {
+      "plus": {
+        "type": "String"
+      }
+    }
   },
   "authSectionSubscription": "Pretplata",
   "@authSectionSubscription": {
@@ -143,19 +153,24 @@
   },
   "authPlusThanks": "Hvala što podržavaš hrvatsku arhivu.",
   "@authPlusThanks": {
-    "description": "Poruka zahvale aktivnom DOMOVINA Plus pretplatniku."
+    "description": "Poruka zahvale aktivnom Plus pretplatniku."
   },
   "authDetails": "Detalji",
   "@authDetails": {
     "description": "Gumb koji otvara detalje pretplate."
   },
-  "authBecomePlus": "Postani DOMOVINA Plus",
+  "authBecomePlus": "Postani {plus}",
   "@authBecomePlus": {
-    "description": "Naslov kartice s pozivom na pretplatu."
+    "description": "Naslov kartice s pozivom na pretplatu.",
+    "placeholders": {
+      "plus": {
+        "type": "String"
+      }
+    }
   },
   "authPlusBenefits": "Šira pretraga, bedž podupiratelja i podrška arhivi.",
   "@authPlusBenefits": {
-    "description": "Popis pogodnosti DOMOVINA Plus pretplate."
+    "description": "Popis pogodnosti Plus pretplate."
   },
   "authUserFallback": "Korisnik",
   "@authUserFallback": {
@@ -423,9 +438,14 @@
   "@authHandoffSendSheetSub": {
     "description": "Podnaslov prijavnog lista otvorenog iz kartice za slanje prijave."
   },
-  "authHandoffSendBody": "Otvori DOMOVINA.ai/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.",
+  "authHandoffSendBody": "Otvori {app}/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.",
   "@authHandoffSendBody": {
-    "description": "Upute za slanje prijave na drugi uređaj."
+    "description": "Upute za slanje prijave na drugi uređaj.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "authGenerateCode": "Generiraj kôd",
   "@authGenerateCode": {
@@ -553,9 +573,14 @@
       }
     }
   },
-  "authHeadlineAccount": "Prijavi se na DOMOVINA.ai",
+  "authHeadlineAccount": "Prijavi se na {app}",
   "@authHeadlineAccount": {
-    "description": "Naslov prijavnog lista (kontekst: račun)."
+    "description": "Naslov prijavnog lista (kontekst: račun).",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "authHeadlineMoment3": "Spremi favorite u svoj račun",
   "@authHeadlineMoment3": {
@@ -593,9 +618,14 @@
   "@authSubHandoff": {
     "description": "Podnaslov prijavnog lista (kontekst: prijenos s drugog uređaja)."
   },
-  "authPasskeyMissingNotice": "Na ovom uređaju još nema pristupnog ključa za DOMOVINA.ai. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.",
+  "authPasskeyMissingNotice": "Na ovom uređaju još nema pristupnog ključa za {app}. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.",
   "@authPasskeyMissingNotice": {
-    "description": "Obavijest kad na uređaju nema pristupnog ključa za prijavu."
+    "description": "Obavijest kad na uređaju nema pristupnog ključa za prijavu.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "authInvalidEmail": "Unesi ispravnu e-mail adresu.",
   "@authInvalidEmail": {
@@ -780,9 +810,14 @@
       }
     }
   },
-  "channelTriggerGenericHeadline": "Postani DOMOVINA Plus",
+  "channelTriggerGenericHeadline": "Postani {plus}",
   "@channelTriggerGenericHeadline": {
-    "description": "Paywall headline for the generic upgrade trigger."
+    "description": "Paywall headline for the generic upgrade trigger.",
+    "placeholders": {
+      "plus": {
+        "type": "String"
+      }
+    }
   },
   "channelTriggerGenericSubtitle": "Podrži hrvatsku arhivu i otključaj sve pogodnosti.",
   "@channelTriggerGenericSubtitle": {
@@ -872,9 +907,14 @@
   "@channelSubscriptionTiedToAccount": {
     "description": "Explains why an account is required before subscribing."
   },
-  "channelWelcomeToPlus": "Dobro došao u DOMOVINA Plus! Hvala na podršci.",
+  "channelWelcomeToPlus": "Dobro došao u {plus}! Hvala na podršci.",
   "@channelWelcomeToPlus": {
-    "description": "Snackbar confirming a successful purchase."
+    "description": "Snackbar confirming a successful purchase.",
+    "placeholders": {
+      "plus": {
+        "type": "String"
+      }
+    }
   },
   "channelPurchaseUnavailableDevice": "Kupnja nije dostupna na ovom uređaju.",
   "@channelPurchaseUnavailableDevice": {
@@ -916,9 +956,14 @@
   "@channelPricesIndicative": {
     "description": "Note under indicative pricing on platforms where the store sets the price."
   },
-  "channelAlreadyPlus": "Već imaš DOMOVINA Plus",
+  "channelAlreadyPlus": "Već imaš {plus}",
   "@channelAlreadyPlus": {
-    "description": "Heading shown to a user who is already subscribed."
+    "description": "Heading shown to a user who is already subscribed.",
+    "placeholders": {
+      "plus": {
+        "type": "String"
+      }
+    }
   },
   "channelThanksSupportingArchive": "Hvala na podršci hrvatskoj arhivi.",
   "@channelThanksSupportingArchive": {
@@ -1009,9 +1054,14 @@
   "@channelOpenGoogleMeet": {
     "description": "Button that opens the Google Meet link for the booked call."
   },
-  "channelFounderCallTitle": "Budi dio priče DOMOVINA",
+  "channelFounderCallTitle": "Budi dio priče {brand}",
   "@channelFounderCallTitle": {
-    "description": "Header title of the founder-booking sheet."
+    "description": "Header title of the founder-booking sheet.",
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
   },
   "channelFounderCallSubtitle": "15 min Google Meeta · osobno s osnivačem · pomozi oblikovati platformu",
   "@channelFounderCallSubtitle": {
@@ -1355,9 +1405,14 @@
   "@homeFooterAbout": {
     "description": "Footer column header: about the project."
   },
-  "homeFooterAboutText": "DOMOVINA.ai uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.",
+  "homeFooterAboutText": "{app} uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.",
   "@homeFooterAboutText": {
-    "description": "Footer about-the-project paragraph."
+    "description": "Footer about-the-project paragraph.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "homeFooterLinks": "Poveznice",
   "@homeFooterLinks": {
@@ -1367,9 +1422,14 @@
   "@homeFooterSuggestEpisode": {
     "description": "Footer link that opens an email to suggest an episode."
   },
-  "homeFooterEpisodeSuggestionSubject": "DOMOVINA.ai — prijedlog epizode",
+  "homeFooterEpisodeSuggestionSubject": "{app} — prijedlog epizode",
   "@homeFooterEpisodeSuggestionSubject": {
-    "description": "Subject line of the suggest-an-episode email."
+    "description": "Subject line of the suggest-an-episode email.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "homeFooterContact": "Kontakt",
   "@homeFooterContact": {
@@ -1422,12 +1482,15 @@
   "@homeFooterSoon": {
     "description": "Small badge on a footer link that is not yet available."
   },
-  "homeFooterCopyright": "© {year} DOMOVINA.ai",
+  "homeFooterCopyright": "© {year} {app}",
   "@homeFooterCopyright": {
     "description": "Footer copyright line.",
     "placeholders": {
       "year": {
         "type": "int"
+      },
+      "app": {
+        "type": "String"
       }
     }
   },
@@ -1868,9 +1931,14 @@
   "@legalPrivacyTitle": {
     "description": "Page title and app bar title for the privacy policy screen."
   },
-  "legalPrivacyIntro": "DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.",
+  "legalPrivacyIntro": "{app} aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.",
   "@legalPrivacyIntro": {
-    "description": "Introductory paragraph on the privacy policy screen describing the app and noting the page is a placeholder."
+    "description": "Introductory paragraph on the privacy policy screen describing the app and noting the page is a placeholder.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "legalPrivacyDataTitle": "Koje podatke prikupljamo",
   "@legalPrivacyDataTitle": {
@@ -1888,9 +1956,14 @@
   "@legalTermsTitle": {
     "description": "Page title and app bar title for the terms of use screen."
   },
-  "legalTermsIntro": "Korištenjem aplikacije DOMOVINA.ai prihvaćate ove Uvjete korištenja.",
+  "legalTermsIntro": "Korištenjem aplikacije {app} prihvaćate ove Uvjete korištenja.",
   "@legalTermsIntro": {
-    "description": "Introductory paragraph on the terms of use screen stating that using the app constitutes acceptance."
+    "description": "Introductory paragraph on the terms of use screen stating that using the app constitutes acceptance.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "legalTermsContentTitle": "Sadržaj",
   "@legalTermsContentTitle": {
@@ -2055,9 +2128,14 @@
   "@mediaYouTubeQualityHint": {
     "description": "Napomena u traci dok je aktivan YouTube embed mod."
   },
-  "mediaNativePlayerLabel": "DOMOVINA player",
+  "mediaNativePlayerLabel": "{brand} player",
   "@mediaNativePlayerLabel": {
-    "description": "Oznaka gumba za povratak s YouTube embeda na ugrađeni DOMOVINA player (DOMOVINA = brend)."
+    "description": "Oznaka gumba za povratak s YouTube embeda na ugrađeni player; {brand} je wordmark brenda.",
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
   },
   "mediaLanguageSelection": "Odabir jezika prikaza",
   "@mediaLanguageSelection": {
@@ -2276,15 +2354,20 @@
   "@ownershipNotOwnerTitle": {
     "description": "Title of the card inviting a non-owner to notify the real owner."
   },
-  "ownershipNotOwnerBody": "Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na DOMOVINA.ai.",
+  "ownershipNotOwnerBody": "Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na {app}.",
   "@ownershipNotOwnerBody": {
-    "description": "Body text encouraging the user to invite the channel owner."
+    "description": "Body text encouraging the user to invite the channel owner.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ownershipInviteOwnerWhatsApp": "Pozovite vlasnika (WhatsApp)",
   "@ownershipInviteOwnerWhatsApp": {
     "description": "Button that opens WhatsApp with a prefilled invitation message."
   },
-  "ownershipInviteMessage": "Pozdrav! Vaš YouTube kanal „{channelTitle}” nalazi se na DOMOVINA.ai. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: {link}",
+  "ownershipInviteMessage": "Pozdrav! Vaš YouTube kanal „{channelTitle}” nalazi se na {app}. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: {link}",
   "@ownershipInviteMessage": {
     "description": "Prefilled WhatsApp message inviting a channel owner to claim their channel.",
     "placeholders": {
@@ -2292,6 +2375,9 @@
         "type": "String"
       },
       "link": {
+        "type": "String"
+      },
+      "app": {
         "type": "String"
       }
     }
@@ -3058,18 +3144,21 @@
   "@pinkaWalletConfirming": {
     "description": "Stanje gumba dok se transakcija potvrđuje na lancu."
   },
-  "pinkaPayFromDomovinaWallet": "Plati {amount} € iz DOMOVINA novčanika",
+  "pinkaPayFromDomovinaWallet": "Plati {amount} € iz {brand} novčanika",
   "@pinkaPayFromDomovinaWallet": {
-    "description": "Gumb za plaćanje iz ugrađenog DOMOVINA novčanika.",
+    "description": "Gumb za plaćanje iz ugrađenog novčanika; {brand} je wordmark brenda.",
     "placeholders": {
       "amount": {
+        "type": "String"
+      },
+      "brand": {
         "type": "String"
       }
     }
   },
   "pinkaOrScanOtherWallet": "ili skeniraj drugim novčanikom",
   "@pinkaOrScanOtherWallet": {
-    "description": "Razdjelnik između plaćanja iz DOMOVINA novčanika i QR koda."
+    "description": "Razdjelnik između plaćanja iz ugrađenog novčanika i QR koda."
   },
   "pinkaScanWithWallet": "Skeniraj novčanikom (MetaMask / Monerium) i pošalji {amount} € u EURe.",
   "@pinkaScanWithWallet": {
@@ -4035,13 +4124,23 @@
   "@personMentionOnlyNote": {
     "description": "Napomena na profilu osobe koja se samo spominje (nikad nije bila gost)."
   },
-  "appInstallBannerIos": "DOMOVINA.ai ima i aplikaciju za iPhone.",
+  "appInstallBannerIos": "{app} ima i aplikaciju za iPhone.",
   "@appInstallBannerIos": {
-    "description": "Snackbar na mobilnom webu (iOS) koji nudi preuzimanje native aplikacije iz App Storea."
+    "description": "Snackbar na mobilnom webu (iOS) koji nudi preuzimanje native aplikacije iz App Storea.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
-  "appInstallBannerAndroid": "DOMOVINA.ai ima i aplikaciju za Android.",
+  "appInstallBannerAndroid": "{app} ima i aplikaciju za Android.",
   "@appInstallBannerAndroid": {
-    "description": "Snackbar na mobilnom webu (Android) koji nudi preuzimanje native aplikacije s Google Playa."
+    "description": "Snackbar na mobilnom webu (Android) koji nudi preuzimanje native aplikacije s Google Playa.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "appInstallBannerAction": "Preuzmi",
   "@appInstallBannerAction": {

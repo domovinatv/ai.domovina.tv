@@ -99,7 +99,7 @@ class _EpisodeSimpleScreenState extends State<EpisodeSimpleScreen> {
         setState(() => _data = data);
         // Isti format naslova kao worker edge-inject za /v/ i /m/.
         setPageMeta(
-          title: '${data.displayTitle} – DOMOVINA.ai',
+          title: data.displayTitle,
           description: data.summary?.summary.abstractHr,
         );
       }

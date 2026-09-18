@@ -98,11 +98,11 @@ abstract class AppLocalizations {
     Locale('hr'),
   ];
 
-  /// Naziv aplikacije (brand) — ne prevodi se.
+  /// Naziv aplikacije — dolazi iz BrandConfig.appName, ne prevodi se.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai'**
-  String get appTitle;
+  /// **'{app}'**
+  String appTitle(String app);
 
   /// SnackBar poruka kad je dostupan noviji build aplikacije.
   ///
@@ -269,8 +269,8 @@ abstract class AppLocalizations {
   /// Gumb koji otvara paywall s informacijama o pretplati.
   ///
   /// In hr, this message translates to:
-  /// **'Saznaj više o DOMOVINA Plus'**
-  String get authLearnAboutPlus;
+  /// **'Saznaj više o {plus}'**
+  String authLearnAboutPlus(String plus);
 
   /// Oznaka sekcije: pretplata.
   ///
@@ -302,7 +302,7 @@ abstract class AppLocalizations {
   /// **'Opasna zona'**
   String get authSectionDangerZone;
 
-  /// Poruka zahvale aktivnom DOMOVINA Plus pretplatniku.
+  /// Poruka zahvale aktivnom Plus pretplatniku.
   ///
   /// In hr, this message translates to:
   /// **'Hvala što podržavaš hrvatsku arhivu.'**
@@ -317,10 +317,10 @@ abstract class AppLocalizations {
   /// Naslov kartice s pozivom na pretplatu.
   ///
   /// In hr, this message translates to:
-  /// **'Postani DOMOVINA Plus'**
-  String get authBecomePlus;
+  /// **'Postani {plus}'**
+  String authBecomePlus(String plus);
 
-  /// Popis pogodnosti DOMOVINA Plus pretplate.
+  /// Popis pogodnosti Plus pretplate.
   ///
   /// In hr, this message translates to:
   /// **'Šira pretraga, bedž podupiratelja i podrška arhivi.'**
@@ -683,8 +683,8 @@ abstract class AppLocalizations {
   /// Upute za slanje prijave na drugi uređaj.
   ///
   /// In hr, this message translates to:
-  /// **'Otvori DOMOVINA.ai/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.'**
-  String get authHandoffSendBody;
+  /// **'Otvori {app}/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.'**
+  String authHandoffSendBody(String app);
 
   /// Gumb za generiranje koda za prijenos.
   ///
@@ -863,8 +863,8 @@ abstract class AppLocalizations {
   /// Naslov prijavnog lista (kontekst: račun).
   ///
   /// In hr, this message translates to:
-  /// **'Prijavi se na DOMOVINA.ai'**
-  String get authHeadlineAccount;
+  /// **'Prijavi se na {app}'**
+  String authHeadlineAccount(String app);
 
   /// Naslov prijavnog lista (kontekst: nakon dodavanja favorita).
   ///
@@ -923,8 +923,8 @@ abstract class AppLocalizations {
   /// Obavijest kad na uređaju nema pristupnog ključa za prijavu.
   ///
   /// In hr, this message translates to:
-  /// **'Na ovom uređaju još nema pristupnog ključa za DOMOVINA.ai. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.'**
-  String get authPasskeyMissingNotice;
+  /// **'Na ovom uređaju još nema pristupnog ključa za {app}. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.'**
+  String authPasskeyMissingNotice(String app);
 
   /// Validacija e-mail adrese.
   ///
@@ -1139,8 +1139,8 @@ abstract class AppLocalizations {
   /// Paywall headline for the generic upgrade trigger.
   ///
   /// In hr, this message translates to:
-  /// **'Postani DOMOVINA Plus'**
-  String get channelTriggerGenericHeadline;
+  /// **'Postani {plus}'**
+  String channelTriggerGenericHeadline(String plus);
 
   /// Paywall subtitle for the generic upgrade trigger.
   ///
@@ -1277,8 +1277,8 @@ abstract class AppLocalizations {
   /// Snackbar confirming a successful purchase.
   ///
   /// In hr, this message translates to:
-  /// **'Dobro došao u DOMOVINA Plus! Hvala na podršci.'**
-  String get channelWelcomeToPlus;
+  /// **'Dobro došao u {plus}! Hvala na podršci.'**
+  String channelWelcomeToPlus(String plus);
 
   /// Snackbar when in-app purchase is unsupported on the current platform.
   ///
@@ -1343,8 +1343,8 @@ abstract class AppLocalizations {
   /// Heading shown to a user who is already subscribed.
   ///
   /// In hr, this message translates to:
-  /// **'Već imaš DOMOVINA Plus'**
-  String get channelAlreadyPlus;
+  /// **'Već imaš {plus}'**
+  String channelAlreadyPlus(String plus);
 
   /// Message of thanks shown to existing subscribers.
   ///
@@ -1463,8 +1463,8 @@ abstract class AppLocalizations {
   /// Header title of the founder-booking sheet.
   ///
   /// In hr, this message translates to:
-  /// **'Budi dio priče DOMOVINA'**
-  String get channelFounderCallTitle;
+  /// **'Budi dio priče {brand}'**
+  String channelFounderCallTitle(String brand);
 
   /// Header subtitle of the founder-booking sheet.
   ///
@@ -1919,8 +1919,8 @@ abstract class AppLocalizations {
   /// Footer about-the-project paragraph.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.'**
-  String get homeFooterAboutText;
+  /// **'{app} uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.'**
+  String homeFooterAboutText(String app);
 
   /// Footer column header: links.
   ///
@@ -1937,8 +1937,8 @@ abstract class AppLocalizations {
   /// Subject line of the suggest-an-episode email.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai — prijedlog epizode'**
-  String get homeFooterEpisodeSuggestionSubject;
+  /// **'{app} — prijedlog epizode'**
+  String homeFooterEpisodeSuggestionSubject(String app);
 
   /// Footer link: contact.
   ///
@@ -1997,8 +1997,8 @@ abstract class AppLocalizations {
   /// Footer copyright line.
   ///
   /// In hr, this message translates to:
-  /// **'© {year} DOMOVINA.ai'**
-  String homeFooterCopyright(int year);
+  /// **'© {year} {app}'**
+  String homeFooterCopyright(int year, String app);
 
   /// Footer tagline.
   ///
@@ -2537,8 +2537,8 @@ abstract class AppLocalizations {
   /// Introductory paragraph on the privacy policy screen describing the app and noting the page is a placeholder.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.'**
-  String get legalPrivacyIntro;
+  /// **'{app} aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.'**
+  String legalPrivacyIntro(String app);
 
   /// Section heading on the privacy policy screen for the data-collection paragraph.
   ///
@@ -2567,8 +2567,8 @@ abstract class AppLocalizations {
   /// Introductory paragraph on the terms of use screen stating that using the app constitutes acceptance.
   ///
   /// In hr, this message translates to:
-  /// **'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove Uvjete korištenja.'**
-  String get legalTermsIntro;
+  /// **'Korištenjem aplikacije {app} prihvaćate ove Uvjete korištenja.'**
+  String legalTermsIntro(String app);
 
   /// Section heading on the terms of use screen for the content/copyright paragraph.
   ///
@@ -2768,11 +2768,11 @@ abstract class AppLocalizations {
   /// **'YouTube player — kvalitetu biraš u postavkama playera'**
   String get mediaYouTubeQualityHint;
 
-  /// Oznaka gumba za povratak s YouTube embeda na ugrađeni DOMOVINA player (DOMOVINA = brend).
+  /// Oznaka gumba za povratak s YouTube embeda na ugrađeni player; {brand} je wordmark brenda.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA player'**
-  String get mediaNativePlayerLabel;
+  /// **'{brand} player'**
+  String mediaNativePlayerLabel(String brand);
 
   /// Semantics oznaka za HR/EN prekidač jezika prikaza sadržaja.
   ///
@@ -3041,8 +3041,8 @@ abstract class AppLocalizations {
   /// Body text encouraging the user to invite the channel owner.
   ///
   /// In hr, this message translates to:
-  /// **'Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na DOMOVINA.ai.'**
-  String get ownershipNotOwnerBody;
+  /// **'Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na {app}.'**
+  String ownershipNotOwnerBody(String app);
 
   /// Button that opens WhatsApp with a prefilled invitation message.
   ///
@@ -3053,8 +3053,8 @@ abstract class AppLocalizations {
   /// Prefilled WhatsApp message inviting a channel owner to claim their channel.
   ///
   /// In hr, this message translates to:
-  /// **'Pozdrav! Vaš YouTube kanal „{channelTitle}” nalazi se na DOMOVINA.ai. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: {link}'**
-  String ownershipInviteMessage(String channelTitle, String link);
+  /// **'Pozdrav! Vaš YouTube kanal „{channelTitle}” nalazi se na {app}. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: {link}'**
+  String ownershipInviteMessage(String channelTitle, String link, String app);
 
   /// Title of the ownership verification step.
   ///
@@ -4082,13 +4082,13 @@ abstract class AppLocalizations {
   /// **'Potvrđujem na lancu…'**
   String get pinkaWalletConfirming;
 
-  /// Gumb za plaćanje iz ugrađenog DOMOVINA novčanika.
+  /// Gumb za plaćanje iz ugrađenog novčanika; {brand} je wordmark brenda.
   ///
   /// In hr, this message translates to:
-  /// **'Plati {amount} € iz DOMOVINA novčanika'**
-  String pinkaPayFromDomovinaWallet(String amount);
+  /// **'Plati {amount} € iz {brand} novčanika'**
+  String pinkaPayFromDomovinaWallet(String amount, String brand);
 
-  /// Razdjelnik između plaćanja iz DOMOVINA novčanika i QR koda.
+  /// Razdjelnik između plaćanja iz ugrađenog novčanika i QR koda.
   ///
   /// In hr, this message translates to:
   /// **'ili skeniraj drugim novčanikom'**
@@ -5285,14 +5285,14 @@ abstract class AppLocalizations {
   /// Snackbar na mobilnom webu (iOS) koji nudi preuzimanje native aplikacije iz App Storea.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai ima i aplikaciju za iPhone.'**
-  String get appInstallBannerIos;
+  /// **'{app} ima i aplikaciju za iPhone.'**
+  String appInstallBannerIos(String app);
 
   /// Snackbar na mobilnom webu (Android) koji nudi preuzimanje native aplikacije s Google Playa.
   ///
   /// In hr, this message translates to:
-  /// **'DOMOVINA.ai ima i aplikaciju za Android.'**
-  String get appInstallBannerAndroid;
+  /// **'{app} ima i aplikaciju za Android.'**
+  String appInstallBannerAndroid(String app);
 
   /// Akcija na app-install snackbaru — otvara App Store / Google Play.
   ///

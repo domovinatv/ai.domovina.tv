@@ -9,6 +9,7 @@
 library;
 
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 
 enum UpgradeTrigger {
   generic,
@@ -28,7 +29,8 @@ extension UpgradeTriggerCopy on UpgradeTrigger {
   }
 
   String headline(AppLocalizations l) => switch (this) {
-        UpgradeTrigger.generic => l.channelTriggerGenericHeadline,
+        UpgradeTrigger.generic =>
+          l.channelTriggerGenericHeadline(AppBrand.config.plusDisplayName),
         UpgradeTrigger.search => l.channelTriggerSearchHeadline,
         UpgradeTrigger.badge => l.channelTriggerBadgeHeadline,
       };

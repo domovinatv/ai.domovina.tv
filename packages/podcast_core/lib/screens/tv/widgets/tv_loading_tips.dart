@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import '../../../brand/app_brand.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// "Slack-style" tips karousel za TvHomeScreen loading state.
@@ -340,38 +341,39 @@ const defaultBibleVerses = <BibleVerse>[
 
 /// Default set tips-a za TvHomeScreen prefetch loading state. Hrvatski,
 /// edukativan ton, fokus na vrijednost koju AI sloj donosi gledatelju.
-const defaultTvTips = <TvTip>[
+/// Getter (ne const) jer prvi tip interpolira ime brenda.
+List<TvTip> get defaultTvTips => <TvTip>[
   TvTip(
     icon: Icons.auto_awesome_rounded,
     title: 'Pametan katalog hrvatskih podcasta',
     body:
-        'DOMOVINA.ai obrađuje sadržaj pomoću AI-a — svaka epizoda dobiva sažetak, poglavlja, teme i ključne tvrdnje.',
+        '${AppBrand.config.appName} obrađuje sadržaj pomoću AI-a — svaka epizoda dobiva sažetak, poglavlja, teme i ključne tvrdnje.',
   ),
-  TvTip(
+  const TvTip(
     icon: Icons.podcasts_rounded,
     title: 'Više od 40 kanala na jednom mjestu',
     body:
         'Bitno.net, Hrvatska katolička mreža, Mladi za Domovinu, Muževni budite, Redefinicija — sve u jednom toku.',
   ),
-  TvTip(
+  const TvTip(
     icon: Icons.menu_book_rounded,
     title: 'Magisterium AI',
     body:
         'Spomenuti pojmovi povezuju se s izvorima učenja Crkve — encilkike, dokumenti Sabora, sveti oci.',
   ),
-  TvTip(
+  const TvTip(
     icon: Icons.translate_rounded,
     title: 'Hrvatski i engleski',
     body:
         'Svaka obrađena epizoda dolazi s prijevodom sažetka i članka — za dijasporu i druge govornike.',
   ),
-  TvTip(
+  const TvTip(
     icon: Icons.bookmark_added_rounded,
     title: 'Nastavi gdje si stao',
     body:
         'Pozicija se sprema preko uređaja — pokreni epizodu na mobitelu, nastavi na TV-u, dovrši u autu.',
   ),
-  TvTip(
+  const TvTip(
     icon: Icons.search_rounded,
     title: 'Pretraga po sadržaju',
     body:

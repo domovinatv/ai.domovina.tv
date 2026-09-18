@@ -76,7 +76,7 @@ class _PersonScreenState extends State<PersonScreen> {
   Future<PersonHub?> _fetchWithMeta() async {
     final hub = await PersonService.fetch(widget.slug);
     if (hub != null && mounted) {
-      setPageMeta(title: '${hub.name} — podcast profil – DOMOVINA.ai');
+      setPageMeta(title: '${hub.name} — podcast profil');
     }
     return hub;
   }
