@@ -7,19 +7,21 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/brand_wordmark.dart';
 
-/// DOMOVINA "D" logo mark (hrvatska trikolora + AI graf). PNG (ne SVG) zbog
-/// web release build gotcha-e.
-class DomovinaLogoMark extends StatelessWidget {
+/// Logo mark aktivnog brenda (`BrandConfig.logoAsset`, PNG iz bundlea
+/// LJUSKE — vidi asset ugovor u CLAUDE.md). PNG, ne SVG, zbog web release
+/// build gotcha-e.
+class BrandLogoMark extends StatelessWidget {
   final double size;
-  const DomovinaLogoMark({super.key, this.size = 56});
+  const BrandLogoMark({super.key, this.size = 56});
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/icons/domovina_ai_logo_1024.png',
+      AppBrand.config.logoAsset,
       width: size,
       height: size,
       filterQuality: FilterQuality.high,
@@ -27,7 +29,8 @@ class DomovinaLogoMark extends StatelessWidget {
   }
 }
 
-/// Tanka hrvatska trikolora kao suptilan brand akcent (crveno/bijelo/navy).
+/// Tanka trobojna crta kao suptilan brand akcent (accent/bijelo/seed —
+/// za DOMOVINA.ai hrvatska trikolora).
 class TricolorAccent extends StatelessWidget {
   final double width;
   final double height;
@@ -77,7 +80,7 @@ class AuthBrandHeader extends StatelessWidget {
     return Column(
       children: [
         if (!compact) ...[
-          DomovinaLogoMark(size: logoSize),
+          BrandLogoMark(size: logoSize),
           const SizedBox(height: 12),
           const BrandWordmark(fontSize: 18),
           const SizedBox(height: 10),

@@ -79,6 +79,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Brand-neutralni asseti jezgre; učitavaju se s `package: 'podcast_core'`.
+  # Brend asseti (logo, splash) NISU ovdje — daje ih ljuska kroz BrandConfig.
+  assets:
+    - assets/icons/google_g_logo.png
   # Generira AppLocalizations iz lib/l10n/*.arb (vidi l10n.yaml). Pokreni
   # `flutter gen-l10n` u OVOM direktoriju nakon promjene ARB-a; generirani
   # Dart je u gitu jer se paket gradi kao ovisnost ljuske.

@@ -31,12 +31,13 @@ Posljedice za dnevni rad:
   `packages/podcast_core/lib/src/log.dart` obara root analyze).
 - **ARB i `flutter gen-l10n`**: u `packages/podcast_core/`. Generirani Dart je
   u gitu jer se paket gradi kao ovisnost, pa ga build ljuske ne regenerira.
-- **Asset ugovor**: jezgra učitava `assets/icons/domovina_ai_logo_1024.png`,
-  `assets/icons/google_g_logo.png` i `assets/splash/splash_full_1.png` iz
-  bundlea LJUSKE (korijenski `pubspec.yaml`). Testovi paketa ih nemaju, pa
-  widget testovi koji crtaju te slike koriste
-  `test/support/fake_asset_bundle.dart`. Privremeno — `BrandConfig` (plan
-  Podcasterium, korak A1) preuzima brend assete.
+- **Asset ugovor**: jezgra učitava logo i splash iz bundlea LJUSKE
+  (korijenski `pubspec.yaml`) na putanjama `BrandConfig.logoAsset` /
+  `splashAsset` (`assets/icons/domovina_ai_logo_1024.png`,
+  `assets/splash/splash_full_1.png` za DOMOVINA). Brand-neutralni asseti
+  (Google „G”) su u paketu i učitavaju se s `package: 'podcast_core'`.
+  Testovi paketa nemaju brend assete, pa widget testovi koji ih crtaju
+  koriste `test/support/fake_asset_bundle.dart`.
 - `appVersion` (footer) je u `packages/podcast_core/lib/src/log.dart`;
   `scripts/deploy.sh` ga bumpa ondje.
 - Dokumenti i dalje citiraju `lib/…` bez prefiksa; `verify-doc-refs.sh`

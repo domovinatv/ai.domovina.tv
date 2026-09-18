@@ -156,7 +156,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const DomovinaLogoMark(size: 72),
+                const BrandLogoMark(size: 72),
                 const SizedBox(height: 18),
                 const BrandWordmark(fontSize: 22),
                 const SizedBox(height: 14),

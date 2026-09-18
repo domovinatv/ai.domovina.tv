@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../brand/app_brand.dart';
 
 import '../../../l10n/app_localizations.dart';
 
@@ -30,14 +31,16 @@ class TvBootSplash extends StatelessWidget {
     final l = AppLocalizations.of(context);
 
     return Container(
-      // Fallback navy u slučaju da slika kasni — boja se poklapa s
-      // gradientom u splash_full_1.png pa transition izgleda atomski.
-      color: const Color(0xFF002F6C),
+      // Fallback boja u slučaju da slika kasni — seed brenda (za DOMOVINA
+      // navy koji se poklapa s gradientom u splash_full_1.png, pa transition
+      // izgleda atomski).
+      color: AppBrand.config.seed,
       child: Stack(
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/splash/splash_full_1.png',
+            // Iz bundlea LJUSKE (asset ugovor, CLAUDE.md „Raspored”).
+            AppBrand.config.splashAsset,
             fit: BoxFit.cover,
             alignment: Alignment.center,
             // Bez frame-builder fade-a — želimo instant prikaz da ne bude

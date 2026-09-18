@@ -337,6 +337,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       AuthProvider.google => (
           Image.asset(
             'assets/icons/google_g_logo.png',
+            package: 'podcast_core',
             width: 22,
             height: 22,
             filterQuality: FilterQuality.high,
