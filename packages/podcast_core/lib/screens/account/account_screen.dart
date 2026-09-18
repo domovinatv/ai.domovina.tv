@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../src/app.dart' show rootScaffoldMessengerKey;
 import '../../onboarding/ui/auth_sheet.dart';
@@ -181,7 +182,7 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(height: 8),
               TextButton.icon(
                 icon: const Icon(Icons.workspace_premium_outlined),
-                label: Text(l.authLearnAboutPlus),
+                label: Text(l.authLearnAboutPlus(AppBrand.config.plusDisplayName)),
                 onPressed: () => openPaywall(context, UpgradeTrigger.generic),
               ),
               const SizedBox(height: 28),
@@ -289,7 +290,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
-                          Text('DOMOVINA Plus',
+                          Text(AppBrand.config.plusDisplayName,
                               style: theme.textTheme.titleMedium
                                   ?.copyWith(fontWeight: FontWeight.bold)),
                           const SizedBox(width: 8),
@@ -317,7 +318,7 @@ class _AccountScreenState extends State<AccountScreen> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
             leading: Icon(Icons.workspace_premium_outlined, color: cs.primary),
-            title: Text(l.authBecomePlus),
+            title: Text(l.authBecomePlus(AppBrand.config.plusDisplayName)),
             subtitle: Text(
               l.authPlusBenefits,
               style: theme.textTheme.bodySmall

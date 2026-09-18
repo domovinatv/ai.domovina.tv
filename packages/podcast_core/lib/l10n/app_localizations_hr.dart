@@ -9,7 +9,9 @@ class AppLocalizationsHr extends AppLocalizations {
   AppLocalizationsHr([String locale = 'hr']) : super(locale);
 
   @override
-  String get appTitle => 'DOMOVINA.ai';
+  String appTitle(String app) {
+    return '$app';
+  }
 
   @override
   String get updateAvailable => 'Dostupna je nova verzija';
@@ -96,7 +98,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'Prijavi se kako bi upravljao svojim računom, pristupnim ključevima i podacima.';
 
   @override
-  String get authLearnAboutPlus => 'Saznaj više o DOMOVINA Plus';
+  String authLearnAboutPlus(String plus) {
+    return 'Saznaj više o $plus';
+  }
 
   @override
   String get authSectionSubscription => 'Pretplata';
@@ -120,7 +124,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authDetails => 'Detalji';
 
   @override
-  String get authBecomePlus => 'Postani DOMOVINA Plus';
+  String authBecomePlus(String plus) {
+    return 'Postani $plus';
+  }
 
   @override
   String get authPlusBenefits =>
@@ -334,8 +340,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'Za slanje prijave na drugi uređaj prvo se prijavi na ovom.';
 
   @override
-  String get authHandoffSendBody =>
-      'Otvori DOMOVINA.ai/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.';
+  String authHandoffSendBody(String app) {
+    return 'Otvori $app/handoff na drugom uređaju i unesi kôd ispod. Kôd vrijedi 5 minuta.';
+  }
 
   @override
   String get authGenerateCode => 'Generiraj kôd';
@@ -433,7 +440,9 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
-  String get authHeadlineAccount => 'Prijavi se na DOMOVINA.ai';
+  String authHeadlineAccount(String app) {
+    return 'Prijavi se na $app';
+  }
 
   @override
   String get authHeadlineMoment3 => 'Spremi favorite u svoj račun';
@@ -468,8 +477,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'Kôd je provjeren — odaberi kako želiš nastaviti.';
 
   @override
-  String get authPasskeyMissingNotice =>
-      'Na ovom uređaju još nema pristupnog ključa za DOMOVINA.ai. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.';
+  String authPasskeyMissingNotice(String app) {
+    return 'Na ovom uređaju još nema pristupnog ključa za $app. Prijavi se drugom metodom — ključ zatim dodaš u Moj račun.';
+  }
 
   @override
   String get authInvalidEmail => 'Unesi ispravnu e-mail adresu.';
@@ -616,7 +626,9 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
-  String get channelTriggerGenericHeadline => 'Postani DOMOVINA Plus';
+  String channelTriggerGenericHeadline(String plus) {
+    return 'Postani $plus';
+  }
 
   @override
   String get channelTriggerGenericSubtitle =>
@@ -692,8 +704,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'Pretplata se veže uz tvoj račun kako bi radila na svim uređajima.';
 
   @override
-  String get channelWelcomeToPlus =>
-      'Dobro došao u DOMOVINA Plus! Hvala na podršci.';
+  String channelWelcomeToPlus(String plus) {
+    return 'Dobro došao u $plus! Hvala na podršci.';
+  }
 
   @override
   String get channelPurchaseUnavailableDevice =>
@@ -730,7 +743,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'Cijene su okvirne; konačna cijena prikazuje se u trgovini.';
 
   @override
-  String get channelAlreadyPlus => 'Već imaš DOMOVINA Plus';
+  String channelAlreadyPlus(String plus) {
+    return 'Već imaš $plus';
+  }
 
   @override
   String get channelThanksSupportingArchive =>
@@ -797,7 +812,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get channelOpenGoogleMeet => 'Otvori Google Meet';
 
   @override
-  String get channelFounderCallTitle => 'Budi dio priče DOMOVINA';
+  String channelFounderCallTitle(String brand) {
+    return 'Budi dio priče $brand';
+  }
 
   @override
   String get channelFounderCallSubtitle =>
@@ -1050,8 +1067,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get homeFooterAbout => 'O projektu';
 
   @override
-  String get homeFooterAboutText =>
-      'DOMOVINA.ai uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.';
+  String homeFooterAboutText(String app) {
+    return '$app uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.';
+  }
 
   @override
   String get homeFooterLinks => 'Poveznice';
@@ -1060,8 +1078,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get homeFooterSuggestEpisode => 'Predloži epizodu';
 
   @override
-  String get homeFooterEpisodeSuggestionSubject =>
-      'DOMOVINA.ai — prijedlog epizode';
+  String homeFooterEpisodeSuggestionSubject(String app) {
+    return '$app — prijedlog epizode';
+  }
 
   @override
   String get homeFooterContact => 'Kontakt';
@@ -1118,8 +1137,8 @@ class AppLocalizationsHr extends AppLocalizations {
   String get homeFooterSoon => 'Uskoro';
 
   @override
-  String homeFooterCopyright(int year) {
-    return '© $year DOMOVINA.ai';
+  String homeFooterCopyright(int year, String app) {
+    return '© $year $app';
   }
 
   @override
@@ -1494,8 +1513,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get legalPrivacyTitle => 'Politika privatnosti';
 
   @override
-  String get legalPrivacyIntro =>
-      'DOMOVINA.ai aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.';
+  String legalPrivacyIntro(String app) {
+    return '$app aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.';
+  }
 
   @override
   String get legalPrivacyDataTitle => 'Koje podatke prikupljamo';
@@ -1512,8 +1532,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get legalTermsTitle => 'Uvjeti korištenja';
 
   @override
-  String get legalTermsIntro =>
-      'Korištenjem aplikacije DOMOVINA.ai prihvaćate ove Uvjete korištenja.';
+  String legalTermsIntro(String app) {
+    return 'Korištenjem aplikacije $app prihvaćate ove Uvjete korištenja.';
+  }
 
   @override
   String get legalTermsContentTitle => 'Sadržaj';
@@ -1662,7 +1683,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'YouTube player — kvalitetu biraš u postavkama playera';
 
   @override
-  String get mediaNativePlayerLabel => 'DOMOVINA player';
+  String mediaNativePlayerLabel(String brand) {
+    return '$brand player';
+  }
 
   @override
   String get mediaLanguageSelection => 'Odabir jezika prikaza';
@@ -1824,15 +1847,16 @@ class AppLocalizationsHr extends AppLocalizations {
   String get ownershipNotOwnerTitle => 'Niste vlasnik kanala?';
 
   @override
-  String get ownershipNotOwnerBody =>
-      'Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na DOMOVINA.ai.';
+  String ownershipNotOwnerBody(String app) {
+    return 'Ako poznajete vlasnika, pošaljite mu poruku da preuzme vlasništvo i verificira se na $app.';
+  }
 
   @override
   String get ownershipInviteOwnerWhatsApp => 'Pozovite vlasnika (WhatsApp)';
 
   @override
-  String ownershipInviteMessage(String channelTitle, String link) {
-    return 'Pozdrav! Vaš YouTube kanal „$channelTitle” nalazi se na DOMOVINA.ai. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: $link';
+  String ownershipInviteMessage(String channelTitle, String link, String app) {
+    return 'Pozdrav! Vaš YouTube kanal „$channelTitle” nalazi se na $app. Možete besplatno preuzeti vlasništvo te upravljati svojim sadržajem i isplatama — verificirajte se kao vlasnik kanala ovdje: $link';
   }
 
   @override
@@ -2471,8 +2495,8 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaWalletConfirming => 'Potvrđujem na lancu…';
 
   @override
-  String pinkaPayFromDomovinaWallet(String amount) {
-    return 'Plati $amount € iz DOMOVINA novčanika';
+  String pinkaPayFromDomovinaWallet(String amount, String brand) {
+    return 'Plati $amount € iz $brand novčanika';
   }
 
   @override
@@ -3267,11 +3291,14 @@ class AppLocalizationsHr extends AppLocalizations {
       'Ova osoba nije gostovala u obrađenim epizodama — profil prati gdje se o njoj govori.';
 
   @override
-  String get appInstallBannerIos => 'DOMOVINA.ai ima i aplikaciju za iPhone.';
+  String appInstallBannerIos(String app) {
+    return '$app ima i aplikaciju za iPhone.';
+  }
 
   @override
-  String get appInstallBannerAndroid =>
-      'DOMOVINA.ai ima i aplikaciju za Android.';
+  String appInstallBannerAndroid(String app) {
+    return '$app ima i aplikaciju za Android.';
+  }
 
   @override
   String get appInstallBannerAction => 'Preuzmi';

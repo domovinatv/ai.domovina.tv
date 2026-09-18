@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../brand/app_brand.dart';
 import '../services/auth_service.dart';
 import '../services/cal_booking_service.dart';
 import '../services/locale_service.dart';
@@ -445,7 +446,7 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l.channelFounderCallTitle,
+                l.channelFounderCallTitle(AppBrand.config.wordmark),
                 style: theme.textTheme.titleMedium,
               ),
               const SizedBox(height: 2),

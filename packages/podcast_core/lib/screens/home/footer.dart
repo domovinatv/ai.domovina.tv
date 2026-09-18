@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../src/log.dart' show appVersion;
+import '../../brand/app_brand.dart';
 import '../../models/channel_index.dart';
 import '../../services/update_notifier.dart';
 import '../../l10n/app_localizations.dart';
@@ -131,7 +132,7 @@ class HomeFooter extends StatelessWidget {
       children: [
         _columnHeader(theme, l.homeFooterAbout),
         Text(
-          l.homeFooterAboutText,
+          l.homeFooterAboutText(AppBrand.config.appName),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.6,
@@ -154,7 +155,9 @@ class HomeFooter extends StatelessWidget {
             label: l.homeFooterSuggestEpisode,
             onTap: () => _launchMail(
               'stepanic.matija@gmail.com',
-              subject: l.homeFooterEpisodeSuggestionSubject,
+              subject: l.homeFooterEpisodeSuggestionSubject(
+                AppBrand.config.appName,
+              ),
             ),
           ),
           _link(
@@ -292,7 +295,9 @@ class HomeFooter extends StatelessWidget {
     final children = [
       _versionPill(theme),
       _smallText(
-          theme, l.homeFooterCopyright(DateTime.now().year)),
+          theme,
+          l.homeFooterCopyright(
+              DateTime.now().year, AppBrand.config.appName)),
       _smallText(theme, l.homeFooterMadeIn),
     ];
     if (isMobile) {

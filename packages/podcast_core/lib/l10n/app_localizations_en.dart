@@ -9,7 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'DOMOVINA.ai';
+  String appTitle(String app) {
+    return '$app';
+  }
 
   @override
   String get updateAvailable => 'A new version is available';
@@ -96,7 +98,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sign in to manage your account, passkeys, and data.';
 
   @override
-  String get authLearnAboutPlus => 'Discover DOMOVINA Plus';
+  String authLearnAboutPlus(String plus) {
+    return 'Discover $plus';
+  }
 
   @override
   String get authSectionSubscription => 'Subscription';
@@ -120,7 +124,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authDetails => 'Details';
 
   @override
-  String get authBecomePlus => 'Get DOMOVINA Plus';
+  String authBecomePlus(String plus) {
+    return 'Get $plus';
+  }
 
   @override
   String get authPlusBenefits =>
@@ -333,8 +339,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'To send a sign-in to another device, sign in here first.';
 
   @override
-  String get authHandoffSendBody =>
-      'Open DOMOVINA.ai/handoff on the other device and enter the code below. The code is valid for 5 minutes.';
+  String authHandoffSendBody(String app) {
+    return 'Open $app/handoff on the other device and enter the code below. The code is valid for 5 minutes.';
+  }
 
   @override
   String get authGenerateCode => 'Generate code';
@@ -432,7 +439,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get authHeadlineAccount => 'Sign in to DOMOVINA.ai';
+  String authHeadlineAccount(String app) {
+    return 'Sign in to $app';
+  }
 
   @override
   String get authHeadlineMoment3 => 'Save favorites to your account';
@@ -467,8 +476,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your code is verified — choose how you\'d like to continue.';
 
   @override
-  String get authPasskeyMissingNotice =>
-      'There\'s no passkey for DOMOVINA.ai on this device yet. Sign in another way — then add a passkey in My account.';
+  String authPasskeyMissingNotice(String app) {
+    return 'There\'s no passkey for $app on this device yet. Sign in another way — then add a passkey in My account.';
+  }
 
   @override
   String get authInvalidEmail => 'Enter a valid email address.';
@@ -611,7 +621,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get channelTriggerGenericHeadline => 'Go DOMOVINA Plus';
+  String channelTriggerGenericHeadline(String plus) {
+    return 'Go $plus';
+  }
 
   @override
   String get channelTriggerGenericSubtitle =>
@@ -687,8 +699,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your subscription is tied to your account so it works on every device.';
 
   @override
-  String get channelWelcomeToPlus =>
-      'Welcome to DOMOVINA Plus! Thank you for your support.';
+  String channelWelcomeToPlus(String plus) {
+    return 'Welcome to $plus! Thank you for your support.';
+  }
 
   @override
   String get channelPurchaseUnavailableDevice =>
@@ -728,7 +741,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prices are indicative; the final price is shown in the store.';
 
   @override
-  String get channelAlreadyPlus => 'You already have DOMOVINA Plus';
+  String channelAlreadyPlus(String plus) {
+    return 'You already have $plus';
+  }
 
   @override
   String get channelThanksSupportingArchive =>
@@ -795,7 +810,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelOpenGoogleMeet => 'Open Google Meet';
 
   @override
-  String get channelFounderCallTitle => 'Be part of the DOMOVINA story';
+  String channelFounderCallTitle(String brand) {
+    return 'Be part of the $brand story';
+  }
 
   @override
   String get channelFounderCallSubtitle =>
@@ -1051,8 +1068,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFooterAbout => 'About';
 
   @override
-  String get homeFooterAboutText =>
-      'DOMOVINA.ai uses artificial intelligence to transcribe, summarise and analyse Croatian Catholic podcasts. The Magisterium AI agent rates their alignment with Catholic teaching.';
+  String homeFooterAboutText(String app) {
+    return '$app uses artificial intelligence to transcribe, summarise and analyse Croatian Catholic podcasts. The Magisterium AI agent rates their alignment with Catholic teaching.';
+  }
 
   @override
   String get homeFooterLinks => 'Links';
@@ -1061,8 +1079,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFooterSuggestEpisode => 'Suggest an episode';
 
   @override
-  String get homeFooterEpisodeSuggestionSubject =>
-      'DOMOVINA.ai — episode suggestion';
+  String homeFooterEpisodeSuggestionSubject(String app) {
+    return '$app — episode suggestion';
+  }
 
   @override
   String get homeFooterContact => 'Contact';
@@ -1116,8 +1135,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFooterSoon => 'Soon';
 
   @override
-  String homeFooterCopyright(int year) {
-    return '© $year DOMOVINA.ai';
+  String homeFooterCopyright(int year, String app) {
+    return '© $year $app';
   }
 
   @override
@@ -1481,8 +1500,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legalPrivacyTitle => 'Privacy Policy';
 
   @override
-  String get legalPrivacyIntro =>
-      'DOMOVINA.ai is an application that transcribes, summarises and analyses Croatian Catholic podcasts using artificial intelligence.';
+  String legalPrivacyIntro(String app) {
+    return '$app is an application that transcribes, summarises and analyses Croatian Catholic podcasts using artificial intelligence.';
+  }
 
   @override
   String get legalPrivacyDataTitle => 'What data we collect';
@@ -1499,8 +1519,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legalTermsTitle => 'Terms of Use';
 
   @override
-  String get legalTermsIntro =>
-      'By using the DOMOVINA.ai application, you accept these Terms of Use.';
+  String legalTermsIntro(String app) {
+    return 'By using the $app application, you accept these Terms of Use.';
+  }
 
   @override
   String get legalTermsContentTitle => 'Content';
@@ -1645,7 +1666,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'YouTube player — choose quality in the player settings';
 
   @override
-  String get mediaNativePlayerLabel => 'DOMOVINA player';
+  String mediaNativePlayerLabel(String brand) {
+    return '$brand player';
+  }
 
   @override
   String get mediaLanguageSelection => 'Display language selection';
@@ -1807,15 +1830,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ownershipNotOwnerTitle => 'Not the channel owner?';
 
   @override
-  String get ownershipNotOwnerBody =>
-      'If you know the owner, send them a message to claim ownership and verify on DOMOVINA.ai.';
+  String ownershipNotOwnerBody(String app) {
+    return 'If you know the owner, send them a message to claim ownership and verify on $app.';
+  }
 
   @override
   String get ownershipInviteOwnerWhatsApp => 'Invite the owner (WhatsApp)';
 
   @override
-  String ownershipInviteMessage(String channelTitle, String link) {
-    return 'Hello! Your YouTube channel \"$channelTitle\" is on DOMOVINA.ai. You can claim ownership for free and manage your content and payouts — verify yourself as the channel owner here: $link';
+  String ownershipInviteMessage(String channelTitle, String link, String app) {
+    return 'Hello! Your YouTube channel \"$channelTitle\" is on $app. You can claim ownership for free and manage your content and payouts — verify yourself as the channel owner here: $link';
   }
 
   @override
@@ -2447,8 +2471,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinkaWalletConfirming => 'Confirming on-chain…';
 
   @override
-  String pinkaPayFromDomovinaWallet(String amount) {
-    return 'Pay €$amount from your DOMOVINA wallet';
+  String pinkaPayFromDomovinaWallet(String amount, String brand) {
+    return 'Pay €$amount from your $brand wallet';
   }
 
   @override
@@ -3247,10 +3271,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'This person hasn\'t appeared as a guest in processed episodes — this profile tracks where they are talked about.';
 
   @override
-  String get appInstallBannerIos => 'DOMOVINA.ai also has an iPhone app.';
+  String appInstallBannerIos(String app) {
+    return '$app also has an iPhone app.';
+  }
 
   @override
-  String get appInstallBannerAndroid => 'DOMOVINA.ai also has an Android app.';
+  String appInstallBannerAndroid(String app) {
+    return '$app also has an Android app.';
+  }
 
   @override
   String get appInstallBannerAction => 'Get it';

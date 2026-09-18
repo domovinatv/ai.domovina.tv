@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../brand/app_brand.dart';
 import '../src/log.dart' show log;
 import 'local_prefs.dart';
 import 'mobile_web_detect.dart';
@@ -45,7 +46,9 @@ void maybeShowAppInstallBanner(BuildContext context) {
   messenger.showSnackBar(
     SnackBar(
       content: Text(
-        os == 'ios' ? l.appInstallBannerIos : l.appInstallBannerAndroid,
+        os == 'ios'
+            ? l.appInstallBannerIos(AppBrand.config.appName)
+            : l.appInstallBannerAndroid(AppBrand.config.appName),
       ),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 8),

@@ -22,6 +22,7 @@ import '../../services/auth_return_path.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_prefs.dart';
 import '../../services/locale_service.dart';
+import '../../widgets/brand_wordmark.dart';
 
 class AuthCallbackScreen extends StatefulWidget {
   const AuthCallbackScreen({super.key});
@@ -157,7 +158,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
               children: [
                 const DomovinaLogoMark(size: 72),
                 const SizedBox(height: 18),
-                const DomovinaWordmark(fontSize: 22),
+                const BrandWordmark(fontSize: 22),
                 const SizedBox(height: 14),
                 const TricolorAccent(width: 52),
                 const SizedBox(height: 32),

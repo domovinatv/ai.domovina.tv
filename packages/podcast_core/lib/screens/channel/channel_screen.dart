@@ -54,7 +54,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
     _detailFuture.then((d) {
       if (!mounted) return;
       setPageMeta(
-        title: '${d.name} — AI obrada podcasta – DOMOVINA.ai',
+        title: '${d.name} — AI obrada podcasta',
         description: d.description,
       );
     }).catchError((_) {});

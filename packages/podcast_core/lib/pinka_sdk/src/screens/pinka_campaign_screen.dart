@@ -171,7 +171,7 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     if (!mounted) return;
     // Runtime <title>/og meta za živu sesiju (crawleri idu kroz _worker.js
     // koji isti naslov gradi edge-side iz kampanje).
-    setPageMeta(title: '${c.title} – DOMOVINA.ai', description: c.description);
+    setPageMeta(title: c.title, description: c.description);
     setState(() {
       _campaign = c;
       _loading = false;

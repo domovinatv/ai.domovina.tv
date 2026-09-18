@@ -8,7 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/typography.dart';
+import '../../widgets/brand_wordmark.dart';
 
 /// DOMOVINA "D" logo mark (hrvatska trikolora + AI graf). PNG (ne SVG) zbog
 /// web release build gotcha-e.
@@ -23,29 +23,6 @@ class DomovinaLogoMark extends StatelessWidget {
       width: size,
       height: size,
       filterQuality: FilterQuality.high,
-    );
-  }
-}
-
-/// Wordmark "DOMOVINA.ai" — Playfair 800, ".ai" u crvenom akcentu.
-class DomovinaWordmark extends StatelessWidget {
-  final double fontSize;
-  const DomovinaWordmark({super.key, this.fontSize = 20});
-
-  @override
-  Widget build(BuildContext context) {
-    final base = AppTypography.wordmarkStyle(
-      color: Theme.of(context).colorScheme.onSurface,
-      fontSize: fontSize,
-    );
-    return Text.rich(
-      TextSpan(
-        style: base,
-        children: [
-          const TextSpan(text: 'DOMOVINA'),
-          TextSpan(text: '.ai', style: TextStyle(color: AppTheme.brandAccent)),
-        ],
-      ),
     );
   }
 }
@@ -102,7 +79,7 @@ class AuthBrandHeader extends StatelessWidget {
         if (!compact) ...[
           DomovinaLogoMark(size: logoSize),
           const SizedBox(height: 12),
-          const DomovinaWordmark(fontSize: 18),
+          const BrandWordmark(fontSize: 18),
           const SizedBox(height: 10),
           const TricolorAccent(),
           const SizedBox(height: 18),

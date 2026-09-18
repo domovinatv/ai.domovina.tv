@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../brand/app_brand.dart';
 import 'page_meta_web.dart' if (dart.library.io) 'page_meta_native.dart'
     as platform;
 
@@ -8,13 +10,17 @@ import 'page_meta_web.dart' if (dart.library.io) 'page_meta_native.dart'
 /// izvršavaju JS) — ovo je za KORISNIKE u živoj SPA sesiji: naslov taba,
 /// history/bookmark naslovi i share-sheet preview koji čita živi DOM
 /// (npr. iOS Safari "Dijeli"). Format naslova zrcali worker injectore
-/// (`<specifično> – DOMOVINA.ai`).
+/// (`<specifično> – <appName>`): sufiks ` – ${AppBrand.config.appName}`
+/// dodaje OVA funkcija, pozivatelji šalju samo specifični dio.
 ///
 /// Wasm-safe: web implementacija koristi package:web + dart:js_interop
 /// (NIKAD dart:html — ruši --wasm build). Na nativu je no-op.
 void setPageMeta({required String title, String? description}) {
   if (!kIsWeb) return;
-  platform.setPageMetaImpl(title: title, description: description);
+  platform.setPageMetaImpl(
+    title: '$title – ${AppBrand.config.appName}',
+    description: description,
+  );
 }
 
 /// Vrati default (index.html) naslov i opis — za home/neutralne rute.

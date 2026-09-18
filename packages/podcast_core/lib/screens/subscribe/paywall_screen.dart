@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/log.dart' show log;
 import '../../onboarding/ui/auth_sheet.dart';
 import '../../services/auth_service.dart';
@@ -146,7 +147,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     switch (result.status) {
       case RcPurchaseStatus.success:
         unawaited(EntitlementService.instance.refresh());
-        _snack(appStrings.channelWelcomeToPlus);
+        _snack(appStrings.channelWelcomeToPlus(AppBrand.config.plusDisplayName));
         if (mounted) context.pop();
       case RcPurchaseStatus.cancelled:
         break; // silent — user backed out
@@ -205,7 +206,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('DOMOVINA Plus')),
+      appBar: AppBar(title: Text(AppBrand.config.plusDisplayName)),
       body: ValueListenableBuilder<bool>(
         valueListenable: EntitlementService.instance.isPlus,
         builder: (context, isPlus, _) {
@@ -525,7 +526,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
             children: [
               Icon(Icons.verified, size: 48, color: cs.primary),
               const SizedBox(height: 12),
-              Text(l.channelAlreadyPlus,
+              Text(l.channelAlreadyPlus(AppBrand.config.plusDisplayName),
                   style: Theme.of(context)
                       .textTheme
                       .titleLarge

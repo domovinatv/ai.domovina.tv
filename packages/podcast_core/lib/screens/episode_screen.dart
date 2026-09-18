@@ -122,7 +122,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
         // Runtime <title>/og meta za živu SPA sesiju — isti format kao
         // worker edge-inject za /v/ (crawleri i dalje idu kroz _worker.js).
         setPageMeta(
-          title: '${data.displayTitle} – DOMOVINA.ai',
+          title: data.displayTitle,
           description: data.summary?.summary.abstractHr,
         );
       }
@@ -224,7 +224,7 @@ class _QueuedEpisodeScreenState extends State<_QueuedEpisodeScreen> {
       _searching = false;
     });
     if (hit != null) {
-      setPageMeta(title: '${hit.video.displayTitle} – DOMOVINA.ai');
+      setPageMeta(title: hit.video.displayTitle);
     }
   }
 

@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
+import '../../brand/app_brand.dart';
 import '../../src/app.dart' show rootScaffoldMessengerKey;
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
@@ -511,7 +512,8 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   String _defaultHeadline() {
     final l = AppLocalizations.of(context);
     return switch (origin) {
-      AuthSheetOrigin.account => l.authHeadlineAccount,
+      AuthSheetOrigin.account =>
+        l.authHeadlineAccount(AppBrand.config.appName),
       AuthSheetOrigin.guest => l.authHeadlineGuest,
       AuthSheetOrigin.moment3 => l.authHeadlineMoment3,
       AuthSheetOrigin.handoff => l.authHeadlineHandoff,
@@ -569,8 +571,8 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       // Nema passkeyja na uređaju → uputi na druge metode. Kreiranje NIJE
       // ovdje (anti multiple-passkeys/accounts) — dodaje se u Moj račun
       // nakon prijave, vezano uz postojeći račun.
-      setState(() => _notice =
-          AppLocalizations.of(context).authPasskeyMissingNotice);
+      setState(() => _notice = AppLocalizations.of(context)
+          .authPasskeyMissingNotice(AppBrand.config.appName));
       return;
     }
     _handleResult(result);
