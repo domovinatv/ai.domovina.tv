@@ -565,6 +565,38 @@ Kad medija JEST na CDN-u, primarna radnja je NAŠ player („Gledaj epizodu" →
 Sintetički ID-evi (X izvor, `_yt_matched:false`) nemaju YouTube video iza sebe
 i ne smiju se ugrađivati.
 
+### Cachiran 404 na CDN-u — web vidi 404, native 200 (isti URL)
+
+Per-epizoda datoteke (`data/<id>/*.json`, `diarized.srt`) su `immutable` i
+dohvaćaju se BEZ cache-bustera. Ali dok ih pipeline još nije uploadao,
+Cloudflare cachira i **404** — i to u zasebnom `Vary: Origin` zapisu. Preglednik
+šalje `Origin` na svaki cross-origin fetch, `dart:io` klijent (iOS/Android/
+macOS) ga ne šalje, pa ista epizoda čita DVA cache zapisa i dobiva dva
+odgovora. Dovoljan je jedan posjet stranici prije uploada da web ostane
+zaključan na 404.
+
+Izmjereno 19.9.2026. na `aue1GuuMsbA` i `70uXR4DDZiE`: `info.json` je uz
+`Origin: https://domovina.ai` vraćao 404 (`cf-cache-status: HIT`, `age`
+20 972 s uz `cache-control: max-age=3600`), a bez tog zaglavlja 200. `loadInfo`
+je zato na webu bacao `VideoNotFoundException` → epizoda je padala na
+`EpisodeStage.queued` („epizoda još nije preuzeta") uz YouTube embed, dok se u
+iOS aplikaciji uredno reproducirala. Uzorak od 360 epizoda: pogođene 2 — obje
+među najsvježijima, tj. točno one koje se klikću iz raila „Upravo stiglo".
+
+**Rule (404 se ne vjeruje iz prve)**: `DataService._get` na 404 ponovi zahtjev s
+`CdnConfig.bustCache(url)` (isti 5-minutni bucket kao probe-ovi) — druga cache
+adresa ide na origin. Tek drugi 404 znači da datoteke nema. Cijena je jedan
+dodatni zahtjev po assetu koji ionako nedostaje, nula na uspjehu. Kontrakt čuva
+`test/data_service_stale_404_test.dart`. Novi per-epizoda dohvat ide kroz
+`_get`/`_fetch`, nikad izravno kroz `http.get`.
+
+**Rule (purge po golom URL-u NE čisti `Vary` varijantu)**:
+`purge_cache` s `{"files":["https://cdn…/info.json"]}` vrati `success:true` a
+otrovani zapis ostane 404 (provjereno). Varijantu čisti samo
+`{"files":[{"url":"…","headers":{"Origin":"https://domovina.ai"}}]}`.
+Isto pravilo kao kod verifikacije purgea: s `Vary: Origin` postoje dva zapisa,
+pa i provjera i purge moraju ići u obje varijante.
+
 ### Thumbnail caching + WebP varijante — `CachedThumbnail`
 
 Sve slike epizoda idu kroz `CachedThumbnail` (`lib/widgets/cached_thumbnail.dart`):
