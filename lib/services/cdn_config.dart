@@ -16,6 +16,13 @@ class CdnConfig {
     return 'v=$bucket';
   }
 
+  /// Lijepi isti 5-minutni cache-buster na proizvoljan CDN URL.
+  ///
+  /// Per-epizoda datoteke ga u normalnom dohvatu NEMAJU (pravo su immutable),
+  /// pa ovo služi samo za drugi pokušaj nakon 404 — vidi `DataService._get`.
+  static String bustCache(String url) =>
+      '$url${url.contains('?') ? '&' : '?'}${_channelCacheBuster()}';
+
   // Channels
   static String channelsIndexUrl() =>
       '$base/channels/data/index.json?${_channelCacheBuster()}';

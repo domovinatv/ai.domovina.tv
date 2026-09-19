@@ -52,8 +52,39 @@ class DataService {
 
   const DataService({required this.youtubeId});
 
+  /// GET koji NE vjeruje 404-u iz prve.
+  ///
+  /// Per-epizoda datoteke su na CDN-u `immutable` pa se dohvaćaju bez
+  /// cache-bustera — ali Cloudflare cachira i **404** od prije nego ih je
+  /// pipeline uploadao, i to u zasebnom `Vary: Origin` zapisu. Preglednik na
+  /// svaki cross-origin fetch šalje `Origin`, `dart:io` klijent (iOS/Android/
+  /// macOS) ga ne šalje — pa ista epizoda čita DVA različita cache zapisa i
+  /// vidi dva različita odgovora.
+  ///
+  /// Izmjereno 19.9.2026. na `aue1GuuMsbA` i `70uXR4DDZiE`: `info.json`,
+  /// `summary.json`, `outline.json`, `article.json` i `diarized.srt` vraćali su
+  /// uz `Origin: https://domovina.ai` **404** (`cf-cache-status: HIT`, `age`
+  /// 20 972 s uz `cache-control: max-age=3600`), a bez tog zaglavlja 200.
+  /// Posljedica: `loadInfo` je na webu bacao [VideoNotFoundException] pa je
+  /// epizoda padala na `EpisodeStage.queued` („epizoda još nije preuzeta") uz
+  /// YouTube embed, dok je u iOS aplikaciji radila normalno — iste datoteke,
+  /// isti Dart izvor. Napomena: `purge_cache` po golom URL-u taj zapis NE
+  /// briše; varijantu čisti samo purge s `headers: {"Origin": …}`.
+  ///
+  /// Zato: na 404 ponovi zahtjev s cache-busterom (isti 5-minutni bucket kao
+  /// probe-ovi u [CdnConfig]). To je druga cache adresa, pa ide na origin i
+  /// zaobilazi otrovani zapis. Tek ako i ona vrati 404, datoteke doista nema.
+  /// Cijena je jedan dodatni zahtjev po assetu koji ionako nedostaje; na
+  /// uspješnom dohvatu nula. Probe putanje ([_exists], `EbookService.probe`)
+  /// cache-buster nose oduvijek i ne trebaju retry.
+  Future<http.Response> _get(String url) async {
+    final first = await http.get(Uri.parse(url));
+    if (first.statusCode != 404) return first;
+    return http.get(Uri.parse(CdnConfig.bustCache(url)));
+  }
+
   Future<String> _fetch(String url) async {
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
     }
@@ -62,7 +93,7 @@ class DataService {
 
   Future<PodcastInfo> loadInfo() async {
     final url = CdnConfig.infoUrl(youtubeId);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode == 404) throw VideoNotFoundException(youtubeId);
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
@@ -76,7 +107,7 @@ class DataService {
   /// Prave HTTP greske propagira dalje.
   Future<PodcastSummary?> loadSummary() async {
     final url = CdnConfig.summaryUrl(youtubeId);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
@@ -90,7 +121,7 @@ class DataService {
   /// Vraca null ako prijevod za ovaj video jos nije producran (404).
   Future<PodcastSummary?> loadSummaryEn() async {
     final url = CdnConfig.summaryEnUrl(youtubeId);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
@@ -103,7 +134,7 @@ class DataService {
   /// Outline — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
   Future<PodcastOutline?> loadOutline() async {
     final url = CdnConfig.outlineUrl(youtubeId);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
@@ -116,7 +147,7 @@ class DataService {
   /// Article — vraca null ako fajl ne postoji (AI pipeline jos nije gotov).
   Future<PodcastArticle?> loadArticle() async {
     final url = CdnConfig.articleUrl(youtubeId);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
@@ -129,7 +160,7 @@ class DataService {
   /// EN-overlay verzija article.json — vraca null ako prijevod ne postoji.
   Future<PodcastArticle?> loadArticleEn() async {
     final url = CdnConfig.articleEnUrl(youtubeId);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(url);
     if (response.statusCode == 404) return null;
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $url');
