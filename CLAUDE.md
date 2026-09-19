@@ -20,6 +20,17 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 
 `.env` must contain `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_PURGE_TOKEN`.
 
+**Rule (produkcija ide SAMO s `main`)**: skripta ne prosljeđuje `--branch`, pa
+wrangler granu čita iz gita — deploy s bilo koje druge grane završi kao
+Cloudflare **Preview**, a `domovina.ai` ostane na staroj verziji. Skriptina
+verifikacija to ne uhvati: `https://domovina.ai/ -> HTTP 200` je istina i kad
+ništa nije objavljeno (izmjereno 19.9.2026., deploy s `feat/podcast-core`
+javio „Deployed v2.0.154" dok je produkcija servirala v2.0.153). Provjeravaj
+**verziju**, ne status:
+`curl -s https://domovina.ai/main.dart.js | grep -o 'DOMOVINA v[0-9.]*' | head -1`
+i `wrangler pages deployment list --project-name=domovina-ai | head -3`
+(stupac mora pisati `Production`, grana `main`).
+
 ## AI tim (tmux, 5 panela)
 
 `./scripts/tim.sh` diže jedan tmux session s pet Claude Code panela:
@@ -548,6 +559,9 @@ adresa ide na origin. Tek drugi 404 znači da datoteke nema. Cijena je jedan
 dodatni zahtjev po assetu koji ionako nedostaje, nula na uspjehu. Kontrakt čuva
 `test/data_service_stale_404_test.dart`. Novi per-epizoda dohvat ide kroz
 `_get`/`_fetch`, nikad izravno kroz `http.get`.
+
+Puna slika (mjerenja, dijagram grana, odbačene alternative):
+`docs/2026-09-19-cachiran-404-vary-origin.md`.
 
 **Rule (purge po golom URL-u NE čisti `Vary` varijantu)**:
 `purge_cache` s `{"files":["https://cdn…/info.json"]}` vrati `success:true` a
