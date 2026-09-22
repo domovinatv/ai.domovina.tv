@@ -56,6 +56,52 @@ Deck mora stati u ekran bez scrolla na **svakoj** projektorskoj rezoluciji od
   prelistava kroz nju prije nego prijeđe na sljedeću — inače je donja polovica
   nedostupna iz kontrola.
 
+## PDF
+
+```bash
+node scripts/deck-pdf.mjs                  # build/marketing/domovina-seed.pdf
+node scripts/deck-pdf.mjs --size 1920x1080 # veća projektorska kutija
+node scripts/deck-pdf.mjs --out ~/Desktop/domovina-seed.pdf
+```
+
+Izlaz ide u `build/` — **nije u gitu, i tako ostaje**: repo je javan, a deck ide
+fondovima izravno. Print stilovi žive u `@media print` bloku na dnu `<style>` u
+samom decku, pa je render na ekranu nepromijenjen.
+
+Troja vrata, jer PDF laže na tri načina i sva tri se vide tek kad ga netko
+otvori pred fondom. Pad = izlaz 1 i **PDF se ne piše** (`--skip-gate` gazi):
+
+| vrata | mjeri | zašto |
+|---|---|---|
+| prelijevanje | `rect.height - visina > 0` na 1024×768, 1280×720, 1920×1080 | isti prag kao orakl; headless Playwright postavlja viewport točno, pa iframe iz prošlog kruga nije potreban |
+| broj stranica | `/Count` iz stabla stranica == broj `.slide` sekcija | jedan piksel viška po slajdu daje 32 stranice, svaka druga prazna — PDF se pritom uredno otvori |
+| veličina stranice | `/MediaBox` == 960×540 pt | broj stranica prođe i kad je kutija kriva; deck prelomljen u A4 portret je uredan PDF i neupotrebljiv na projektoru |
+
+Exit kodovi su ugovor, kao kod `voting-drift-check`: **0** prošlo, **1** deck
+pada na vratima, **2** ne mogu provjeriti (nema chromiuma, deck se ne učita,
+PDF nečitljiv). Ne miješati „ne znam" s „deck je puknuo".
+
+**Rule (`--size` mora ući kroz `addStyleTag`)**: `preferCSSPageSize` daje CSS-u
+zadnju riječ, a deck ima `@page{size:1280px 720px}` tvrdo upisan — dok se
+zatraženi format nije ubrizgavao kao kasnije print pravilo, `--size 1920x1080`
+je tiho davao stranicu od 960×540 pt. Uhvatila su ga vrata veličine.
+
+**Rule (čeka se `document.fonts.ready`)**: Fraunces i Inter dolaze s Google
+Fontsa. Bez tog čekanja prvi izvoz padne na Georgiju i to se vidi tek u gotovom
+PDF-u. Provjera ide `pdffonts` — u ispravnom izvozu su ugrađeni samo Fraunces i
+Inter rezovi.
+
+**Poznato**: slajd 9 povlači `TimesNewRomanPS-BoldMT` za **jedan znak** — strelicu
+`→` u „€45M → €1M", koje Fraunces nema. Renderira se uredno jer Times tu jest,
+ali glif ovisi o stroju koji izvozi; ista klasa problema kao `⏱` u OG slikama.
+
+Chromium: skripta prvo pokuša Playwrightov headless shell, pa njegov puni
+chromium, pa **sistemski Chrome**. Na ovom stroju prolazi tek treći — cache je
+imao shell krive revizije (1223 uz playwright koji traži 1208), a `chromium-1208`
+je raspakiran bez svog frameworka i gasio se uz „Target page, context or browser
+has been closed". Uz taj ispad render ovisi o lokalno instaliranom Chromeu, ne o
+verziji prikovanoj u `package.json`.
+
 ## Zašto ovo uopće ima orakl
 
 Mjerenja iz prolaza 26.–27.8.2026. — koje su provjere mehaničke, koliko su
