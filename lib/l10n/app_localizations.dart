@@ -6268,6 +6268,102 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'E-knjiga (EPUB)'**
   String get ebookCardAction;
+
+  /// Naslov sekcije sa sponzorima ugrađenima u snimku (partneri koje je autor sam doveo). Ton zahvale, ne reklame.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uz podršku'**
+  String get sponsorsInVideoTitle;
+
+  /// Podnaslov sekcije sponzora epizode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Partneri koji su omogućili ovu epizodu. Hvala im što podržavaju autore.'**
+  String get sponsorsInVideoIntro;
+
+  /// Uloga sponzora (role = sponsor).
+  ///
+  /// In hr, this message translates to:
+  /// **'Sponzor epizode'**
+  String get sponsorsInVideoRoleSponsor;
+
+  /// Uloga sponzora (role = partner).
+  ///
+  /// In hr, this message translates to:
+  /// **'Partner podcasta'**
+  String get sponsorsInVideoRolePartner;
+
+  /// Kredit za garderobu voditelja (role = wardrobe).
+  ///
+  /// In hr, this message translates to:
+  /// **'Garderoba'**
+  String get sponsorsInVideoRoleWardrobe;
+
+  /// Kredit za opremanje studija (role = studio).
+  ///
+  /// In hr, this message translates to:
+  /// **'Opremanje studija'**
+  String get sponsorsInVideoRoleStudio;
+
+  /// Uloga sponzora koju aplikacija ne poznaje — generička oznaka.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podrška'**
+  String get sponsorsInVideoRoleOther;
+
+  /// Gumb koji pušta raspon snimke s porukom sponzora i sam stane na kraju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslušaj poruku sponzora'**
+  String get sponsorsInVideoListen;
+
+  /// Gumb koji pušta sponzoriranu rubriku u snimci i sam stane na kraju.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslušaj sponzoriranu rubriku'**
+  String get sponsorsInVideoListenRubric;
+
+  /// Poveznica koja skače na trenutak kad voditelj zahvaljuje sponzoru, bez automatskog zaustavljanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zahvala na {time}'**
+  String sponsorsInVideoThanksAt(String time);
+
+  /// Poveznica na autorovo poglavlje nazvano po sponzoru.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poglavlje na {time}'**
+  String sponsorsInVideoChapterAt(String time);
+
+  /// Generička poveznica na trenutak u snimci.
+  ///
+  /// In hr, this message translates to:
+  /// **'Na {time}'**
+  String sponsorsInVideoAt(String time);
+
+  /// Poveznica na web stranicu sponzora (otvara vanjski preglednik).
+  ///
+  /// In hr, this message translates to:
+  /// **'Web'**
+  String get sponsorsInVideoWebsite;
+
+  /// Proširi skraćen opis sponzora.
+  ///
+  /// In hr, this message translates to:
+  /// **'više'**
+  String get sponsorsInVideoMore;
+
+  /// Skrati proširen opis sponzora.
+  ///
+  /// In hr, this message translates to:
+  /// **'manje'**
+  String get sponsorsInVideoLess;
+
+  /// Kratka potvrda kad se reprodukcija sama zaustavi na kraju poruke sponzora.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poruka sponzora je završila'**
+  String get sponsorsInVideoStoppedAt;
 }
 
 class _AppLocalizationsDelegate

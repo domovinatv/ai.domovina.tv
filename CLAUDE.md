@@ -632,6 +632,32 @@ datotečne sustave, gdje „č" i „?" završe kao smeće ili odbijen upload.
 Mjerenja, odbačene alternative i otvoreni dug (backfill, EN izdanje, `epubcheck`):
 `docs/2026-09-15-ebook-epub-na-frontendu.md`.
 
+### Sponzori u snimci — `SponsorsInVideo` (od 24.9.2026.)
+
+`data/<id>/sponsors_in_video.json` (fetch pipeline KORAK 9.85,
+`detect_sponsors.js`) nosi partnere koje je autor SAM doveo i koji su ugrađeni
+u snimku. Sekcija „Uz podršku" na `/v/:id` (`widgets/sponsors_in_video_section.dart`)
+crta karticu po imenovanom sponzoru; `playable: true` segment dobiva
+„Poslušaj", koji pušta raspon i sam pauzira na `end` (`_checkSponsorClip` u
+`episode_screen.dart`), a ostali segmenti su samo skok na trenutak. Ugovor:
+`fetch.domovina.tv/docs/2026-09-23-sponzori-u-snimci.md`, testovi
+`test/sponsors_in_video_test.dart`.
+
+**Rule (ime sloja)**: ovo NISU dinamička sponzorstva kupljena na domovina.ai
+nakon snimanja — ta dolaze kao zaseban proizvod, izvor i widget. Ne preimenovati
+u generičko `Sponsors`.
+
+**Rule (dohvat)**: kroz `DataService.loadSponsorsInVideo` (`_get`, jedan retry
+s cache-busterom), izvan `EpisodeData.load`, bez memorije preko sesije i bez
+pollinga; 404/greška/nečitljiv JSON = sekcije nema. Zapis bez imena
+(`_unattributed`) se ne prikazuje.
+
+**Rule (otvaranje endDrawera pauzira web video)**: montiranje `Video` widgeta
+premjesti `<video>` u DOM-u i element se pauzira. Svaka radnja koja pusti
+reprodukciju pa otvori drawer mora ponoviti `play()` nakon animacije
+(`_revealPlayer`, 300/900 ms). Izmjereno 24.9.2026. na 390 px: seek je sjeo na
+5963 s, a poruka nije krenula.
+
 ## Logging
 
 `main.dart` exports a `log()` function that prefixes messages with `[DOMOVINA v{version}]`. Use it throughout the app for console debugging:

@@ -13,6 +13,7 @@ import '../models/channel_detail.dart' show ChannelVideo;
 import '../models/episode_status.dart';
 import '../models/person_hub.dart' show personSlug;
 import '../models/podcast_article.dart' show PodcastSection;
+import '../models/sponsors_in_video.dart';
 import '../services/background_audio.dart';
 import '../services/background_playback.dart';
 import '../services/episode_language.dart';
@@ -40,6 +41,7 @@ import '../widgets/hero_section.dart';
 import '../widgets/language_toggle_chip.dart';
 import '../pinka_sdk/pinka_sdk.dart';
 import '../widgets/summary_section.dart';
+import '../widgets/sponsors_in_video_section.dart';
 import '../widgets/chapters_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/magisterium_panel.dart';
@@ -773,6 +775,22 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// a ne uvjet da se epizoda prikaže.
   EbookAvailability _ebook = EbookAvailability.none;
 
+  /// Sponzori ugrađeni u snimku (`sponsors_in_video.json`). Kao i e-knjiga,
+  /// dohvaćaju se lijeno i izvan [EpisodeData.load] — sekcija je dodatak i ne
+  /// smije usporiti prvi prikaz ni srušiti ekran; do odgovora (ili zauvijek,
+  /// na 404/grešku) je null i sekcije nema.
+  SponsorsInVideo? _sponsorsInVideo;
+
+  /// „Poslušaj poruku sponzora" u tijeku: player se sam pauzira kad pozicija
+  /// dođe do kraja raspona. Null = nema aktivnog isječka.
+  SponsorInVideoSegment? _sponsorClip;
+
+  /// Pozicija je barem jednom ušla u raspon isječka. Tek tada kraj raspona
+  /// znači „poruka je gotova" — prije toga stream još javlja staru poziciju
+  /// (npr. 2:00:00 ako je korisnik bio dalje od poruke) i pauza bi pala odmah.
+  bool _sponsorClipEntered = false;
+  DateTime? _sponsorClipStartedAt;
+
   @override
   void initState() {
     super.initState();
@@ -781,6 +799,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
     EbookService.probe(widget.data.youtubeId).then((found) {
       if (!mounted || !found.any) return;
       setState(() => _ebook = found);
+    });
+    DataService(youtubeId: widget.data.youtubeId).loadSponsorsInVideo().then((
+      found,
+    ) {
+      if (!mounted || found == null || !found.hasNamed) return;
+      setState(() => _sponsorsInVideo = found);
     });
 
     // 1) URL forsiranje (npr. /v/<id>/en) — najjaci signal.
@@ -1420,6 +1444,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
   }
 
   void _onVideoPosition(Duration pos) {
+    _checkSponsorClip(pos);
     // URL sync na webu — adresna traka prati player na 1Hz.
     // Nema veze sa seekLockom; želimo da se address bar updatea i tijekom
     // ručno-induciranog seeka (čim novi pos stigne).
@@ -1494,6 +1519,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
     });
 
     // Auto-scroll teksta samo ako korisnik nije ručno scrollao zadnje 2 sekunde
+    // — i ne dok svira poruka sponzora: korisnik je gleda s kartice sponzora,
+    // pa bi skok na sekciju članka odvukao stranicu ispod njegova prsta.
+    if (_sponsorClip != null) return;
     final lastScroll = _lastManualScroll;
     if (lastScroll == null ||
         DateTime.now().difference(lastScroll) > const Duration(seconds: 2)) {
@@ -1630,6 +1658,103 @@ class _EpisodeContentState extends State<_EpisodeContent>
       await _player?.play();
     }
   }
+
+  /// Seek na sekundu + play, bez scrolla teksta (sponzorski gumbi).
+  Future<void> _seekToAndPlay(Duration to) async {
+    _seekLock = DateTime.now();
+    // Namjeran skok s gumba — kao tap na poglavlje, Undo se ne nudi.
+    _seekUndo?.suppress(window: const Duration(seconds: 2));
+    if (kIsWeb) {
+      await _player?.play();
+      await _player?.seek(to);
+    } else {
+      await _player?.seek(to);
+      await _player?.play();
+    }
+  }
+
+  /// Na uskom ekranu je player u endDraweru — bez njega bi „Poslušaj" svirao
+  /// bez ikakvog vizuala (isto kao play u članku).
+  ///
+  /// Otvaranje drawera montira `Video` widget, koji `<video>` premjesti u
+  /// DOM-u — a to po HTML specu PAUZIRA element (ista zamka kao ulazak u
+  /// fullscreen, vidi CLAUDE.md „media_kit web"). Izmjereno 24.9.2026. na
+  /// 390 px: seek je sjeo na 5963 s, a poruka nije krenula. Zato nakon
+  /// animacije ponovi `play()` (300/900 ms, kao `_resumeAfterTransition`).
+  void _revealPlayer() {
+    if (MediaQuery.sizeOf(context).width > 900) return;
+    final wasOpen = _scaffoldKey.currentState?.isEndDrawerOpen ?? false;
+    _scaffoldKey.currentState?.openEndDrawer();
+    if (wasOpen) return;
+    for (final ms in const [300, 900]) {
+      Future<void>.delayed(Duration(milliseconds: ms), () {
+        final player = _player;
+        if (!mounted || player == null || player.state.playing) return;
+        player.play();
+      });
+    }
+  }
+
+  /// „Poslušaj poruku sponzora": pusti točno taj raspon i stani na kraju.
+  void _listenSponsor(SponsorInVideoSegment seg) {
+    log('SponsorsInVideo: listen ${seg.start}-${seg.end}s (${seg.kind.name})');
+    _sponsorClip = seg;
+    _sponsorClipEntered = false;
+    _sponsorClipStartedAt = DateTime.now();
+    _seekToAndPlay(seg.startPosition);
+    _revealPlayer();
+  }
+
+  /// Nepouzdan raspon (zahvala, poglavlje): samo skok na trenutak, bez
+  /// zaustavljanja. Adresna traka se sama poravna na `/v/<id>/t/<sec>`.
+  void _jumpSponsor(SponsorInVideoSegment seg) {
+    _sponsorClip = null;
+    _seekToAndPlay(seg.startPosition);
+    _revealPlayer();
+  }
+
+  void _checkSponsorClip(Duration pos) {
+    final clip = _sponsorClip;
+    if (clip == null) return;
+    const slack = Duration(seconds: 3);
+    final inRange = pos >= clip.startPosition - slack && pos < clip.endPosition;
+    if (!_sponsorClipEntered) {
+      if (inRange) {
+        _sponsorClipEntered = true;
+      } else if (DateTime.now().difference(_sponsorClipStartedAt!) >
+          const Duration(seconds: 8)) {
+        // Seek nikad nije stigao (medija se nije dala premotati) — odustani.
+        _sponsorClip = null;
+      }
+      return;
+    }
+    if (inRange) return;
+    _sponsorClip = null;
+    // Prirodan kraj = pozicija je upravo prešla `end`. Sve drugo (skok
+    // naprijed ili natrag po timelineu) je korisnikov izbor — ne pauziraj.
+    if (pos >= clip.endPosition && pos < clip.endPosition + slack) {
+      _player?.pause();
+      log('SponsorsInVideo: auto-pause at ${pos.inSeconds}s');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).sponsorsInVideoStoppedAt),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  List<({Duration start, Duration end})> get _sponsorRanges =>
+      _sponsorsInVideo?.playableRanges ?? const [];
+
+  Widget _sponsorsSection({double horizontalPadding = 20}) =>
+      SponsorsInVideoSection(
+        data: _sponsorsInVideo,
+        horizontalPadding: horizontalPadding,
+        onListen: _videoReady ? _listenSponsor : null,
+        onJump: _videoReady ? _jumpSponsor : null,
+      );
 
   void _drawerTap(String timestamp) {
     _scaffoldKey.currentState?.closeDrawer();
@@ -1875,6 +2000,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 preferEn: _language == EpisodeLanguage.en,
                 episodeUrl: episodeShareUrl(data.youtubeId, lang: _language),
               ),
+              // Partneri koji su omogućili epizodu — iza sažetka, prije
+              // poglavlja; sama se sakrije kad imenovanih sponzora nema.
+              _sponsorsSection(),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
               ChaptersSection(
@@ -2002,6 +2130,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                           lang: _language,
                         ),
                       ),
+                      // Sponzori u snimci — isto mjesto kao u standardnom.
+                      _sponsorsSection(),
                       Divider(
                         height: 1,
                         color: theme.colorScheme.outlineVariant,
@@ -2219,6 +2349,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
               scrollTimestamp: _scrollTimestamp,
               onChapterTap: _seekAndPlay,
               onSeek: _onVideoSeek,
+              sponsorRanges: _sponsorRanges,
               totalDurationSeconds: data.info.duration,
               speakerTimeline: data.speakerTimeline,
               speakers: summaryForUi.summary.speakers,
@@ -2250,6 +2381,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             scrollTimestamp: _scrollTimestamp,
             onChapterTap: _seekAndPlay,
             onSeek: _onVideoSeek,
+            sponsorRanges: _sponsorRanges,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: summaryForUi.summary.speakers,
@@ -2297,6 +2429,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             scrollTimestamp: _scrollTimestamp,
             onChapterTap: _seekAndPlay,
             onSeek: _onVideoSeek,
+            sponsorRanges: _sponsorRanges,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: summaryForUi.summary.speakers,
@@ -2376,6 +2509,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                     activeTimestamp: _activeTimestamp,
                     onChapterTap: _seekAndPlay,
                     onSeek: _onVideoSeek,
+                    sponsorRanges: _sponsorRanges,
                     totalDurationSeconds: data.info.duration,
                     speakerTimeline: data.speakerTimeline,
                     speakers: summaryForUi.summary.speakers,
@@ -2763,6 +2897,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             chapters: const [],
             onChapterTap: (_) {},
             onSeek: _onVideoSeek,
+            sponsorRanges: _sponsorRanges,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
           ),
@@ -2790,6 +2925,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   chapters: const [],
                   onChapterTap: (_) {},
                   onSeek: _onVideoSeek,
+                  sponsorRanges: _sponsorRanges,
                   totalDurationSeconds: data.info.duration,
                   speakerTimeline: data.speakerTimeline,
                   width: null,

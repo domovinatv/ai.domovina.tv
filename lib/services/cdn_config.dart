@@ -63,6 +63,11 @@ class CdnConfig {
       '$base/data/$ytId/article.magisterium_full_v2.en.json';
   static String diarizedSrtUrl(String ytId) => '$base/data/$ytId/diarized.srt';
 
+  /// Sponzori ugrađeni u snimku (KORAK 9.85) — postoji za svaku objavljenu
+  /// epizodu; `sponsors: []` znači da ih nema. Vidi `SponsorsInVideo`.
+  static String sponsorsInVideoUrl(String ytId) =>
+      '$base/data/$ytId/sponsors_in_video.json';
+
   /// EPUB e-knjiga epizode (pipeline KORAK 9.8, `generate_ebook.js`).
   /// Postoji samo za epizode koje imaju članak; englesko izdanje samo kad
   /// postoji i `article.en.json`. Ime na CDN-u je `book.epub` / `book.en.epub`
