@@ -103,6 +103,14 @@ TestFlight i Play internal. Ishod ide u Telegram grupu preko
   `xcodebuild` potpisivanje traži otključan login keychain iz Aqua sesije.
 - Stanje storeova u bilo kojem trenutku: `./scripts/store-status.rb`
   (review state, TestFlight `processingState`, Play rollout %).
+- Produkcija iz postojećeg builda, bez re-uploada: `./scripts/play-promote.sh <vc>
+  production "<tekst>"` i `./scripts/asc-submit.rb <build> --notes-hr "<tekst>" --submit`
+  (bez `--submit` samo plan). Tako je 24.9.2026. poslan 2.0.154 (177).
+- **Rule (odobrena verzija zatvara train)**: kad Apple odobri verziju X, svaki
+  sljedeći upload s istim `version:` u pubspecu altool odbije („Pre-Release Train
+  … closed"). Do 24.9. je to prolazilo kao ✅ (buildovi 159 i 160 nikad nisu
+  stigli na TestFlight); sada `testflight-upload.sh` vraća exit 3 i nightly javi
+  „bumpaj verziju".
 - **Rule (build artefakti NE idu izravno na `/Volumes/DOMOVINA2TB`)**: taj exFAT
   ima alokacijski blok od **512 KB**, pa je Gradle home od 14 GB u 156 000
   datoteka pri kopiranju narastao na **41 GB** (izmjereno 2026-08-13). Sve što

@@ -20,7 +20,7 @@ auth=(-H "Authorization: Bearer $TOKEN")
 
 RELEASE=$(ruby -rjson -e 'r={"name"=>"'"$APP_VER"' ('"$VC"')","versionCodes"=>["'"$VC"'"],"status"=>"completed"};
 n=ARGV[0]; r["releaseNotes"]=[{"language"=>"hr","text"=>n}] unless n.to_s.empty?;
-puts({"track"=>"'"$TRACK"'","releases"=>[r]}.to_json)' "$NOTES")
+puts({"track"=>"'"$TRACK"'","releases"=>[r]}.to_json)' -- "$NOTES")
 
 echo "==> edits.insert"
 EDIT=$(curl -s --retry 3 "${auth[@]}" -H "Content-Length: 0" -X POST "$API/edits" | ruby -rjson -e 'puts JSON.parse(STDIN.read)["id"]')

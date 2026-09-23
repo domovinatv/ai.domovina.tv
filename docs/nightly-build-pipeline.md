@@ -78,10 +78,25 @@ javi 🎉 da ih makneš — inače baseline tiho trune i pokriva prave regresije
 **Verifikacija nakon uploada.** HTTP 200 na uploadu ne znači da je build dobar:
 Apple obrađuje asinkrono i ITMS-90xxx odbijenice stižu tek minutama kasnije.
 Nightly zato do 45 minuta (`NIGHTLY_TF_POLL_MIN`) polla `processingState` za taj
-build broj i tek onda javlja ✅ ili ⚠️. Prozor je bio 20 min i to je bilo premalo —
-izmjereno 2026-08-13: build 159 se ni 25 minuta nakon uploada još nije pojavio u
-`/v1/builds`. „Još se obrađuje" NIJE greška, samo Appleov red čekanja. Za Play čita natrag internal track i provjeri da je
-`versionCode` stvarno ondje.
+build broj i tek onda javlja ✅ ili ⚠️. Za Play čita natrag internal track i
+provjeri da je `versionCode` stvarno ondje.
+
+**Rule (build kojeg ASC ne vidi NIJE „u obradi")**: do 24.9.2026. je poll
+nepoznat build brojao kao `PROCESSING`. Zato je 13.8. zaključeno da „build 159 ni
+25 min nakon uploada nije u `/v1/builds`" i prozor je podignut s 20 na 45 min.
+Istina je bila drukčija: 159 (i kasnije 160) **nikad nije stigao**. `altool` je
+javio `UPLOAD FAILED … Invalid Pre-Release Train. The train version '2.0.136' is
+closed`, ali uz exit 0, pa je korak prošao kao ✅, a izvještaj je javio „Apple ga
+još obrađuje, nije greška". Pravi uploadi (168, 171, 176, 177) postanu `VALID`
+za 2–3 min. Sada:
+
+- `testflight-upload.sh` priznaje uspjeh samo uz `UPLOAD SUCCEEDED` u ispisu
+  altoola; zatvoren train vraća **exit 3** i nightly javi „bumpaj verziju".
+- poll razlikuje `NOT_FOUND` od `PROCESSING`; `NOT_FOUND` na kraju prozora je ⚠️
+  „upload možda nije stigao", ne umirujuća poruka.
+
+Zatvoren train se događa kad je verzija iz pubspeca već **odobrena** na App
+Storeu, a nitko je nije bumpao (`deploy.sh` bumpa samo kad se deploya web).
 
 ## Datoteke
 
@@ -163,8 +178,20 @@ Could not add entry ':shared_preferences_android:compileReleaseKotlin' to cache 
 Nigdje ne piše „nema mjesta na disku". Bez preflighta bi se to svaku noć javljalo
 kao misteriozan Gradle lock problem.
 
-Pragovi (env-podesivi): `NIGHTLY_MIN_FREE_BOOT_GB` (default 20),
+Pragovi (env-podesivi): `NIGHTLY_MIN_FREE_BOOT_GB` (default **8**),
 `NIGHTLY_MIN_FREE_DD_GB` (default 15).
+
+**Zašto je boot prag spušten s 20 na 8 GB (24.9.2026.)**: 20 GB je postavljeno
+13.8., dok su DerivedData i Gradle cache (14+ GB) još bili na boot disku. Dan
+kasnije preseljeni su u sparsebundle, ali prag je ostao. Od 13.8. do 23.9. odbio
+je **18 noći** uz 7–14 GB slobodno, dakle više nego što je buildova prošlo (4),
+i 18 dana zaredom (28.8.–15.9.) nije bilo novog builda. Na boot disku build sada
+drži samo worktree `../.nightly-domovina` (~2 GB, trajno). Najveći potrošač koji
+se mijenja je **swap**: raste s uptimeom (7 GB nakon 6 h), pa je nakon reboota
+slobodno ~32 GB, a u 03:00 ~10 GB.
+
+Izvještaj sada nosi red `boot disk: X GB na startu, najmanje Y GB tijekom builda`
+(sampler svakih 20 s). Prag spuštati dalje samo uz te brojke.
 
 **DerivedData je na vanjskom disku** — `IDECustomDerivedDataLocation` pokazuje na
 `/Volumes/DOMOVINA2TB/xcode_temp_files/DerivedData/` (exFAT). Preflight provjeri i
