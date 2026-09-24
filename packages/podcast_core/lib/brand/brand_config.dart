@@ -29,7 +29,13 @@ class BrandConfig {
     this.flags = const FeatureFlags(),
     this.sourceCodeUrl = 'https://github.com/domovinatv',
     this.plusLifetime = true,
+    this.featuredChannels = const [],
   });
+
+  /// ID-evi kanala koje brend ističe (npr. `subclub`): prvi slideovi hero
+  /// karusela, zaseban rail na naslovnici, vrh popisa kanala i chipova
+  /// pretrage. Prazna lista = bez isticanja, ponašanje kao prije.
+  final List<String> featuredChannels;
 
   /// Nudi li Plus i doživotni (lifetime) paket. Utječe na orijentacijske
   /// pločice paywalla kad RevenueCat offering nije dostupan.

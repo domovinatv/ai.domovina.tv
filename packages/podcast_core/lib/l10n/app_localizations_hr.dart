@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1389,6 +1390,9 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get homeRailLatest => 'Najnovije epizode';
+
+  @override
+  String get homeRailFeaturedShows => 'Istaknuti podcasti';
 
   @override
   String get homeRailFavorites => 'Tvoje spremljeno';

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../brand/app_brand.dart';
 import '../../theme/app_theme.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -226,9 +227,14 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
 
   Widget _channelChips(ThemeData theme) {
     final l = AppLocalizations.of(context);
-    // Sortiraj kanale po veličini (najveći prvi).
+    // Istaknuti kanali brenda prvi, zatim po veličini (najveći prvi).
+    final featured = AppBrand.config.featuredChannels;
     final entries = _allChannels.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+      ..sort((a, b) {
+        final fa = featured.contains(a.key) ? 0 : 1;
+        final fb = featured.contains(b.key) ? 0 : 1;
+        return fa != fb ? fa.compareTo(fb) : b.value.compareTo(a.value);
+      });
     return SizedBox(
       height: 46,
       child: ScrollConfiguration(

@@ -376,6 +376,7 @@
   "homeChannelsLoadError": "Couldn't load the channels:\n{error}",
   "homeRailContinue": "Continue listening",
   "homeRailLatest": "Latest episodes",
+  "homeRailFeaturedShows": "Featured shows",
   "homeRailFavorites": "Your saved episodes",
   "favoritesTitle": "Saved episodes",
   "favoritesCount": "{count, plural, one{{count} episode} other{{count} episodes}}",
