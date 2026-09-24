@@ -616,7 +616,8 @@ class _Breadcrumb extends StatelessWidget {
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        crumb('Početna', onTap: () => context.go('/')),
+        crumb(AppLocalizations.of(context).ownershipCrumbHome,
+            onTap: () => context.go('/')),
         if (hasChannel) ...[
           sep(),
           node(
