@@ -401,3 +401,110 @@ class _ExpandableBlurbState extends State<_ExpandableBlurb> {
     );
   }
 }
+
+/// Sažeti ulaz u sponzore u panelu playera (desni stupac na desktopu, ladica
+/// na mobitelu). Sekcija [SponsorsInVideoSection] stoji iza sažetka, ~1500 px
+/// ispod vrha — a deep-link (`/v/<id>/t/<sec>`) na mobitelu odmah otvori
+/// ladicu s playerom preko svega. Bez ove trake gumb „Poslušaj" korisnik
+/// nije mogao naći (prijava 24.9.2026. na `aue1GuuMsbA/t/8`).
+///
+/// Jedan gumb po pouzdanom rasponu; isti raspon pripisan dvama sponzorima
+/// (`NwLeHiokKSU`: HiPP i Plazma) postaje jedan gumb s oba imena. Imenovani
+/// sponzori bez takvog raspona ostaju samo navedeni. Krediti (garderoba,
+/// studio) ovdje ne ulaze — žive u sekciji.
+class SponsorsInVideoPlayerStrip extends StatelessWidget {
+  final SponsorsInVideo? data;
+  final void Function(SponsorInVideoSegment segment)? onListen;
+
+  const SponsorsInVideoPlayerStrip({
+    super.key,
+    required this.data,
+    this.onListen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final partners = [
+      for (final s in data?.named ?? const <SponsorInVideo>[])
+        if (!s.role.isCredit) s,
+    ];
+    if (partners.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+
+    // (start, end) → segment + imena sponzora kojima pripada.
+    final clips = <(int, int), (SponsorInVideoSegment, List<String>)>{};
+    final silent = <String>[];
+    for (final s in partners) {
+      final playable = s.playableSegments;
+      if (playable.isEmpty) {
+        silent.add(s.name!);
+        continue;
+      }
+      for (final seg in playable) {
+        final entry = clips.putIfAbsent((seg.start, seg.end), () => (seg, []));
+        entry.$2.add(s.name!);
+      }
+    }
+    final ordered = clips.values.toList()
+      ..sort((a, b) => a.$1.start.compareTo(b.$1.start));
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.volunteer_activism_outlined,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  silent.isEmpty
+                      ? l.sponsorsInVideoTitle
+                      : '${l.sponsorsInVideoTitle}: ${silent.join(', ')}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (ordered.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final (seg, names) in ordered)
+                  Tooltip(
+                    message: seg.kind == SponsorInVideoKind.rubric
+                        ? l.sponsorsInVideoListenRubric
+                        : l.sponsorsInVideoListen,
+                    child: FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      icon: const Icon(Icons.play_arrow, size: 16),
+                      label: Text(
+                        '${names.join(', ')} · '
+                        '${formatSponsorClock(seg.durationSeconds)}',
+                      ),
+                      onPressed: onListen == null ? null : () => onListen!(seg),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

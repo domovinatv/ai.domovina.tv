@@ -380,4 +380,65 @@ void main() {
       expect(btn.onPressed, isNull);
     });
   });
+
+  group('SponsorsInVideoPlayerStrip', () {
+    testWidgets(
+      'isti raspon za dva sponzora je jedan gumb; bez raspona samo ime',
+      (tester) async {
+        SponsorInVideoSegment? listened;
+        final data = SponsorsInVideo.fromJson({
+          'sponsors': [
+            for (final n in ['HiPP', 'Plazma'])
+              {
+                'id': n.toLowerCase(),
+                'name': n,
+                'role': 'sponsor',
+                'segments': [
+                  {
+                    'kind': 'host_read',
+                    'start': 86,
+                    'end': 137,
+                    'playable': true,
+                  },
+                ],
+              },
+            {'id': 'cafe', 'name': 'Cafe Brazil', 'role': 'partner'},
+            {'id': 'odjeca', 'name': 'Unique', 'role': 'wardrobe'},
+          ],
+        });
+        await tester.pumpWidget(
+          _host(
+            SponsorsInVideoPlayerStrip(
+              data: data,
+              onListen: (s) => listened = s,
+            ),
+          ),
+        );
+        expect(find.text('HiPP, Plazma · 0:51'), findsOneWidget);
+        expect(find.text('Uz podršku: Cafe Brazil'), findsOneWidget);
+        expect(find.textContaining('Unique'), findsNothing);
+        await tester.tap(find.text('HiPP, Plazma · 0:51'));
+        expect((listened!.start, listened!.end), (86, 137));
+      },
+    );
+
+    testWidgets('bez imenovanog partnera ne zauzima ništa', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          SponsorsInVideoPlayerStrip(
+            data: SponsorsInVideo.fromJson({
+              'sponsors': [
+                {'id': 'x', 'name': 'Studio X', 'role': 'studio'},
+                {'id': '_unattributed', 'name': null},
+              ],
+            }),
+          ),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(SponsorsInVideoPlayerStrip)),
+        Size.zero,
+      );
+    });
+  });
 }

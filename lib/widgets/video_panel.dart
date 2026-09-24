@@ -4,11 +4,13 @@ import '../l10n/app_localizations.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
+import '../models/sponsors_in_video.dart';
 import '../models/podcast_summary.dart';
 import '../services/seek_undo.dart';
 import 'audio_poster.dart';
 import 'episode_video.dart';
 import 'playback_controls.dart';
+import 'sponsors_in_video_section.dart';
 import 'youtube_embed.dart';
 
 /// Marker za jedno poglavlje u video playeru (timestamp + label)
@@ -43,6 +45,11 @@ class VideoPanel extends StatefulWidget {
   /// se diskretno na seek baru da korisnik vidi gdje su.
   final List<({Duration start, Duration end})> sponsorRanges;
 
+  /// Sponzori u snimci za traku iznad poglavlja + „Poslušaj" (vlasnik
+  /// playera i auto-stopa je ekran).
+  final SponsorsInVideo? sponsorsInVideo;
+  final void Function(SponsorInVideoSegment segment)? onSponsorListen;
+
   /// YouTube ID epizode — omogućuje in-app YouTube embed mode (web).
   final String? youtubeId;
 
@@ -72,6 +79,8 @@ class VideoPanel extends StatefulWidget {
     this.width = 360,
     this.onSeek,
     this.sponsorRanges = const [],
+    this.sponsorsInVideo,
+    this.onSponsorListen,
     this.youtubeId,
     this.audioOnly = false,
     this.posterUrl,
@@ -385,6 +394,16 @@ class _VideoPanelState extends State<VideoPanel> {
               ],
             ),
           ),
+
+          // Sponzori u snimci — ovdje jer je panel playera (na mobitelu
+          // ladica) površina koju korisnik stvarno gleda.
+          if (widget.sponsorsInVideo?.hasNamed ?? false) ...[
+            Divider(height: 1, color: theme.colorScheme.outlineVariant),
+            SponsorsInVideoPlayerStrip(
+              data: widget.sponsorsInVideo,
+              onListen: widget.onSponsorListen,
+            ),
+          ],
 
           Divider(height: 1, color: theme.colorScheme.outlineVariant),
 
