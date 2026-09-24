@@ -14,6 +14,8 @@
 /// na profil iz imena govornika, reproduciraj [personSlug] točno.
 library;
 
+import '../brand/domain_score.dart';
+
 /// ASCII-fold imena → stabilni slug. Mora se poklapati s backend logikom koja
 /// generira primarni ključ (npr. "don Tomislav Lukač" → "don-tomislav-lukac",
 /// "Željka Markić" → "zeljka-markic"). Ako slug ne postoji na serveru → 404 i
@@ -204,7 +206,7 @@ class PersonEpisode {
             durationSeconds: durationSeconds,
             speakingShare: speakingShare,
           ),
-      magisteriumScore: (json['magisterium_score'] as num?)?.round(),
+      magisteriumScore: domainScoreFromJson(json['magisterium_score']),
       firstTs: (json['first_ts'] as num?)?.toInt() ?? 0,
       deepLink: json['deep_link'] as String? ?? '',
     );
@@ -393,7 +395,7 @@ class PersonHub {
     final totalDuration = (json['total_duration_seconds'] as num?)?.toInt() ??
         primary.fold<int>(0, (sum, e) => sum + (e.durationSeconds ?? 0));
 
-    final rawAvg = (json['avg_magisterium_score'] as num?)?.round();
+    final rawAvg = domainScoreFromJson(json['avg_magisterium_score']);
     final scores = episodes
         .map((e) => e.magisteriumScore)
         .whereType<int>()
@@ -517,7 +519,7 @@ class PersonSummary {
       channelCount: (json['channel_count'] as num?)?.toInt() ?? 0,
       totalDurationSeconds:
           (json['total_duration_seconds'] as num?)?.toInt() ?? 0,
-      avgMagisteriumScore: (json['avg_magisterium_score'] as num?)?.round(),
+      avgMagisteriumScore: domainScoreFromJson(json['avg_magisterium_score']),
       firstYear: (json['first_year'] as num?)?.toInt(),
       lastYear: (json['last_year'] as num?)?.toInt(),
       isVirtualChannel: json['is_virtual_channel'] as bool? ?? false,

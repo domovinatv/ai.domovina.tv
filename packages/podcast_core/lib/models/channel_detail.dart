@@ -1,3 +1,5 @@
+import '../brand/domain_score.dart';
+
 /// Matcha kanonski YouTube channel ID `UC` + 22 znaka (base64url alfabet).
 final RegExp kYoutubeChannelIdPattern = RegExp(r'^UC[0-9A-Za-z_-]{22}$');
 
@@ -90,7 +92,7 @@ class ChannelDetail {
       followerCount: json['follower_count'] as int?,
       videoCount: json['video_count'] as int? ?? 0,
       totalDurationSeconds: json['total_duration_seconds'] as int? ?? 0,
-      avgMagisteriumScore: json['avg_magisterium_score'] as int?,
+      avgMagisteriumScore: domainScoreFromJson(json['avg_magisterium_score']),
       latestVideoDate: json['latest_video_date'] as String?,
       videos: (json['videos'] as List<dynamic>? ?? [])
           .map((e) => ChannelVideo.fromJson(e as Map<String, dynamic>))
@@ -179,7 +181,7 @@ class ChannelVideo {
       abstract_: json['abstract'] as String?,
       topics: (json['topics'] as List<dynamic>? ?? []).cast<String>(),
       speakers: speakers,
-      magisteriumScore: json['magisterium_score'] as int?,
+      magisteriumScore: domainScoreFromJson(json['magisterium_score']),
       pipeline: json['pipeline'] != null
           ? VideoPipeline.fromJson(json['pipeline'] as Map<String, dynamic>)
           : null,

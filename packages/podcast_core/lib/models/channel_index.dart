@@ -1,4 +1,5 @@
 import 'channel_detail.dart' show canonicalUcId;
+import '../brand/domain_score.dart';
 
 /// Model za /channels/data/index.json
 class ChannelIndex {
@@ -90,7 +91,7 @@ class ChannelSummary {
       followerCount: json['follower_count'] as int?,
       videoCount: json['video_count'] as int? ?? 0,
       totalDurationSeconds: json['total_duration_seconds'] as int? ?? 0,
-      avgMagisteriumScore: json['avg_magisterium_score'] as int?,
+      avgMagisteriumScore: domainScoreFromJson(json['avg_magisterium_score']),
       latestVideo: lv != null && lv is Map<String, dynamic>
           ? LatestVideo.fromJson(lv)
           : null,
