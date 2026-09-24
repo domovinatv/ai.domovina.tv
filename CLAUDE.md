@@ -654,7 +654,8 @@ pauza je do 24.9.2026. djelovala kao da je player stao), a ostali segmenti su sa
 otvori ladicu s playerom, pa je bez trake gumb bio nevidljiv (prijava
 24.9.2026. na `aue1GuuMsbA/t/8`). Ugovor:
 `fetch.domovina.tv/docs/2026-09-23-sponzori-u-snimci.md`, testovi
-`test/sponsors_in_video_test.dart`.
+`test/sponsors_in_video_test.dart`. Odluke, mjerenja, zamke i provjera
+(`scripts/verify-sponsor-listen.py`): `docs/2026-09-24-sponzori-u-snimci-frontend.md`.
 
 U članku sekcija u koju PADA POČETAK pouzdanog raspona dobiva prigušenu
 oznaku „Poruka sponzora na 1:39:23" s gumbom (`SponsorsInVideo.marksBySection`
