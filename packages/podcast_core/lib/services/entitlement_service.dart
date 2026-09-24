@@ -40,6 +40,11 @@ class EntitlementService {
     _initialized = true;
 
     // Fold in the mobile optimistic SDK unlock (always false on web/TV).
+    // Seed from the current value: RevenueCatService.configure() runs first
+    // in main() and its cached CustomerInfo may already have flipped the
+    // notifier before this listener exists (cold start with a restored
+    // session showed "Get Plus" to a Plus user).
+    _optimisticPlus = RevenueCatService.instance.optimisticPlus.value;
     RevenueCatService.instance.optimisticPlus.addListener(() {
       _optimisticPlus = RevenueCatService.instance.optimisticPlus.value;
       _recompute();
