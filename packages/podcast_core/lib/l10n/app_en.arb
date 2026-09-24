@@ -304,6 +304,7 @@
   "homeChannelMagisteriumTooltip": "{label}\nAn estimate of alignment with Catholic teaching (0–100).",
   "homeFooterAbout": "About",
   "homeFooterAboutText": "{app} uses artificial intelligence to transcribe, summarise and analyse Croatian Catholic podcasts. The Magisterium AI agent rates their alignment with Catholic teaching.",
+  "homeFooterAboutTextGeneric": "{app} uses artificial intelligence to transcribe podcasts, split them into chapters and turn them into articles you can read, with speakers and search by meaning.",
   "homeFooterLinks": "Links",
   "homeFooterSuggestEpisode": "Suggest an episode",
   "homeFooterEpisodeSuggestionSubject": "{app} — episode suggestion",

@@ -132,7 +132,9 @@ class HomeFooter extends StatelessWidget {
       children: [
         _columnHeader(theme, l.homeFooterAbout),
         Text(
-          l.homeFooterAboutText(AppBrand.config.appName),
+          AppBrand.config.flags.domainScore
+              ? l.homeFooterAboutText(AppBrand.config.appName)
+              : l.homeFooterAboutTextGeneric(AppBrand.config.appName),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.6,
@@ -170,7 +172,7 @@ class HomeFooter extends StatelessWidget {
             theme,
             l,
             label: 'GitHub',
-            onTap: () => _launchUrl('https://github.com/domovinatv'),
+            onTap: () => _launchUrl(AppBrand.config.sourceCodeUrl),
           ),
           _link(
             theme,
@@ -208,7 +210,7 @@ class HomeFooter extends StatelessWidget {
         const SizedBox(height: 6),
         _stat(theme, _formatNumber(totalHours),
             l.homeFooterStatHours(totalHours)),
-        if (avgScore != null) ...[
+        if (avgScore != null && AppBrand.config.flags.domainScore) ...[
           const SizedBox(height: 6),
           _stat(theme, '$avgScore', l.homeFooterStatAvgScore),
         ],

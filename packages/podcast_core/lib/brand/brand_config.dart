@@ -27,7 +27,11 @@ class BrandConfig {
     this.defaultEpisodeLanguage = 'en',
     required this.endpoints,
     this.flags = const FeatureFlags(),
+    this.sourceCodeUrl = 'https://github.com/domovinatv',
   });
+
+  /// Poveznica „GitHub” u podnožju naslovnice.
+  final String sourceCodeUrl;
 
   /// Puno ime proizvoda, npr. `DOMOVINA.ai` — naslovi, page meta, obavijesti.
   final String appName;

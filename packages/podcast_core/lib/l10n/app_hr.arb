@@ -1414,6 +1414,15 @@
       }
     }
   },
+  "homeFooterAboutTextGeneric": "{app} uz pomoć umjetne inteligencije transkribira podcaste, dijeli ih na poglavlja i od njih piše članke koje možeš čitati, s govornicima i pretragom po smislu.",
+  "@homeFooterAboutTextGeneric": {
+    "description": "Footer about-the-project paragraph for brands without a domain score.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
   "homeFooterLinks": "Poveznice",
   "@homeFooterLinks": {
     "description": "Footer column header: links."

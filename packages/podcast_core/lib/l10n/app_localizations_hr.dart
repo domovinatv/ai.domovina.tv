@@ -1072,6 +1072,11 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String homeFooterAboutTextGeneric(String app) {
+    return '$app uz pomoć umjetne inteligencije transkribira podcaste, dijeli ih na poglavlja i od njih piše članke koje možeš čitati, s govornicima i pretragom po smislu.';
+  }
+
+  @override
   String get homeFooterLinks => 'Poveznice';
 
   @override

@@ -1922,6 +1922,12 @@ abstract class AppLocalizations {
   /// **'{app} uz pomoć umjetne inteligencije transkribira, sažima i analizira hrvatske katoličke podcaste. Agent Magisterium AI ocjenjuje usklađenost s katoličkim naukom.'**
   String homeFooterAboutText(String app);
 
+  /// Footer about-the-project paragraph for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'{app} uz pomoć umjetne inteligencije transkribira podcaste, dijeli ih na poglavlja i od njih piše članke koje možeš čitati, s govornicima i pretragom po smislu.'**
+  String homeFooterAboutTextGeneric(String app);
+
   /// Footer column header: links.
   ///
   /// In hr, this message translates to:

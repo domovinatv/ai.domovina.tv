@@ -1073,6 +1073,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String homeFooterAboutTextGeneric(String app) {
+    return '$app uses artificial intelligence to transcribe podcasts, split them into chapters and turn them into articles you can read, with speakers and search by meaning.';
+  }
+
+  @override
   String get homeFooterLinks => 'Links';
 
   @override
