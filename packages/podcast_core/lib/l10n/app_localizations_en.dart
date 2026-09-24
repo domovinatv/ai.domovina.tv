@@ -437,6 +437,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'We\'ll send you a link and a six-digit code to sign in — no password.';
 
   @override
+  String get authUsePassword => 'Sign in with password';
+
+  @override
+  String get authPasswordEntrySub => 'For accounts that have a password.';
+
+  @override
+  String get authPasswordHint => 'Password';
+
+  @override
   String authOtpSentTo(String email) {
     return 'We sent a link and a code to $email. Enter the code — or open the link in your email.';
   }
@@ -2781,6 +2790,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get serviceOtpInvalidOrExpired =>
       'The code is incorrect or has expired — check it or request a new one.';
+
+  @override
+  String get servicePasswordInvalid => 'Wrong email or password.';
 
   @override
   String get serviceOtpCheckFailed => 'We couldn\'t verify the code.';

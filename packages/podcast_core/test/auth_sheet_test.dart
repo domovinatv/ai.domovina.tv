@@ -87,6 +87,37 @@ void main() {
     expect(find.text(l.authContinueWithGoogle), findsNothing);
   });
 
+  testWidgets('e-mail korak vodi na prijavu lozinkom, back vraća na e-mail',
+      (tester) async {
+    final l = await AppLocalizations.delegate.load(const Locale('hr'));
+    await tester.pumpWidget(_wrap(
+      Builder(
+        builder: (ctx) => Center(
+          child: ElevatedButton(
+            onPressed: () => showAuthSheet(ctx),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(l.authEmailMagicLink));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l.authEmailMagicLink));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(l.authUsePassword));
+    await tester.pumpAndSettle();
+    expect(find.text(l.authPasswordHint), findsOneWidget);
+    expect(find.text(l.commonSignIn), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(find.text(l.authSendCode), findsOneWidget);
+    expect(find.text(l.authPasswordHint), findsNothing);
+  });
+
   group('passkeys po brendu', () {
     tearDown(() => AppBrand.init(domovinaBrand));
 

@@ -552,6 +552,29 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Prijava e-mailom i lozinkom — samo za račune kojima je lozinka
+  /// postavljena na backendu (npr. račun za pregled u App Storeu i Google
+  /// Playu). Registracija lozinkom namjerno ne postoji.
+  Future<AuthFlowResult> signInWithPassword(
+      String email, String password) async {
+    log('AuthService.signInWithPassword email=$email');
+    final client = _client();
+    if (client == null) {
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
+    }
+    try {
+      await client.auth.signInWithPassword(email: email, password: password);
+      return AuthFlowResult(
+          AuthFlowStatus.success, appStrings.serviceSignInSuccess);
+    } on sb.AuthException catch (e) {
+      log('signInWithPassword error: ${e.message} (code: ${e.code})');
+      return AuthFlowResult.failure(appStrings.servicePasswordInvalid);
+    } catch (e) {
+      log('signInWithPassword unexpected: $e');
+      return AuthFlowResult.failure(appStrings.serviceUnavailable);
+    }
+  }
+
   /// Sve povezane prijavne metode trenutnog usera (za Moj račun ekran).
   /// GoTrue identities (google/apple/email) + certilia iz app_metadata.
   /// Passkey nije GoTrue identity — vidi se kroz PasskeyService.listPasskeys.

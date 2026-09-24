@@ -571,6 +571,18 @@
   "@authEmailEntrySub": {
     "description": "Podnaslov koraka za unos e-maila."
   },
+  "authUsePassword": "Prijava lozinkom",
+  "@authUsePassword": {
+    "description": "Neupadljiva poveznica na koraku e-maila i naslov koraka s lozinkom (računi s postavljenom lozinkom, npr. račun za pregled u storeu)."
+  },
+  "authPasswordEntrySub": "Za račune kojima je postavljena lozinka.",
+  "@authPasswordEntrySub": {
+    "description": "Podnaslov koraka prijave lozinkom."
+  },
+  "authPasswordHint": "Lozinka",
+  "@authPasswordHint": {
+    "description": "Placeholder polja za lozinku."
+  },
   "authOtpSentTo": "Poslali smo poveznicu i kôd na {email}. Upiši kôd — ili otvori poveznicu u e-mailu.",
   "@authOtpSentTo": {
     "description": "Podnaslov koraka za unos koda; {email} je adresa.",
@@ -3538,6 +3550,10 @@
   "serviceOtpInvalidOrExpired": "Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.",
   "@serviceOtpInvalidOrExpired": {
     "description": "Error when an entered email code is wrong or expired."
+  },
+  "servicePasswordInvalid": "Pogrešan e-mail ili lozinka.",
+  "@servicePasswordInvalid": {
+    "description": "Error when email and password sign-in is rejected."
   },
   "serviceOtpCheckFailed": "Provjera koda nije uspjela.",
   "@serviceOtpCheckFailed": {

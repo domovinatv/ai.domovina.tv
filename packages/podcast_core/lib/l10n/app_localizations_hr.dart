@@ -438,6 +438,15 @@ class AppLocalizationsHr extends AppLocalizations {
       'Pošaljemo ti poveznicu i šesteroznamenkasti kôd za prijavu — bez lozinke.';
 
   @override
+  String get authUsePassword => 'Prijava lozinkom';
+
+  @override
+  String get authPasswordEntrySub => 'Za račune kojima je postavljena lozinka.';
+
+  @override
+  String get authPasswordHint => 'Lozinka';
+
+  @override
   String authOtpSentTo(String email) {
     return 'Poslali smo poveznicu i kôd na $email. Upiši kôd — ili otvori poveznicu u e-mailu.';
   }
@@ -2804,6 +2813,9 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get serviceOtpInvalidOrExpired =>
       'Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.';
+
+  @override
+  String get servicePasswordInvalid => 'Pogrešan e-mail ili lozinka.';
 
   @override
   String get serviceOtpCheckFailed => 'Provjera koda nije uspjela.';

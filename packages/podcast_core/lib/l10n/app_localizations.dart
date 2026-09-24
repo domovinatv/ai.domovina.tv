@@ -860,6 +860,24 @@ abstract class AppLocalizations {
   /// **'Pošaljemo ti poveznicu i šesteroznamenkasti kôd za prijavu — bez lozinke.'**
   String get authEmailEntrySub;
 
+  /// Neupadljiva poveznica na koraku e-maila i naslov koraka s lozinkom (računi s postavljenom lozinkom, npr. račun za pregled u storeu).
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava lozinkom'**
+  String get authUsePassword;
+
+  /// Podnaslov koraka prijave lozinkom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za račune kojima je postavljena lozinka.'**
+  String get authPasswordEntrySub;
+
+  /// Placeholder polja za lozinku.
+  ///
+  /// In hr, this message translates to:
+  /// **'Lozinka'**
+  String get authPasswordHint;
+
   /// Podnaslov koraka za unos koda; {email} je adresa.
   ///
   /// In hr, this message translates to:
@@ -4525,6 +4543,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Kod nije ispravan ili je istekao — provjeri unos ili zatraži novi.'**
   String get serviceOtpInvalidOrExpired;
+
+  /// Error when email and password sign-in is rejected.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pogrešan e-mail ili lozinka.'**
+  String get servicePasswordInvalid;
 
   /// Generic error when code verification fails unexpectedly.
   ///

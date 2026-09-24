@@ -23,7 +23,7 @@ import '../../router/nav.dart';
 enum AuthSheetOrigin { account, guest, moment3, handoff }
 
 /// Koji je korak trenutno prikazan u sheetu.
-enum _SheetView { providers, emailEntry, otpEntry }
+enum _SheetView { providers, emailEntry, otpEntry, passwordEntry }
 
 Future<void> showAuthSheet(
   BuildContext context, {
@@ -122,6 +122,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
 
   final _emailCtrl = TextEditingController();
   final _otpCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
 
   /// Nakon pogrešnog koda polje se prazni — bez vraćanja fokusa korisnik na
   /// mobitelu mora ponovo tapnuti polje da mu se digne tipkovnica.
@@ -150,6 +151,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   void dispose() {
     _resendTimer?.cancel();
     _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     _otpCtrl.dispose();
     _otpFocus.dispose();
     super.dispose();
@@ -162,6 +164,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
   bool _stepBack() {
     switch (_view) {
       case _SheetView.otpEntry:
+      case _SheetView.passwordEntry:
         _backToEmailEntry();
         return true;
       case _SheetView.emailEntry:
@@ -228,6 +231,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
                       _SheetView.providers => _providerChildren(),
                       _SheetView.emailEntry => _emailEntryChildren(),
                       _SheetView.otpEntry => _otpEntryChildren(theme, cs),
+                      _SheetView.passwordEntry => _passwordEntryChildren(),
                     },
                   ],
                 ),
@@ -429,6 +433,69 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
               )
             : Text(l.authSendCode),
       ),
+      const SizedBox(height: 4),
+      // Neupadljivo: lozinku ima samo račun postavljen na backendu (pregled
+      // u storeu), ne obični korisnik.
+      TextButton(
+        onPressed: _emailBusy ? null : _openPasswordEntry,
+        child: Text(
+          l.authUsePassword,
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+      ),
+      const SizedBox(height: 4),
+      const _LegalLine(),
+    ];
+  }
+
+  // ── password entry view ────────────────────────────────────────────────
+
+  List<Widget> _passwordEntryChildren() {
+    final l = AppLocalizations.of(context);
+    return [
+      AutofillGroup(
+        child: Column(
+          children: [
+            TextField(
+              controller: _emailCtrl,
+              enabled: !_emailBusy,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                hintText: l.authEmailHint,
+                prefixIcon: const Icon(Icons.alternate_email, size: 20),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _passwordCtrl,
+              autofocus: true,
+              enabled: !_emailBusy,
+              obscureText: true,
+              autofillHints: const [AutofillHints.password],
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _signInWithPassword(),
+              decoration: InputDecoration(
+                hintText: l.authPasswordHint,
+                prefixIcon: const Icon(Icons.lock_outline, size: 20),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      FilledButton(
+        onPressed: _emailBusy ? null : _signInWithPassword,
+        child: _emailBusy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(l.commonSignIn),
+      ),
       const SizedBox(height: 12),
       const _LegalLine(),
     ];
@@ -510,6 +577,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       _SheetView.providers => widget.headlineOverride ?? _defaultHeadline(),
       _SheetView.emailEntry => l.authEmailTitle,
       _SheetView.otpEntry => l.authCheckEmail,
+      _SheetView.passwordEntry => l.authUsePassword,
     };
   }
 
@@ -519,6 +587,7 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       _SheetView.providers => widget.subtitleOverride ?? _defaultSubtitle(),
       _SheetView.emailEntry => l.authEmailEntrySub,
       _SheetView.otpEntry => l.authOtpSentTo(_otpEmail),
+      _SheetView.passwordEntry => l.authPasswordEntrySub,
     };
   }
 
@@ -613,7 +682,48 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
       _error = null;
       _notice = null;
       _otpCtrl.clear();
+      _passwordCtrl.clear();
     });
+  }
+
+  void _openPasswordEntry() {
+    setState(() {
+      _view = _SheetView.passwordEntry;
+      _error = null;
+      _notice = null;
+    });
+  }
+
+  Future<void> _signInWithPassword() async {
+    final l = AppLocalizations.of(context);
+    final email = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text;
+    if (!_emailRe.hasMatch(email)) {
+      setState(() => _error = l.authInvalidEmail);
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _error = l.servicePasswordInvalid);
+      return;
+    }
+    setState(() {
+      _emailBusy = true;
+      _error = null;
+      _notice = null;
+    });
+    final result =
+        await AuthService.instance.signInWithPassword(email, password);
+    if (!mounted) return;
+    setState(() => _emailBusy = false);
+    if (result.status == AuthFlowStatus.success) {
+      setLocalStorageString(lastProviderKey, AuthProvider.email.name);
+      _handleResult(result);
+    } else {
+      setState(() {
+        _error = result.message ?? l.servicePasswordInvalid;
+        _passwordCtrl.clear();
+      });
+    }
   }
 
   static final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
