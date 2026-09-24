@@ -37,5 +37,6 @@ const BrandConfig domovinaBrand = BrandConfig(
     channelOwnership: true,
     domainScore: true,
     calBooking: true,
+    passkeys: true,
   ),
 );

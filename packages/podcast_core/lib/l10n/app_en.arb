@@ -53,7 +53,7 @@
   "authRemovePasskey": "Remove passkey",
   "authAddPasskeyHere": "Add a passkey on this device",
   "authWherePasskeyStored": "Where is your passkey stored?",
-  "authPasskeyHintBody": "We recommend Apple Passwords or Google Password Manager — that way your passkey is tied to Face ID or your fingerprint and synced across all your devices. If you use an extension like LastPass or 1Password, turn it off for domovina.ai (or remove it as the default key manager), as it intercepts the passkey prompt and breaks sign-in.\n\n{steps}",
+  "authPasskeyHintBody": "We recommend Apple Passwords or Google Password Manager — that way your passkey is tied to Face ID or your fingerprint and synced across all your devices. If you use an extension like LastPass or 1Password, turn it off for {site} (or remove it as the default key manager), as it intercepts the passkey prompt and breaks sign-in.\n\n{steps}",
   "authPasskeyStepsApple": "Settings → Apps → Passwords → Password Options → \"AutoFill\" — choose Passwords (iCloud).",
   "authPasskeyStepsAndroid": "Settings → Passwords & accounts → Default passkey service → choose Google Password Manager.",
   "authPasskeyStepsGeneric": "In your OS settings, choose the system passkey manager (Apple Passwords or Google Password Manager).",

@@ -416,11 +416,11 @@ abstract class AppLocalizations {
   /// **'Gdje se sprema pristupni ključ?'**
   String get authWherePasskeyStored;
 
-  /// Uputa o tome gdje se sprema pristupni ključ; {steps} su koraci ovisni o platformi.
+  /// Uputa o tome gdje se sprema pristupni ključ; {site} je domena brenda, {steps} su koraci ovisni o platformi.
   ///
   /// In hr, this message translates to:
-  /// **'Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za domovina.ai (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n{steps}'**
-  String authPasskeyHintBody(String steps);
+  /// **'Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za {site} (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n{steps}'**
+  String authPasskeyHintBody(String site, String steps);
 
   /// Koraci za odabir upravitelja pristupnih ključeva na iOS-u / macOS-u.
   ///

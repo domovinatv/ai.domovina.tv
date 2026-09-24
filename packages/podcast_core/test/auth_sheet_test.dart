@@ -9,11 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'package:podcast_core/brand/app_brand.dart';
+import 'package:podcast_core/brand/domovina_brand.dart';
 import 'package:podcast_core/l10n/app_localizations.dart';
 import 'package:podcast_core/onboarding/ui/auth_sheet.dart';
 import 'package:podcast_core/widgets/anonymous_signin_bar.dart';
 
 import 'support/fake_asset_bundle.dart';
+import 'support/test_brands.dart';
 
 Widget _wrap(Widget child) => DefaultAssetBundle(
       // Brend asseti su u ljusci, ne u paketu — vidi support/fake_asset_bundle.dart.
@@ -82,5 +85,39 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
     expect(find.text(l.authContinueWithGoogle), findsNothing);
+  });
+
+  group('passkeys po brendu', () {
+    tearDown(() => AppBrand.init(domovinaBrand));
+
+    Future<void> openSheet(WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(
+        Builder(
+          builder: (ctx) => Center(
+            child: ElevatedButton(
+              onPressed: () => showAuthSheet(ctx),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('DOMOVINA nudi passkey', (tester) async {
+      final l = await AppLocalizations.delegate.load(const Locale('hr'));
+      await openSheet(tester);
+      expect(find.text(l.authSignInWithPasskey), findsOneWidget);
+    });
+
+    testWidgets('brend bez passkeyja ne nudi passkey, Google vodi',
+        (tester) async {
+      AppBrand.init(brandWithoutPasskeys());
+      final l = await AppLocalizations.delegate.load(const Locale('hr'));
+      await openSheet(tester);
+      expect(find.text(l.authSignInWithPasskey), findsNothing);
+      expect(find.text(l.authContinueWithGoogle), findsOneWidget);
+    });
   });
 }

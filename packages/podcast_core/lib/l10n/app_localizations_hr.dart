@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -182,8 +181,8 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authWherePasskeyStored => 'Gdje se sprema pristupni ključ?';
 
   @override
-  String authPasskeyHintBody(String steps) {
-    return 'Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za domovina.ai (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n$steps';
+  String authPasskeyHintBody(String site, String steps) {
+    return 'Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za $site (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n$steps';
   }
 
   @override

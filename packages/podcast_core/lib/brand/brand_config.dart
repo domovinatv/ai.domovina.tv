@@ -150,6 +150,7 @@ class FeatureFlags {
     this.calBooking = false,
     this.handoff = true,
     this.tv = true,
+    this.passkeys = false,
   });
 
   /// Glasanje za podcaste (`/glasanje*`, rail na naslovnici).
@@ -172,4 +173,10 @@ class FeatureFlags {
 
   /// Android TV / Leanback sučelje.
   final bool tv;
+
+  /// Prijava i upravljanje passkeyjima (Corbado). Traži Corbado projekt s
+  /// domenom brenda kao relying party; bez njega „Dodaj passkey” pada, pa
+  /// brend bez projekta ne prikazuje ni tile u auth sheetu ni sekciju u
+  /// Mom računu.
+  final bool passkeys;
 }

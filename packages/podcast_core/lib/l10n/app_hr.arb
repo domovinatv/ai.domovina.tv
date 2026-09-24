@@ -232,10 +232,13 @@
   "@authWherePasskeyStored": {
     "description": "Naslov upute o pohrani pristupnog ključa."
   },
-  "authPasskeyHintBody": "Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za domovina.ai (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n{steps}",
+  "authPasskeyHintBody": "Preporučujemo Apple Passwords ili Google Password Manager — tako je pristupni ključ vezan uz Face ID ili otisak prsta i sinkroniziran na svim tvojim uređajima. Ako koristiš proširenje poput LastPassa ili 1Passworda, isključi ga za {site} (ili ga ukloni kao zadani upravitelj ključeva) jer presreće prozor pristupnog ključa i ometa prijavu.\n\n{steps}",
   "@authPasskeyHintBody": {
-    "description": "Uputa o tome gdje se sprema pristupni ključ; {steps} su koraci ovisni o platformi.",
+    "description": "Uputa o tome gdje se sprema pristupni ključ; {site} je domena brenda, {steps} su koraci ovisni o platformi.",
     "placeholders": {
+      "site": {
+        "type": "String"
+      },
       "steps": {
         "type": "String"
       }

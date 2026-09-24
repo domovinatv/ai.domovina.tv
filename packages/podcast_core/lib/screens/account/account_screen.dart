@@ -55,7 +55,7 @@ class _AccountScreenState extends State<AccountScreen> {
   void initState() {
     super.initState();
     AuthService.instance.addListener(_onAuthChange);
-    _loadPasskeys();
+    if (AppBrand.config.flags.passkeys) _loadPasskeys();
     _mozdaUcitajGlasanje();
   }
 
@@ -246,9 +246,11 @@ class _AccountScreenState extends State<AccountScreen> {
               _sectionLabel(theme, l.authSectionSignInMethods),
               _identitiesCard(theme),
               const SizedBox(height: 16),
-              _sectionLabel(theme, l.authSectionPasskeys),
-              _passkeysCard(theme),
-              const SizedBox(height: 16),
+              if (AppBrand.config.flags.passkeys) ...[
+                _sectionLabel(theme, l.authSectionPasskeys),
+                _passkeysCard(theme),
+                const SizedBox(height: 16),
+              ],
               _sectionLabel(theme, l.authSectionDevices),
               _devicesCard(theme),
               const SizedBox(height: 16),
@@ -797,7 +799,8 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            l.authPasskeyHintBody(steps),
+            l.authPasskeyHintBody(
+                Uri.parse(AppBrand.config.endpoints.site).host, steps),
             style: theme.textTheme.bodySmall?.copyWith(
               color: cs.onSurfaceVariant,
               height: 1.45,

@@ -279,8 +279,11 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     AuthProvider.email,
   ];
 
-  static bool _isOffered(AuthProvider p) =>
-      p != AuthProvider.certilia || AuthPlugins.has(AuthProvider.certilia.name);
+  static bool _isOffered(AuthProvider p) => switch (p) {
+        AuthProvider.certilia => AuthPlugins.has(AuthProvider.certilia.name),
+        AuthProvider.passkey => AppBrand.config.flags.passkeys,
+        _ => true,
+      };
 
   List<Widget> _providerChildren() {
     // Returning user: metoda kojom se zadnji put prijavio ide na vrh kao
@@ -288,12 +291,11 @@ class _AuthSheetContentState extends State<_AuthSheetContent> {
     // CTA, a njegova stvarna metoda peta u nizu — glavni uzrok "slučajno sam
     // otvorio drugi račun".
     // Provider iz plugina (certilia) nudi se samo kad ga je ljuska
-    // registrirala; zadnje korištena metoda koja više nije dostupna pada
-    // na passkey.
+    // registrirala, passkey samo kad ga brend ima; zadnje korištena metoda
+    // koja više nije dostupna pada na prvu ponuđenu.
     final offered = _defaultOrder.where(_isOffered).toList();
     final last = _lastUsed;
-    final lead =
-        (last != null && _isOffered(last)) ? last : AuthProvider.passkey;
+    final lead = (last != null && _isOffered(last)) ? last : offered.first;
     final rest = offered.where((p) => p != lead);
     return [
       _providerTile(lead, primary: true),

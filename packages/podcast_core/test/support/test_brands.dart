@@ -7,7 +7,14 @@ import 'package:podcast_core/brand/domovina_brand.dart';
 /// (`flags.domainScore == false`) — sve ostalo isto, pa test mjeri samo
 /// učinak te zastavice. Testovi ga postavljaju kroz `AppBrand.init(...)` i
 /// u `tearDown` vraćaju [domovinaBrand].
-BrandConfig brandWithoutDomainScore() {
+BrandConfig brandWithoutDomainScore() =>
+    _domovinaWith(domainScore: false);
+
+/// DOMOVINA bez passkeyja (`flags.passkeys == false`) — kao brend koji još
+/// nema Corbado projekt.
+BrandConfig brandWithoutPasskeys() => _domovinaWith(passkeys: false);
+
+BrandConfig _domovinaWith({bool? domainScore, bool? passkeys}) {
   final d = domovinaBrand;
   final f = d.flags;
   return BrandConfig(
@@ -32,10 +39,11 @@ BrandConfig brandWithoutDomainScore() {
       voting: f.voting,
       pinka: f.pinka,
       channelOwnership: f.channelOwnership,
-      domainScore: false,
+      domainScore: domainScore ?? f.domainScore,
       calBooking: f.calBooking,
       handoff: f.handoff,
       tv: f.tv,
+      passkeys: passkeys ?? f.passkeys,
     ),
   );
 }

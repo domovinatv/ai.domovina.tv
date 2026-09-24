@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -181,8 +180,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authWherePasskeyStored => 'Where is your passkey stored?';
 
   @override
-  String authPasskeyHintBody(String steps) {
-    return 'We recommend Apple Passwords or Google Password Manager — that way your passkey is tied to Face ID or your fingerprint and synced across all your devices. If you use an extension like LastPass or 1Password, turn it off for domovina.ai (or remove it as the default key manager), as it intercepts the passkey prompt and breaks sign-in.\n\n$steps';
+  String authPasskeyHintBody(String site, String steps) {
+    return 'We recommend Apple Passwords or Google Password Manager — that way your passkey is tied to Face ID or your fingerprint and synced across all your devices. If you use an extension like LastPass or 1Password, turn it off for $site (or remove it as the default key manager), as it intercepts the passkey prompt and breaks sign-in.\n\n$steps';
   }
 
   @override
