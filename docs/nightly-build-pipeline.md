@@ -1,7 +1,7 @@
 # Nightly store build — TestFlight + Play internal, svaku noć
 
 Dopuna `docs/mobile-release-pipeline.md`: ondje je **ručni** put (build → upload →
-promocija), ovdje je **automatski noćni** koji taj put vozi sam u 01:00 kad ima
+promocija), ovdje je **automatski noćni** koji taj put vozi sam u 03:00 kad ima
 novih commitova, i javlja ishod u Telegram grupu.
 
 Cilj nije objava. Cilj je da na oba storea **uvijek stoji svjež, provjeren build**
@@ -10,7 +10,7 @@ kasnije kad ga zatrebaš.
 
 ```mermaid
 flowchart TD
-    L[launchd 01:00<br/>ai.domovina.nightly-build] --> C{HEAD != zadnji<br/>izgrađeni sha?}
+    L[launchd 03:00<br/>ai.domovina.nightly-build] --> C{HEAD != zadnji<br/>izgrađeni sha?}
     C -->|ne| S[💤 Telegram: preskočeno<br/>izlaz 0]
     C -->|da| E{.env potpun?<br/>key.properties?}
     E -->|ne| F[❌ Telegram: preduvjeti]
@@ -37,7 +37,7 @@ find package flutter_certilia" — jer `../../stepanic` ondje pokazuje u
 `/Volumes/stepanic`. Nightly mora razrješavati putanje identično ručnom buildu.
 
 **Odvojeni git worktree.** Nightly nikad ne gradi iz tvog radnog direktorija.
-U 01:00 ondje lako leži nedovršen WIP, a `flutter clean` iz iOS grane bi ti
+U 03:00 ondje lako leži nedovršen WIP, a `flutter clean` iz iOS grane bi ti
 usput obrisao artefakte. Worktree je detached na HEAD shi u
 `../.nightly-domovina`, s `.env` i `android/key.properties` simlinkanim iz
 glavnog repoa. Čisti se s `git clean -fd` **bez `-x`**, pa ignorirani artefakti
@@ -106,7 +106,7 @@ Storeu, a nitko je nije bumpao (`deploy.sh` bumpa samo kad se deploya web).
 | `scripts/store-status.rb` | stanje oba storea; `--json` za skriptu, `--max-build` za build broj |
 | `scripts/telegram-notify.rb` | slanje u grupu (chunking, retry, supergroup migracija, **redakcija tajni**) |
 | `scripts/telegram-chatid.rb` | jednokratno otkrivanje `chat_id`-a |
-| `launchd/ai.domovina.nightly-build.plist` | raspored 01:00 |
+| `launchd/ai.domovina.nightly-build.plist` | raspored 03:00 |
 | `.nightly/test-baseline.txt` | poznati crveni testovi, izuzeti iz vrata (praćen u gitu) |
 | `.nightly/logs/`, `.nightly/reports/`, `.nightly/last-built-sha` | lokalno stanje (ignorirano) |
 
@@ -138,8 +138,8 @@ nema `mapfile`; skripta se doduše sama re-execa na brew bash, ali plist to radi
 eksplicitno da se ne oslanjamo na dva mehanizma.
 
 Mac mini je na `sleep 0` / `displaysleep 0` (`pmset -g custom`) pa se raspored u
-01:00 ispali pouzdano. Ako se to ikad promijeni, launchd će job pokrenuti tek
-kad se stroj probudi — a ne u 01:00.
+03:00 ispali pouzdano. Ako se to ikad promijeni, launchd će job pokrenuti tek
+kad se stroj probudi — a ne u 03:00.
 
 ## Telegram
 
@@ -241,7 +241,7 @@ obriše svoj DerivedData prije builda.
   privatni ključ nije lokalan, pa potpisivanje ovisi o `-allowProvisioningUpdates`
   koji u build-timeu razgovara s Appleom. Ako to ikad zatraži keychain dopuštenje,
   job visi na **nevidljivom** promptu. Zato prvi put pokreni preko
-  `launchctl kickstart` dok gledaš ekran, ne pusti ga naslijepo u 01:00.
+  `launchctl kickstart` dok gledaš ekran, ne pusti ga naslijepo u 03:00.
   Watchdog (`timeout`) svejedno prekine korak nakon zadanih minuta.
 - **TestFlight buildovi istječu nakon 90 dana** i svaki upload šalje mail
   testerima ako grupa ima auto-distribuciju. Za nightly grupu je **isključi** —

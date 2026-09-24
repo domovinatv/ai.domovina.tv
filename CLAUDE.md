@@ -84,7 +84,7 @@ omeđi s `<!-- doc-refs:ignore-start -->` / `<!-- doc-refs:ignore-end -->`.
 Isto pravilo vrijedi za brojke: ako broj ima decimalu, mora postojati naredba
 koja ga reproducira (primjer: `docs/podcasterium_analysis_report.md` §7).
 
-## Nightly store build (launchd, 01:00)
+## Nightly store build (launchd, 03:00)
 
 `scripts/nightly-build.sh` svaku noć — ako je HEAD drukčiji od zadnjeg uspješno
 izgrađenog — gradi iOS + Android iz **odvojenog git worktreea** i šalje ih na
