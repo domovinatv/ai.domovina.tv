@@ -74,8 +74,15 @@ List<ChannelSummary> applySortMode(
   if (!mode.isOffered) mode = ChannelSortMode.fallback;
   switch (mode) {
     case ChannelSortMode.newest:
+      // Zadani mod: istaknuti kanali brenda (BrandConfig.featuredChannels)
+      // idu prvi, svaka skupina po datumu zadnje epizode. Eksplicitni
+      // korisnikovi modovi ispod ih ne diraju.
+      final featured = AppBrand.config.featuredChannels;
       final list = List<ChannelSummary>.from(channels);
       list.sort((a, b) {
+        final fa = featured.contains(a.id) ? 0 : 1;
+        final fb = featured.contains(b.id) ? 0 : 1;
+        if (fa != fb) return fa.compareTo(fb);
         final aDate = a.latestVideo?.date ?? '';
         final bDate = b.latestVideo?.date ?? '';
         return bDate.compareTo(aDate);

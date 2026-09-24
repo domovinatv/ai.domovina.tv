@@ -542,6 +542,37 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                   ),
                 ),
 
+                // Istaknuti kanali brenda (BrandConfig.featuredChannels) —
+                // prazno i nevidljivo kad brend ništa ne ističe.
+                if (featured != null && allVids.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Builder(builder: (context) {
+                      final shows = HomeFeed.featuredShows(allVids,
+                          limit: 12, excludeFeatured: featured.video);
+                      if (shows.isEmpty) return const SizedBox.shrink();
+                      return EpisodesRail(
+                        eyebrow: l.homeRailFeaturedShows,
+                        isMobile: isMobile,
+                        cards: shows
+                            .map((fv) => EpisodeRailCard(
+                                  title: fv.video.displayTitle,
+                                  subtitle: fv.channelName,
+                                  thumbnailUrl:
+                                      CdnConfig.thumbnailUrl(fv.video.id),
+                                  dateLabel: fv.video.date,
+                                  magisteriumScore: fv.video.magisteriumScore,
+                                  width: isMobile ? 180 : 220,
+                                  shareUrl: () => episodeShareUrl(
+                                    fv.video.id,
+                                    lang: shareLanguageForVideo(fv.video.id),
+                                  ),
+                                  onTap: () => onVideoTap(fv.video.id),
+                                ))
+                            .toList(),
+                      );
+                    }),
+                  ),
+
                 // "Najnovije epizode" rail — cross-channel po datumu desc.
                 // CDN URL eksplicitno (`fv.video.thumbnail` moze biti ytimg
                 // URL iz pipeline-a, sto blokira CORS na web build-u).

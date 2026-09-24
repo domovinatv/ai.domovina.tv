@@ -2354,6 +2354,12 @@ abstract class AppLocalizations {
   /// **'Najnovije epizode'**
   String get homeRailLatest;
 
+  /// Home rail with the latest episodes of the brand's featured channels.
+  ///
+  /// In hr, this message translates to:
+  /// **'Istaknuti podcasti'**
+  String get homeRailFeaturedShows;
+
   /// Eyebrow title (uppercased in UI) of the saved/liked episodes rail.
   ///
   /// In hr, this message translates to:

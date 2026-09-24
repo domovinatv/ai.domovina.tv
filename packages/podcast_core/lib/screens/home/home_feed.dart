@@ -178,14 +178,66 @@ class HomeFeed {
   /// 4. **Newest** — najnovije spremne epizode (nepromijenjeno).
   ///
   /// Vraca praznu listu ako je `all` prazan.
+  ///
+  /// Kad brend ističe kanale ([featuredChannels], zadano
+  /// `BrandConfig.featuredChannels`), prvih do [featuredSlots] slideova bira
+  /// isti algoritam samo nad epizodama tih kanala, a ostatak do [limit] nad
+  /// svim ostalima. Bez istaknutih kanala rezultat je nepromijenjen.
   static List<FeaturedPick> pickFeaturedCarousel(
     List<FeedVideo> all, {
     int limit = 5,
     ScoreFn? score,
     bool useDefaultScore = true,
     DateTime? now,
+    List<String>? featuredChannels,
+    int featuredSlots = 3,
   }) {
-    if (all.isEmpty) return const [];
+    final featured = featuredChannels ?? AppBrand.config.featuredChannels;
+    if (featured.isEmpty) {
+      return _pickCarousel(all,
+          limit: limit, score: score, useDefaultScore: useDefaultScore, now: now);
+    }
+    final inFeatured = all.where((v) => featured.contains(v.channelId)).toList();
+    final head = [
+      ..._pickCarousel(inFeatured.where(isReadyForHome).toList(),
+        limit: featuredSlots < limit ? featuredSlots : limit,
+        score: score,
+        useDefaultScore: useDefaultScore,
+        now: now),
+    ];
+    // Algoritam vraća samo najbolji tier; istaknuti kanali ipak pune sve
+    // svoje slotove, dopunom najnovijim spremnim epizodama tih kanala.
+    final slots = featuredSlots < limit ? featuredSlots : limit;
+    if (head.length < slots) {
+      final taken = head.map((p) => p.video.video.id).toSet();
+      final extra = inFeatured
+          .where(isReadyForHome)
+          .where((v) => !taken.contains(v.video.id))
+          .toList()
+        ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      head.addAll(extra.take(slots - head.length).map((v) => FeaturedPick(
+            video: v,
+            reason: FeaturedReason.newest,
+            candidatePool: inFeatured.length,
+          )));
+    }
+    final rest = _pickCarousel(
+        all.where((v) => !featured.contains(v.channelId)).toList(),
+        limit: limit - head.length,
+        score: score,
+        useDefaultScore: useDefaultScore,
+        now: now);
+    return [...head, ...rest];
+  }
+
+  static List<FeaturedPick> _pickCarousel(
+    List<FeedVideo> all, {
+    required int limit,
+    ScoreFn? score,
+    bool useDefaultScore = true,
+    DateTime? now,
+  }) {
+    if (all.isEmpty || limit <= 0) return const [];
 
     final scoreFn = score ?? (useDefaultScore ? defaultScore : null);
     final ref = now ?? DateTime.now();
@@ -319,6 +371,41 @@ class HomeFeed {
     final sorted = List<FeedVideo>.from(filtered)
       ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
     return sorted.take(limit).toList();
+  }
+
+  /// Rail istaknutih kanala brenda — najnovije spremne epizode, naizmjence po
+  /// kanalu redoslijedom iz [featuredChannels] (zadano
+  /// `BrandConfig.featuredChannels`), da jedan plodan kanal ne zauzme cijeli
+  /// rail. Prazna lista kad brend ništa ne ističe.
+  static List<FeedVideo> featuredShows(List<FeedVideo> all,
+      {int limit = 12,
+      FeedVideo? excludeFeatured,
+      List<String>? featuredChannels}) {
+    final featured = featuredChannels ?? AppBrand.config.featuredChannels;
+    if (featured.isEmpty) return const [];
+    final queues = [
+      for (final id in featured)
+        all
+            .where((v) => v.channelId == id)
+            .where(isReadyForHome)
+            .where((v) =>
+                excludeFeatured == null ||
+                v.video.id != excludeFeatured.video.id)
+            .toList()
+          ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? '')),
+    ];
+    final out = <FeedVideo>[];
+    for (var i = 0; out.length < limit; i++) {
+      var added = false;
+      for (final q in queues) {
+        if (i < q.length && out.length < limit) {
+          out.add(q[i]);
+          added = true;
+        }
+      }
+      if (!added) break;
+    }
+    return out;
   }
 
   /// "Upravo stiglo" rail — tek pristigle epizode (info + thumbnail, bez

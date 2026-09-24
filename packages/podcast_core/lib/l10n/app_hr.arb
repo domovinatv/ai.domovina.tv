@@ -1783,6 +1783,10 @@
   "@homeRailLatest": {
     "description": "Eyebrow title (uppercased in UI) of the latest-episodes rail."
   },
+  "homeRailFeaturedShows": "Istaknuti podcasti",
+  "@homeRailFeaturedShows": {
+    "description": "Home rail with the latest episodes of the brand's featured channels."
+  },
   "homeRailFavorites": "Tvoje spremljeno",
   "@homeRailFavorites": {
     "description": "Eyebrow title (uppercased in UI) of the saved/liked episodes rail."
