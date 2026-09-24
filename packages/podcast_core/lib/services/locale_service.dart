@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../brand/app_brand.dart';
 import '../l10n/app_localizations.dart';
 import 'local_prefs.dart';
 
@@ -32,6 +33,17 @@ AppLocalizations get appStrings =>
 /// Podržani UI jezici. Hrvatski prvi = default fallback.
 const List<Locale> kSupportedLocales = [Locale('hr'), Locale('en')];
 
+/// Početni jezik: spremljeni izbor korisnika, inače zadani jezik brenda
+/// (`BrandConfig.defaultLocale`). Nepoznata vrijednost pada na hrvatski.
+@visibleForTesting
+Locale resolveInitialLocale(String? saved, String brandDefault) {
+  final code = saved ?? brandDefault;
+  return kSupportedLocales.firstWhere(
+    (l) => l.languageCode == code,
+    orElse: () => const Locale('hr'),
+  );
+}
+
 class LocaleController extends ChangeNotifier {
   LocaleController._();
   static final LocaleController instance = LocaleController._();
@@ -44,11 +56,7 @@ class LocaleController extends ChangeNotifier {
   /// Učitaj spremljeni jezik. Mora se pozvati u main() prije runApp.
   Future<void> init() async {
     final raw = await _read();
-    _locale = switch (raw) {
-      'en' => const Locale('en'),
-      // Novi korisnik (null) ili bilo što drugo → hrvatski.
-      _ => const Locale('hr'),
-    };
+    _locale = resolveInitialLocale(raw, AppBrand.config.defaultLocale);
     notifyListeners();
   }
 
