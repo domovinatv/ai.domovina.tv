@@ -646,8 +646,9 @@ Mjerenja, odbačene alternative i otvoreni dug (backfill, EN izdanje, `epubcheck
 `detect_sponsors.js`) nosi partnere koje je autor SAM doveo i koji su ugrađeni
 u snimku. Sekcija „Uz podršku" na `/v/:id` (`widgets/sponsors_in_video_section.dart`)
 crta karticu po imenovanom sponzoru; `playable: true` segment dobiva
-„Poslušaj", koji pušta raspon i sam pauzira na `end` (`_checkSponsorClip` u
-`episode_screen.dart`), a ostali segmenti su samo skok na trenutak. Isti
+„Poslušaj", koji skoči na raspon i na `end` samo javi „Poruka sponzora je
+završila" — reprodukcija NE staje (`_checkSponsorClip` u `episode_screen.dart`;
+pauza je do 24.9.2026. djelovala kao da je player stao), a ostali segmenti su samo skok na trenutak. Isti
 „Poslušaj" stoji i u panelu playera (`SponsorsInVideoPlayerStrip` iznad
 „Poglavlja") — sekcija je ~1500 px ispod vrha, a deep-link na mobitelu odmah
 otvori ladicu s playerom, pa je bez trake gumb bio nevidljiv (prijava

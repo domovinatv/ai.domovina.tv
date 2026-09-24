@@ -781,13 +781,15 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// na 404/grešku) je null i sekcije nema.
   SponsorsInVideo? _sponsorsInVideo;
 
-  /// „Poslušaj poruku sponzora" u tijeku: player se sam pauzira kad pozicija
-  /// dođe do kraja raspona. Null = nema aktivnog isječka.
+  /// „Poslušaj poruku sponzora" u tijeku: kad pozicija dođe do kraja raspona,
+  /// javi se da je poruka gotova, a reprodukcija teče dalje (odluka 24.9.2026.
+  /// — pauza je djelovala kao da je player stao). Null = nema aktivnog isječka.
   SponsorInVideoSegment? _sponsorClip;
 
   /// Pozicija je barem jednom ušla u raspon isječka. Tek tada kraj raspona
   /// znači „poruka je gotova" — prije toga stream još javlja staru poziciju
-  /// (npr. 2:00:00 ako je korisnik bio dalje od poruke) i pauza bi pala odmah.
+  /// (npr. 2:00:00 ako je korisnik bio dalje od poruke) i poruka „završila"
+  /// bi iskočila odmah.
   bool _sponsorClipEntered = false;
   DateTime? _sponsorClipStartedAt;
 
@@ -1695,7 +1697,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
     }
   }
 
-  /// „Poslušaj poruku sponzora": pusti točno taj raspon i stani na kraju.
+  /// „Poslušaj poruku sponzora": skoči na početak raspona, pusti i javi kad
+  /// poruka završi — epizoda nastavlja svirati.
   void _listenSponsor(SponsorInVideoSegment seg) {
     log('SponsorsInVideo: listen ${seg.start}-${seg.end}s (${seg.kind.name})');
     _sponsorClip = seg;
@@ -1731,14 +1734,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     if (inRange) return;
     _sponsorClip = null;
     // Prirodan kraj = pozicija je upravo prešla `end`. Sve drugo (skok
-    // naprijed ili natrag po timelineu) je korisnikov izbor — ne pauziraj.
+    // naprijed ili natrag po timelineu) je korisnikov izbor — tada šutimo.
     if (pos >= clip.endPosition && pos < clip.endPosition + slack) {
-      _player?.pause();
-      log('SponsorsInVideo: auto-pause at ${pos.inSeconds}s');
+      log('SponsorsInVideo: message ended at ${pos.inSeconds}s');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).sponsorsInVideoStoppedAt),
+          content: Text(AppLocalizations.of(context).sponsorsInVideoEnded),
           duration: const Duration(seconds: 2),
         ),
       );

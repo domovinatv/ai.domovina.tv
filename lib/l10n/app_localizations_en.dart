@@ -4007,5 +4007,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sponsorsInVideoLess => 'less';
 
   @override
-  String get sponsorsInVideoStoppedAt => 'The sponsor message has ended';
+  String get sponsorsInVideoEnded => 'The sponsor message has ended';
 }

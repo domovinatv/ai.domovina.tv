@@ -46,7 +46,7 @@ class VideoPanel extends StatefulWidget {
   final List<({Duration start, Duration end})> sponsorRanges;
 
   /// Sponzori u snimci za traku iznad poglavlja + „Poslušaj" (vlasnik
-  /// playera i auto-stopa je ekran).
+  /// playera i praćenja kraja poruke je ekran).
   final SponsorsInVideo? sponsorsInVideo;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 

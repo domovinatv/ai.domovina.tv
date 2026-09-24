@@ -9,8 +9,8 @@ import '../theme/app_theme.dart';
 ///
 /// Ton je zahvala partneru koji je omogućio epizodu, ne reklama: kartica nosi
 /// ime, ulogu, autorov opis i poveznice, a pouzdan raspon u snimci dobiva gumb
-/// „Poslušaj" koji pušta točno taj dio i sam stane (zaustavljanje radi ekran,
-/// koji drži player). Nepouzdani rasponi (zahvala, poglavlje) su samo skok na
+/// „Poslušaj" koji skoči na taj dio i javi kad poruka završi (to radi ekran,
+/// koji drži player; reprodukcija se nastavlja). Nepouzdani rasponi (zahvala, poglavlje) su samo skok na
 /// trenutak, bez zaustavljanja.
 ///
 /// Nije isto što i buduća DINAMIČKA sponzorstva kupljena na domovina.ai — ta
@@ -21,7 +21,7 @@ import '../theme/app_theme.dart';
 class SponsorsInVideoSection extends StatelessWidget {
   final SponsorsInVideo? data;
 
-  /// Pusti segment od `start` i zaustavi na `end`. Null dok player nije
+  /// Pusti segment od `start` i javi kraj na `end` (bez pauze). Null dok player nije
   /// spreman — gumbi su tada onemogućeni (isto kao play u članku).
   final void Function(SponsorInVideoSegment segment)? onListen;
 

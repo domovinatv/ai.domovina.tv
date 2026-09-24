@@ -1042,5 +1042,5 @@
   "sponsorsInVideoWebsite": "Website",
   "sponsorsInVideoMore": "more",
   "sponsorsInVideoLess": "less",
-  "sponsorsInVideoStoppedAt": "The sponsor message has ended"
+  "sponsorsInVideoEnded": "The sponsor message has ended"
 }

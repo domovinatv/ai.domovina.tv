@@ -6311,13 +6311,13 @@ abstract class AppLocalizations {
   /// **'Podrška'**
   String get sponsorsInVideoRoleOther;
 
-  /// Gumb koji pušta raspon snimke s porukom sponzora i sam stane na kraju.
+  /// Gumb koji skoči na poruku sponzora u snimci i pusti je.
   ///
   /// In hr, this message translates to:
   /// **'Poslušaj poruku sponzora'**
   String get sponsorsInVideoListen;
 
-  /// Gumb koji pušta sponzoriranu rubriku u snimci i sam stane na kraju.
+  /// Gumb koji skoči na sponzoriranu rubriku u snimci i pusti je.
   ///
   /// In hr, this message translates to:
   /// **'Poslušaj sponzoriranu rubriku'**
@@ -6359,11 +6359,11 @@ abstract class AppLocalizations {
   /// **'manje'**
   String get sponsorsInVideoLess;
 
-  /// Kratka potvrda kad se reprodukcija sama zaustavi na kraju poruke sponzora.
+  /// Kratka potvrda kad poruka sponzora pokrenuta gumbom „Poslušaj“ završi; reprodukcija se nastavlja.
   ///
   /// In hr, this message translates to:
   /// **'Poruka sponzora je završila'**
-  String get sponsorsInVideoStoppedAt;
+  String get sponsorsInVideoEnded;
 }
 
 class _AppLocalizationsDelegate

@@ -4924,11 +4924,11 @@
   },
   "sponsorsInVideoListen": "Poslušaj poruku sponzora",
   "@sponsorsInVideoListen": {
-    "description": "Gumb koji pušta raspon snimke s porukom sponzora i sam stane na kraju."
+    "description": "Gumb koji skoči na poruku sponzora u snimci i pusti je."
   },
   "sponsorsInVideoListenRubric": "Poslušaj sponzoriranu rubriku",
   "@sponsorsInVideoListenRubric": {
-    "description": "Gumb koji pušta sponzoriranu rubriku u snimci i sam stane na kraju."
+    "description": "Gumb koji skoči na sponzoriranu rubriku u snimci i pusti je."
   },
   "sponsorsInVideoThanksAt": "Zahvala na {time}",
   "@sponsorsInVideoThanksAt": {
@@ -4969,8 +4969,8 @@
   "@sponsorsInVideoLess": {
     "description": "Skrati proširen opis sponzora."
   },
-  "sponsorsInVideoStoppedAt": "Poruka sponzora je završila",
-  "@sponsorsInVideoStoppedAt": {
-    "description": "Kratka potvrda kad se reprodukcija sama zaustavi na kraju poruke sponzora."
+  "sponsorsInVideoEnded": "Poruka sponzora je završila",
+  "@sponsorsInVideoEnded": {
+    "description": "Kratka potvrda kad poruka sponzora pokrenuta gumbom „Poslušaj“ završi; reprodukcija se nastavlja."
   }
 }

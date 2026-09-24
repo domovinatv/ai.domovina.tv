@@ -4051,5 +4051,5 @@ class AppLocalizationsHr extends AppLocalizations {
   String get sponsorsInVideoLess => 'manje';
 
   @override
-  String get sponsorsInVideoStoppedAt => 'Poruka sponzora je završila';
+  String get sponsorsInVideoEnded => 'Poruka sponzora je završila';
 }
