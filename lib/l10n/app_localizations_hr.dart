@@ -4052,4 +4052,20 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get sponsorsInVideoEnded => 'Poruka sponzora je završila';
+
+  @override
+  String get sponsorsInVideoListenShort => 'Poslušaj';
+
+  @override
+  String get sponsorsInVideoRubricShort => 'Rubrika';
+
+  @override
+  String sponsorsInVideoMessageAt(String time) {
+    return 'Poruka sponzora na $time';
+  }
+
+  @override
+  String sponsorsInVideoRubricAt(String time) {
+    return 'Sponzorirana rubrika na $time';
+  }
 }

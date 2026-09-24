@@ -382,45 +382,42 @@ void main() {
   });
 
   group('SponsorsInVideoPlayerStrip', () {
-    testWidgets(
-      'isti raspon za dva sponzora je jedan gumb; bez raspona samo ime',
-      (tester) async {
-        SponsorInVideoSegment? listened;
-        final data = SponsorsInVideo.fromJson({
-          'sponsors': [
-            for (final n in ['HiPP', 'Plazma'])
-              {
-                'id': n.toLowerCase(),
-                'name': n,
-                'role': 'sponsor',
-                'segments': [
-                  {
-                    'kind': 'host_read',
-                    'start': 86,
-                    'end': 137,
-                    'playable': true,
-                  },
-                ],
-              },
-            {'id': 'cafe', 'name': 'Cafe Brazil', 'role': 'partner'},
-            {'id': 'odjeca', 'name': 'Unique', 'role': 'wardrobe'},
-          ],
-        });
-        await tester.pumpWidget(
-          _host(
-            SponsorsInVideoPlayerStrip(
-              data: data,
-              onListen: (s) => listened = s,
-            ),
+    testWidgets('svaki sponzor ima svoj redak i svoj gumb', (tester) async {
+      // Prijava 24.9.2026.: „Uz podršku: Cafe Brazil" + gumb „e-Duhovne
+      // vježbe · 0:45" ispod čitalo se kao da je aplikacija Cafe Brazilova.
+      SponsorInVideoSegment? listened;
+      await tester.pumpWidget(
+        _host(
+          SponsorsInVideoPlayerStrip(
+            data: _parse(_iva),
+            onListen: (s) => listened = s,
           ),
-        );
-        expect(find.text('HiPP, Plazma · 0:51'), findsOneWidget);
-        expect(find.text('Uz podršku: Cafe Brazil'), findsOneWidget);
-        expect(find.textContaining('Unique'), findsNothing);
-        await tester.tap(find.text('HiPP, Plazma · 0:51'));
-        expect((listened!.start, listened!.end), (86, 137));
-      },
-    );
+        ),
+      );
+      expect(find.text('Uz podršku'), findsOneWidget);
+      expect(find.textContaining('Uz podršku:'), findsNothing);
+      expect(
+        find.text('Cafe Brazil · Partner podcasta', findRichText: true),
+        findsOneWidget,
+      );
+      expect(
+        find.text('e-Duhovne vježbe · Sponzor epizode', findRichText: true),
+        findsOneWidget,
+      );
+      // Gumb nosi glagol i trajanje; ime je u retku iznad njega.
+      expect(find.text('Poslušaj · 0:45'), findsOneWidget);
+      await tester.tap(find.text('Poslušaj · 0:45'));
+      expect((listened!.start, listened!.end), (5963, 6008));
+    });
+
+    testWidgets('rubrika ima svoju oznaku; krediti ne ulaze', (tester) async {
+      await tester.pumpWidget(
+        _host(SponsorsInVideoPlayerStrip(data: _parse(_rastuci))),
+      );
+      expect(find.text('Poslušaj · 0:13'), findsOneWidget);
+      expect(find.text('Rubrika · 3:49'), findsOneWidget);
+      expect(find.textContaining('Unique'), findsNothing);
+    });
 
     testWidgets('bez imenovanog partnera ne zauzima ništa', (tester) async {
       await tester.pumpWidget(
@@ -439,6 +436,78 @@ void main() {
         tester.getSize(find.byType(SponsorsInVideoPlayerStrip)),
         Size.zero,
       );
+    });
+  });
+
+  group('oznake u članku', () {
+    const ivaSections = [
+      (ts: '00:00:27', seconds: 27),
+      (ts: '01:21:46', seconds: 4906),
+      (ts: '01:43:05', seconds: 6185),
+    ];
+
+    test('sidro je vrijeme: spot 5963 ide u sekciju koja ga sadrži', () {
+      // Članak opisuje oglas tek u sekciji od 1:43:05, ali spot počinje na
+      // 1:39:23 — oznaka ide tamo gdje je zvuk, ne gdje je tekst.
+      final marks = _parse(_iva).marksBySection(ivaSections);
+      expect(marks.keys, ['01:21:46']);
+      final m = marks['01:21:46']!.single;
+      expect(m.sponsors.single.name, 'e-Duhovne vježbe');
+      expect(m.segment.start, 5963);
+    });
+
+    test('raspon prije prve sekcije ide u prvu; krediti i mention ne', () {
+      final marks = _parse(_rastuci).marksBySection([
+        (ts: '00:05:00', seconds: 300),
+        (ts: '01:00:00', seconds: 3600),
+      ]);
+      expect(marks['00:05:00']!.single.segment.start, 151);
+      expect(marks['01:00:00']!.single.segment.kind, SponsorInVideoKind.rubric);
+      expect(_parse(_iva).marksBySection(const []), isEmpty);
+    });
+
+    test('isti raspon dvaju sponzora je jedna oznaka s oba imena', () {
+      final d = SponsorsInVideo.fromJson({
+        'sponsors': [
+          for (final n in ['HiPP', 'Plazma'])
+            {
+              'id': n,
+              'name': n,
+              'role': 'sponsor',
+              'segments': [
+                {
+                  'kind': 'host_read',
+                  'start': 86,
+                  'end': 137,
+                  'playable': true,
+                },
+              ],
+            },
+        ],
+      });
+      final m = d.marksBySection(const [(ts: '00:00:00', seconds: 0)]);
+      expect(m['00:00:00']!.single.sponsors.map((s) => s.name), [
+        'HiPP',
+        'Plazma',
+      ]);
+    });
+
+    testWidgets('oznaka imenuje sponzora i vrijeme, gumb pušta raspon', (
+      tester,
+    ) async {
+      SponsorInVideoSegment? listened;
+      final marks = _parse(_iva).marksBySection(ivaSections)['01:21:46']!;
+      await tester.pumpWidget(
+        _host(
+          SponsorsInVideoSectionMark(
+            marks: marks,
+            onListen: (s) => listened = s,
+          ),
+        ),
+      );
+      expect(find.text('Poruka sponzora na 1:39:23'), findsOneWidget);
+      await tester.tap(find.text('e-Duhovne vježbe · 0:45'));
+      expect(listened!.end, 6008);
     });
   });
 }

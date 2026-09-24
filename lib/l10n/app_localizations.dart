@@ -6364,6 +6364,30 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Poruka sponzora je završila'**
   String get sponsorsInVideoEnded;
+
+  /// Kratka oznaka gumba za poruku sponzora u playeru, uz trajanje („Poslušaj · 0:45“).
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslušaj'**
+  String get sponsorsInVideoListenShort;
+
+  /// Kratka oznaka gumba za sponzoriranu rubriku u playeru, uz trajanje („Rubrika · 3:49“).
+  ///
+  /// In hr, this message translates to:
+  /// **'Rubrika'**
+  String get sponsorsInVideoRubricShort;
+
+  /// Oznaka u sekciji članka u kojoj je poruka sponzora; ispod su gumbi s imenom sponzora.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poruka sponzora na {time}'**
+  String sponsorsInVideoMessageAt(String time);
+
+  /// Oznaka u sekciji članka u kojoj počinje sponzorirana rubrika.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sponzorirana rubrika na {time}'**
+  String sponsorsInVideoRubricAt(String time);
 }
 
 class _AppLocalizationsDelegate

@@ -4008,4 +4008,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sponsorsInVideoEnded => 'The sponsor message has ended';
+
+  @override
+  String get sponsorsInVideoListenShort => 'Listen';
+
+  @override
+  String get sponsorsInVideoRubricShort => 'Segment';
+
+  @override
+  String sponsorsInVideoMessageAt(String time) {
+    return 'Sponsor message at $time';
+  }
+
+  @override
+  String sponsorsInVideoRubricAt(String time) {
+    return 'Sponsored segment at $time';
+  }
 }

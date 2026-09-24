@@ -408,10 +408,12 @@ class _ExpandableBlurbState extends State<_ExpandableBlurb> {
 /// ladicu s playerom preko svega. Bez ove trake gumb „Poslušaj" korisnik
 /// nije mogao naći (prijava 24.9.2026. na `aue1GuuMsbA/t/8`).
 ///
-/// Jedan gumb po pouzdanom rasponu; isti raspon pripisan dvama sponzorima
-/// (`NwLeHiokKSU`: HiPP i Plazma) postaje jedan gumb s oba imena. Imenovani
-/// sponzori bez takvog raspona ostaju samo navedeni. Krediti (garderoba,
-/// studio) ovdje ne ulaze — žive u sekciji.
+/// Svaki sponzor ima SVOJ redak (ime · uloga) i ispod njega svoje gumbe.
+/// Prva verzija je sponzore bez raspona slagala u naslov („Uz podršku: Cafe
+/// Brazil"), a gumb s imenom drugog sponzora stavljala ispod — čitalo se kao
+/// da e-Duhovne vježbe pripadaju Cafe Brazilu. Isti raspon pripisan dvama
+/// sponzorima (`NwLeHiokKSU`: HiPP i Plazma) namjerno dobiva gumb u OBA retka.
+/// Krediti (garderoba, studio) ovdje ne ulaze — žive u sekciji.
 class SponsorsInVideoPlayerStrip extends StatelessWidget {
   final SponsorsInVideo? data;
   final void Function(SponsorInVideoSegment segment)? onListen;
@@ -431,23 +433,7 @@ class SponsorsInVideoPlayerStrip extends StatelessWidget {
     if (partners.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
-
-    // (start, end) → segment + imena sponzora kojima pripada.
-    final clips = <(int, int), (SponsorInVideoSegment, List<String>)>{};
-    final silent = <String>[];
-    for (final s in partners) {
-      final playable = s.playableSegments;
-      if (playable.isEmpty) {
-        silent.add(s.name!);
-        continue;
-      }
-      for (final seg in playable) {
-        final entry = clips.putIfAbsent((seg.start, seg.end), () => (seg, []));
-        entry.$2.add(s.name!);
-      }
-    }
-    final ordered = clips.values.toList()
-      ..sort((a, b) => a.$1.start.compareTo(b.$1.start));
+    final muted = theme.colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
@@ -456,54 +442,181 @@ class SponsorsInVideoPlayerStrip extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.volunteer_activism_outlined,
-                size: 14,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              Icon(Icons.volunteer_activism_outlined, size: 14, color: muted),
               const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  silent.isEmpty
-                      ? l.sponsorsInVideoTitle
-                      : '${l.sponsorsInVideoTitle}: ${silent.join(', ')}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    letterSpacing: 0.5,
-                  ),
+              Text(
+                l.sponsorsInVideoTitle,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: muted,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
-          if (ordered.isNotEmpty) ...[
+          for (final s in partners)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: s.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        TextSpan(
+                          text: ' · ${sponsorRoleLabel(s.role, l)}',
+                          style: TextStyle(color: muted),
+                        ),
+                      ],
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  if (s.playableSegments.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final seg in s.playableSegments)
+                          SponsorListenChip(
+                            segment: seg,
+                            onPressed: onListen == null
+                                ? null
+                                : () => onListen!(seg),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kompaktan „Poslušaj · 0:45" (ili „Rubrika · 3:49") — dijele ga traka u
+/// playeru i oznaka u članku. Puni opis ide u tooltip.
+class SponsorListenChip extends StatelessWidget {
+  final SponsorInVideoSegment segment;
+  final VoidCallback? onPressed;
+
+  /// Ime sponzora ispred trajanja — u članku, gdje nema retka s imenom.
+  final String? sponsorName;
+
+  const SponsorListenChip({
+    super.key,
+    required this.segment,
+    this.onPressed,
+    this.sponsorName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final isRubric = segment.kind == SponsorInVideoKind.rubric;
+    final what =
+        sponsorName ??
+        (isRubric
+            ? l.sponsorsInVideoRubricShort
+            : l.sponsorsInVideoListenShort);
+    return Tooltip(
+      message: isRubric
+          ? l.sponsorsInVideoListenRubric
+          : l.sponsorsInVideoListen,
+      child: FilledButton.tonalIcon(
+        style: FilledButton.styleFrom(
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+        ),
+        icon: const Icon(Icons.play_arrow, size: 16),
+        label: Text('$what · ${formatSponsorClock(segment.durationSeconds)}'),
+        onPressed: onPressed,
+      ),
+    );
+  }
+}
+
+/// Oznaka poruke sponzora u sekciji članka — isto mjesto kao pill za osobu
+/// („X govori ovdje"), ali prigušena: stoji uvijek, a ne samo kad korisnik
+/// dođe s profila, pa crvena bi se čitala kao reklama. Sidro je VRIJEME
+/// segmenta, ne tekst (vidi [SponsorsInVideo.marksBySection]).
+class SponsorsInVideoSectionMark extends StatelessWidget {
+  final List<SponsorInVideoMark> marks;
+  final void Function(SponsorInVideoSegment segment)? onListen;
+
+  const SponsorsInVideoSectionMark({
+    super.key,
+    required this.marks,
+    this.onListen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (marks.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final first = marks.first.segment;
+    final time = formatSponsorClock(first.start);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.fromBorderSide(AppTheme.brandRim(theme.brightness)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.volunteer_activism_outlined,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    first.kind == SponsorInVideoKind.rubric
+                        ? l.sponsorsInVideoRubricAt(time)
+                        : l.sponsorsInVideoMessageAt(time),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final (seg, names) in ordered)
-                  Tooltip(
-                    message: seg.kind == SponsorInVideoKind.rubric
-                        ? l.sponsorsInVideoListenRubric
-                        : l.sponsorsInVideoListen,
-                    child: FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                      icon: const Icon(Icons.play_arrow, size: 16),
-                      label: Text(
-                        '${names.join(', ')} · '
-                        '${formatSponsorClock(seg.durationSeconds)}',
-                      ),
-                      onPressed: onListen == null ? null : () => onListen!(seg),
-                    ),
+                for (final m in marks)
+                  SponsorListenChip(
+                    segment: m.segment,
+                    sponsorName: m.sponsors.map((s) => s.name!).join(', '),
+                    onPressed: onListen == null
+                        ? null
+                        : () => onListen!(m.segment),
                   ),
               ],
             ),
           ],
-        ],
+        ),
       ),
     );
   }

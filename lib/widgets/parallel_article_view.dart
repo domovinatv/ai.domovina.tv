@@ -1,3 +1,4 @@
+import '../models/sponsors_in_video.dart';
 import 'package:flutter/material.dart';
 
 import '../models/magisterium_data.dart';
@@ -53,6 +54,10 @@ class ParallelArticleView extends StatelessWidget {
   /// True → pill "X govori ovdje"; false → "Ovdje se spominje: X".
   final bool highlightSpeaks;
 
+  /// Poruke sponzora po timestampu sekcije + „Poslušaj" (kao [ArticleSection]).
+  final Map<String, List<SponsorInVideoMark>> sponsorMarks;
+  final void Function(SponsorInVideoSegment segment)? onSponsorListen;
+
   const ParallelArticleView({
     super.key,
     required this.article,
@@ -65,6 +70,8 @@ class ParallelArticleView extends StatelessWidget {
     this.highlightTimestamp,
     this.highlightPersonName,
     this.highlightSpeaks = true,
+    this.sponsorMarks = const {},
+    this.onSponsorListen,
   });
 
   @override
@@ -112,6 +119,9 @@ class ParallelArticleView extends StatelessWidget {
                               : null,
                       personHighlightSpeaks: highlightSpeaks,
                       personNeedle: highlightPersonName,
+                      sponsorMarks:
+                          sponsorMarks[sec.screenshotTimestamp] ?? const [],
+                      onSponsorListen: onSponsorListen,
                     ),
                   ),
                   SizedBox(width: columnGap),

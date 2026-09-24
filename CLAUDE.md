@@ -656,6 +656,20 @@ otvori ladicu s playerom, pa je bez trake gumb bio nevidljiv (prijava
 `fetch.domovina.tv/docs/2026-09-23-sponzori-u-snimci.md`, testovi
 `test/sponsors_in_video_test.dart`.
 
+U članku sekcija u koju PADA POČETAK pouzdanog raspona dobiva prigušenu
+oznaku „Poruka sponzora na 1:39:23" s gumbom (`SponsorsInVideo.marksBySection`
+→ `SponsorsInVideoSectionMark`).
+
+**Rule (sidro je vrijeme, ne tekst)**: AI članak sponzora opisuje drugdje i
+drukčije napisanog — Ivin spot 1:39:23 opisan je tek u sekciji od 1:43:05,
+„Cafe Brazil" je u članku „Caffe Brazil", „HiPP"/„Plazma" su „HIP-a"/„Plasme".
+Označavanje imena u tekstu čeka `aliases` iz pipelinea; ne nagađati fuzzy
+pravilima u klijentu.
+
+**Rule (jedan sponzor = jedan redak)**: u traci playera ime i uloga stoje u
+svom retku, gumb ispod („Poslušaj · 0:45"). Prva verzija je sponzore bez
+raspona slagala u naslov, pa se gumb drugog sponzora čitao kao njihov.
+
 **Rule (ime sloja)**: ovo NISU dinamička sponzorstva kupljena na domovina.ai
 nakon snimanja — ta dolaze kao zaseban proizvod, izvor i widget. Ne preimenovati
 u generičko `Sponsors`.

@@ -4972,5 +4972,31 @@
   "sponsorsInVideoEnded": "Poruka sponzora je završila",
   "@sponsorsInVideoEnded": {
     "description": "Kratka potvrda kad poruka sponzora pokrenuta gumbom „Poslušaj“ završi; reprodukcija se nastavlja."
+  },
+  "sponsorsInVideoListenShort": "Poslušaj",
+  "@sponsorsInVideoListenShort": {
+    "description": "Kratka oznaka gumba za poruku sponzora u playeru, uz trajanje („Poslušaj · 0:45“)."
+  },
+  "sponsorsInVideoRubricShort": "Rubrika",
+  "@sponsorsInVideoRubricShort": {
+    "description": "Kratka oznaka gumba za sponzoriranu rubriku u playeru, uz trajanje („Rubrika · 3:49“)."
+  },
+  "sponsorsInVideoMessageAt": "Poruka sponzora na {time}",
+  "@sponsorsInVideoMessageAt": {
+    "description": "Oznaka u sekciji članka u kojoj je poruka sponzora; ispod su gumbi s imenom sponzora.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorsInVideoRubricAt": "Sponzorirana rubrika na {time}",
+  "@sponsorsInVideoRubricAt": {
+    "description": "Oznaka u sekciji članka u kojoj počinje sponzorirana rubrika.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   }
 }

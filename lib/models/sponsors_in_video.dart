@@ -196,6 +196,13 @@ class SponsorInVideo {
   }
 }
 
+/// Pouzdan raspon u snimci + sponzori kojima pripada (isti host_read zna biti
+/// pripisan dvama sponzorima — tada je to JEDNA oznaka s oba imena).
+typedef SponsorInVideoMark = ({
+  List<SponsorInVideo> sponsors,
+  SponsorInVideoSegment segment,
+});
+
 /// Sadržaj `sponsors_in_video.json` za jednu epizodu.
 class SponsorsInVideo {
   final int schemaVersion;
@@ -230,6 +237,46 @@ class SponsorsInVideo {
 
   /// Sekcija postoji samo kad ima barem jednog imenovanog sponzora.
   bool get hasNamed => sponsors.any((s) => s.isNamed);
+
+  /// Oznake za članak: pouzdani rasponi imenovanih partnera (bez kredita),
+  /// razvrstani po sekciji u koju PADA POČETAK raspona — zadnja sekcija s
+  /// početkom ≤ `start`, a raspon prije prve sekcije ide u prvu. Tekst
+  /// članka ne gledamo: AI zna oglas utopiti u susjednu sekciju (Ivin spot
+  /// 1:39:23 opisan je tek u sekciji od 1:43:05), a vrijeme je točno.
+  ///
+  /// [sections] su (timestamp sekcije, početak u sekundama), poredane.
+  Map<String, List<SponsorInVideoMark>> marksBySection(
+    List<({String ts, int seconds})> sections,
+  ) {
+    if (sections.isEmpty) return const {};
+    final byRange = <(int, int), SponsorInVideoMark>{};
+    for (final s in named) {
+      if (s.role.isCredit) continue;
+      for (final seg in s.playableSegments) {
+        final key = (seg.start, seg.end);
+        final existing = byRange[key];
+        byRange[key] = (
+          sponsors: [...?existing?.sponsors, s],
+          segment: existing?.segment ?? seg,
+        );
+      }
+    }
+    final out = <String, List<SponsorInVideoMark>>{};
+    final marks = byRange.values.toList()
+      ..sort((a, b) => a.segment.start.compareTo(b.segment.start));
+    for (final m in marks) {
+      var ts = sections.first.ts;
+      for (final sec in sections) {
+        if (sec.seconds <= m.segment.start) {
+          ts = sec.ts;
+        } else {
+          break;
+        }
+      }
+      (out[ts] ??= []).add(m);
+    }
+    return out;
+  }
 
   /// Rasponi za oznake na vremenskoj crti playera: pouzdani segmenti
   /// imenovanih sponzora, bez duplikata (isti host_read zna biti pripisan

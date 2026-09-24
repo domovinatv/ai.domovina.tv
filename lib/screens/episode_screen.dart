@@ -1747,6 +1747,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     }
   }
 
+  /// Poruke sponzora razvrstane po sekciji članka (sidro je vrijeme).
+  Map<String, List<SponsorInVideoMark>> get _sponsorMarks =>
+      _sponsorsInVideo?.marksBySection([
+        for (final s in _sortedSections) (ts: s.ts, seconds: s.dur.inSeconds),
+      ]) ??
+      const {};
+
   List<({Duration start, Duration end})> get _sponsorRanges =>
       _sponsorsInVideo?.playableRanges ?? const [];
 
@@ -2035,6 +2042,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       }
                     : null,
                 magisterium: magPrimary,
+                sponsorMarks: _sponsorMarks,
+                onSponsorListen: _videoReady ? _listenSponsor : null,
               ),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
@@ -2180,6 +2189,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         onPlayTap: _videoReady
                             ? (ts) => _seekAndPlay(ts, preroll: true)
                             : null,
+                        sponsorMarks: _sponsorMarks,
+                        onSponsorListen: _videoReady ? _listenSponsor : null,
                       ),
                     ),
                   ),
