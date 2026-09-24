@@ -766,6 +766,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your subscription renews automatically until you cancel. You can cancel any time in your store settings. The lifetime plan is a one-time purchase.';
 
   @override
+  String get channelLegalAutoRenewSubscriptionsOnly =>
+      'Your subscription renews automatically until you cancel. You can cancel any time in your store settings.';
+
+  @override
   String get channelTalkToFounder => 'Talk to the founder';
 
   @override

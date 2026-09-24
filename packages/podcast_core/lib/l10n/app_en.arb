@@ -213,6 +213,7 @@
   "channelAlreadyPlus": "You already have {plus}",
   "channelThanksSupportingArchive": "Thank you for supporting the Croatian archive.",
   "channelLegalAutoRenew": "Your subscription renews automatically until you cancel. You can cancel any time in your store settings. The lifetime plan is a one-time purchase.",
+  "channelLegalAutoRenewSubscriptionsOnly": "Your subscription renews automatically until you cancel. You can cancel any time in your store settings.",
   "channelTalkToFounder": "Talk to the founder",
   "channelCannotFetchSlots": "We couldn’t load the available times.",
   "channelNoSlotsThreeWeeks": "There are no open slots in the next three weeks.",

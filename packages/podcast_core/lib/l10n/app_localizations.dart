@@ -1376,6 +1376,12 @@ abstract class AppLocalizations {
   /// **'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine. Doživotni paket jednokratna je kupnja.'**
   String get channelLegalAutoRenew;
 
+  /// Auto-renewal notice for brands that sell subscriptions only (no lifetime plan).
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine.'**
+  String get channelLegalAutoRenewSubscriptionsOnly;
+
   /// Tooltip on the floating founder-booking button.
   ///
   /// In hr, this message translates to:

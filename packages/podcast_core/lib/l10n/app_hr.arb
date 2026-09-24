@@ -993,6 +993,10 @@
   "@channelLegalAutoRenew": {
     "description": "Legal fine print about auto-renewal and cancellation."
   },
+  "channelLegalAutoRenewSubscriptionsOnly": "Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine.",
+  "@channelLegalAutoRenewSubscriptionsOnly": {
+    "description": "Auto-renewal notice for brands that sell subscriptions only (no lifetime plan)."
+  },
   "channelTalkToFounder": "Razgovaraj s osnivačem",
   "@channelTalkToFounder": {
     "description": "Tooltip on the floating founder-booking button."

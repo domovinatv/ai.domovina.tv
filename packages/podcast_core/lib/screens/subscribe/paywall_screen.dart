@@ -605,17 +605,41 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _legal(ColorScheme cs) => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Text(
-          AppLocalizations.of(context).channelLegalAutoRenew,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: cs.onSurfaceVariant),
-          textAlign: TextAlign.center,
-        ),
-      );
+  /// Uvjeti obnove i poveznice na uvjete korištenja i privatnost — App
+  /// Review 3.1.2 traži oboje u samom toku kupnje.
+  Widget _legal(ColorScheme cs) {
+    final l = AppLocalizations.of(context);
+    final style =
+        Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        children: [
+          Text(
+            AppBrand.config.plusLifetime
+                ? l.channelLegalAutoRenew
+                : l.channelLegalAutoRenewSubscriptionsOnly,
+            style: style,
+            textAlign: TextAlign.center,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () => drillDown(context, '/terms'),
+                child: Text(l.homeFooterTerms),
+              ),
+              Text('·', style: style),
+              TextButton(
+                onPressed: () => drillDown(context, '/privacy'),
+                child: Text(l.homeFooterPrivacy),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Explicit fire-and-forget.

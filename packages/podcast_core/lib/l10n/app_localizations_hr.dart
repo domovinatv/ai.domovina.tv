@@ -768,6 +768,10 @@ class AppLocalizationsHr extends AppLocalizations {
       'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine. Doživotni paket jednokratna je kupnja.';
 
   @override
+  String get channelLegalAutoRenewSubscriptionsOnly =>
+      'Pretplata se automatski obnavlja dok je ne otkažeš. Otkazati je možeš bilo kada u postavkama trgovine.';
+
+  @override
   String get channelTalkToFounder => 'Razgovaraj s osnivačem';
 
   @override
