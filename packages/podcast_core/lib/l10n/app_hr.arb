@@ -875,6 +875,18 @@
   "@channelPlanOneTime": {
     "description": "Billing cadence label for the lifetime plan (single payment)."
   },
+  "channelTrialThen": "{days} dana besplatno, zatim {price}",
+  "@channelTrialThen": {
+    "description": "Free-trial disclosure under a paywall plan: trial length in days, then the regular price.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "channelPlanFounderBadge": "Osnivač",
   "@channelPlanFounderBadge": {
     "description": "Badge on the lifetime plan marking early supporters."

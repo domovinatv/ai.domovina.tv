@@ -1226,6 +1226,12 @@ abstract class AppLocalizations {
   /// **'jednokratno'**
   String get channelPlanOneTime;
 
+  /// Free-trial disclosure under a paywall plan: trial length in days, then the regular price.
+  ///
+  /// In hr, this message translates to:
+  /// **'{days} dana besplatno, zatim {price}'**
+  String channelTrialThen(int days, String price);
+
   /// Badge on the lifetime plan marking early supporters.
   ///
   /// In hr, this message translates to:

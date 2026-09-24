@@ -190,7 +190,27 @@ class RevenueCatService {
         title: p.storeProduct.title,
         description: p.storeProduct.description,
         webCheckoutUrl: p.webCheckoutUrl,
+        trialDays: _trialDaysOf(p.storeProduct),
       );
+
+  /// Besplatni trial u danima: iOS intro offer s cijenom 0, inače Play free
+  /// phase zadane opcije. `null` kad trial ne postoji.
+  int? _trialDaysOf(StoreProduct product) {
+    int? days(PeriodUnit unit, int value) => switch (unit) {
+          PeriodUnit.day => value,
+          PeriodUnit.week => 7 * value,
+          PeriodUnit.month => 30 * value,
+          PeriodUnit.year => 365 * value,
+          PeriodUnit.unknown => null,
+        };
+    final intro = product.introductoryPrice;
+    if (intro != null && intro.price == 0) {
+      return days(intro.periodUnit, intro.periodNumberOfUnits);
+    }
+    final period = product.defaultOption?.freePhase?.billingPeriod;
+    if (period != null) return days(period.unit, period.value);
+    return null;
+  }
 
   RcPlan _planOf(PackageType t) => switch (t) {
         PackageType.monthly => RcPlan.monthly,

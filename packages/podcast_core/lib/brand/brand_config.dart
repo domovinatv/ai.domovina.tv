@@ -28,7 +28,12 @@ class BrandConfig {
     required this.endpoints,
     this.flags = const FeatureFlags(),
     this.sourceCodeUrl = 'https://github.com/domovinatv',
+    this.plusLifetime = true,
   });
+
+  /// Nudi li Plus i doživotni (lifetime) paket. Utječe na orijentacijske
+  /// pločice paywalla kad RevenueCat offering nije dostupan.
+  final bool plusLifetime;
 
   /// Poveznica „GitHub” u podnožju naslovnice.
   final String sourceCodeUrl;

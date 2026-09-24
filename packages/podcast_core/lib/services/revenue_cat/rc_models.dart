@@ -38,6 +38,11 @@ class RcPackage {
   /// one. Used on web (the SDK can't run there) to redirect to checkout.
   final String? webCheckoutUrl;
 
+  /// Trajanje besplatnog probnog razdoblja u danima, ako ga proizvod ima
+  /// (App Store intro offer ili Play free phase). Paywall ga mora prikazati uz
+  /// cijenu (App Review 3.1.2).
+  final int? trialDays;
+
   const RcPackage({
     required this.id,
     required this.plan,
@@ -46,6 +51,7 @@ class RcPackage {
     required this.title,
     this.description,
     this.webCheckoutUrl,
+    this.trialDays,
   });
 }
 

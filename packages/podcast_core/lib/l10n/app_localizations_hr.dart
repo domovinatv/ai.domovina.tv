@@ -677,6 +677,11 @@ class AppLocalizationsHr extends AppLocalizations {
   String get channelPlanOneTime => 'jednokratno';
 
   @override
+  String channelTrialThen(int days, String price) {
+    return '$days dana besplatno, zatim $price';
+  }
+
+  @override
   String get channelPlanFounderBadge => 'Osnivač';
 
   @override

@@ -672,6 +672,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelPlanOneTime => 'one-time';
 
   @override
+  String channelTrialThen(int days, String price) {
+    return '$days-day free trial, then $price';
+  }
+
+  @override
   String get channelPlanFounderBadge => 'Founder';
 
   @override

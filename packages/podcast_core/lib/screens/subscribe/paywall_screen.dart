@@ -54,8 +54,9 @@ List<_IndicativePlan> _indicativePlans(AppLocalizations l) => [
       l.channelPlanPerYear, l.channelPlanSaveBadge),
   _IndicativePlan(RcPlan.monthly, l.channelPlanMonthly, '4,99 €',
       l.channelPlanPerMonth),
-  _IndicativePlan(RcPlan.lifetime, l.channelPlanLifetime, '99,99 €',
-      l.channelPlanOneTime, l.channelPlanFounderBadge),
+  if (AppBrand.config.plusLifetime)
+    _IndicativePlan(RcPlan.lifetime, l.channelPlanLifetime, '99,99 €',
+        l.channelPlanOneTime, l.channelPlanFounderBadge),
 ];
 
 /// What Plus actually unlocks TODAY. Every line here is a purchase claim, so it
@@ -385,6 +386,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Widget _realPackageTile(ColorScheme cs, RcPackage pkg) {
+    final l = AppLocalizations.of(context);
     final highlight = pkg.plan == RcPlan.annual;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -413,6 +415,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: highlight ? Colors.white : cs.primary,
                               fontWeight: FontWeight.w700)),
+                      if (pkg.trialDays != null) ...[
+                        const SizedBox(height: 2),
+                        Text(l.channelTrialThen(pkg.trialDays!, pkg.priceString),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: highlight ? Colors.white : cs.primary,
+                                fontWeight: FontWeight.w600)),
+                      ],
                       if (pkg.description != null &&
                           pkg.description!.isNotEmpty) ...[
                         const SizedBox(height: 2),

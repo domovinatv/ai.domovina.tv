@@ -188,6 +188,7 @@
   "channelPlanPerMonth": "/ mo",
   "channelPlanLifetime": "Lifetime",
   "channelPlanOneTime": "one-time",
+  "channelTrialThen": "{days}-day free trial, then {price}",
   "channelPlanFounderBadge": "Founder",
   "channelBenefitSearch": "Broader search — up to 30 results instead of 12",
   "channelBenefitBadge": "A supporter badge on your account",
