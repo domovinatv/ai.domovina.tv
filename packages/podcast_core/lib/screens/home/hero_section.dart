@@ -1,3 +1,4 @@
+import '../../brand/app_brand.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
@@ -459,7 +460,7 @@ class _WhyDialog extends StatelessWidget {
       (
         l.homeWhyFactAiProcessing,
         (pick.video.video.pipeline?.hasMagisterium ?? false)
-            ? l.homeWhyFactAiYes
+            ? (AppBrand.config.flags.domainScore ? l.homeWhyFactAiYes : l.homeWhyFactAiYesGeneric)
             : l.homeWhyFactAiNo
       ),
       if (pick.combinedScore != null)

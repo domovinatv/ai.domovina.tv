@@ -121,6 +121,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get authPlusThanks => 'Hvala što podržavaš hrvatsku arhivu.';
 
   @override
+  String get supportThanksGeneric => 'Hvala ti na podršci.';
+
+  @override
   String get authDetails => 'Detalji';
 
   @override
@@ -633,6 +636,10 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get channelTriggerGenericSubtitle =>
       'Podrži hrvatsku arhivu i otključaj sve pogodnosti.';
+
+  @override
+  String get channelTriggerGenericSubtitleNeutral =>
+      'Otključaj sve Plus pogodnosti.';
 
   @override
   String get channelTriggerSearchHeadline => 'Šira pretraga';
@@ -1251,6 +1258,9 @@ class AppLocalizationsHr extends AppLocalizations {
       'Da (transkript, sažetak i Magisterium analiza)';
 
   @override
+  String get homeWhyFactAiYesGeneric => 'Da (transkript, članak i poglavlja)';
+
+  @override
   String get homeWhyFactAiNo => 'Ne';
 
   @override
@@ -1523,6 +1533,11 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String legalPrivacyIntroGeneric(String app) {
+    return '$app je aplikacija koja uz pomoć umjetne inteligencije transkribira podcaste, dijeli ih na poglavlja i od njih piše članke za čitanje.';
+  }
+
+  @override
   String get legalPrivacyDataTitle => 'Koje podatke prikupljamo';
 
   @override
@@ -1554,6 +1569,10 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get legalTermsAiBody =>
       'Magisterium AI ocjene i sažetci strojno su generirani i mogu sadržavati pogreške. Ne predstavljaju službeno stajalište Katoličke Crkve.';
+
+  @override
+  String get legalTermsAiBodyGeneric =>
+      'Članci, sažeci, poglavlja i oznake govornika generiraju se automatski uz pomoć umjetne inteligencije (AI) i mogu sadržavati pogreške ili netočnosti (halucinacije). Korisnik AI značajke koristi na vlastitu odgovornost, a ITalk d.o.o. ne odgovara za točnost i pravne posljedice tako generiranog sadržaja.';
 
   @override
   String get legalTermsContactBody =>
@@ -1735,6 +1754,10 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get mediaViewDetailedTooltip =>
       'Prebaci na detaljni prikaz — članak, Magisterium ocjena i poglavlja uz video';
+
+  @override
+  String get mediaViewDetailedTooltipGeneric =>
+      'Prebaci na detaljni prikaz — članak i poglavlja uz video';
 
   @override
   String get mediaUserFallback => 'Korisnik';

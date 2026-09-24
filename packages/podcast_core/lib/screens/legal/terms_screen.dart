@@ -39,7 +39,7 @@ class TermsScreen extends StatelessWidget {
         Text(l.legalTermsAiTitle, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(
-          l.legalTermsAiBody,
+          AppBrand.config.flags.domainScore ? l.legalTermsAiBody : l.legalTermsAiBodyGeneric,
           style: body,
         ),
         const SizedBox(height: 24),

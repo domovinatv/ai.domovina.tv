@@ -121,6 +121,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authPlusThanks => 'Thank you for supporting the Croatian archive.';
 
   @override
+  String get supportThanksGeneric => 'Thank you for your support.';
+
+  @override
   String get authDetails => 'Details';
 
   @override
@@ -628,6 +631,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get channelTriggerGenericSubtitle =>
       'Support the Croatian archive and unlock every benefit.';
+
+  @override
+  String get channelTriggerGenericSubtitleNeutral =>
+      'Unlock every Plus benefit.';
 
   @override
   String get channelTriggerSearchHeadline => 'Broader search';
@@ -1246,6 +1253,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Yes (transcript, summary and Magisterium analysis)';
 
   @override
+  String get homeWhyFactAiYesGeneric =>
+      'Yes (transcript, article and chapters)';
+
+  @override
   String get homeWhyFactAiNo => 'No';
 
   @override
@@ -1510,6 +1521,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String legalPrivacyIntroGeneric(String app) {
+    return '$app is an application that uses artificial intelligence to transcribe podcasts, split them into chapters and turn them into readable articles.';
+  }
+
+  @override
   String get legalPrivacyDataTitle => 'What data we collect';
 
   @override
@@ -1541,6 +1557,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get legalTermsAiBody =>
       'Analyses, summaries, and Magisterium ratings are generated automatically using Artificial Intelligence (AI) and may contain errors or inaccuracies (hallucinations). They do not represent the official position of the Catholic Church. The User utilises AI features at their own risk, and ITalk d.o.o. disclaims all liability for the accuracy and legal consequences of such generated content.';
+
+  @override
+  String get legalTermsAiBodyGeneric =>
+      'Articles, summaries, chapters and speaker labels are generated automatically using Artificial Intelligence (AI) and may contain errors or inaccuracies (hallucinations). The User utilises AI features at their own risk, and ITalk d.o.o. disclaims all liability for the accuracy and legal consequences of such generated content.';
 
   @override
   String get legalTermsContactBody =>
@@ -1718,6 +1738,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mediaViewDetailedTooltip =>
       'Switch to the detailed view — article, Magisterium score and chapters alongside the video';
+
+  @override
+  String get mediaViewDetailedTooltipGeneric =>
+      'Switch to the detailed view — article and chapters alongside the video';
 
   @override
   String get mediaUserFallback => 'User';

@@ -532,7 +532,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       .titleLarge
                       ?.copyWith(color: cs.primary)),
               const SizedBox(height: 6),
-              Text(l.channelThanksSupportingArchive,
+              Text(
+                  AppBrand.config.flags.domainScore
+                      ? l.channelThanksSupportingArchive
+                      : l.supportThanksGeneric,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 16),

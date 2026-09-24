@@ -308,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Hvala što podržavaš hrvatsku arhivu.'**
   String get authPlusThanks;
 
+  /// Brand-neutral variant of authPlusThanks for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Hvala ti na podršci.'**
+  String get supportThanksGeneric;
+
   /// Gumb koji otvara detalje pretplate.
   ///
   /// In hr, this message translates to:
@@ -1147,6 +1153,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Podrži hrvatsku arhivu i otključaj sve pogodnosti.'**
   String get channelTriggerGenericSubtitle;
+
+  /// Brand-neutral variant of channelTriggerGenericSubtitle for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otključaj sve Plus pogodnosti.'**
+  String get channelTriggerGenericSubtitleNeutral;
 
   /// Paywall headline for the search upgrade trigger.
   ///
@@ -2186,6 +2198,12 @@ abstract class AppLocalizations {
   /// **'Da (transkript, sažetak i Magisterium analiza)'**
   String get homeWhyFactAiYes;
 
+  /// Brand-neutral variant of homeWhyFactAiYes for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Da (transkript, članak i poglavlja)'**
+  String get homeWhyFactAiYesGeneric;
+
   /// Facts table value when the episode is not AI-processed.
   ///
   /// In hr, this message translates to:
@@ -2546,6 +2564,12 @@ abstract class AppLocalizations {
   /// **'{app} aplikacija je koja transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije.'**
   String legalPrivacyIntro(String app);
 
+  /// Brand-neutral variant of legalPrivacyIntro for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'{app} je aplikacija koja uz pomoć umjetne inteligencije transkribira podcaste, dijeli ih na poglavlja i od njih piše članke za čitanje.'**
+  String legalPrivacyIntroGeneric(String app);
+
   /// Section heading on the privacy policy screen for the data-collection paragraph.
   ///
   /// In hr, this message translates to:
@@ -2599,6 +2623,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Magisterium AI ocjene i sažetci strojno su generirani i mogu sadržavati pogreške. Ne predstavljaju službeno stajalište Katoličke Crkve.'**
   String get legalTermsAiBody;
+
+  /// Brand-neutral variant of legalTermsAiBody for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članci, sažeci, poglavlja i oznake govornika generiraju se automatski uz pomoć umjetne inteligencije (AI) i mogu sadržavati pogreške ili netočnosti (halucinacije). Korisnik AI značajke koristi na vlastitu odgovornost, a ITalk d.o.o. ne odgovara za točnost i pravne posljedice tako generiranog sadržaja.'**
+  String get legalTermsAiBodyGeneric;
 
   /// Contact paragraph on the terms of use screen with the support email address.
   ///
@@ -2857,6 +2887,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Prebaci na detaljni prikaz — članak, Magisterium ocjena i poglavlja uz video'**
   String get mediaViewDetailedTooltip;
+
+  /// Brand-neutral variant of mediaViewDetailedTooltip for brands without a domain score.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prebaci na detaljni prikaz — članak i poglavlja uz video'**
+  String get mediaViewDetailedTooltipGeneric;
 
   /// Zamjensko ime u izborniku računa kad korisnik nema postavljeno ime.
   ///

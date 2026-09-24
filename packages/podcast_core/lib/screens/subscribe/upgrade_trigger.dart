@@ -36,7 +36,9 @@ extension UpgradeTriggerCopy on UpgradeTrigger {
       };
 
   String subtitle(AppLocalizations l) => switch (this) {
-        UpgradeTrigger.generic => l.channelTriggerGenericSubtitle,
+        UpgradeTrigger.generic => AppBrand.config.flags.domainScore
+            ? l.channelTriggerGenericSubtitle
+            : l.channelTriggerGenericSubtitleNeutral,
         UpgradeTrigger.search => l.channelTriggerSearchSubtitle,
         UpgradeTrigger.badge => l.channelTriggerBadgeSubtitle,
       };

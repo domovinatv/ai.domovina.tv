@@ -25,7 +25,9 @@ class PrivacyScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          l.legalPrivacyIntro(AppBrand.config.appName),
+          AppBrand.config.flags.domainScore
+              ? l.legalPrivacyIntro(AppBrand.config.appName)
+              : l.legalPrivacyIntroGeneric(AppBrand.config.appName),
           style: body,
         ),
         const SizedBox(height: 24),

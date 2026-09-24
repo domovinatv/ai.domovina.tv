@@ -1,3 +1,4 @@
+import '../brand/app_brand.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
@@ -28,7 +29,9 @@ class ViewModeToggleButton extends StatelessWidget {
     final label = toSimple ? l.mediaViewSimple : l.mediaViewDetailed;
     final icon = toSimple ? Icons.unfold_less : Icons.unfold_more;
     final tooltip =
-        toSimple ? l.mediaViewSimpleTooltip : l.mediaViewDetailedTooltip;
+        toSimple ? l.mediaViewSimpleTooltip : (AppBrand.config.flags.domainScore
+                ? l.mediaViewDetailedTooltip
+                : l.mediaViewDetailedTooltipGeneric);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),

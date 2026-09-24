@@ -300,7 +300,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           const PlusBadge(),
                         ]),
                         const SizedBox(height: 2),
-                        Text(l.authPlusThanks,
+                        Text(AppBrand.config.flags.domainScore ? l.authPlusThanks : l.supportThanksGeneric,
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(color: cs.onSurfaceVariant)),
                       ],

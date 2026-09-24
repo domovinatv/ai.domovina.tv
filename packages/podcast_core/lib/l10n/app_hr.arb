@@ -155,6 +155,10 @@
   "@authPlusThanks": {
     "description": "Poruka zahvale aktivnom Plus pretplatniku."
   },
+  "supportThanksGeneric": "Hvala ti na podršci.",
+  "@supportThanksGeneric": {
+    "description": "Brand-neutral variant of authPlusThanks for brands without a domain score."
+  },
   "authDetails": "Detalji",
   "@authDetails": {
     "description": "Gumb koji otvara detalje pretplate."
@@ -822,6 +826,10 @@
   "channelTriggerGenericSubtitle": "Podrži hrvatsku arhivu i otključaj sve pogodnosti.",
   "@channelTriggerGenericSubtitle": {
     "description": "Paywall subtitle for the generic upgrade trigger."
+  },
+  "channelTriggerGenericSubtitleNeutral": "Otključaj sve Plus pogodnosti.",
+  "@channelTriggerGenericSubtitleNeutral": {
+    "description": "Brand-neutral variant of channelTriggerGenericSubtitle for brands without a domain score."
   },
   "channelTriggerSearchHeadline": "Šira pretraga",
   "@channelTriggerSearchHeadline": {
@@ -1628,6 +1636,10 @@
   "@homeWhyFactAiYes": {
     "description": "Facts table value when the episode is AI-processed."
   },
+  "homeWhyFactAiYesGeneric": "Da (transkript, članak i poglavlja)",
+  "@homeWhyFactAiYesGeneric": {
+    "description": "Brand-neutral variant of homeWhyFactAiYes for brands without a domain score."
+  },
   "homeWhyFactAiNo": "Ne",
   "@homeWhyFactAiNo": {
     "description": "Facts table value when the episode is not AI-processed."
@@ -1949,6 +1961,15 @@
       }
     }
   },
+  "legalPrivacyIntroGeneric": "{app} je aplikacija koja uz pomoć umjetne inteligencije transkribira podcaste, dijeli ih na poglavlja i od njih piše članke za čitanje.",
+  "@legalPrivacyIntroGeneric": {
+    "description": "Brand-neutral variant of legalPrivacyIntro for brands without a domain score.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
   "legalPrivacyDataTitle": "Koje podatke prikupljamo",
   "@legalPrivacyDataTitle": {
     "description": "Section heading on the privacy policy screen for the data-collection paragraph."
@@ -1989,6 +2010,10 @@
   "legalTermsAiBody": "Magisterium AI ocjene i sažetci strojno su generirani i mogu sadržavati pogreške. Ne predstavljaju službeno stajalište Katoličke Crkve.",
   "@legalTermsAiBody": {
     "description": "Disclaimer paragraph on the terms of use screen noting that AI-generated analysis may contain errors and is not an official Church position."
+  },
+  "legalTermsAiBodyGeneric": "Članci, sažeci, poglavlja i oznake govornika generiraju se automatski uz pomoć umjetne inteligencije (AI) i mogu sadržavati pogreške ili netočnosti (halucinacije). Korisnik AI značajke koristi na vlastitu odgovornost, a ITalk d.o.o. ne odgovara za točnost i pravne posljedice tako generiranog sadržaja.",
+  "@legalTermsAiBodyGeneric": {
+    "description": "Brand-neutral variant of legalTermsAiBody for brands without a domain score."
   },
   "legalTermsContactBody": "Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za upite kontaktirajte Matiju Stepanića na ms@domovina.ai.",
   "@legalTermsContactBody": {
@@ -2202,6 +2227,10 @@
   "mediaViewDetailedTooltip": "Prebaci na detaljni prikaz — članak, Magisterium ocjena i poglavlja uz video",
   "@mediaViewDetailedTooltip": {
     "description": "Tooltip koji objašnjava detaljni prikaz epizode (Magisterium = brend)."
+  },
+  "mediaViewDetailedTooltipGeneric": "Prebaci na detaljni prikaz — članak i poglavlja uz video",
+  "@mediaViewDetailedTooltipGeneric": {
+    "description": "Brand-neutral variant of mediaViewDetailedTooltip for brands without a domain score."
   },
   "mediaUserFallback": "Korisnik",
   "@mediaUserFallback": {
