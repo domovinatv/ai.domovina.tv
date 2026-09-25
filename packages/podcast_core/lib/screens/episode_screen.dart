@@ -71,11 +71,13 @@ class EpisodeScreen extends StatefulWidget {
   /// koju `/t/<sec>` sleti dobiva crvenu "X govori ovdje" oznaku u članku.
   final String? highlightPersonSlug;
 
-  /// `false` iz `?video=0` — na mobitelu se video panel (endDrawer) ne otvara
-  /// sam kad je video spreman, pa članak ostaje vidljiv. Za linkove na članak
-  /// i za store screenshotove (`scripts/store-screenshots.sh` u Podcasterium
-  /// shellu).
-  final bool autoOpenVideo;
+  /// Video panel (endDrawer) kad je video spreman, iz `?video=`:
+  /// `null` (bez parametra) — otvori sam samo na mobitelu (width <= 900);
+  /// `false` (`?video=0`) — ne otvaraj, članak ostaje vidljiv;
+  /// `true` (`?video=1`) — otvori na svakoj širini, i na tabletu.
+  /// Za linkove na članak ili player i za store screenshotove
+  /// (`scripts/store-screenshots.sh` u Podcasterium shellu).
+  final bool? openVideo;
 
   const EpisodeScreen({
     super.key,
@@ -83,7 +85,7 @@ class EpisodeScreen extends StatefulWidget {
     this.startAtSeconds,
     this.initialLanguageEn = false,
     this.highlightPersonSlug,
-    this.autoOpenVideo = true,
+    this.openVideo,
   });
 
   @override
@@ -147,7 +149,7 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
         startAtSeconds: widget.startAtSeconds,
         initialLanguageEn: widget.initialLanguageEn,
         highlightPersonSlug: widget.highlightPersonSlug,
-        autoOpenVideo: widget.autoOpenVideo,
+        openVideo: widget.openVideo,
       );
     }
 
@@ -663,14 +665,14 @@ class _EpisodeContent extends StatefulWidget {
   final int? startAtSeconds;
   final bool initialLanguageEn;
   final String? highlightPersonSlug;
-  final bool autoOpenVideo;
+  final bool? openVideo;
 
   const _EpisodeContent({
     required this.data,
     this.startAtSeconds,
     this.initialLanguageEn = false,
     this.highlightPersonSlug,
-    this.autoOpenVideo = true,
+    this.openVideo,
   });
 
   @override
@@ -1374,13 +1376,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
         // Ako mu smeta, swipe-right zatvara endDrawer (Flutter default gesture).
         // Desktop (width > 900) ima inline video panel/stupac, ne endDrawer —
         // tu auto-open nije primjenjiv.
-        // `?video=0` (autoOpenVideo == false) preskače auto-open.
-        if (!_endDrawerAutoOpened && widget.autoOpenVideo) {
+        // `?video=0` preskače auto-open, `?video=1` ga forsira i na tabletu.
+        if (!_endDrawerAutoOpened && widget.openVideo != false) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             final width = MediaQuery.sizeOf(context).width;
             // Mobile threshold — isto kao isWide u build() (width > 900).
-            if (width <= 900) {
+            if (width <= 900 || widget.openVideo == true) {
               _scaffoldKey.currentState?.openEndDrawer();
               _endDrawerAutoOpened = true;
             }

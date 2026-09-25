@@ -213,10 +213,10 @@ GoRouter createRouter() {
           // profila govornika); vidi EpisodeScreen.highlightPersonSlug.
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // `?video=0|1` je zaseban ekran (vidi EpisodeScreen.openVideo);
             // s istim ključem bi se samo reciklirao postojeći.
             key: ValueKey('video-$videoId-hr'
-                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
+                '${_videoKeySuffix(state)}'),
             // Android TV (Leanback): standalone 10-foot UI. EN toggle nije jos
             // u TV varijanti (Faza 4.5), pa /v/<id>/en za sada renderira isti
             // TvEpisodeScreen (vidi tv ruta /en ispod).
@@ -229,7 +229,7 @@ GoRouter createRouter() {
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                     highlightPersonSlug: person,
-                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
+                    openVideo: _openVideo(state),
                   ),
           );
         },
@@ -288,10 +288,10 @@ GoRouter createRouter() {
           final startAt = t != null ? int.tryParse(t) : null;
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // `?video=0|1` je zaseban ekran (vidi EpisodeScreen.openVideo);
             // s istim ključem bi se samo reciklirao postojeći.
             key: ValueKey('video-$videoId-en'
-                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
+                '${_videoKeySuffix(state)}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -302,7 +302,7 @@ GoRouter createRouter() {
                     startAtSeconds: startAt,
                     initialLanguageEn: true,
                     highlightPersonSlug: person,
-                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
+                    openVideo: _openVideo(state),
                   ),
           );
         },
@@ -317,10 +317,10 @@ GoRouter createRouter() {
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // `?video=0|1` je zaseban ekran (vidi EpisodeScreen.openVideo);
             // s istim ključem bi se samo reciklirao postojeći.
             key: ValueKey('video-$videoId-hr'
-                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
+                '${_videoKeySuffix(state)}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -330,7 +330,7 @@ GoRouter createRouter() {
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                     highlightPersonSlug: person,
-                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
+                    openVideo: _openVideo(state),
                   ),
           );
         },
@@ -343,10 +343,10 @@ GoRouter createRouter() {
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // `?video=0|1` je zaseban ekran (vidi EpisodeScreen.openVideo);
             // s istim ključem bi se samo reciklirao postojeći.
             key: ValueKey('video-$videoId-en'
-                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
+                '${_videoKeySuffix(state)}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -357,7 +357,7 @@ GoRouter createRouter() {
                     startAtSeconds: startAt,
                     initialLanguageEn: true,
                     highlightPersonSlug: person,
-                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
+                    openVideo: _openVideo(state),
                   ),
           );
         },
@@ -567,3 +567,18 @@ GoRouter createRouter() {
     ),
   );
 }
+
+/// `?video=0` → false, `?video=1` → true, inače null (vidi
+/// EpisodeScreen.openVideo).
+bool? _openVideo(GoRouterState state) =>
+    switch (state.uri.queryParameters['video']) {
+      '0' => false,
+      '1' => true,
+      _ => null,
+    };
+
+String _videoKeySuffix(GoRouterState state) => switch (_openVideo(state)) {
+      false => '-novideo',
+      true => '-video',
+      null => '',
+    };
