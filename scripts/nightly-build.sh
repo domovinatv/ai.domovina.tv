@@ -234,21 +234,15 @@ else
   echo "==> disk: boot ${BOOT_FREE} GB slobodno (DerivedData je na default lokaciji)"
 fi
 
-# Gradle cache (14 GB i raste) živi na vanjskom disku zajedno s DerivedData —
-# boot volumen je pretijesan. ~/.gradle je simlink onamo, ali nightly postavlja
-# GRADLE_USER_HOME eksplicitno da ne ovisi o simlinku.
-BUILD_FILES="${NIGHTLY_BUILD_FILES:-/Volumes/DOMOVINA_BUILD}"
-SPARSEBUNDLE="${NIGHTLY_SPARSEBUNDLE:-/Volumes/DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle}"
-# Build artefakti žive u APFS sparsebundleu NA vanjskom disku, ne izravno na
-# njemu: exFAT ondje ima alokacijski blok od 512 KB, pa je Gradle cache od 156 000
-# sitnih datoteka narastao 14 GB → 41 GB. APFS unutra ima 4 KB blokove.
-# Kontejner se montira sam — nightly ne smije ovisiti o tome da ga netko ručno digne.
-if [[ ! -d "$BUILD_FILES" && -d "$SPARSEBUNDLE" ]]; then
-  echo "==> montiram $SPARSEBUNDLE"
-  hdiutil attach -nobrowse "$SPARSEBUNDLE" >/dev/null 2>&1 || {
-    REPORT+=("❌ disk: ne mogu montirati $SPARSEBUNDLE")
-    finish_fail "preduvjeti (montiranje build kontejnera)" 1
-  }
+# Gradle cache (14 GB i raste) i nightly DerivedData žive na vanjskom APFS
+# disku DOMOVINA1TB — boot volumen je pretijesan. Nightly postavlja
+# GRADLE_USER_HOME eksplicitno da ne ovisi o simlinku ~/.gradle.
+# Do 26.9.2026 je ovo bio APFS sparsebundle DOMOVINA_BUILD na DOMOVINA2TB; I/O
+# kroz njega pao je na ~6 MB/s, pa je ugašen. Obje mape su cache: kad nedostaju,
+# nastaju prazne i pune se same (nikad ih ne kopirati s diska na disk).
+BUILD_FILES="${NIGHTLY_BUILD_FILES:-/Volumes/DOMOVINA1TB/domovina_build}"
+if [[ -d "$(dirname "$BUILD_FILES")" ]]; then
+  mkdir -p "$BUILD_FILES/gradle"
 fi
 if [[ -d "$BUILD_FILES/gradle" ]]; then
   export GRADLE_USER_HOME="$BUILD_FILES/gradle"

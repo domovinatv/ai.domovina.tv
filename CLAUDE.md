@@ -114,11 +114,11 @@ TestFlight i Play internal. Ishod ide u Telegram grupu preko
 - **Rule (build artefakti NE idu izravno na `/Volumes/DOMOVINA2TB`)**: taj exFAT
   ima alokacijski blok od **512 KB**, pa je Gradle home od 14 GB u 156 000
   datoteka pri kopiranju narastao na **41 GB** (izmjereno 2026-08-13). Sve što
-  ima puno sitnih datoteka ide u APFS sparsebundle
-  (`domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle` → `/Volumes/DOMOVINA_BUILD`,
-  blok 4 KB). `~/.gradle` je simlink onamo; kontejner montira
-  `launchd/ai.domovina.build-volume.plist` pri prijavi, a nightly ga digne sam ako
-  treba. Ista logika kao emulatorski `DOMOVINA_ANDROID.sparsebundle`.
+  ima puno sitnih datoteka ide na APFS disk `/Volumes/DOMOVINA1TB`
+  (nightly: `domovina_build/{gradle,derived-data}`, Android emulatori:
+  `android/{system-images,avd}`). Sparsebundle `DOMOVINA_BUILD` je ugašen
+  26.9.2026. (I/O ~6 MB/s). Cache i emulatori se ne sele: obriši i napravi
+  iznova.
 
 ## Tripwire: registar podcasta ↔ glasački bazen (launchd, 08:30)
 
@@ -342,9 +342,10 @@ arm64 native). Setup, svakodnevne komande i objašnjenje rezolucije (960×540 dp
 logički dp prostor uz dpr 2.0, NE downsampling — EON crta native 1920×1080):
 `docs/android-tv-emulator.md`.
 
-**Rule**: prije `emulator @EON_TV_API31` mora se mountati APFS kontejner
-(`hdiutil attach /Volumes/DOMOVINA2TB/android_emulators/DOMOVINA_ANDROID.sparsebundle`)
-jer SSD je exFAT i sve živi u tom kontejneru. Perf mjeriš samo na fizičkom EON-u.
+**Rule**: `EON_TV_API31` živi na `/Volumes/DOMOVINA1TB/android/` kao i ostali
+emulatori; stari `DOMOVINA_ANDROID.sparsebundle` više ne postoji (26.9.2026.).
+Ako AVD fali, napravi ga iznova po `docs/android-tv-emulator.md`, ne seli ga.
+Perf mjeriš samo na fizičkom EON-u.
 
 ### Native Android splash je static (nije rotirajuc)
 

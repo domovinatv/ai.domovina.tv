@@ -202,34 +202,33 @@ Najveći potrošači na ovom stroju (mjereno 2026-08-13): `~/Library/Containers/
 30 GB (Docker.raw, od čega je reclaimable samo ~3 GB jer 19 kontejnera aktivno radi),
 `~/.gradle` 14 GB, `~/fvm/versions` 5,8 GB (četiri Flutter SDK-a).
 
-### Build artefakti idu u APFS sparsebundle na vanjskom disku
+### Build artefakti idu na APFS disk DOMOVINA1TB
 
-**Rule: NIKAD ne stavljati cache s puno sitnih datoteka izravno na
-`/Volumes/DOMOVINA2TB`.** Taj exFAT ima **alokacijski blok od 524 288 bajtova** —
-svaka datoteka, ma kako mala, zauzme pola megabajta. Izmjereno 2026-08-13:
-Gradle home od 14 GB u 156 394 datoteke narastao je pri kopiranju na **41 GB** i
-pojeo 44 GB slobodnog prostora prije nego je prekinut.
-
-Rješenje je isti obrazac koji projekt već koristi za Android emulator: APFS
-kontejner *unutar* exFAT diska.
+**Rule: cache s puno sitnih datoteka ide na APFS, nikad na exFAT** (exFAT s
+blokom od 512 KB je 13.8.2026. napuhao Gradle home od 14 GB u 156 394 datoteke
+na 41 GB).
 
 ```
-/Volumes/DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle   (200 GB max, sparse)
-  └── montiran na /Volumes/DOMOVINA_BUILD   (APFS, blok 4096 B)
-        ├── gradle/         ← GRADLE_USER_HOME; ~/.gradle je simlink ovamo
-        └── derived-data/   ← BUILD_DERIVED_DATA za xcodebuild
+/Volumes/DOMOVINA1TB/domovina_build/     (APFS, izravno na disku)
+  ├── gradle/         ← GRADLE_USER_HOME nightlyja
+  └── derived-data/   ← BUILD_DERIVED_DATA za xcodebuild
 ```
 
-Kontejner se montira na dva načina, oba potrebna:
-- `launchd/ai.domovina.build-volume.plist` (RunAtLoad) — da nakon reboota
-  `~/.gradle` simlink ne bude slomljen za **interaktivne** Gradle buildove;
-- sam nightly ga u preflightu montira ako nije montiran — da ne ovisi o tome je
-  li se netko prijavio.
+Obje mape su cache. Kad nedostaju, nightly napravi praznu `gradle/`, a Xcode
+`derived-data/`; prvi build je sporiji jer sve skida ispočetka. Nikad ih ne
+kopirati s diska na disk — obrisati i pustiti da se napune.
+
+Do 26.9.2026. ovdje je bio APFS sparsebundle
+`DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle`, montiran
+na `/Volumes/DOMOVINA_BUILD` preko `launchd/ai.domovina.build-volume.plist`.
+Čitanje kroz njega palo je na ~6 MB/s (Android emulator s AVD-om unutra
+bootao je 17 min, s DOMOVINA1TB 16 s), pa su kontejner i launchd agent
+uklonjeni.
 
 **Xcode DerivedData**: globalni `IDECustomDerivedDataLocation` i dalje pokazuje na
 goli exFAT (`/Volumes/DOMOVINA2TB/xcode_temp_files/DerivedData`, zatečeno 66 GB
 zauzeća uz veliki dio otpada na 512 KB blokove). Nightly ga **ne dira** — koristi
-vlastiti `-derivedDataPath` unutar sparsebundlea. Bez toga Xcode svakoj putanji
+vlastiti `-derivedDataPath` na DOMOVINA1TB. Bez toga Xcode svakoj putanji
 projekta radi novi `Runner-<hash>`, pa bi worktree svaku noć ostavljao naslage.
 GC prag: kad na kontejneru padne ispod `NIGHTLY_DD_GC_GB` (default 60), nightly
 obriše svoj DerivedData prije builda.
