@@ -226,6 +226,7 @@ GoRouter createRouter() {
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                     highlightPersonSlug: person,
+                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
                   ),
           );
         },
@@ -295,6 +296,7 @@ GoRouter createRouter() {
                     startAtSeconds: startAt,
                     initialLanguageEn: true,
                     highlightPersonSlug: person,
+                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
                   ),
           );
         },
@@ -319,6 +321,7 @@ GoRouter createRouter() {
                     youtubeId: videoId,
                     startAtSeconds: startAt,
                     highlightPersonSlug: person,
+                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
                   ),
           );
         },
@@ -342,6 +345,7 @@ GoRouter createRouter() {
                     startAtSeconds: startAt,
                     initialLanguageEn: true,
                     highlightPersonSlug: person,
+                    autoOpenVideo: state.uri.queryParameters['video'] != '0',
                   ),
           );
         },
@@ -406,9 +410,13 @@ GoRouter createRouter() {
       // Kod živi u lib/screens/search/meili_search_screen.dart.
       GoRoute(
         path: '/search',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          key: ValueKey('meili-search'),
-          child: MeiliSearchScreen(),
+        // `?q=<upit>` otvara pretragu s već upisanim upitom (dijeljivi link,
+        // store screenshotovi).
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: const ValueKey('meili-search'),
+          child: MeiliSearchScreen(
+            initialQuery: state.uri.queryParameters['q'],
+          ),
         ),
       ),
       // DOMOVINA Plus paywall — kontekstualni ?from=<trigger> (offline, export,

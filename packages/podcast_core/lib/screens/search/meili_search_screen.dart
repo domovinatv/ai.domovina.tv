@@ -19,7 +19,11 @@ import '../../router/nav.dart';
 /// Meilisearcha (`localhost:7700`). Komplementarno semantičkoj MCP pretrazi.
 /// Ruta: `/search` (vidi app_router.dart).
 class MeiliSearchScreen extends StatefulWidget {
-  const MeiliSearchScreen({super.key});
+  /// Upit iz `?q=` — upisan u polje i pokrenut odmah, bez fokusa (tipkovnica
+  /// ne prekriva rezultate).
+  final String? initialQuery;
+
+  const MeiliSearchScreen({super.key, this.initialQuery});
 
   @override
   State<MeiliSearchScreen> createState() => _MeiliSearchScreenState();
@@ -41,8 +45,16 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
   @override
   void initState() {
     super.initState();
+    final q = widget.initialQuery?.trim() ?? '';
+    if (q.isNotEmpty) {
+      _controller.text = q;
+      _query = q;
+    }
     _bootstrap();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+    if (q.isEmpty) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _focus.requestFocus());
+    }
   }
 
   Future<void> _bootstrap() async {
@@ -50,6 +62,7 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
     if (!mounted) return;
     setState(() => _meiliUp = up);
     if (!up) return;
+    if (_query.isNotEmpty) _runSearch();
     try {
       final facets = await MeiliClient.channelFacets();
       if (mounted) setState(() => _allChannels = facets);
