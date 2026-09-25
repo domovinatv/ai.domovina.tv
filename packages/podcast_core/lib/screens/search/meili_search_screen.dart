@@ -169,7 +169,8 @@ class _MeiliSearchScreenState extends State<MeiliSearchScreen> {
       child: TextField(
         controller: _controller,
         focusNode: _focus,
-        autofocus: true,
+        // S `?q=` bez fokusa: tipkovnica bi prekrila rezultate.
+        autofocus: (widget.initialQuery ?? '').trim().isEmpty,
         textInputAction: TextInputAction.search,
         onChanged: _onChanged,
         style: theme.textTheme.titleMedium,

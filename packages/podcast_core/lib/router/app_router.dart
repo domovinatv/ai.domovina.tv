@@ -213,7 +213,10 @@ GoRouter createRouter() {
           // profila govornika); vidi EpisodeScreen.highlightPersonSlug.
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-hr'),
+            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // s istim ključem bi se samo reciklirao postojeći.
+            key: ValueKey('video-$videoId-hr'
+                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
             // Android TV (Leanback): standalone 10-foot UI. EN toggle nije jos
             // u TV varijanti (Faza 4.5), pa /v/<id>/en za sada renderira isti
             // TvEpisodeScreen (vidi tv ruta /en ispod).
@@ -285,7 +288,10 @@ GoRouter createRouter() {
           final startAt = t != null ? int.tryParse(t) : null;
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-en'),
+            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // s istim ključem bi se samo reciklirao postojeći.
+            key: ValueKey('video-$videoId-en'
+                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -311,7 +317,10 @@ GoRouter createRouter() {
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-hr'),
+            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // s istim ključem bi se samo reciklirao postojeći.
+            key: ValueKey('video-$videoId-hr'
+                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
@@ -334,7 +343,10 @@ GoRouter createRouter() {
           final startAt = int.tryParse(state.pathParameters['seconds'] ?? '');
           final person = state.uri.queryParameters['p'];
           return NoTransitionPage(
-            key: ValueKey('video-$videoId-en'),
+            // `?video=0` je zaseban ekran (bez auto-open video panela);
+            // s istim ključem bi se samo reciklirao postojeći.
+            key: ValueKey('video-$videoId-en'
+                '${state.uri.queryParameters['video'] == '0' ? '-novideo' : ''}'),
             child: TvMode.isTv
                 ? TvEpisodeScreen(
                     youtubeId: videoId,
