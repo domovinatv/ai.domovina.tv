@@ -74,7 +74,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
   void _startTimer() {
     _timer?.cancel();
-    if (widget.picks.length <= 1) return;
+    if (widget.picks.length <= 1 || HomeFeed.heroPin.isNotEmpty) return;
     _timer = Timer.periodic(_interval, (_) {
       if (!_paused && mounted) _go(1);
     });

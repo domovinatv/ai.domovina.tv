@@ -69,4 +69,20 @@ void main() {
         HomeFeed.featuredShows(_all, featuredChannels: const ['en1', 'en2']);
     expect(_ids(shows), ['e1', 'f1', 'e2']);
   });
+
+  test('HERO_PIN stavlja zadanu epizodu prvu, bez duplikata', () {
+    final picks = HomeFeed.pickFeaturedCarousel(_all, now: _now, pin: 'f1');
+    final ids = picks.map((p) => p.video.video.id).toList();
+    expect(ids.first, 'f1');
+    expect(ids.where((id) => id == 'f1'), hasLength(1));
+    expect(ids, hasLength(5));
+  });
+
+  test('HERO_PIN nepoznate epizode ne mijenja izbor', () {
+    List<String> ids(String pin) => HomeFeed.pickFeaturedCarousel(_all,
+            now: _now, pin: pin)
+        .map((p) => p.video.video.id)
+        .toList();
+    expect(ids('nema'), ids(''));
+  });
 }

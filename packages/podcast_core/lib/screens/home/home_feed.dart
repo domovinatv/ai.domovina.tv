@@ -183,6 +183,11 @@ class HomeFeed {
   /// `BrandConfig.featuredChannels`), prvih do [featuredSlots] slideova bira
   /// isti algoritam samo nad epizodama tih kanala, a ostatak do [limit] nad
   /// svim ostalima. Bez istaknutih kanala rezultat je nepromijenjen.
+  /// Epizoda koja stoji prva u hero karuselu, a karusel se tada ne vrti
+  /// (`--dart-define=HERO_PIN=<youtubeId>`). Samo za store screenshotove;
+  /// u pravom buildu je prazna i ništa ne mijenja.
+  static const heroPin = String.fromEnvironment('HERO_PIN');
+
   static List<FeaturedPick> pickFeaturedCarousel(
     List<FeedVideo> all, {
     int limit = 5,
@@ -191,6 +196,35 @@ class HomeFeed {
     DateTime? now,
     List<String>? featuredChannels,
     int featuredSlots = 3,
+    String pin = heroPin,
+  }) {
+    final picks = _pickFeaturedCarousel(all,
+        limit: limit,
+        score: score,
+        useDefaultScore: useDefaultScore,
+        now: now,
+        featuredChannels: featuredChannels,
+        featuredSlots: featuredSlots);
+    if (pin.isEmpty) return picks;
+    final pinned = all.where((v) => v.video.id == pin).firstOrNull;
+    if (pinned == null) return picks;
+    return [
+      FeaturedPick(
+          video: pinned,
+          reason: FeaturedReason.newest,
+          candidatePool: all.length),
+      ...picks.where((p) => p.video.video.id != pin),
+    ].take(limit).toList();
+  }
+
+  static List<FeaturedPick> _pickFeaturedCarousel(
+    List<FeedVideo> all, {
+    required int limit,
+    ScoreFn? score,
+    required bool useDefaultScore,
+    DateTime? now,
+    List<String>? featuredChannels,
+    required int featuredSlots,
   }) {
     final featured = featuredChannels ?? AppBrand.config.featuredChannels;
     if (featured.isEmpty) {
