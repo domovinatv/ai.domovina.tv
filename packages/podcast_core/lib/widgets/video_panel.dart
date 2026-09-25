@@ -4,11 +4,13 @@ import '../l10n/app_localizations.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/speaker_timeline.dart';
+import '../models/sponsors_in_video.dart';
 import '../models/podcast_summary.dart';
 import '../services/seek_undo.dart';
 import 'audio_poster.dart';
 import 'episode_video.dart';
 import 'playback_controls.dart';
+import 'sponsors_in_video_section.dart';
 import 'youtube_embed.dart';
 
 /// Marker za jedno poglavlje u video playeru (timestamp + label)
@@ -39,6 +41,15 @@ class VideoPanel extends StatefulWidget {
   final double? width;
   final void Function(Duration position)? onSeek;
 
+  /// Pouzdani rasponi poruka sponzora u snimci (`SponsorsInVideo`) — crtaju
+  /// se diskretno na seek baru da korisnik vidi gdje su.
+  final List<({Duration start, Duration end})> sponsorRanges;
+
+  /// Sponzori u snimci za traku iznad poglavlja + „Poslušaj" (vlasnik
+  /// playera i praćenja kraja poruke je ekran).
+  final SponsorsInVideo? sponsorsInVideo;
+  final void Function(SponsorInVideoSegment segment)? onSponsorListen;
+
   /// YouTube ID epizode — omogućuje in-app YouTube embed mode (web).
   final String? youtubeId;
 
@@ -67,6 +78,9 @@ class VideoPanel extends StatefulWidget {
     this.speakers = const [],
     this.width = 360,
     this.onSeek,
+    this.sponsorRanges = const [],
+    this.sponsorsInVideo,
+    this.onSponsorListen,
     this.youtubeId,
     this.audioOnly = false,
     this.posterUrl,
@@ -295,6 +309,7 @@ class _VideoPanelState extends State<VideoPanel> {
                 _SeekBar(
                   value: _sliderValue,
                   chapters: widget.chapters,
+                  sponsorRanges: widget.sponsorRanges,
                   totalMs: totalMs,
                   onChangeStart: (_) => setState(() => _seeking = true),
                   onChanged: (v) => setState(() => _sliderValue = v),
@@ -380,6 +395,16 @@ class _VideoPanelState extends State<VideoPanel> {
             ),
           ),
 
+          // Sponzori u snimci — ovdje jer je panel playera (na mobitelu
+          // ladica) površina koju korisnik stvarno gleda.
+          if (widget.sponsorsInVideo?.hasNamed ?? false) ...[
+            Divider(height: 1, color: theme.colorScheme.outlineVariant),
+            SponsorsInVideoPlayerStrip(
+              data: widget.sponsorsInVideo,
+              onListen: widget.onSponsorListen,
+            ),
+          ],
+
           Divider(height: 1, color: theme.colorScheme.outlineVariant),
 
           // Chapter lista — scrollable
@@ -425,6 +450,7 @@ class _VideoPanelState extends State<VideoPanel> {
 class _SeekBar extends StatelessWidget {
   final double value;
   final List<VideoChapterMark> chapters;
+  final List<({Duration start, Duration end})> sponsorRanges;
   final int totalMs;
   final ValueChanged<double> onChangeStart;
   final ValueChanged<double> onChanged;
@@ -433,6 +459,7 @@ class _SeekBar extends StatelessWidget {
   const _SeekBar({
     required this.value,
     required this.chapters,
+    this.sponsorRanges = const [],
     required this.totalMs,
     required this.onChangeStart,
     required this.onChanged,
@@ -455,8 +482,10 @@ class _SeekBar extends StatelessWidget {
               child: CustomPaint(
                 painter: _ChapterMarkerPainter(
                   chapters: chapters,
+                  sponsorRanges: sponsorRanges,
                   totalMs: totalMs,
                   color: theme.colorScheme.primary.withAlpha(120),
+                  sponsorColor: theme.colorScheme.tertiary.withAlpha(110),
                 ),
               ),
             );
@@ -482,18 +511,40 @@ class _SeekBar extends StatelessWidget {
 
 class _ChapterMarkerPainter extends CustomPainter {
   final List<VideoChapterMark> chapters;
+  final List<({Duration start, Duration end})> sponsorRanges;
   final int totalMs;
   final Color color;
+  final Color sponsorColor;
 
   const _ChapterMarkerPainter({
     required this.chapters,
+    this.sponsorRanges = const [],
     required this.totalMs,
     required this.color,
+    required this.sponsorColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (totalMs <= 0) return;
+    // Rasponi poruka sponzora: tanka traka ispod tracka, najmanje 3 px da se
+    // kratak spot (45 s u 2 h) uopće vidi.
+    final band = Paint()..color = sponsorColor;
+    for (final r in sponsorRanges) {
+      final x0 = r.start.inMilliseconds / totalMs * size.width;
+      var x1 = r.end.inMilliseconds / totalMs * size.width;
+      if (x1 - x0 < 3) x1 = x0 + 3;
+      canvas.drawRRect(
+        RRect.fromLTRBR(
+          x0,
+          size.height * 0.62,
+          x1.clamp(0, size.width),
+          size.height * 0.62 + 3,
+          const Radius.circular(1.5),
+        ),
+        band,
+      );
+    }
     final paint = Paint()
       ..color = color
       ..strokeWidth = 2
@@ -511,7 +562,9 @@ class _ChapterMarkerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ChapterMarkerPainter old) =>
-      old.chapters != chapters || old.totalMs != totalMs;
+      old.chapters != chapters ||
+      old.sponsorRanges != sponsorRanges ||
+      old.totalMs != totalMs;
 }
 
 // ---------------------------------------------------------------------------

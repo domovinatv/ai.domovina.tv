@@ -144,6 +144,7 @@ flowchart TD
 | `scripts/play-upload.sh [internal\|production]` | upload AAB na Play track (SA auth); release name čita iz pubspec-a |
 | `scripts/testflight-upload.sh` | upload IPA na TestFlight (`altool` + ASC API key) |
 | `scripts/play-promote.sh <vc> [track] [notes-hr]` | promocija VEĆ uploadanog versionCodea na production (bez re-uploada; re-upload istog vc-a pada) |
+| `scripts/asc-submit.rb <build> --notes-hr "…" [--notes-en "…"] [--submit]` | iOS pandan: VALID TestFlight build → App Store review (dolje opisan flow). Bez `--submit` samo ispiše plan |
 
 ## Production promocija (programski — radi otkad su console forme jednom ispunjene)
 

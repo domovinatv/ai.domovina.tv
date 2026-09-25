@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Nightly store build — svaki dan u 01:00, ako ima novih commitova.
+  Nightly store build — svaki dan u 03:00, ako ima novih commitova.
   Instalacija (NE radi je agent, vidi docs/nightly-build-pipeline.md):
     cp launchd/ai.domovina.nightly-build.plist ~/Library/LaunchAgents/
     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.domovina.nightly-build.plist
@@ -32,7 +32,7 @@
 
   <key>StartCalendarInterval</key>
   <dict>
-    <key>Hour</key><integer>1</integer>
+    <key>Hour</key><integer>3</integer>
     <key>Minute</key><integer>0</integer>
   </dict>
 

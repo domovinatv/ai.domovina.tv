@@ -20,7 +20,7 @@
   Telegram — treba korisnikovu sesiju, ne sistemski kontekst.
   Program je homebrew bash 5 (macOS /bin/bash je 3.2).
 
-  08:30, a ne 01:00 kao nightly: drift nastaje kad ČOVJEK doda podcast u
+  08:30, a ne 03:00 kao nightly: drift nastaje kad ČOVJEK doda podcast u
   registar tijekom dana, pa provjera ima smisla ujutro — kad si tu da je
   riješiš jednom komandom, a ne usred noći.
 -->

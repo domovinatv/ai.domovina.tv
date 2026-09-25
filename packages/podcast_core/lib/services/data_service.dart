@@ -12,6 +12,7 @@ import '../models/episode_status.dart';
 import '../models/magisterium_full_v2_data.dart';
 import '../models/speaker_timeline.dart';
 import '../brand/app_brand.dart';
+import '../models/sponsors_in_video.dart';
 import 'cdn_config.dart';
 
 /// Bačen kad info.json za dani YouTube ID ne postoji na CDN-u (HTTP 404).
@@ -275,6 +276,22 @@ class DataService {
     if (!domainScoreEnabled) return null;
     try {
       return await _fetch(CdnConfig.magisteriumFullV2PromptUrl(youtubeId));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Sponzori ugrađeni u snimku — opcionalno, i nikad ne ruši ekran: 404,
+  /// mreža, CORS ili nečitljiv JSON daju null pa se sekcija jednostavno ne
+  /// prikaže. Namjerno bez memorije preko sesije: pipeline datoteku prepisuje
+  /// i purgea kad se detektor poboljša, pa je obični HTTP cache dovoljan.
+  /// 404 prolazi kroz [_get] (jedan retry s cache-busterom, nikad petlja).
+  Future<SponsorsInVideo?> loadSponsorsInVideo() async {
+    try {
+      final raw = await _fetch(CdnConfig.sponsorsInVideoUrl(youtubeId));
+      final json = jsonDecode(raw);
+      if (json is! Map<String, dynamic>) return null;
+      return SponsorsInVideo.fromJson(json);
     } catch (_) {
       return null;
     }

@@ -1,7 +1,7 @@
 # Nightly store build — TestFlight + Play internal, svaku noć
 
 Dopuna `docs/mobile-release-pipeline.md`: ondje je **ručni** put (build → upload →
-promocija), ovdje je **automatski noćni** koji taj put vozi sam u 01:00 kad ima
+promocija), ovdje je **automatski noćni** koji taj put vozi sam u 03:00 kad ima
 novih commitova, i javlja ishod u Telegram grupu.
 
 Cilj nije objava. Cilj je da na oba storea **uvijek stoji svjež, provjeren build**
@@ -10,7 +10,7 @@ kasnije kad ga zatrebaš.
 
 ```mermaid
 flowchart TD
-    L[launchd 01:00<br/>ai.domovina.nightly-build] --> C{HEAD != zadnji<br/>izgrađeni sha?}
+    L[launchd 03:00<br/>ai.domovina.nightly-build] --> C{HEAD != zadnji<br/>izgrađeni sha?}
     C -->|ne| S[💤 Telegram: preskočeno<br/>izlaz 0]
     C -->|da| E{.env potpun?<br/>key.properties?}
     E -->|ne| F[❌ Telegram: preduvjeti]
@@ -37,7 +37,7 @@ find package flutter_certilia" — jer `../../stepanic` ondje pokazuje u
 `/Volumes/stepanic`. Nightly mora razrješavati putanje identično ručnom buildu.
 
 **Odvojeni git worktree.** Nightly nikad ne gradi iz tvog radnog direktorija.
-U 01:00 ondje lako leži nedovršen WIP, a `flutter clean` iz iOS grane bi ti
+U 03:00 ondje lako leži nedovršen WIP, a `flutter clean` iz iOS grane bi ti
 usput obrisao artefakte. Worktree je detached na HEAD shi u
 `../.nightly-domovina`, s `.env` i `android/key.properties` simlinkanim iz
 glavnog repoa. Čisti se s `git clean -fd` **bez `-x`**, pa ignorirani artefakti
@@ -78,10 +78,25 @@ javi 🎉 da ih makneš — inače baseline tiho trune i pokriva prave regresije
 **Verifikacija nakon uploada.** HTTP 200 na uploadu ne znači da je build dobar:
 Apple obrađuje asinkrono i ITMS-90xxx odbijenice stižu tek minutama kasnije.
 Nightly zato do 45 minuta (`NIGHTLY_TF_POLL_MIN`) polla `processingState` za taj
-build broj i tek onda javlja ✅ ili ⚠️. Prozor je bio 20 min i to je bilo premalo —
-izmjereno 2026-08-13: build 159 se ni 25 minuta nakon uploada još nije pojavio u
-`/v1/builds`. „Još se obrađuje" NIJE greška, samo Appleov red čekanja. Za Play čita natrag internal track i provjeri da je
-`versionCode` stvarno ondje.
+build broj i tek onda javlja ✅ ili ⚠️. Za Play čita natrag internal track i
+provjeri da je `versionCode` stvarno ondje.
+
+**Rule (build kojeg ASC ne vidi NIJE „u obradi")**: do 24.9.2026. je poll
+nepoznat build brojao kao `PROCESSING`. Zato je 13.8. zaključeno da „build 159 ni
+25 min nakon uploada nije u `/v1/builds`" i prozor je podignut s 20 na 45 min.
+Istina je bila drukčija: 159 (i kasnije 160) **nikad nije stigao**. `altool` je
+javio `UPLOAD FAILED … Invalid Pre-Release Train. The train version '2.0.136' is
+closed`, ali uz exit 0, pa je korak prošao kao ✅, a izvještaj je javio „Apple ga
+još obrađuje, nije greška". Pravi uploadi (168, 171, 176, 177) postanu `VALID`
+za 2–3 min. Sada:
+
+- `testflight-upload.sh` priznaje uspjeh samo uz `UPLOAD SUCCEEDED` u ispisu
+  altoola; zatvoren train vraća **exit 3** i nightly javi „bumpaj verziju".
+- poll razlikuje `NOT_FOUND` od `PROCESSING`; `NOT_FOUND` na kraju prozora je ⚠️
+  „upload možda nije stigao", ne umirujuća poruka.
+
+Zatvoren train se događa kad je verzija iz pubspeca već **odobrena** na App
+Storeu, a nitko je nije bumpao (`deploy.sh` bumpa samo kad se deploya web).
 
 ## Datoteke
 
@@ -91,7 +106,7 @@ izmjereno 2026-08-13: build 159 se ni 25 minuta nakon uploada još nije pojavio 
 | `scripts/store-status.rb` | stanje oba storea; `--json` za skriptu, `--max-build` za build broj |
 | `scripts/telegram-notify.rb` | slanje u grupu (chunking, retry, supergroup migracija, **redakcija tajni**) |
 | `scripts/telegram-chatid.rb` | jednokratno otkrivanje `chat_id`-a |
-| `launchd/ai.domovina.nightly-build.plist` | raspored 01:00 |
+| `launchd/ai.domovina.nightly-build.plist` | raspored 03:00 |
 | `.nightly/test-baseline.txt` | poznati crveni testovi, izuzeti iz vrata (praćen u gitu) |
 | `.nightly/logs/`, `.nightly/reports/`, `.nightly/last-built-sha` | lokalno stanje (ignorirano) |
 
@@ -123,8 +138,8 @@ nema `mapfile`; skripta se doduše sama re-execa na brew bash, ali plist to radi
 eksplicitno da se ne oslanjamo na dva mehanizma.
 
 Mac mini je na `sleep 0` / `displaysleep 0` (`pmset -g custom`) pa se raspored u
-01:00 ispali pouzdano. Ako se to ikad promijeni, launchd će job pokrenuti tek
-kad se stroj probudi — a ne u 01:00.
+03:00 ispali pouzdano. Ako se to ikad promijeni, launchd će job pokrenuti tek
+kad se stroj probudi — a ne u 03:00.
 
 ## Telegram
 
@@ -163,8 +178,20 @@ Could not add entry ':shared_preferences_android:compileReleaseKotlin' to cache 
 Nigdje ne piše „nema mjesta na disku". Bez preflighta bi se to svaku noć javljalo
 kao misteriozan Gradle lock problem.
 
-Pragovi (env-podesivi): `NIGHTLY_MIN_FREE_BOOT_GB` (default 20),
+Pragovi (env-podesivi): `NIGHTLY_MIN_FREE_BOOT_GB` (default **8**),
 `NIGHTLY_MIN_FREE_DD_GB` (default 15).
+
+**Zašto je boot prag spušten s 20 na 8 GB (24.9.2026.)**: 20 GB je postavljeno
+13.8., dok su DerivedData i Gradle cache (14+ GB) još bili na boot disku. Dan
+kasnije preseljeni su u sparsebundle, ali prag je ostao. Od 13.8. do 23.9. odbio
+je **18 noći** uz 7–14 GB slobodno, dakle više nego što je buildova prošlo (4),
+i 18 dana zaredom (28.8.–15.9.) nije bilo novog builda. Na boot disku build sada
+drži samo worktree `../.nightly-domovina` (~2 GB, trajno). Najveći potrošač koji
+se mijenja je **swap**: raste s uptimeom (7 GB nakon 6 h), pa je nakon reboota
+slobodno ~32 GB, a u 03:00 ~10 GB.
+
+Izvještaj sada nosi red `boot disk: X GB na startu, najmanje Y GB tijekom builda`
+(sampler svakih 20 s). Prag spuštati dalje samo uz te brojke.
 
 **DerivedData je na vanjskom disku** — `IDECustomDerivedDataLocation` pokazuje na
 `/Volumes/DOMOVINA2TB/xcode_temp_files/DerivedData/` (exFAT). Preflight provjeri i
@@ -175,34 +202,33 @@ Najveći potrošači na ovom stroju (mjereno 2026-08-13): `~/Library/Containers/
 30 GB (Docker.raw, od čega je reclaimable samo ~3 GB jer 19 kontejnera aktivno radi),
 `~/.gradle` 14 GB, `~/fvm/versions` 5,8 GB (četiri Flutter SDK-a).
 
-### Build artefakti idu u APFS sparsebundle na vanjskom disku
+### Build artefakti idu na APFS disk DOMOVINA1TB
 
-**Rule: NIKAD ne stavljati cache s puno sitnih datoteka izravno na
-`/Volumes/DOMOVINA2TB`.** Taj exFAT ima **alokacijski blok od 524 288 bajtova** —
-svaka datoteka, ma kako mala, zauzme pola megabajta. Izmjereno 2026-08-13:
-Gradle home od 14 GB u 156 394 datoteke narastao je pri kopiranju na **41 GB** i
-pojeo 44 GB slobodnog prostora prije nego je prekinut.
-
-Rješenje je isti obrazac koji projekt već koristi za Android emulator: APFS
-kontejner *unutar* exFAT diska.
+**Rule: cache s puno sitnih datoteka ide na APFS, nikad na exFAT** (exFAT s
+blokom od 512 KB je 13.8.2026. napuhao Gradle home od 14 GB u 156 394 datoteke
+na 41 GB).
 
 ```
-/Volumes/DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle   (200 GB max, sparse)
-  └── montiran na /Volumes/DOMOVINA_BUILD   (APFS, blok 4096 B)
-        ├── gradle/         ← GRADLE_USER_HOME; ~/.gradle je simlink ovamo
-        └── derived-data/   ← BUILD_DERIVED_DATA za xcodebuild
+/Volumes/DOMOVINA1TB/domovina_build/     (APFS, izravno na disku)
+  ├── gradle/         ← GRADLE_USER_HOME nightlyja
+  └── derived-data/   ← BUILD_DERIVED_DATA za xcodebuild
 ```
 
-Kontejner se montira na dva načina, oba potrebna:
-- `launchd/ai.domovina.build-volume.plist` (RunAtLoad) — da nakon reboota
-  `~/.gradle` simlink ne bude slomljen za **interaktivne** Gradle buildove;
-- sam nightly ga u preflightu montira ako nije montiran — da ne ovisi o tome je
-  li se netko prijavio.
+Obje mape su cache. Kad nedostaju, nightly napravi praznu `gradle/`, a Xcode
+`derived-data/`; prvi build je sporiji jer sve skida ispočetka. Nikad ih ne
+kopirati s diska na disk — obrisati i pustiti da se napune.
+
+Do 26.9.2026. ovdje je bio APFS sparsebundle
+`DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle`, montiran
+na `/Volumes/DOMOVINA_BUILD` preko `launchd/ai.domovina.build-volume.plist`.
+Čitanje kroz njega palo je na ~6 MB/s (Android emulator s AVD-om unutra
+bootao je 17 min, s DOMOVINA1TB 16 s), pa su kontejner i launchd agent
+uklonjeni.
 
 **Xcode DerivedData**: globalni `IDECustomDerivedDataLocation` i dalje pokazuje na
 goli exFAT (`/Volumes/DOMOVINA2TB/xcode_temp_files/DerivedData`, zatečeno 66 GB
 zauzeća uz veliki dio otpada na 512 KB blokove). Nightly ga **ne dira** — koristi
-vlastiti `-derivedDataPath` unutar sparsebundlea. Bez toga Xcode svakoj putanji
+vlastiti `-derivedDataPath` na DOMOVINA1TB. Bez toga Xcode svakoj putanji
 projekta radi novi `Runner-<hash>`, pa bi worktree svaku noć ostavljao naslage.
 GC prag: kad na kontejneru padne ispod `NIGHTLY_DD_GC_GB` (default 60), nightly
 obriše svoj DerivedData prije builda.
@@ -214,7 +240,7 @@ obriše svoj DerivedData prije builda.
   privatni ključ nije lokalan, pa potpisivanje ovisi o `-allowProvisioningUpdates`
   koji u build-timeu razgovara s Appleom. Ako to ikad zatraži keychain dopuštenje,
   job visi na **nevidljivom** promptu. Zato prvi put pokreni preko
-  `launchctl kickstart` dok gledaš ekran, ne pusti ga naslijepo u 01:00.
+  `launchctl kickstart` dok gledaš ekran, ne pusti ga naslijepo u 03:00.
   Watchdog (`timeout`) svejedno prekine korak nakon zadanih minuta.
 - **TestFlight buildovi istječu nakon 90 dana** i svaki upload šalje mail
   testerima ako grupa ima auto-distribuciju. Za nightly grupu je **isključi** —

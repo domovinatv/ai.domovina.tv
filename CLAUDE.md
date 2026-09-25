@@ -61,6 +61,17 @@ Deploy script runs: `flutter pub get` → `flutter analyze` → `flutter build w
 
 `.env` must contain `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_PURGE_TOKEN`.
 
+**Rule (produkcija ide SAMO s `main`)**: skripta ne prosljeđuje `--branch`, pa
+wrangler granu čita iz gita — deploy s bilo koje druge grane završi kao
+Cloudflare **Preview**, a `domovina.ai` ostane na staroj verziji. Skriptina
+verifikacija to ne uhvati: `https://domovina.ai/ -> HTTP 200` je istina i kad
+ništa nije objavljeno (izmjereno 19.9.2026., deploy s `feat/podcast-core`
+javio „Deployed v2.0.154" dok je produkcija servirala v2.0.153). Provjeravaj
+**verziju**, ne status:
+`curl -s https://domovina.ai/main.dart.js | grep -o 'DOMOVINA v[0-9.]*' | head -1`
+i `wrangler pages deployment list --project-name=domovina-ai | head -3`
+(stupac mora pisati `Production`, grana `main`).
+
 ## AI tim (tmux, 5 panela)
 
 `./scripts/tim.sh` diže jedan tmux session s pet Claude Code panela:
@@ -114,7 +125,7 @@ omeđi s `<!-- doc-refs:ignore-start -->` / `<!-- doc-refs:ignore-end -->`.
 Isto pravilo vrijedi za brojke: ako broj ima decimalu, mora postojati naredba
 koja ga reproducira (primjer: `docs/podcasterium_analysis_report.md` §7).
 
-## Nightly store build (launchd, 01:00)
+## Nightly store build (launchd, 03:00)
 
 `scripts/nightly-build.sh` svaku noć — ako je HEAD drukčiji od zadnjeg uspješno
 izgrađenog — gradi iOS + Android iz **odvojenog git worktreea** i šalje ih na
@@ -133,14 +144,22 @@ TestFlight i Play internal. Ishod ide u Telegram grupu preko
   `xcodebuild` potpisivanje traži otključan login keychain iz Aqua sesije.
 - Stanje storeova u bilo kojem trenutku: `./scripts/store-status.rb`
   (review state, TestFlight `processingState`, Play rollout %).
+- Produkcija iz postojećeg builda, bez re-uploada: `./scripts/play-promote.sh <vc>
+  production "<tekst>"` i `./scripts/asc-submit.rb <build> --notes-hr "<tekst>" --submit`
+  (bez `--submit` samo plan). Tako je 24.9.2026. poslan 2.0.154 (177).
+- **Rule (odobrena verzija zatvara train)**: kad Apple odobri verziju X, svaki
+  sljedeći upload s istim `version:` u pubspecu altool odbije („Pre-Release Train
+  … closed"). Do 24.9. je to prolazilo kao ✅ (buildovi 159 i 160 nikad nisu
+  stigli na TestFlight); sada `testflight-upload.sh` vraća exit 3 i nightly javi
+  „bumpaj verziju".
 - **Rule (build artefakti NE idu izravno na `/Volumes/DOMOVINA2TB`)**: taj exFAT
   ima alokacijski blok od **512 KB**, pa je Gradle home od 14 GB u 156 000
   datoteka pri kopiranju narastao na **41 GB** (izmjereno 2026-08-13). Sve što
-  ima puno sitnih datoteka ide u APFS sparsebundle
-  (`domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle` → `/Volumes/DOMOVINA_BUILD`,
-  blok 4 KB). `~/.gradle` je simlink onamo; kontejner montira
-  `launchd/ai.domovina.build-volume.plist` pri prijavi, a nightly ga digne sam ako
-  treba. Ista logika kao emulatorski `DOMOVINA_ANDROID.sparsebundle`.
+  ima puno sitnih datoteka ide na APFS disk `/Volumes/DOMOVINA1TB`
+  (nightly: `domovina_build/{gradle,derived-data}`, Android emulatori:
+  `android/{system-images,avd}`). Sparsebundle `DOMOVINA_BUILD` je ugašen
+  26.9.2026. (I/O ~6 MB/s). Cache i emulatori se ne sele: obriši i napravi
+  iznova.
 
 ## Tripwire: registar podcasta ↔ glasački bazen (launchd, 08:30)
 
@@ -364,9 +383,10 @@ arm64 native). Setup, svakodnevne komande i objašnjenje rezolucije (960×540 dp
 logički dp prostor uz dpr 2.0, NE downsampling — EON crta native 1920×1080):
 `docs/android-tv-emulator.md`.
 
-**Rule**: prije `emulator @EON_TV_API31` mora se mountati APFS kontejner
-(`hdiutil attach /Volumes/DOMOVINA2TB/android_emulators/DOMOVINA_ANDROID.sparsebundle`)
-jer SSD je exFAT i sve živi u tom kontejneru. Perf mjeriš samo na fizičkom EON-u.
+**Rule**: `EON_TV_API31` živi na `/Volumes/DOMOVINA1TB/android/` kao i ostali
+emulatori; stari `DOMOVINA_ANDROID.sparsebundle` više ne postoji (26.9.2026.).
+Ako AVD fali, napravi ga iznova po `docs/android-tv-emulator.md`, ne seli ga.
+Perf mjeriš samo na fizičkom EON-u.
 
 ### Native Android splash je static (nije rotirajuc)
 
@@ -590,6 +610,9 @@ dodatni zahtjev po assetu koji ionako nedostaje, nula na uspjehu. Kontrakt čuva
 `test/data_service_stale_404_test.dart`. Novi per-epizoda dohvat ide kroz
 `_get`/`_fetch`, nikad izravno kroz `http.get`.
 
+Puna slika (mjerenja, dijagram grana, odbačene alternative):
+`docs/2026-09-19-cachiran-404-vary-origin.md`.
+
 **Rule (purge po golom URL-u NE čisti `Vary` varijantu)**:
 `purge_cache` s `{"files":["https://cdn…/info.json"]}` vrati `success:true` a
 otrovani zapis ostane 404 (provjereno). Varijantu čisti samo
@@ -658,6 +681,52 @@ datotečne sustave, gdje „č" i „?" završe kao smeće ili odbijen upload.
 
 Mjerenja, odbačene alternative i otvoreni dug (backfill, EN izdanje, `epubcheck`):
 `docs/2026-09-15-ebook-epub-na-frontendu.md`.
+
+### Sponzori u snimci — `SponsorsInVideo` (od 24.9.2026.)
+
+`data/<id>/sponsors_in_video.json` (fetch pipeline KORAK 9.85,
+`detect_sponsors.js`) nosi partnere koje je autor SAM doveo i koji su ugrađeni
+u snimku. Sekcija „Uz podršku" na `/v/:id` (`widgets/sponsors_in_video_section.dart`)
+crta karticu po imenovanom sponzoru; `playable: true` segment dobiva
+„Poslušaj", koji skoči na raspon i na `end` samo javi „Poruka sponzora je
+završila" — reprodukcija NE staje (`_checkSponsorClip` u `episode_screen.dart`;
+pauza je do 24.9.2026. djelovala kao da je player stao), a ostali segmenti su samo skok na trenutak. Isti
+„Poslušaj" stoji i u panelu playera (`SponsorsInVideoPlayerStrip` iznad
+„Poglavlja") — sekcija je ~1500 px ispod vrha, a deep-link na mobitelu odmah
+otvori ladicu s playerom, pa je bez trake gumb bio nevidljiv (prijava
+24.9.2026. na `aue1GuuMsbA/t/8`). Ugovor:
+`fetch.domovina.tv/docs/2026-09-23-sponzori-u-snimci.md`, testovi
+`test/sponsors_in_video_test.dart`. Odluke, mjerenja, zamke i provjera
+(`scripts/verify-sponsor-listen.py`): `docs/2026-09-24-sponzori-u-snimci-frontend.md`.
+
+U članku sekcija u koju PADA POČETAK pouzdanog raspona dobiva prigušenu
+oznaku „Poruka sponzora na 1:39:23" s gumbom (`SponsorsInVideo.marksBySection`
+→ `SponsorsInVideoSectionMark`).
+
+**Rule (sidro je vrijeme, ne tekst)**: AI članak sponzora opisuje drugdje i
+drukčije napisanog — Ivin spot 1:39:23 opisan je tek u sekciji od 1:43:05,
+„Cafe Brazil" je u članku „Caffe Brazil", „HiPP"/„Plazma" su „HIP-a"/„Plasme".
+Označavanje imena u tekstu čeka `aliases` iz pipelinea; ne nagađati fuzzy
+pravilima u klijentu.
+
+**Rule (jedan sponzor = jedan redak)**: u traci playera ime i uloga stoje u
+svom retku, gumb ispod („Poslušaj · 0:45"). Prva verzija je sponzore bez
+raspona slagala u naslov, pa se gumb drugog sponzora čitao kao njihov.
+
+**Rule (ime sloja)**: ovo NISU dinamička sponzorstva kupljena na domovina.ai
+nakon snimanja — ta dolaze kao zaseban proizvod, izvor i widget. Ne preimenovati
+u generičko `Sponsors`.
+
+**Rule (dohvat)**: kroz `DataService.loadSponsorsInVideo` (`_get`, jedan retry
+s cache-busterom), izvan `EpisodeData.load`, bez memorije preko sesije i bez
+pollinga; 404/greška/nečitljiv JSON = sekcije nema. Zapis bez imena
+(`_unattributed`) se ne prikazuje.
+
+**Rule (otvaranje endDrawera pauzira web video)**: montiranje `Video` widgeta
+premjesti `<video>` u DOM-u i element se pauzira. Svaka radnja koja pusti
+reprodukciju pa otvori drawer mora ponoviti `play()` nakon animacije
+(`_revealPlayer`, 300/900 ms). Izmjereno 24.9.2026. na 390 px: seek je sjeo na
+5963 s, a poruka nije krenula.
 
 ## Logging
 

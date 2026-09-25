@@ -156,6 +156,26 @@
   .nav button:hover{color:var(--gold-lit)}
   .nav button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .prog{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:11;width:0}
+
+  /* ---- PDF izvoz (scripts/deck-pdf.mjs) ---------------------------------
+     Živi SAMO pod print medijem, pa je render na ekranu bit-identičan onome
+     prije ovog bloka — deck je izvor žive Artifact objave i taj se render ne
+     smije pomaknuti. Veličinu stranice postavlja skripta (1280x720 landscape);
+     svaka vh/svh duljina gore razriješi se prema toj kutiji, pa je slajd
+     točno jedna stranica. Bez `page-break-after` bi `min-height:100svh` plus
+     obrub od 1px prelio svaki slajd na sljedeću stranicu. */
+  @media print{
+    @page{size:1280px 720px;margin:0}
+    html{scroll-snap-type:none;scroll-behavior:auto;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .slide{
+      height:100vh;min-height:100vh;border-bottom:0;
+      break-after:page;page-break-after:always;
+    }
+    .slide:last-of-type{break-after:auto;page-break-after:auto}
+    /* ekranski chrome: traka napretka, gumbi i uputa za tipkovnicu */
+    .prog,.nav,.tick{display:none}
+    .tscroll{overflow-x:visible}
+  }
 </style>
 
 <div class="prog" id="prog"></div>

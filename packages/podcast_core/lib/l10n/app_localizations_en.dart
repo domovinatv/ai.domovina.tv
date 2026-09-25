@@ -4034,4 +4034,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ebookCardAction => 'Ebook (EPUB)';
+
+  @override
+  String get sponsorsInVideoTitle => 'With support from';
+
+  @override
+  String get sponsorsInVideoIntro =>
+      'Partners who made this episode possible. Thank you for supporting creators.';
+
+  @override
+  String get sponsorsInVideoRoleSponsor => 'Episode sponsor';
+
+  @override
+  String get sponsorsInVideoRolePartner => 'Podcast partner';
+
+  @override
+  String get sponsorsInVideoRoleWardrobe => 'Wardrobe';
+
+  @override
+  String get sponsorsInVideoRoleStudio => 'Studio equipment';
+
+  @override
+  String get sponsorsInVideoRoleOther => 'Support';
+
+  @override
+  String get sponsorsInVideoListen => 'Listen to the sponsor message';
+
+  @override
+  String get sponsorsInVideoListenRubric => 'Listen to the sponsored segment';
+
+  @override
+  String sponsorsInVideoThanksAt(String time) {
+    return 'Thanks at $time';
+  }
+
+  @override
+  String sponsorsInVideoChapterAt(String time) {
+    return 'Chapter at $time';
+  }
+
+  @override
+  String sponsorsInVideoAt(String time) {
+    return 'At $time';
+  }
+
+  @override
+  String get sponsorsInVideoWebsite => 'Website';
+
+  @override
+  String get sponsorsInVideoMore => 'more';
+
+  @override
+  String get sponsorsInVideoLess => 'less';
+
+  @override
+  String get sponsorsInVideoEnded => 'The sponsor message has ended';
+
+  @override
+  String get sponsorsInVideoListenShort => 'Listen';
+
+  @override
+  String get sponsorsInVideoRubricShort => 'Segment';
+
+  @override
+  String sponsorsInVideoMessageAt(String time) {
+    return 'Sponsor message at $time';
+  }
+
+  @override
+  String sponsorsInVideoRubricAt(String time) {
+    return 'Sponsored segment at $time';
+  }
 }

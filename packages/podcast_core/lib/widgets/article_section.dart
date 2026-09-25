@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
+import '../models/sponsors_in_video.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 import '../services/share_links.dart';
@@ -17,6 +18,7 @@ import '../services/clip_service.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
 import 'cached_thumbnail.dart';
+import 'sponsors_in_video_section.dart';
 
 class ArticleSection extends StatelessWidget {
   final PodcastArticle article;
@@ -41,6 +43,11 @@ class ArticleSection extends StatelessWidget {
   /// ovdje"; false kad se samo spominje → pill "Ovdje se spominje: X".
   final bool highlightSpeaks;
 
+  /// Poruke sponzora po timestampu sekcije (vidi
+  /// [SponsorsInVideo.marksBySection]) i „Poslušaj" za njih.
+  final Map<String, List<SponsorInVideoMark>> sponsorMarks;
+  final void Function(SponsorInVideoSegment segment)? onSponsorListen;
+
   const ArticleSection({
     super.key,
     required this.article,
@@ -52,6 +59,8 @@ class ArticleSection extends StatelessWidget {
     this.highlightTimestamp,
     this.highlightPersonName,
     this.highlightSpeaks = true,
+    this.sponsorMarks = const {},
+    this.onSponsorListen,
   });
 
   @override
@@ -84,6 +93,8 @@ class ArticleSection extends StatelessWidget {
             highlightTimestamp: highlightTimestamp,
             highlightPersonName: highlightPersonName,
             highlightSpeaks: highlightSpeaks,
+            sponsorMarks: sponsorMarks,
+            onSponsorListen: onSponsorListen,
           ),
         ),
       ],
@@ -101,6 +112,8 @@ class _IterationBlock extends StatelessWidget {
   final String? highlightTimestamp;
   final String? highlightPersonName;
   final bool highlightSpeaks;
+  final Map<String, List<SponsorInVideoMark>> sponsorMarks;
+  final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
   const _IterationBlock({
     required this.iteration,
@@ -112,6 +125,8 @@ class _IterationBlock extends StatelessWidget {
     this.highlightTimestamp,
     this.highlightPersonName,
     this.highlightSpeaks = true,
+    this.sponsorMarks = const {},
+    this.onSponsorListen,
   });
 
   @override
@@ -156,6 +171,9 @@ class _IterationBlock extends StatelessWidget {
                       : null,
                   personHighlightSpeaks: highlightSpeaks,
                   personNeedle: highlightPersonName,
+                  sponsorMarks:
+                      sponsorMarks[sec.screenshotTimestamp] ?? const [],
+                  onSponsorListen: onSponsorListen,
                 ),
               ),
             );
@@ -261,6 +279,11 @@ class ArticleSectionCard extends StatefulWidget {
   /// Za razliku od [personHighlight], postavlja se na SVIM sekcijama.
   final String? personNeedle;
 
+  /// Poruke sponzora koje počinju u ovoj sekciji — prigušena oznaka iznad
+  /// naslova s gumbom „Poslušaj" (vidi [SponsorsInVideoSectionMark]).
+  final List<SponsorInVideoMark> sponsorMarks;
+  final void Function(SponsorInVideoSegment segment)? onSponsorListen;
+
   const ArticleSectionCard({
     super.key,
     required this.section,
@@ -274,6 +297,8 @@ class ArticleSectionCard extends StatefulWidget {
     this.personHighlight,
     this.personHighlightSpeaks = true,
     this.personNeedle,
+    this.sponsorMarks = const [],
+    this.onSponsorListen,
   });
 
   @override
@@ -377,6 +402,11 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                   ],
                 ),
               ),
+            ),
+          if (widget.sponsorMarks.isNotEmpty)
+            SponsorsInVideoSectionMark(
+              marks: widget.sponsorMarks,
+              onListen: widget.onSponsorListen,
             ),
           // Timestamp badge + play button + score badge + subtitle
           Row(

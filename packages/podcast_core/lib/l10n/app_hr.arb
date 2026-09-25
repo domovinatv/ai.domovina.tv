@@ -1336,7 +1336,11 @@
   },
   "episodeStatusNotOnCdn": "Epizoda „{id}” nije pronađena na CDN-u.",
   "@episodeStatusNotOnCdn": {
-    "placeholders": {"id": {"type": "String"}},
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    },
     "description": "Short not-found line used above the queued status card, with the episode id."
   },
   "episodeYouTubeUntilProcessed": "Gledaj s YouTubea dok epizodu ne obradimo.",
@@ -4742,7 +4746,7 @@
   "@votingBrokenTitleUnknown": {
     "description": "Niz je pukao, ali broj dana prije pucanja nije poznat (server vraća prikazni niz 0)."
   },
-  "votingBrokenLongest":"{count, plural, one{Najduži ostaje {count} dan.} few{Najduži ostaje {count} dana.} other{Najduži ostaje {count} dana.}}",
+  "votingBrokenLongest": "{count, plural, one{Najduži ostaje {count} dan.} few{Najduži ostaje {count} dana.} other{Najduži ostaje {count} dana.}}",
   "@votingBrokenLongest": {
     "description": "Najduži niz ostaje zapisan i nakon pucanja.",
     "placeholders": {
@@ -4905,7 +4909,9 @@
   "@votingStreakBrokeBurned": {
     "description": "Nakon glasa koji je puknuo niz, a pritom pojeo zastavice (praznina veća od broja zastavica). Bez ove poruke zastavice nestanu bez objašnjenja.",
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "@votingStreakSaved": {
@@ -4978,7 +4984,9 @@
   "@votingRailRank": {
     "description": "Mjesto kandidata na ljestvici, ispod imena u home railu.",
     "placeholders": {
-      "rank": { "type": "int" }
+      "rank": {
+        "type": "int"
+      }
     }
   },
   "votingRailCtaTitle": "Glasaj koji ide sljedeći",
@@ -5029,7 +5037,9 @@
   "@ebookDownloaded": {
     "description": "Snackbar nakon preuzimanja knjige.",
     "placeholders": {
-      "file": { "type": "String" }
+      "file": {
+        "type": "String"
+      }
     }
   },
   "ebookFailed": "Knjigu nije bilo moguće dohvatiti. Pokušaj ponovno.",
@@ -5059,5 +5069,110 @@
   "ebookCardAction": "E-knjiga (EPUB)",
   "@ebookCardAction": {
     "description": "Gumb na kartici koji otvara sheet s e-knjigom."
+  },
+  "sponsorsInVideoTitle": "Uz podršku",
+  "@sponsorsInVideoTitle": {
+    "description": "Naslov sekcije sa sponzorima ugrađenima u snimku (partneri koje je autor sam doveo). Ton zahvale, ne reklame."
+  },
+  "sponsorsInVideoIntro": "Partneri koji su omogućili ovu epizodu. Hvala im što podržavaju autore.",
+  "@sponsorsInVideoIntro": {
+    "description": "Podnaslov sekcije sponzora epizode."
+  },
+  "sponsorsInVideoRoleSponsor": "Sponzor epizode",
+  "@sponsorsInVideoRoleSponsor": {
+    "description": "Uloga sponzora (role = sponsor)."
+  },
+  "sponsorsInVideoRolePartner": "Partner podcasta",
+  "@sponsorsInVideoRolePartner": {
+    "description": "Uloga sponzora (role = partner)."
+  },
+  "sponsorsInVideoRoleWardrobe": "Garderoba",
+  "@sponsorsInVideoRoleWardrobe": {
+    "description": "Kredit za garderobu voditelja (role = wardrobe)."
+  },
+  "sponsorsInVideoRoleStudio": "Opremanje studija",
+  "@sponsorsInVideoRoleStudio": {
+    "description": "Kredit za opremanje studija (role = studio)."
+  },
+  "sponsorsInVideoRoleOther": "Podrška",
+  "@sponsorsInVideoRoleOther": {
+    "description": "Uloga sponzora koju aplikacija ne poznaje — generička oznaka."
+  },
+  "sponsorsInVideoListen": "Poslušaj poruku sponzora",
+  "@sponsorsInVideoListen": {
+    "description": "Gumb koji skoči na poruku sponzora u snimci i pusti je."
+  },
+  "sponsorsInVideoListenRubric": "Poslušaj sponzoriranu rubriku",
+  "@sponsorsInVideoListenRubric": {
+    "description": "Gumb koji skoči na sponzoriranu rubriku u snimci i pusti je."
+  },
+  "sponsorsInVideoThanksAt": "Zahvala na {time}",
+  "@sponsorsInVideoThanksAt": {
+    "description": "Poveznica koja skače na trenutak kad voditelj zahvaljuje sponzoru, bez automatskog zaustavljanja.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorsInVideoChapterAt": "Poglavlje na {time}",
+  "@sponsorsInVideoChapterAt": {
+    "description": "Poveznica na autorovo poglavlje nazvano po sponzoru.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorsInVideoAt": "Na {time}",
+  "@sponsorsInVideoAt": {
+    "description": "Generička poveznica na trenutak u snimci.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorsInVideoWebsite": "Web",
+  "@sponsorsInVideoWebsite": {
+    "description": "Poveznica na web stranicu sponzora (otvara vanjski preglednik)."
+  },
+  "sponsorsInVideoMore": "više",
+  "@sponsorsInVideoMore": {
+    "description": "Proširi skraćen opis sponzora."
+  },
+  "sponsorsInVideoLess": "manje",
+  "@sponsorsInVideoLess": {
+    "description": "Skrati proširen opis sponzora."
+  },
+  "sponsorsInVideoEnded": "Poruka sponzora je završila",
+  "@sponsorsInVideoEnded": {
+    "description": "Kratka potvrda kad poruka sponzora pokrenuta gumbom „Poslušaj“ završi; reprodukcija se nastavlja."
+  },
+  "sponsorsInVideoListenShort": "Poslušaj",
+  "@sponsorsInVideoListenShort": {
+    "description": "Kratka oznaka gumba za poruku sponzora u playeru, uz trajanje („Poslušaj · 0:45“)."
+  },
+  "sponsorsInVideoRubricShort": "Rubrika",
+  "@sponsorsInVideoRubricShort": {
+    "description": "Kratka oznaka gumba za sponzoriranu rubriku u playeru, uz trajanje („Rubrika · 3:49“)."
+  },
+  "sponsorsInVideoMessageAt": "Poruka sponzora na {time}",
+  "@sponsorsInVideoMessageAt": {
+    "description": "Oznaka u sekciji članka u kojoj je poruka sponzora; ispod su gumbi s imenom sponzora.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorsInVideoRubricAt": "Sponzorirana rubrika na {time}",
+  "@sponsorsInVideoRubricAt": {
+    "description": "Oznaka u sekciji članka u kojoj počinje sponzorirana rubrika.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   }
 }

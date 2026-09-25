@@ -122,6 +122,8 @@ write_report() {
     echo "- commit: ${SHA_SHORT:-?} — ${SUBJECT:-?}"
     echo "- build: ${BUILD_NAME:-?} (${BN:-?})"
     report_lines_raw | sed 's/^/- /'
+    [[ -s "${BOOT_MIN_FILE:-}" ]] && \
+      echo "- boot disk: ${BOOT_FREE} GB na startu, najmanje $(cat "$BOOT_MIN_FILE") GB tijekom builda"
     echo "- trajanje: $(dur $((SECONDS - START_TS)))"
     echo "- log: .nightly/logs/$RUN_TS.log"
   } > "$STATE/reports/$RUN_TS.md"
@@ -182,8 +184,15 @@ fi
 # Pun disk se NE prijavi kao "nema mjesta": Gradle javi "Failed to release lock"
 # i "Could not add entry to cache", što izgleda kao pokvaren build. Izmjereno
 # 2026-08-13 — boot volumen na 3 GiB je oborio AAB nakon 3 min. Provjeri unaprijed.
+#
+# Prag je bio 20 GB dok su DerivedData i Gradle cache (14+ GB) živjeli na boot
+# disku. Od 14.8. su u sparsebundleu, a boot disku ostaje worktree (~2 GB) — ali
+# prag je ostao, pa je od 13.8. do 23.9. odbio 18 noći (više nego što ih je
+# prošlo), uz 7–14 GB slobodno. Veći dio toga pojede swap, koji raste s uptimeom.
+# Stvarni vrh potrošnje mjeri sampler niže i piše ga u izvještaj — prag spuštati
+# dalje tek uz te brojke.
 free_gb() { df -g "$1" 2>/dev/null | awk 'NR==2 {print $4}'; }
-MIN_FREE_BOOT="${NIGHTLY_MIN_FREE_BOOT_GB:-20}"
+MIN_FREE_BOOT="${NIGHTLY_MIN_FREE_BOOT_GB:-8}"
 MIN_FREE_DD="${NIGHTLY_MIN_FREE_DD_GB:-15}"
 
 BOOT_FREE="$(free_gb "$HOME")"
@@ -192,6 +201,18 @@ if [[ -z "$BOOT_FREE" || "$BOOT_FREE" -lt "$MIN_FREE_BOOT" ]]; then
   REPORT+=("❌ disk: boot volumen ${BOOT_FREE:-?} GB slobodno (< ${MIN_FREE_BOOT} GB)")
   finish_fail "preduvjeti (disk)" 1
 fi
+
+# Sampler: najmanji slobodni prostor na boot disku tijekom cijelog builda.
+BOOT_MIN_FILE="$STATE/.boot-min"
+echo "$BOOT_FREE" > "$BOOT_MIN_FILE"
+(
+  while sleep 20; do
+    f="$(free_gb "$HOME")"; m="$(cat "$BOOT_MIN_FILE" 2>/dev/null || echo "$f")"
+    [[ -n "$f" && "$f" -lt "$m" ]] && echo "$f" > "$BOOT_MIN_FILE"
+  done
+) &
+BOOT_SAMPLER_PID=$!
+trap 'kill "$BOOT_SAMPLER_PID" 2>/dev/null; rmdir "$LOCK" 2>/dev/null || true' EXIT
 
 # Xcode DerivedData ovdje živi na vanjskom disku; ako nije montiran, xcodebuild
 # padne s 2000 redaka ispisa koji nigdje ne kažu "nema diska".
@@ -213,21 +234,15 @@ else
   echo "==> disk: boot ${BOOT_FREE} GB slobodno (DerivedData je na default lokaciji)"
 fi
 
-# Gradle cache (14 GB i raste) živi na vanjskom disku zajedno s DerivedData —
-# boot volumen je pretijesan. ~/.gradle je simlink onamo, ali nightly postavlja
-# GRADLE_USER_HOME eksplicitno da ne ovisi o simlinku.
-BUILD_FILES="${NIGHTLY_BUILD_FILES:-/Volumes/DOMOVINA_BUILD}"
-SPARSEBUNDLE="${NIGHTLY_SPARSEBUNDLE:-/Volumes/DOMOVINA2TB/domovina_ai_build_files/DOMOVINA_BUILD.sparsebundle}"
-# Build artefakti žive u APFS sparsebundleu NA vanjskom disku, ne izravno na
-# njemu: exFAT ondje ima alokacijski blok od 512 KB, pa je Gradle cache od 156 000
-# sitnih datoteka narastao 14 GB → 41 GB. APFS unutra ima 4 KB blokove.
-# Kontejner se montira sam — nightly ne smije ovisiti o tome da ga netko ručno digne.
-if [[ ! -d "$BUILD_FILES" && -d "$SPARSEBUNDLE" ]]; then
-  echo "==> montiram $SPARSEBUNDLE"
-  hdiutil attach -nobrowse "$SPARSEBUNDLE" >/dev/null 2>&1 || {
-    REPORT+=("❌ disk: ne mogu montirati $SPARSEBUNDLE")
-    finish_fail "preduvjeti (montiranje build kontejnera)" 1
-  }
+# Gradle cache (14 GB i raste) i nightly DerivedData žive na vanjskom APFS
+# disku DOMOVINA1TB — boot volumen je pretijesan. Nightly postavlja
+# GRADLE_USER_HOME eksplicitno da ne ovisi o simlinku ~/.gradle.
+# Do 26.9.2026 je ovo bio APFS sparsebundle DOMOVINA_BUILD na DOMOVINA2TB; I/O
+# kroz njega pao je na ~6 MB/s, pa je ugašen. Obje mape su cache: kad nedostaju,
+# nastaju prazne i pune se same (nikad ih ne kopirati s diska na disk).
+BUILD_FILES="${NIGHTLY_BUILD_FILES:-/Volumes/DOMOVINA1TB/domovina_build}"
+if [[ -d "$(dirname "$BUILD_FILES")" ]]; then
+  mkdir -p "$BUILD_FILES/gradle"
 fi
 if [[ -d "$BUILD_FILES/gradle" ]]; then
   export GRADLE_USER_HOME="$BUILD_FILES/gradle"
@@ -351,25 +366,34 @@ $(report_lines)
 fi
 
 # ── 7. upload ────────────────────────────────────────────────────────────────
-step "TestFlight upload"   30 ./scripts/testflight-upload.sh    || finish_fail "TestFlight upload" $?
+TF_RC=0
+step "TestFlight upload"   30 ./scripts/testflight-upload.sh    || TF_RC=$?
+if [[ $TF_RC -eq 3 ]]; then
+  REPORT+=("🍏❌ Apple je zatvorio train ${BUILD_NAME} (verzija već odobrena) — bumpaj verziju u pubspec.yaml")
+fi
+[[ $TF_RC -eq 0 ]] || finish_fail "TestFlight upload" $TF_RC
 step "Play internal upload" 20 ./scripts/play-upload.sh internal || finish_fail "Play upload" $?
 
 # ── 8. verifikacija (upload 200 ≠ build je dobar) ────────────────────────────
 # Apple obrađuje asinkrono; ITMS odbijenice stižu tek ovdje, ne na uploadu.
 # Prozor: izmjereno 2026-08-13 da build ni 25 min nakon uploada još nije bio
 # vidljiv u /v1/builds. 20 min je davalo lažni ⚠️ gotovo svaku noć.
-IOS_STATE="PROCESSING"
+# NOT_FOUND ≠ PROCESSING: build kojeg ASC ne poznaje možda nikad nije stigao.
+# Do 24.9.2026. su se ta dva stanja stapala, pa je odbijen upload (13.8., 18.8.)
+# javljen kao "Apple ga još obrađuje — nije greška".
+IOS_STATE="NOT_FOUND"
 for _ in $(seq 1 "${NIGHTLY_TF_POLL_MIN:-45}"); do
   sleep 60
   IOS_STATE="$("$ROOT/scripts/store-status.rb" --json 2>/dev/null \
-    | ruby -rjson -e 'd=JSON.parse(STDIN.read); b=(d.dig("ios","builds")||[]).find{|x| x["build"].to_i==ARGV[0].to_i}; puts(b ? b["processing"] : "PROCESSING")' "$BN" \
-    || echo PROCESSING)"
+    | ruby -rjson -e 'd=JSON.parse(STDIN.read); b=(d.dig("ios","builds")||[]).find{|x| x["build"].to_i==ARGV[0].to_i}; puts(b ? b["processing"] : "NOT_FOUND")' "$BN" \
+    || echo "$IOS_STATE")"
   echo "    TestFlight build $BN: $IOS_STATE"
   [[ "$IOS_STATE" == "VALID" || "$IOS_STATE" == "INVALID" || "$IOS_STATE" == "FAILED" ]] && break
 done
 case "$IOS_STATE" in
   VALID)   REPORT+=("🍏 TestFlight build ${BN}: VALID") ;;
   PROCESSING) REPORT+=("🍏 TestFlight build ${BN}: Apple ga još obrađuje (>${NIGHTLY_TF_POLL_MIN:-45} min) — nije greška, provjeri ujutro sa store-status.rb") ;;
+  NOT_FOUND)  REPORT+=("🍏⚠️ TestFlight build ${BN}: App Store Connect ga NE VIDI ni nakon ${NIGHTLY_TF_POLL_MIN:-45} min — upload možda nije stigao, provjeri store-status.rb") ;;
   *)       REPORT+=("🍏❌ TestFlight build ${BN}: ${IOS_STATE}") ;;
 esac
 

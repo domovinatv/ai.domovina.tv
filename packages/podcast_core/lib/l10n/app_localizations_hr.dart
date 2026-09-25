@@ -4076,4 +4076,75 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get ebookCardAction => 'E-knjiga (EPUB)';
+
+  @override
+  String get sponsorsInVideoTitle => 'Uz podršku';
+
+  @override
+  String get sponsorsInVideoIntro =>
+      'Partneri koji su omogućili ovu epizodu. Hvala im što podržavaju autore.';
+
+  @override
+  String get sponsorsInVideoRoleSponsor => 'Sponzor epizode';
+
+  @override
+  String get sponsorsInVideoRolePartner => 'Partner podcasta';
+
+  @override
+  String get sponsorsInVideoRoleWardrobe => 'Garderoba';
+
+  @override
+  String get sponsorsInVideoRoleStudio => 'Opremanje studija';
+
+  @override
+  String get sponsorsInVideoRoleOther => 'Podrška';
+
+  @override
+  String get sponsorsInVideoListen => 'Poslušaj poruku sponzora';
+
+  @override
+  String get sponsorsInVideoListenRubric => 'Poslušaj sponzoriranu rubriku';
+
+  @override
+  String sponsorsInVideoThanksAt(String time) {
+    return 'Zahvala na $time';
+  }
+
+  @override
+  String sponsorsInVideoChapterAt(String time) {
+    return 'Poglavlje na $time';
+  }
+
+  @override
+  String sponsorsInVideoAt(String time) {
+    return 'Na $time';
+  }
+
+  @override
+  String get sponsorsInVideoWebsite => 'Web';
+
+  @override
+  String get sponsorsInVideoMore => 'više';
+
+  @override
+  String get sponsorsInVideoLess => 'manje';
+
+  @override
+  String get sponsorsInVideoEnded => 'Poruka sponzora je završila';
+
+  @override
+  String get sponsorsInVideoListenShort => 'Poslušaj';
+
+  @override
+  String get sponsorsInVideoRubricShort => 'Rubrika';
+
+  @override
+  String sponsorsInVideoMessageAt(String time) {
+    return 'Poruka sponzora na $time';
+  }
+
+  @override
+  String sponsorsInVideoRubricAt(String time) {
+    return 'Sponzorirana rubrika na $time';
+  }
 }
