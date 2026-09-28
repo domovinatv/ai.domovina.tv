@@ -11,6 +11,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../services/locale_service.dart';
 import '../models/pinka_campaign.dart';
 import '../models/pinka_contribution_intent.dart';
+import '../models/pinka_link_preview.dart';
 import '../models/pinka_slot.dart';
 import '../pinka_client.dart';
 import '../pinka_config.dart';
@@ -18,6 +19,27 @@ import '../util/pinka_intent_status.dart';
 import '../util/pinka_money.dart';
 import '../wallet/pinka_wallet.dart';
 import 'pinka_common.dart';
+import 'pinka_wall_list.dart' show PinkaLinkPreviewCard;
+
+/// Doprinos kako ga panel javlja hostu — na zaprimanju ([PinkaContributePanel.
+/// onReceived]) i na namiri ([PinkaContributePanel.onPaid]). `contributionId`
+/// je isti `id` koji kasnije vrati zid (`public_contributions.id`), pa host
+/// optimistični unos tiho zamijeni pravim redom.
+class PinkaDonation {
+  final String? contributionId;
+  final int amountCents;
+  final String? displayName;
+  final String? message;
+  final PinkaLinkPreview? linkPreview;
+
+  const PinkaDonation({
+    required this.contributionId,
+    required this.amountCents,
+    this.displayName,
+    this.message,
+    this.linkPreview,
+  });
+}
 
 /// "Podrži" panel — SEPA (EPC QR) + on-chain (EURe na Gnosisu preko MPT
 /// protokola) doprinos. Samostalan: prima kampanju, javlja [onPaid] kad uplata
@@ -27,9 +49,16 @@ class PinkaContributePanel extends StatefulWidget {
   final PinkaClient client;
   final PinkaConfig config;
 
-  /// Poziva se kad uplata sjedne — s iznosom i javnim imenom donatora
-  /// (null = anonimno), da host može animirati "dolazak" doprinosa na zid.
-  final void Function(int amountCents, String? displayName)? onPaid;
+  /// Poziva se kad uplata sjedne (RPC `paid` — doprinos je u bazi plaćen).
+  final void Function(PinkaDonation donation)? onPaid;
+
+  /// SEPA: Monerium je ZAPRIMIO uplatu (rail `received_*`, ~1 s) — namira
+  /// tek slijedi. Host tu animira „dolazak" kartice na zid, jer do RPC `paid`
+  /// zna proći i nekoliko sati. Zove se jednom po intentu.
+  final void Function(PinkaDonation donation)? onReceived;
+
+  /// Rail je odbio uplatu NAKON [onReceived] — host povuče optimistični unos.
+  final void Function(String contributionId)? onRejected;
 
   /// Host hook: display-name prijavljenog korisnika ili `null` (gost/anon).
   /// Kad je ne-null, ime donatora se predispuni; kad je null, uz polje se
@@ -74,6 +103,8 @@ class PinkaContributePanel extends StatefulWidget {
     required this.client,
     required this.config,
     this.onPaid,
+    this.onReceived,
+    this.onRejected,
     this.signedInName,
     this.onSignInRequested,
     this.presetAmountCents,
@@ -142,6 +173,16 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// Intent (sid/contributionId) za koji je proslava (animacija + haptika) već
   /// odigrana — `settled`/RPC `paid` nakon `received` je ne ponavljaju.
   String? _celebratedFor;
+
+  /// Doprinos po intentu (ključ = `_intentGen`) — ono što ide hostu u
+  /// onReceived/onPaid, uhvaćeno u trenutku slanja.
+  final Map<int, PinkaDonation> _donations = {};
+
+  /// OG preview poveznice iz obrasca (polje „Poveznica" ili prvi URL u
+  /// poruci), za živi pregled kartice. Debounce jer se tipka.
+  PinkaLinkPreview? _linkPreview;
+  String? _linkPreviewFor;
+  Timer? _previewDebounce;
 
   /// Dugo stoji u `received_processing` → istakni napomenu o prvoj uplati.
   bool _slowReview = false;
@@ -277,6 +318,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       t.cancel();
     }
     _autoCloseTimer?.cancel();
+    _previewDebounce?.cancel();
     _holdTimer?.cancel();
     _slowReviewTimer?.cancel();
     _customFocus.dispose();
@@ -353,6 +395,37 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     }
   }
 
+  /// Poveznica za koju se traži OG preview: polje „Poveznica", inače prvi
+  /// URL u poruci (webhook nakon plaćanja isto čita poruku). Anonimno = bez.
+  String? get _previewCandidate {
+    if (_anonymous) return null;
+    final link = _publicLinkUrl;
+    if (link != null) return link;
+    final m = RegExp(r'(https?://|www\.)[^\s]+').firstMatch(_msgCtrl.text);
+    return m == null ? null : _normalizeLink(m.group(0)!);
+  }
+
+  /// Zove se na svaku promjenu poveznice/poruke; dohvat tek kad tipkanje
+  /// stane (700 ms), i samo kad se kandidat stvarno promijenio.
+  void _schedulePreview() {
+    final url = _previewCandidate;
+    if (url == _linkPreviewFor) return;
+    _previewDebounce?.cancel();
+    if (url == null) {
+      setState(() {
+        _linkPreview = null;
+        _linkPreviewFor = null;
+      });
+      return;
+    }
+    _previewDebounce = Timer(const Duration(milliseconds: 700), () async {
+      _linkPreviewFor = url;
+      final p = await widget.client.linkPreview(url);
+      if (!mounted || _previewCandidate != url) return;
+      setState(() => _linkPreview = p);
+    });
+  }
+
   // ── SEPA ───────────────────────────────────────────────────────────────
   /// Uspjeh se prikazuje ČIM Monerium zaprimi uplatu (rail `received_*`, ~1 s),
   /// kao odobrenje kartice — namira (mint + prosljeđivanje) stiže kasnije i
@@ -375,10 +448,15 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       });
       _startStatusPolling(intent, gen);
       _startHoldCountdown(intent.holdExpiresAt);
-      // Iznos i ime se hvataju SADA: panel se nakon uspjeha zatvori, pa ih
+      // Doprinos se hvata SADA: panel se nakon uspjeha zatvori, pa ga
       // donator do RPC `paid` već može prepisati za sljedeću donaciju.
-      final amountCents = _amountCents;
-      final displayName = _publicDisplayName;
+      final donation = _donations[gen] = PinkaDonation(
+        contributionId: intent.contributionId,
+        amountCents: _amountCents,
+        displayName: _publicDisplayName,
+        message: _messageWithLink,
+        linkPreview: _anonymous ? null : _linkPreview,
+      );
       // Bez limita: prva uplata s novog IBAN-a zna stajati na provjeri satima.
       // Petlja živi dok živi widget — i nakon što se uspjeh zatvori.
       final paid = await widget.client.waitForPaid(
@@ -391,7 +469,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       if (gen == _intentGen && _phase != _Phase.rejected) {
         _enterSuccess(intent, gen, settled: true);
       }
-      widget.onPaid?.call(amountCents, displayName);
+      widget.onPaid?.call(donation);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -412,6 +490,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     if (_celebratedFor != id) {
       _celebratedFor = id;
       HapticFeedback.mediumImpact();
+      final donation = _donations[gen];
+      if (donation != null) widget.onReceived?.call(donation);
     }
     if (target == _Phase.paid) _slowReviewTimer?.cancel();
     final wasShowingSuccess = _phase == _Phase.received;
@@ -470,6 +550,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         _onIntentStatus(intent, gen, s);
       } else if (s.isRejected) {
         // Panel je uspjeh već zatvorio — odbijanje ide u obrazac.
+        widget.onRejected?.call(intent.contributionId);
         final reason = s.rejectedReason;
         setState(() => _error = reason == null
             ? appStrings.pinkaIntentRejected
@@ -493,6 +574,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       // porukom, bez animacije (i bez automatskog zatvaranja).
       _slowReviewTimer?.cancel();
       _autoCloseTimer?.cancel();
+      widget.onRejected?.call(intent.contributionId);
       setState(() {
         _intentStatus = s;
         _phase = _Phase.rejected;
@@ -556,7 +638,12 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         if (r.isCredited) {
           if (!mounted) return;
           setState(() => _phase = _Phase.paid);
-          widget.onPaid?.call(_amountCents, _publicDisplayName);
+          widget.onPaid?.call(PinkaDonation(
+            contributionId: contributionId,
+            amountCents: _amountCents,
+            displayName: _publicDisplayName,
+            message: _hasSlot ? _messageWithLink : null,
+          ));
           return;
         }
         await Future<void>.delayed(const Duration(seconds: 3));
@@ -826,7 +913,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
             helperText: l.pinkaLinkHelper,
             helperMaxLines: 2,
           ),
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) {
+            setState(() {});
+            _schedulePreview();
+          },
         ),
         const SizedBox(height: 12),
         TextField(
@@ -839,17 +929,26 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
             isDense: true,
             labelText: l.pinkaMessageLabel,
           ),
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) {
+            setState(() {});
+            _schedulePreview();
+          },
         ),
         const SizedBox(height: 4),
         InkWell(
-          onTap: () => setState(() => _anonymous = !_anonymous),
+          onTap: () {
+            setState(() => _anonymous = !_anonymous);
+            _schedulePreview();
+          },
           child: Row(
             children: [
               Checkbox(
                 value: _anonymous,
                 visualDensity: VisualDensity.compact,
-                onChanged: (v) => setState(() => _anonymous = v ?? false),
+                onChanged: (v) {
+                  setState(() => _anonymous = v ?? false);
+                  _schedulePreview();
+                },
               ),
               Expanded(
                 child: Text(
@@ -888,6 +987,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           message: _anonymous ? null : _msgCtrl.text.trim(),
           messagePlaceholder: l.pinkaPreviewMessagePlaceholder,
           linkHost: link == null ? null : Uri.parse(link).host,
+          linkPreview: _anonymous ? null : _linkPreview,
         ),
       ],
     );
@@ -1476,22 +1576,26 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       _walletNote = null;
       _msgCtrl.clear();
     });
+    _schedulePreview(); // poruka je obrisana → preview samo iz polja poveznice
   }
 
   Widget _qrBox(String data) {
-    // Kompaktno: 200px + tanka bijela margina — dovoljno za pouzdan sken, a
-    // štedi ~50px visine da desni stupac stane u viewport bez scrolla.
+    // Tanka bijela margina oko QR-a; veličina prati širinu panela.
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: QrImageView(
-        data: data,
-        version: QrVersions.auto,
-        size: 200,
-        errorCorrectionLevel: QrErrorCorrectLevel.M,
+      child: LayoutBuilder(
+        builder: (_, c) => QrImageView(
+          data: data,
+          version: QrVersions.auto,
+          // Raste sa širinom panela (desni stupac 400 px → ~260), ali ne ispod
+          // pouzdanog skena ni preko razumne veličine na mobitelu.
+          size: c.maxWidth.isFinite ? c.maxWidth.clamp(180.0, 260.0) : 220,
+          errorCorrectionLevel: QrErrorCorrectLevel.M,
+        ),
       ),
     );
   }
@@ -1512,6 +1616,10 @@ class _ContributionPreviewCard extends StatelessWidget {
   /// pokazuje.
   final String? linkHost;
 
+  /// OG preview poveznice (s našeg servera). Kad postoji, zamjenjuje goli
+  /// host — donator vidi karticu točno kakva će biti na zidu.
+  final PinkaLinkPreview? linkPreview;
+
   const _ContributionPreviewCard({
     super.key,
     required this.name,
@@ -1520,6 +1628,7 @@ class _ContributionPreviewCard extends StatelessWidget {
     required this.message,
     required this.messagePlaceholder,
     required this.linkHost,
+    this.linkPreview,
   });
 
   @override
@@ -1567,7 +1676,15 @@ class _ContributionPreviewCard extends StatelessWidget {
               fontStyle: hasMessage ? null : FontStyle.italic,
             ),
           ),
-          if (linkHost != null && linkHost!.isNotEmpty) ...[
+          if (linkPreview != null) ...[
+            const SizedBox(height: 8),
+            PinkaLinkPreviewCard(
+              key: const Key('pinka-preview-link-card'),
+              preview: linkPreview!,
+              detailed: true,
+              showDescription: false,
+            ),
+          ] else if (linkHost != null && linkHost!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Row(
               mainAxisSize: MainAxisSize.min,

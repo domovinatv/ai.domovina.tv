@@ -111,6 +111,15 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
   final GlobalKey _wallKey = GlobalKey();
   final List<(AnimationController, OverlayEntry)> _flights = [];
 
+  /// Doprinosi čija je SEPA uplata zaprimljena, a u bazi još nisu `paid` (mint
+  /// zna trajati satima). Stoje na vrhu zida dok ih pravi red istog `id`-a ne
+  /// zamijeni. Ključ = contribution id.
+  final Map<String, PinkaPublicContribution> _optimistic = {};
+
+  /// Doprinosi koji su već „doletjeli" na zidu (na zaprimanju) — namira ih
+  /// ne animira ponovno.
+  final Set<String> _flown = {};
+
   /// Mapa mjesta i zauzeta mjesta sa servera. `_slotMap == null` → legacy
   /// prikaz zida; grid mod se pali PODACIMA (seed mape), ne feature flagom.
   PinkaSlotMap? _slotMap;
@@ -172,10 +181,11 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     // Runtime <title>/og meta za živu sesiju (crawleri idu kroz _worker.js
     // koji isti naslov gradi edge-side iz kampanje).
     setPageMeta(title: '${c.title} – DOMOVINA.ai', description: c.description);
+    _optimistic.removeWhere((id, _) => list.any((e) => e.id == id));
     setState(() {
       _campaign = c;
       _loading = false;
-      _wall = list;
+      _wall = [..._optimistic.values, ...list];
       _yield = yield_;
       _balanceCents = balance ?? _balanceCents;
       _slotMap = map;
@@ -270,20 +280,59 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     );
   }
 
-  /// "Poleti" mini karticu doprinosa iz panela (gdje je donator upravo gledao
-  /// progress 5/5) prema vrhu zida — vizualni dolazak donacije u listu.
-  void _flyDonationToWall(int amountCents, String? displayName) {
+  void _onDonationReceived(PinkaDonation d) {
+    final id = d.contributionId;
+    if (id != null) _flown.add(id);
+    _flyDonationToWall(d, onLanded: () {
+      if (!mounted || id == null) return;
+      if (_wall.any((e) => e.id == id)) return; // namira je bila brža
+      final entry = PinkaPublicContribution(
+        id: id,
+        displayName: d.displayName,
+        message: d.message,
+        amountCents: d.amountCents,
+        currency: 'eur',
+        createdAt: DateTime.now().toUtc().toIso8601String(),
+        linkPreview: d.linkPreview,
+      );
+      _optimistic[id] = entry;
+      _seen.add(id);
+      setState(() {
+        _wall = [entry, ..._wall];
+        _flashIds = {id};
+      });
+      Future.delayed(const Duration(milliseconds: 2400), () {
+        if (mounted) setState(() => _flashIds = {});
+      });
+    });
+  }
+
+  /// "Poleti" karticu doprinosa iz panela prema vrhu zida — vizualni dolazak
+  /// donacije. [onLanded] se zove kad kartica sleti (tada host ubaci unos).
+  void _flyDonationToWall(PinkaDonation d, {VoidCallback? onLanded}) {
+    // Zid na desktopu scrolla sam — cilj je vrh, pa ga vrati gore.
+    if (_wallScroll.hasClients && _wallScroll.offset > 0) {
+      _wallScroll.animateTo(0,
+          duration: const Duration(milliseconds: 400), curve: Curves.easeOut);
+    }
     final panelBox = _panelKey.currentContext?.findRenderObject() as RenderBox?;
     final overlayState = Overlay.maybeOf(context, rootOverlay: true);
-    if (panelBox == null || !panelBox.attached || overlayState == null) return;
+    if (panelBox == null || !panelBox.attached || overlayState == null) {
+      onLanded?.call();
+      return;
+    }
     final overlayBox = overlayState.context.findRenderObject() as RenderBox?;
-    if (overlayBox == null) return;
+    if (overlayBox == null) {
+      onLanded?.call();
+      return;
+    }
     final screen = overlayBox.size;
 
     // Start: sredina panela, gdje je stajao stepper/potvrda.
+    final cardWidth = math.min(300.0, screen.width - 32);
     final start =
         panelBox.localToGlobal(panelBox.size.center(Offset.zero)) -
-        const Offset(80, 20);
+        Offset(cardWidth / 2, 60);
 
     // Cilj: vrh zida — najnoviji unos ide na početak liste. Kad je zid izvan
     // ekrana (mobile, daleko ispod), klampanje drži cilj na rubu viewporta pa
@@ -293,13 +342,13 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
         ? wallBox.localToGlobal(const Offset(12, 12))
         : Offset(24, screen.height - 96);
     end = Offset(
-      end.dx.clamp(12.0, math.max(12.0, screen.width - 220.0)),
-      end.dy.clamp(12.0, math.max(12.0, screen.height - 72.0)),
+      end.dx.clamp(12.0, math.max(12.0, screen.width - cardWidth - 12)),
+      end.dy.clamp(12.0, math.max(12.0, screen.height - 140.0)),
     );
 
     final controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1300),
     );
     final curve = CurvedAnimation(
       parent: controller,
@@ -328,12 +377,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
               child: Opacity(
                 opacity: fade.clamp(0.0, 1.0),
                 child: Transform.scale(
-                  scale: 1 - 0.2 * t,
+                  // Iskoči iz panela (1,05) pa se smanji na mjesto u zidu.
+                  scale: t < 0.15 ? 1 + t / 3 : 1.05 - 0.2 * (t - 0.15),
                   alignment: Alignment.topLeft,
-                  child: _FlyingDonationChip(
-                    amountCents: amountCents,
-                    displayName: displayName,
-                  ),
+                  child: _FlyingDonationCard(donation: d, width: cardWidth),
                 ),
               ),
             ),
@@ -344,7 +391,10 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
     final flight = (controller, entry);
     _flights.add(flight);
     overlayState.insert(entry);
-    controller.forward().whenCompleteOrCancel(() => _cleanupFlight(flight));
+    controller.forward().whenCompleteOrCancel(() {
+      _cleanupFlight(flight);
+      onLanded?.call();
+    });
   }
 
   /// Skini overlay i oslobodi controller — idempotentno (let završi sam ILI
@@ -433,13 +483,23 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
           campaign: c,
           client: widget.client,
           config: widget.config,
+          // SEPA uplata ZAPRIMLJENA (korak 2/5, ~1 s nakon plaćanja): kartica
+          // odmah doleti na vrh zida i ostane tamo, iako je doprinos u bazi
+          // `paid` tek nakon minta (zna trajati satima).
+          onReceived: _onDonationReceived,
           // Uplata je sjela → mjesto je prešlo u `sold`; odmah povuci svježu
-          // mapu da se ime pojavi na kvadratiću, očisti odabir i animiraj
-          // "dolazak" doprinosa na zid.
-          onPaid: (amountCents, displayName) {
+          // mapu da se ime pojavi na kvadratiću i očisti odabir. Let samo ako
+          // ga zaprimanje nije već odigralo (on-chain, rail bez statusa).
+          onPaid: (d) {
             _clearSlot();
+            final id = d.contributionId;
+            if (id != null) _optimistic.remove(id);
             _refresh();
-            _flyDonationToWall(amountCents, displayName);
+            if (id == null || !_flown.contains(id)) _flyDonationToWall(d);
+          },
+          onRejected: (id) {
+            if (_optimistic.remove(id) == null) return;
+            setState(() => _wall = _wall.where((e) => e.id != id).toList());
           },
           signedInName: () => AuthService.instance.isSignedIn
               ? AuthService.instance.currentUser?.displayName
@@ -570,7 +630,8 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
             ),
             const SizedBox(width: 20),
             SizedBox(
-              width: 360,
+              // 400 (bilo 360): veći QR za sken s ekrana računala.
+              width: 400,
               child: SingleChildScrollView(
                 controller: _railScroll,
                 padding: const EdgeInsets.fromLTRB(0, 16, 24, 20),
@@ -907,60 +968,83 @@ class _PinkaCampaignScreenState extends State<PinkaCampaignScreen>
 
 /// Mini kartica doprinosa koja "leti" iz panela na zid — ista vizualna
 /// obitelj kao unos u [PinkaWallList], samo kompaktna (ime + iznos).
-class _FlyingDonationChip extends StatelessWidget {
-  final int amountCents;
-  final String? displayName;
+/// Kartica koja leti iz panela na zid — ista građa kao pločica zida (ime,
+/// iznos, poruka, preview poveznice), da se vidi ŠTO je stiglo.
+class _FlyingDonationCard extends StatelessWidget {
+  final PinkaDonation donation;
+  final double width;
 
-  const _FlyingDonationChip({
-    required this.amountCents,
-    required this.displayName,
-  });
+  const _FlyingDonationCard({required this.donation, required this.width});
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final msg = donation.message?.trim();
     return Material(
       color: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        width: width,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: cs.tertiaryContainer,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: cs.tertiary.withValues(alpha: 0.6)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(Icons.favorite, size: 16, color: cs.tertiary),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 140),
-              child: Text(
-                displayName ?? l.pinkaAnonymous,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onTertiaryContainer,
+            Row(
+              children: [
+                Icon(Icons.favorite, size: 16, color: cs.tertiary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    donation.displayName ?? l.pinkaAnonymous,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: cs.onTertiaryContainer,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Text(
+                  '${fmtEur(donation.amountCents)} €',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: cs.tertiary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Text(
-              '${fmtEur(amountCents)} €',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: cs.tertiary,
+            if (msg != null && msg.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                msg,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: cs.onTertiaryContainer),
               ),
-            ),
+            ],
+            if (donation.linkPreview != null) ...[
+              const SizedBox(height: 8),
+              PinkaLinkPreviewCard(
+                preview: donation.linkPreview!,
+                detailed: true,
+                showDescription: false,
+              ),
+            ],
           ],
         ),
       ),

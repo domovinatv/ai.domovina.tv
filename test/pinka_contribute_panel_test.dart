@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:domovina_ai/l10n/app_localizations.dart';
 import 'package:domovina_ai/pinka_sdk/src/models/pinka_campaign.dart';
 import 'package:domovina_ai/pinka_sdk/src/models/pinka_contribution_intent.dart';
+import 'package:domovina_ai/pinka_sdk/src/models/pinka_link_preview.dart';
 import 'package:domovina_ai/pinka_sdk/src/pinka_client.dart';
 import 'package:domovina_ai/pinka_sdk/src/pinka_config.dart';
 import 'package:domovina_ai/pinka_sdk/src/util/pinka_intent_status.dart';
@@ -127,6 +128,14 @@ class _SepaClient extends PinkaClient {
     rpcCalls++;
     return rpcState;
   }
+
+  final previewCalls = <String>[];
+
+  @override
+  Future<PinkaLinkPreview?> linkPreview(String url) async {
+    previewCalls.add(url);
+    return PinkaLinkPreview(url: url, title: 'Naslov stranice $url');
+  }
 }
 
 /// Lažni rail: vraća [stage] (+ razlog) i broji dohvate.
@@ -158,13 +167,15 @@ class _SepaHarness {
   final rail = _FakeRail();
   int paidCalls = 0;
   int haptics = 0;
+  final received = <PinkaDonation>[];
 
   Widget panel() => PinkaContributePanel(
         campaign: _campaign,
         client: client,
         config: PinkaConfig.defaults,
         statusFetcher: rail.fetch,
-        onPaid: (_, _) => paidCalls++,
+        onPaid: (_) => paidCalls++,
+        onReceived: received.add,
       );
 
   Future<void> start(WidgetTester tester) async {
@@ -341,6 +352,10 @@ void main() {
       // Doprinos u bazi još nije `paid` → zid se ne dira.
       expect(h.paidCalls, 0);
       expect(h.haptics, 1);
+      // Host dobije doprinos odmah (let na zid), s id-em koji će vratiti zid.
+      expect(h.received, hasLength(1));
+      expect(h.received.single.contributionId, 'contrib-1');
+      expect(h.received.single.amountCents, 100);
       await h.finish(tester);
     });
 
@@ -368,6 +383,7 @@ void main() {
       await h.tick(tester);
       expect(h.paidCalls, 1);
       expect(h.haptics, 1);
+      expect(h.received, hasLength(1), reason: 'onReceived samo jednom');
       expect(find.text(l.pinkaThanksForSupport), findsNothing);
       final railCalls = h.rail.calls;
       await h.tick(tester);
@@ -502,6 +518,42 @@ void main() {
     expect(find.text(l.pinkaSepaReceivedProcessing), findsOneWidget);
     expect(find.text(l.pinkaSepaFirstPaymentReview), findsNothing);
     await h.finish(tester);
+  });
+
+  testWidgets('OG preview poveznice u pregledu kartice (debounce, polje ili poruka)',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final l = await AppLocalizations.delegate.load(const Locale('hr'));
+    final client = _SepaClient();
+    await tester.pumpWidget(_wrap(PinkaContributePanel(
+      campaign: _campaign,
+      client: client,
+      config: PinkaConfig.defaults,
+    )));
+    await tester.pumpAndSettle();
+
+    // URL u poruci — tipkanje ne okida dohvat dok ne stane 700 ms.
+    await tester.enterText(
+        _fieldWithLabel(l.pinkaMessageLabel), 'Pogledaj https://ff.hr/klub');
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(client.previewCalls, isEmpty);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(client.previewCalls, ['https://ff.hr/klub']);
+    expect(find.byKey(const Key('pinka-preview-link-card')), findsOneWidget);
+    expect(find.text('Naslov stranice https://ff.hr/klub'), findsOneWidget);
+
+    // Polje „Poveznica" ima prednost pred URL-om u poruci.
+    await tester.enterText(_fieldWithLabel(l.pinkaLinkLabel), 'domovina.ai');
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pump();
+    expect(client.previewCalls.last, 'https://domovina.ai');
+
+    // Anonimno → nema previewa.
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    expect(find.byKey(const Key('pinka-preview-link-card')), findsNothing);
   });
 
   group('parseIntentStatus', () {

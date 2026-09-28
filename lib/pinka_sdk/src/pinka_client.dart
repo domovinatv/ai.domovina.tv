@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import 'models/pinka_campaign.dart';
 import 'models/pinka_contribution_intent.dart';
+import 'models/pinka_link_preview.dart';
 import 'models/pinka_onchain_confirm.dart';
 import 'models/pinka_public_contribution.dart';
 import 'models/pinka_slot.dart';
@@ -227,6 +228,26 @@ class PinkaClient {
       throw PinkaFailure(err);
     }
     return PinkaContributionIntent.fromJson(data);
+  }
+
+  /// OG preview poveznice za živi pregled kartice u obrascu (prije plaćanja).
+  /// Server vadi metapodatke i kešira sliku kod nas — klijent nikad ne
+  /// dohvaća tuđi URL. `null` na bilo što (nema previewa, greška, limit).
+  Future<PinkaLinkPreview?> linkPreview(String url) async {
+    try {
+      await ensureSession();
+      final res = await _client.functions.invoke(
+        config.linkPreviewFn,
+        body: {'url': url},
+      );
+      final data = res.data;
+      if (data is! Map) return null;
+      final p = PinkaLinkPreview.fromJson(data['preview']);
+      return (p != null && p.hasContent) ? p : null;
+    } catch (e) {
+      _log('linkPreview failed — $e');
+      return null;
+    }
   }
 
   /// Stanje doprinosa preko guest-pollable SECURITY DEFINER RPC-a (anon ne može

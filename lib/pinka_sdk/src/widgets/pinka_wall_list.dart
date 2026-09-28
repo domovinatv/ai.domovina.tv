@@ -248,7 +248,7 @@ class _WallEntry extends StatelessWidget {
                 header,
                 ...messageLine,
                 const SizedBox(height: 8),
-                Expanded(child: _LinkPreviewCard(preview: preview)),
+                Expanded(child: PinkaLinkPreviewCard(preview: preview)),
               ],
             )
           : OverflowBox(
@@ -374,7 +374,7 @@ class _WallDetailsSheet extends StatelessWidget {
               ],
               if (preview != null) ...[
                 const SizedBox(height: 16),
-                _LinkPreviewCard(preview: preview, detailed: true),
+                PinkaLinkPreviewCard(preview: preview, detailed: true),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
                   onPressed: () => pinkaLaunch(preview.url),
@@ -398,14 +398,25 @@ class _WallDetailsSheet extends StatelessWidget {
   }
 }
 
-class _LinkPreviewCard extends StatelessWidget {
+/// Preview poveznice (izvor, naslov, OG slika iz NAŠEG storagea) — u pločici
+/// zida, u detaljnom sheetu i u živom pregledu obrasca podrške.
+class PinkaLinkPreviewCard extends StatelessWidget {
   final PinkaLinkPreview preview;
 
   /// U kartici zida (false) preview je samo prikaz — tap pripada kartici i
   /// otvara detaljni sheet. U sheetu (true) prikazuje i opis.
   final bool detailed;
 
-  const _LinkPreviewCard({required this.preview, this.detailed = false});
+  /// Opis ispod naslova — default samo u detaljnom sheetu. Pregled u obrascu
+  /// koristi `detailed` raspored (neograničena visina) bez opisa.
+  final bool? showDescription;
+
+  const PinkaLinkPreviewCard({
+    super.key,
+    required this.preview,
+    this.detailed = false,
+    this.showDescription,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -441,7 +452,8 @@ class _LinkPreviewCard extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
-        if (detailed && (p.description?.isNotEmpty ?? false)) ...[
+        if ((showDescription ?? detailed) &&
+            (p.description?.isNotEmpty ?? false)) ...[
           const SizedBox(height: 4),
           Text(
             p.description!,

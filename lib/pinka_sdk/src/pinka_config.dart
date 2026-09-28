@@ -14,6 +14,7 @@ class PinkaConfig {
     this.schema = 'pinka_finance',
     this.contributeFn = 'pinka-contribute',
     this.onchainConfirmFn = 'pinka-onchain-confirm',
+    this.linkPreviewFn = 'pinka-link-preview',
     this.contributionStatusRpc = 'contribution_status',
     this.activeCampaignForSubjectRpc = 'active_campaign_for_subject',
     this.setCampaignEpisodesRpc = 'set_campaign_episodes',
@@ -38,6 +39,9 @@ class PinkaConfig {
 
   /// Edge fn koja verificira + kreditira on-chain (EURe) tx po hashu.
   final String onchainConfirmFn;
+
+  /// Edge funkcija za OG preview poveznice u obrascu (prije plaćanja).
+  final String linkPreviewFn;
 
   /// SECURITY DEFINER RPC za guest polling stanja doprinosa (anon ne može
   /// čitati `contributions` red kroz RLS — vidi domovina-api migracije).
