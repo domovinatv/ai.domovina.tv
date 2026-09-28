@@ -305,9 +305,60 @@ void main() {
       await tester.pump();
       final thumb = tester.widget<CachedThumbnail>(find.byType(CachedThumbnail));
       expect(thumb.url, cached);
-      // Visina pločice se NE mijenja zbog slike (raspored bez rupa).
+      // Slika ide ISPOD teksta u OG omjeru 1,91 : 1, pa je pločica viša od
+      // obične s previewom za točno visinu slike (+ razmak).
       final tile = tester.widget<StaggeredGridTile>(find.byType(StaggeredGridTile));
-      expect(tile.mainAxisExtent, kPinkaWallTallTile);
+      expect(tile.mainAxisExtent, greaterThan(kPinkaWallTallTile));
+      final box = tester.getSize(find.byType(CachedThumbnail));
+      expect(box.width / box.height, closeTo(kPinkaOgAspect, 0.01));
+      final textY = tester.getBottomLeft(find.text('Keširana slika')).dy;
+      expect(tester.getTopLeft(find.byType(CachedThumbnail)).dy,
+          greaterThan(textY));
+      expect(tester.takeException(), isNull); // bez overflowa
+    });
+    testWidgets('portret ide LIJEVO od teksta, landscape ISPOD, u svom omjeru',
+        (tester) async {
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 'portret',
+          message: 'Hvala!',
+          preview: const PinkaLinkPreview(
+            url: 'https://c.ff.hr/',
+            title: 'NK Lomnica',
+            imageCached: cached,
+            imageWidth: 211,
+            imageHeight: 256,
+          ),
+        ),
+      ])));
+      await tester.pump();
+      final img = find.byType(CachedThumbnail);
+      final title = find.text('NK Lomnica');
+      expect(tester.getTopRight(img).dx,
+          lessThan(tester.getTopLeft(title).dx));
+      final size = tester.getSize(img);
+      expect(size.width / size.height, closeTo(211 / 256, 0.02));
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 'panorama',
+          message: 'Hvala!',
+          preview: const PinkaLinkPreview(
+            url: 'https://lumidea.hr/',
+            title: 'Lumidea',
+            imageCached: cached,
+            imageWidth: 1920,
+            imageHeight: 711,
+          ),
+        ),
+      ])));
+      await tester.pump();
+      final wide = tester.getSize(find.byType(CachedThumbnail));
+      expect(wide.width / wide.height, closeTo(1920 / 711, 0.02));
+      expect(tester.getTopLeft(find.byType(CachedThumbnail)).dy,
+          greaterThan(tester.getBottomLeft(find.text('Lumidea')).dy));
+      expect(tester.takeException(), isNull);
     });
   });
 }

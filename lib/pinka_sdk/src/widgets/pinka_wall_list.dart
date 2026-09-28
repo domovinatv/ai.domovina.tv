@@ -29,6 +29,52 @@ const double kPinkaWallShortTile = 84;
 const double kPinkaWallTallTile =
     2 * kPinkaWallShortTile + kPinkaWallSpacing; // 178
 
+/// OG standard (1200×630) — omjer kad dimenzije slike nisu poznate.
+const double kPinkaOgAspect = 1.91;
+
+/// Ispod ovog omjera (portret, kvadrat) slika ide LIJEVO od teksta; šira ide
+/// ISPOD teksta preko cijele širine kartice.
+const double kPinkaSideImageMaxAspect = 1.2;
+
+/// Koliko je pločica sa slikom sa strane viša od obične s previewom — toliko
+/// slika naraste (≈ 140 px visine umjesto ~80).
+const double kPinkaSideImageExtra = 60;
+
+/// Raspored slike u preview kartici.
+enum PinkaPreviewImageLayout { none, side, below }
+
+PinkaPreviewImageLayout pinkaPreviewImageLayout(PinkaLinkPreview p) {
+  if (p.imageCached == null) return PinkaPreviewImageLayout.none;
+  final a = p.imageAspect;
+  return a != null && a < kPinkaSideImageMaxAspect
+      ? PinkaPreviewImageLayout.side
+      : PinkaPreviewImageLayout.below;
+}
+
+/// Omjer slike ispod teksta: stvarni, ali ograničen — panorama 4 : 1 bi bila
+/// traka, pa se krajnosti blago obrežu (BoxFit.cover).
+double _belowAspect(PinkaLinkPreview p) =>
+    (p.imageAspect ?? kPinkaOgAspect).clamp(kPinkaSideImageMaxAspect, 3.0);
+
+/// Omjer slike sa strane (portret do kvadrata).
+double _sideAspect(PinkaLinkPreview p) =>
+    (p.imageAspect ?? 1).clamp(0.5, kPinkaSideImageMaxAspect);
+
+/// Visina pločice s previewom. Slika ispod teksta ovisi o širini stupca, pa se
+/// računa ovdje — samo tako drži točan omjer. 14 = padding kartice, 10 =
+/// padding preview kartice, 1 = njen obrub; 8 = razmak tekst → slika.
+double pinkaWallPreviewTileExtent(PinkaLinkPreview p, double columnWidth) {
+  switch (pinkaPreviewImageLayout(p)) {
+    case PinkaPreviewImageLayout.none:
+      return kPinkaWallTallTile;
+    case PinkaPreviewImageLayout.side:
+      return kPinkaWallTallTile + kPinkaSideImageExtra;
+    case PinkaPreviewImageLayout.below:
+      final imageWidth = columnWidth - 2 * 14 - 2 * 10 - 2 * 1;
+      return kPinkaWallTallTile + 8 + imageWidth / _belowAspect(p);
+  }
+}
+
 /// Ciljna širina kartice — broj stupaca je `(maxWidth / ovo).floor()`.
 const double kPinkaWallTargetCardWidth = 340;
 
@@ -63,6 +109,9 @@ class PinkaWallList extends StatelessWidget {
           final columns = (w.isFinite && w > 0)
               ? (w / kPinkaWallTargetCardWidth).floor().clamp(1, 4)
               : 1;
+          final columnWidth = (w.isFinite && w > 0)
+              ? (w - kPinkaWallSpacing * (columns - 1)) / columns
+              : kPinkaWallTargetCardWidth;
           return StaggeredGrid.count(
             crossAxisCount: columns,
             mainAxisSpacing: kPinkaWallSpacing,
@@ -72,7 +121,7 @@ class PinkaWallList extends StatelessWidget {
                 StaggeredGridTile.extent(
                   crossAxisCellCount: 1,
                   mainAxisExtent: _hasPreview(c)
-                      ? kPinkaWallTallTile
+                      ? pinkaWallPreviewTileExtent(c.linkPreview!, columnWidth)
                       : kPinkaWallShortTile,
                   child: _WallEntry(
                     contribution: c,
@@ -410,61 +459,70 @@ class _LinkPreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: image == null
-          ? text
-          : detailed
-              // Sheet: slika preko cijele širine, OG omjer 1,91 : 1.
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: AspectRatio(
-                        aspectRatio: 1.91,
-                        child: _PreviewImage(url: image),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    text,
-                  ],
-                )
-              // Pločica ima FIKSNU visinu (staggered raspored bez rupa), pa
-              // slika ide lijevo kao kvadrat umjesto iznad teksta.
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: _PreviewImage(
-                          url: image,
-                          width: _kPreviewThumb,
-                          height: _kPreviewThumb),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(child: text),
-                  ],
-                ),
+      child: switch (pinkaPreviewImageLayout(p)) {
+        PinkaPreviewImageLayout.none => text,
+        // Portret/kvadrat LIJEVO: na zidu slika popuni visinu kartice (širina
+        // iz omjera), u sheetu (neograničena visina) ima fiksnu širinu.
+        PinkaPreviewImageLayout.side => detailed
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: _framed(AspectRatio(
+                        aspectRatio: _sideAspect(p),
+                        child: _PreviewImage(url: image!))),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: text),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _framed(AspectRatio(
+                      aspectRatio: _sideAspect(p),
+                      child: _PreviewImage(url: image!))),
+                  const SizedBox(width: 10),
+                  Expanded(child: text),
+                ],
+              ),
+        // Landscape ISPOD izvora i naslova, preko cijele širine, u stvarnom
+        // omjeru. Pločica ima zadanu visinu, a naslov 1–2 retka: višak ide
+        // IZMEĐU teksta i slike, pa slika sjedne na dno neobrezana. U sheetu
+        // (neograničena visina) Spacer ne smije postojati.
+        PinkaPreviewImageLayout.below => Column(
+            mainAxisSize: detailed ? MainAxisSize.min : MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              text,
+              const SizedBox(height: 8),
+              if (!detailed) const Spacer(),
+              _framed(AspectRatio(
+                  aspectRatio: _belowAspect(p),
+                  child: _PreviewImage(url: image!))),
+            ],
+          ),
+      },
     );
   }
 }
 
-const double _kPreviewThumb = 64;
+Widget _framed(Widget child) =>
+    ClipRRect(borderRadius: BorderRadius.circular(6), child: child);
 
-/// Slika previewa iz NAŠEG storagea. Pad dohvata = slika nestane, kartica
-/// ostane tekstualna (bez ikone slomljene slike na javnom zidu).
+/// Slika previewa iz NAŠEG storagea. Pad dohvata = mirna ploha iste boje kao
+/// placeholder (bez ikone slomljene slike na javnom zidu); pločica zadrži
+/// visinu, pa raspored ne skače.
 class _PreviewImage extends StatelessWidget {
   final String url;
-  final double? width;
-  final double? height;
 
-  const _PreviewImage({required this.url, this.width, this.height});
+  const _PreviewImage({required this.url});
 
   @override
   Widget build(BuildContext context) => CachedThumbnail(
         url: url,
-        width: width,
-        height: height,
-        errorFallbackBuilder: (_) => const SizedBox.shrink(),
+        errorFallbackBuilder: (ctx) => ColoredBox(
+            color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
       );
 }

@@ -13,6 +13,12 @@ class PinkaLinkPreview {
   /// Kopija slike u našem storageu (`pinka-og-cache`, Supabase → R2), koju
   /// `pinka-webhook` napravi jednom po doprinosu. Jedina slika koju zid crta.
   final String? imageCached;
+
+  /// Dimenzije keširane slike (iz zaglavlja, pri keširanju). Zid po njima
+  /// bira raspored PRIJE učitavanja: OG „standard" je 1200×630, ali stvarne
+  /// slike su i 2,7 : 1 i portretne (izmjereno 28.9.2026.).
+  final int? imageWidth;
+  final int? imageHeight;
   final String? siteName;
 
   const PinkaLinkPreview({
@@ -21,8 +27,17 @@ class PinkaLinkPreview {
     this.description,
     this.image,
     this.imageCached,
+    this.imageWidth,
+    this.imageHeight,
     this.siteName,
   });
+
+  /// širina / visina, ili null kad dimenzije nisu poznate.
+  double? get imageAspect {
+    final w = imageWidth, h = imageHeight;
+    if (w == null || h == null || w <= 0 || h <= 0) return null;
+    return w / h;
+  }
 
   bool get hasContent =>
       (title?.isNotEmpty ?? false) || (description?.isNotEmpty ?? false);
@@ -39,6 +54,8 @@ class PinkaLinkPreview {
       description: m['description'] as String?,
       image: m['image'] as String?,
       imageCached: _ownImageUrl(m['image_cached']),
+      imageWidth: (m['image_width'] as num?)?.toInt(),
+      imageHeight: (m['image_height'] as num?)?.toInt(),
       siteName: (m['siteName'] ?? m['site_name']) as String?,
     );
   }
