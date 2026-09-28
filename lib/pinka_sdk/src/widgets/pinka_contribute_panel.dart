@@ -123,10 +123,20 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   /// Živi rail progress SEPA intenta (stepper "Korak M/N" ispod QR-a).
   PinkaIntentStatus? _intentStatus;
-  Timer? _statusTimer;
 
-  /// Raste sa svakim novim intentom i na reset/dispose — petlje starog intenta
-  /// (rail polling, `waitForPaid`) po njemu znaju da su zastarjele.
+  /// Rail polling po intentu (ključ = `_intentGen` intenta). Timer NE umire kad
+  /// se panel zatvori: zatvoreni intent i dalje prati namiru u pozadini, da
+  /// kasno odbijanje stigne do donatora. Gase se na settled/rejected i dispose.
+  final Map<int, Timer> _railTimers = {};
+
+  /// Uspjeh stoji [_kSuccessHold] pa se panel sam vrati na obrazac — kao
+  /// kartica: odobrenje odmah, namira (mint, prosljeđivanje) tiho u pozadini.
+  static const _kSuccessHold = Duration(seconds: 4);
+  Timer? _autoCloseTimer;
+
+  /// Intent koji panel TRENUTNO prikazuje. Raste sa svakim novim intentom i
+  /// na zatvaranje uspjeha — pozadinske petlje starog intenta po njemu znaju
+  /// da više ne smiju dirati prikaz (ali namiru i dalje prate).
   int _intentGen = 0;
 
   /// Intent (sid/contributionId) za koji je proslava (animacija + haptika) već
@@ -263,7 +273,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   @override
   void dispose() {
     _intentGen++;
-    _statusTimer?.cancel();
+    for (final t in _railTimers.values) {
+      t.cancel();
+    }
+    _autoCloseTimer?.cancel();
     _holdTimer?.cancel();
     _slowReviewTimer?.cancel();
     _customFocus.dispose();
@@ -362,19 +375,23 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       });
       _startStatusPolling(intent, gen);
       _startHoldCountdown(intent.holdExpiresAt);
+      // Iznos i ime se hvataju SADA: panel se nakon uspjeha zatvori, pa ih
+      // donator do RPC `paid` već može prepisati za sljedeću donaciju.
+      final amountCents = _amountCents;
+      final displayName = _publicDisplayName;
       // Bez limita: prva uplata s novog IBAN-a zna stajati na provjeri satima.
-      // Petlja živi dok živi ovaj intent u ovom widgetu.
+      // Petlja živi dok živi widget — i nakon što se uspjeh zatvori.
       final paid = await widget.client.waitForPaid(
         intent.contributionId,
         maxAttempts: null,
-        isCancelled: () => !mounted || gen != _intentGen,
+        isCancelled: () => !mounted,
       );
-      if (!mounted || gen != _intentGen) return;
-      if (paid && _phase != _Phase.rejected) {
-        _statusTimer?.cancel();
-        _enterSuccess(intent, settled: true);
-        widget.onPaid?.call(_amountCents, _publicDisplayName);
+      if (!mounted || !paid) return;
+      _railTimers.remove(gen)?.cancel();
+      if (gen == _intentGen && _phase != _Phase.rejected) {
+        _enterSuccess(intent, gen, settled: true);
       }
+      widget.onPaid?.call(amountCents, displayName);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -386,7 +403,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   /// Prijelaz u uspjeh (`received`) ili namiru (`paid`). Proslava — animacija
   /// ikone i haptika — okida TOČNO JEDNOM po intentu.
-  void _enterSuccess(PinkaContributionIntent intent, {required bool settled}) {
+  void _enterSuccess(PinkaContributionIntent intent, int gen,
+      {required bool settled}) {
     _holdTimer?.cancel(); // novac je stigao; kasna uplata se ionako kreditira
     final target = settled ? _Phase.paid : _Phase.received;
     if (_phase == target || _phase == _Phase.paid) return;
@@ -399,6 +417,13 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     final wasShowingSuccess = _phase == _Phase.received;
     setState(() => _phase = target);
     if (!wasShowingSuccess) {
+      _autoCloseTimer?.cancel();
+      _autoCloseTimer = Timer(_kSuccessHold, () {
+        if (!mounted || gen != _intentGen) return;
+        if (_phase == _Phase.received || _phase == _Phase.paid) {
+          _resetForAnother();
+        }
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final ctx = _panelKey.currentContext;
         if (ctx == null || !ctx.mounted) return;
@@ -423,16 +448,15 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   /// Polla rail status endpoint (`/api/intents/<sid>`) svake 3 s — puni
   /// stepper "Korak M/N" i OKIDA uspjeh čim stage kaže da je uplata zaprimljena.
-  /// Ne staje na uspjehu: vrti se do `settled`/`rejected` (ili dok widget ne
-  /// umre / ne krene novi intent). Na grešku fetch vrati null i UI zadrži
-  /// zadnje poznato stanje.
+  /// Vrti se do `settled`/`rejected` (ili dispose), i kad se panel u
+  /// međuvremenu zatvori: tada samo javlja kasno odbijanje. Na grešku fetch
+  /// vrati null i UI zadrži zadnje poznato stanje.
   void _startStatusPolling(PinkaContributionIntent intent, int gen) {
     final url = intent.statusUrl ??
         (intent.sid.isNotEmpty
             ? '${widget.config.intentStatusBase}${intent.sid}'
             : null);
     if (url == null) return;
-    _statusTimer?.cancel();
     final fetch = widget.statusFetcher ?? fetchIntentStatus;
     var inFlight = false;
     Future<void> tick() async {
@@ -440,22 +464,35 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       inFlight = true;
       final s = await fetch(url);
       inFlight = false;
-      if (!mounted || gen != _intentGen || s == null) return;
-      _onIntentStatus(intent, s);
+      if (!mounted || s == null) return;
+      if (s.isRejected || s.isSettled) _railTimers.remove(gen)?.cancel();
+      if (gen == _intentGen) {
+        _onIntentStatus(intent, gen, s);
+      } else if (s.isRejected) {
+        // Panel je uspjeh već zatvorio — odbijanje ide u obrazac.
+        final reason = s.rejectedReason;
+        setState(() => _error = reason == null
+            ? appStrings.pinkaIntentRejected
+            : '${appStrings.pinkaIntentRejected} '
+                '${appStrings.pinkaIntentRejectedReason(reason)}');
+      }
     }
 
+    _railTimers.remove(gen)?.cancel();
+    _railTimers[gen] =
+        Timer.periodic(const Duration(seconds: 3), (_) => tick());
     tick();
-    _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) => tick());
   }
 
-  void _onIntentStatus(PinkaContributionIntent intent, PinkaIntentStatus s) {
+  void _onIntentStatus(
+      PinkaContributionIntent intent, int gen, PinkaIntentStatus s) {
     if (_phase == _Phase.rejected) return;
     final shownSuccess = _phase == _Phase.received || _phase == _Phase.paid;
-    if (s.isRejected || s.isSettled) _statusTimer?.cancel();
     if (s.isRejected && shownSuccess) {
       // Rijetko (0/49 izmjereno), ali moguće: uspjeh se povlači jasnom
-      // porukom, bez animacije.
+      // porukom, bez animacije (i bez automatskog zatvaranja).
       _slowReviewTimer?.cancel();
+      _autoCloseTimer?.cancel();
       setState(() {
         _intentStatus = s;
         _phase = _Phase.rejected;
@@ -469,7 +506,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
         if (mounted) setState(() => _slowReview = true);
       });
     }
-    _enterSuccess(intent, settled: s.isSettled);
+    _enterSuccess(intent, gen, settled: s.isSettled);
   }
 
   // ── On-chain (in-app DOMOVINA wallet) ────────────────────────────────────
@@ -1321,7 +1358,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           Text(l.pinkaPaymentConfirmedOnchain,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: cs.onSurfaceVariant)),
-        if (sepa && _intentStatus != null) ...[
+        // Samo dok namira traje: nakon RPC `paid` rail polling stane, pa bi
+        // stepper zauvijek stajao na zadnjem stanju (izmjereno: „Korak 4/5").
+        if (sepa && _phase == _Phase.received && _intentStatus != null) ...[
           const SizedBox(height: 12),
           _sepaProgress(theme, compact: true),
         ],
@@ -1418,8 +1457,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// ostaju (vjerojatno isti donator), poruka se čisti (potrošena na zidu),
   /// odabir mjesta se pušta hostu — to je mjesto sad zauzeto.
   void _resetForAnother() {
-    _intentGen++; // gasi rail polling i waitForPaid starog intenta
-    _statusTimer?.cancel();
+    // Odvaja prikaz od starog intenta; njegov rail polling i `waitForPaid`
+    // namjerno žive dalje (onPaid za zid, kasno odbijanje).
+    _intentGen++;
+    _autoCloseTimer?.cancel();
     _holdTimer?.cancel();
     _slowReviewTimer?.cancel();
     _slowReviewTimer = null;

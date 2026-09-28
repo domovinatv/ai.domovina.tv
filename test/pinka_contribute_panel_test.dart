@@ -322,7 +322,11 @@ void main() {
     expect(find.text(l.pinkaLinkInvalid), findsOneWidget);
   });
 
-  group('SEPA: uspjeh na zaprimanju, namira kasnije', () {
+  group('SEPA: uspjeh na zaprimanju, zatvaranje, namira u pozadini', () {
+    /// Obrazac je opet vidljiv kad postoji SEPA submit gumb.
+    Finder form(AppLocalizations l) =>
+        find.text(l.pinkaSupportWithAmount('1'));
+
     testWidgets('uspjeh na received_processing PRIJE RPC paid', (tester) async {
       final l = await AppLocalizations.delegate.load(const Locale('hr'));
       final h = _SepaHarness();
@@ -334,56 +338,72 @@ void main() {
 
       expect(find.text(l.pinkaThanksForSupport), findsOneWidget);
       expect(find.text(l.pinkaSepaReceivedProcessing), findsOneWidget);
-      expect(find.text(l.pinkaSepaFirstPaymentReview), findsOneWidget);
-      expect(find.text(l.pinkaPaymentConfirmedOnchain), findsNothing);
       // Doprinos u bazi još nije `paid` → zid se ne dira.
       expect(h.paidCalls, 0);
       expect(h.haptics, 1);
-
-      // Nakon 60 s u istoj fazi napomena o prvoj uplati se ističe.
-      expect(find.byKey(const Key('pinka-first-payment-review')), findsNothing);
-      await tester.pump(const Duration(seconds: 61));
-      expect(
-          find.byKey(const Key('pinka-first-payment-review')), findsOneWidget);
       await h.finish(tester);
     });
 
-    testWidgets('proslava samo jednom kroz received → minted → settled → paid',
+    testWidgets('uspjeh se sam zatvori; onPaid stigne kasnije, bez 2. proslave',
         (tester) async {
       final l = await AppLocalizations.delegate.load(const Locale('hr'));
       final h = _SepaHarness();
       await h.start(tester);
 
       h.rail.stage = 'received_processing';
-      await h.tick(tester);
+      await h.tick(tester); // t≈3 s: uspjeh
       await tester.pump(const Duration(seconds: 1)); // animacija do kraja
       expect(h.haptics, 1);
       expect(_successIconScale(tester), closeTo(1, 0.001));
 
       h.rail.stage = 'minted';
-      await h.tick(tester);
-      expect(find.text(l.pinkaSepaMintedForwarding), findsOneWidget);
-      // Ikona NIJE krenula ispočetka (tween bi počeo od 0,4).
-      expect(_successIconScale(tester), closeTo(1, 0.001));
+      await h.tick(tester); // t≈7 s: 4 s od uspjeha prošlo, panel se zatvara
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text(l.pinkaThanksForSupport), findsNothing);
+      expect(form(l), findsOneWidget);
 
+      // Namira stiže dok je panel već na obrascu.
       h.rail.stage = 'settled';
-      await h.tick(tester);
-      expect(find.text(l.pinkaPaymentConfirmedOnchain), findsOneWidget);
-      expect(_successIconScale(tester), closeTo(1, 0.001));
-      final railCallsAtSettle = h.rail.calls;
-
       h.client.rpcState = 'paid';
       await h.tick(tester);
       expect(h.paidCalls, 1);
       expect(h.haptics, 1);
-      expect(_successIconScale(tester), closeTo(1, 0.001));
-      // settled je terminalan — rail polling je stao.
+      expect(find.text(l.pinkaThanksForSupport), findsNothing);
+      final railCalls = h.rail.calls;
       await h.tick(tester);
-      expect(h.rail.calls, railCallsAtSettle);
+      expect(h.rail.calls, railCalls, reason: 'settled gasi rail polling');
       await h.finish(tester);
     });
 
-    testWidgets('rejected nakon prikazanog uspjeha zamijeni uspjeh porukom',
+    testWidgets('minted prije zatvaranja mijenja samo napomenu', (tester) async {
+      final l = await AppLocalizations.delegate.load(const Locale('hr'));
+      final h = _SepaHarness();
+      await h.start(tester);
+      h.rail.stage = 'minted';
+      await h.tick(tester);
+      expect(find.text(l.pinkaThanksForSupport), findsOneWidget);
+      expect(find.text(l.pinkaSepaMintedForwarding), findsOneWidget);
+      await h.finish(tester);
+    });
+
+    testWidgets('RPC paid dok je uspjeh otvoren: nema zapelog steppera',
+        (tester) async {
+      final l = await AppLocalizations.delegate.load(const Locale('hr'));
+      final h = _SepaHarness();
+      await h.start(tester);
+      h.rail.stage = 'forwarding';
+      h.client.rpcState = 'paid';
+      await h.tick(tester);
+      expect(find.text(l.pinkaPaymentConfirmedOnchain), findsOneWidget);
+      // Prije: „Korak 4/5" sa spinnerom zauvijek (prijava 28.9.2026.).
+      expect(find.text(l.pinkaStepOf(4, 5)), findsNothing);
+      expect(h.paidCalls, 1);
+      await tester.pump(const Duration(seconds: 5));
+      expect(form(l), findsOneWidget);
+      await h.finish(tester);
+    });
+
+    testWidgets('rejected dok je uspjeh otvoren: poruka, bez zatvaranja',
         (tester) async {
       final l = await AppLocalizations.delegate.load(const Locale('hr'));
       final h = _SepaHarness();
@@ -396,16 +416,36 @@ void main() {
       h.rail
         ..stage = 'rejected'
         ..reason = 'Uplata nije prošla provjeru';
-      await h.tick(tester);
+      await tester.pump(const Duration(seconds: 3)); // t≈6 s < zatvaranje
+      await tester.pump();
 
       expect(find.text(l.pinkaThanksForSupport), findsNothing);
       expect(find.text(l.pinkaIntentRejected), findsOneWidget);
       expect(
           find.text(l.pinkaIntentRejectedReason('Uplata nije prošla provjeru')),
           findsOneWidget);
-      expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+      expect(find.text(l.pinkaIntentRejected), findsOneWidget);
       expect(h.paidCalls, 0);
       expect(h.haptics, 1);
+      await h.finish(tester);
+    });
+
+    testWidgets('rejected nakon zatvaranja javi se u obrascu', (tester) async {
+      final l = await AppLocalizations.delegate.load(const Locale('hr'));
+      final h = _SepaHarness();
+      await h.start(tester);
+      h.rail.stage = 'received_processing';
+      await h.tick(tester);
+      await tester.pump(const Duration(seconds: 5));
+      expect(form(l), findsOneWidget);
+
+      h.rail
+        ..stage = 'rejected'
+        ..reason = 'X';
+      await h.tick(tester);
+      expect(
+          find.textContaining(l.pinkaIntentRejected), findsOneWidget);
       await h.finish(tester);
     });
 
@@ -439,19 +479,25 @@ void main() {
     });
   });
 
-  testWidgets('review_expected: true ističe provjeru odmah, false je skriva',
-      (tester) async {
-    final l = await AppLocalizations.delegate.load(const Locale('hr'));
+  testWidgets('review_expected: true ističe provjeru odmah', (tester) async {
     final h = _SepaHarness();
     await h.start(tester);
-
     h.rail
       ..stage = 'received_processing'
       ..reviewExpected = true;
     await h.tick(tester);
     expect(find.byKey(const Key('pinka-first-payment-review')), findsOneWidget);
+    await h.finish(tester);
+  });
 
-    h.rail.reviewExpected = false;
+  testWidgets('review_expected: false skriva napomenu o prvoj uplati',
+      (tester) async {
+    final l = await AppLocalizations.delegate.load(const Locale('hr'));
+    final h = _SepaHarness();
+    await h.start(tester);
+    h.rail
+      ..stage = 'received_processing'
+      ..reviewExpected = false;
     await h.tick(tester);
     expect(find.text(l.pinkaSepaReceivedProcessing), findsOneWidget);
     expect(find.text(l.pinkaSepaFirstPaymentReview), findsNothing);
