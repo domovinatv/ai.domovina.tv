@@ -2491,6 +2491,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your payment is confirmed on-chain.';
 
   @override
+  String get pinkaSepaReceivedProcessing =>
+      'Payment received. EURe is being issued.';
+
+  @override
+  String get pinkaSepaFirstPaymentReview =>
+      'The first payment from a new account can take a while to be checked. You don\'t need to do anything.';
+
+  @override
+  String get pinkaSepaMintedForwarding =>
+      'EURe issued, being forwarded to the campaign…';
+
+  @override
+  String pinkaIntentRejectedReason(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
   String get pinkaDonateAgain => 'Donate again';
 
   @override

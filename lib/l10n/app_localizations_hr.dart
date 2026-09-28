@@ -2514,6 +2514,23 @@ class AppLocalizationsHr extends AppLocalizations {
   String get pinkaPaymentConfirmedOnchain => 'Plaćanje je potvrđeno na lancu.';
 
   @override
+  String get pinkaSepaReceivedProcessing =>
+      'Uplata je zaprimljena. Izdavanje EURe-a je u tijeku.';
+
+  @override
+  String get pinkaSepaFirstPaymentReview =>
+      'Kod prve uplate s novog računa provjera može potrajati. Ne moraš ništa raditi.';
+
+  @override
+  String get pinkaSepaMintedForwarding =>
+      'EURe izdan, prosljeđuje se kampanji…';
+
+  @override
+  String pinkaIntentRejectedReason(String reason) {
+    return 'Razlog: $reason';
+  }
+
+  @override
   String get pinkaDonateAgain => 'Doniraj još jednom';
 
   @override

@@ -27,6 +27,21 @@ class PinkaIntentStatus {
 
   bool get isRejected => stage == 'rejected';
   bool get isExpired => stage == 'expired';
+
+  /// Monerium je ZAPRIMIO uplatu (SEPA Instant stigne u istoj sekundi) —
+  /// od tog trenutka donator je svoj dio odradio, iako mint EURe-a kod prve
+  /// uplate s novog IBAN-a zna čekati ručnu provjeru (izmjereno 1 min – 8 h).
+  bool get isReceived => const {
+        'received_processing',
+        'minted',
+        'forwarding',
+        'settled',
+      }.contains(stage);
+
+  /// EURe izdan, a prosljeđivanje kampanji još traje.
+  bool get isMinted => stage == 'minted' || stage == 'forwarding';
+
+  bool get isSettled => stage == 'settled';
 }
 
 class PinkaIntentStep {
@@ -48,7 +63,18 @@ Future<PinkaIntentStatus?> fetchIntentStatus(String statusUrl) async {
         .get(Uri.parse(statusUrl))
         .timeout(const Duration(seconds: 8));
     if (res.statusCode != 200) return null;
-    final body = jsonDecode(res.body);
+    return parseIntentStatus(jsonDecode(res.body));
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Parsira tijelo `GET /api/intents/<sid>`; `null` kad oblik ne odgovara.
+///
+/// `rejected_reason` rail vraća UNUTAR `status` bloka — do 28.9.2026. se čitao
+/// s vrha tijela i razlog odbijanja bio je uvijek null. Vrh ostaje fallback.
+PinkaIntentStatus? parseIntentStatus(Object? body) {
+  try {
     if (body is! Map) return null;
     final status = body['status'];
     if (status is! Map) return null;
@@ -63,7 +89,8 @@ Future<PinkaIntentStatus?> fetchIntentStatus(String statusUrl) async {
     return PinkaIntentStatus(
       stage: stage,
       steps: steps,
-      rejectedReason: body['rejected_reason'] as String?,
+      rejectedReason:
+          (status['rejected_reason'] ?? body['rejected_reason']) as String?,
     );
   } catch (_) {
     return null;

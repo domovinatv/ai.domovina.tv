@@ -247,12 +247,18 @@ class PinkaClient {
   }
 
   /// Poll dok doprinos ne postane 'paid' (ili istek). Default ~5 min.
+  ///
+  /// `maxAttempts: null` polla bez limita — SEPA panel tako čeka prvu uplatu
+  /// s novog IBAN-a, koju Monerium zna držati na provjeri satima. Tada je
+  /// [isCancelled] obavezan: jedini kraj petlje osim `paid`/`failed`/`expired`.
   Future<bool> waitForPaid(
     String contributionId, {
     Duration interval = const Duration(seconds: 3),
-    int maxAttempts = 100,
+    int? maxAttempts = 100,
+    bool Function()? isCancelled,
   }) async {
-    for (var i = 0; i < maxAttempts; i++) {
+    for (var i = 0; maxAttempts == null || i < maxAttempts; i++) {
+      if (isCancelled?.call() ?? false) return false;
       final state = await contributionStatus(contributionId);
       if (state == 'paid') return true;
       if (state == 'failed' || state == 'expired') return false;

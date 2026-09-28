@@ -4154,6 +4154,30 @@ abstract class AppLocalizations {
   /// **'Plaćanje je potvrđeno na lancu.'**
   String get pinkaPaymentConfirmedOnchain;
 
+  /// Ispod zahvale kad je Monerium zaprimio SEPA uplatu (rail stage=received_processing), a EURe još nije izdan. Bez obećanja trajanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je zaprimljena. Izdavanje EURe-a je u tijeku.'**
+  String get pinkaSepaReceivedProcessing;
+
+  /// Smirujuća napomena uz received_processing; nakon ~60 s u toj fazi se ističe. Namjerno „provjera", ne tehnički naziv.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod prve uplate s novog računa provjera može potrajati. Ne moraš ništa raditi.'**
+  String get pinkaSepaFirstPaymentReview;
+
+  /// Ispod zahvale kad je EURe izdan, a prosljeđivanje kampanji traje (rail stage=minted/forwarding).
+  ///
+  /// In hr, this message translates to:
+  /// **'EURe izdan, prosljeđuje se kampanji…'**
+  String get pinkaSepaMintedForwarding;
+
+  /// Razlog odbijanja SEPA uplate s raila (status.rejected_reason), ispod pinkaIntentRejected.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razlog: {reason}'**
+  String pinkaIntentRejectedReason(String reason);
+
   /// Gumb na ekranu zahvale koji vraća obrazac za novu donaciju.
   ///
   /// In hr, this message translates to:

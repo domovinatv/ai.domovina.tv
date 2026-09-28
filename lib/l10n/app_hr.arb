@@ -3125,6 +3125,27 @@
   "@pinkaPaymentConfirmedOnchain": {
     "description": "Potvrda da je uplata zabilježena na lancu."
   },
+  "pinkaSepaReceivedProcessing": "Uplata je zaprimljena. Izdavanje EURe-a je u tijeku.",
+  "@pinkaSepaReceivedProcessing": {
+    "description": "Ispod zahvale kad je Monerium zaprimio SEPA uplatu (rail stage=received_processing), a EURe još nije izdan. Bez obećanja trajanja."
+  },
+  "pinkaSepaFirstPaymentReview": "Kod prve uplate s novog računa provjera može potrajati. Ne moraš ništa raditi.",
+  "@pinkaSepaFirstPaymentReview": {
+    "description": "Smirujuća napomena uz received_processing; nakon ~60 s u toj fazi se ističe. Namjerno „provjera\", ne tehnički naziv."
+  },
+  "pinkaSepaMintedForwarding": "EURe izdan, prosljeđuje se kampanji…",
+  "@pinkaSepaMintedForwarding": {
+    "description": "Ispod zahvale kad je EURe izdan, a prosljeđivanje kampanji traje (rail stage=minted/forwarding)."
+  },
+  "pinkaIntentRejectedReason": "Razlog: {reason}",
+  "@pinkaIntentRejectedReason": {
+    "description": "Razlog odbijanja SEPA uplate s raila (status.rejected_reason), ispod pinkaIntentRejected.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "pinkaDonateAgain": "Doniraj još jednom",
   "@pinkaDonateAgain": {
     "description": "Gumb na ekranu zahvale koji vraća obrazac za novu donaciju."

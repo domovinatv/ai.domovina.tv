@@ -63,6 +63,11 @@ class PinkaContributePanel extends StatefulWidget {
   /// odabir. Prima ključ mjesta koje je palo (može biti `null`).
   final void Function(String? slotKey)? onSlotConflict;
 
+  /// Dohvat rail statusa SEPA intenta. Default je HTTP [fetchIntentStatus];
+  /// testovi podmeću lažni da mogu voditi intent kroz stageove.
+  @visibleForTesting
+  final Future<PinkaIntentStatus?> Function(String statusUrl)? statusFetcher;
+
   const PinkaContributePanel({
     super.key,
     required this.campaign,
@@ -78,6 +83,7 @@ class PinkaContributePanel extends StatefulWidget {
     this.selectedSlotLabel,
     this.onClearSlot,
     this.onSlotConflict,
+    this.statusFetcher,
   });
 
   @override
@@ -86,7 +92,10 @@ class PinkaContributePanel extends StatefulWidget {
 
 enum _Mode { sepa, onchain }
 
-enum _Phase { idle, creating, awaiting, paid }
+/// `received` = Monerium je zaprimio SEPA uplatu i donator vidi uspjeh, ali
+/// mint/prosljeđivanje još traje; `paid` = namireno (rail `settled` ili RPC
+/// `paid`); `rejected` = odbijeno NAKON što je uspjeh već bio prikazan.
+enum _Phase { idle, creating, awaiting, received, paid, rejected }
 
 enum _WalletPhase { idle, connecting, sending, confirming }
 
@@ -115,6 +124,22 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// Živi rail progress SEPA intenta (stepper "Korak M/N" ispod QR-a).
   PinkaIntentStatus? _intentStatus;
   Timer? _statusTimer;
+
+  /// Raste sa svakim novim intentom i na reset/dispose — petlje starog intenta
+  /// (rail polling, `waitForPaid`) po njemu znaju da su zastarjele.
+  int _intentGen = 0;
+
+  /// Intent (sid/contributionId) za koji je proslava (animacija + haptika) već
+  /// odigrana — `settled`/RPC `paid` nakon `received` je ne ponavljaju.
+  String? _celebratedFor;
+
+  /// Dugo stoji u `received_processing` → istakni napomenu o prvoj uplati.
+  bool _slowReview = false;
+  Timer? _slowReviewTimer;
+
+  /// Panel se na uspjehu skupi s QR-a (~900 px) na kratku karticu — na
+  /// mobitelu bi zahvala ostala iznad viewporta, a donator gledao zid ispod.
+  final _panelKey = GlobalKey();
 
   /// Do kada je mjesto rezervirano (hold) — odbrojava se ispod QR-a.
   DateTime? _holdExpiresAt;
@@ -237,8 +262,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   @override
   void dispose() {
+    _intentGen++;
     _statusTimer?.cancel();
     _holdTimer?.cancel();
+    _slowReviewTimer?.cancel();
     _customFocus.dispose();
     _customCtrl.dispose();
     _nameCtrl.dispose();
@@ -314,6 +341,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   // ── SEPA ───────────────────────────────────────────────────────────────
+  /// Uspjeh se prikazuje ČIM Monerium zaprimi uplatu (rail `received_*`, ~1 s),
+  /// kao odobrenje kartice — namira (mint + prosljeđivanje) stiže kasnije i
+  /// samo mijenja napomenu ispod. `onPaid` (zid, kvadratić) i dalje čeka RPC
+  /// `paid`, jer doprinos u bazi postaje plaćen tek na `settled`.
   Future<void> _submitSepa() async {
     if (!_validateAmount(onchain: false)) return;
     if (!_validateLink(onchain: false)) return;
@@ -324,18 +355,24 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     try {
       final intent = await _createContribution();
       if (intent == null || !mounted) return;
+      final gen = ++_intentGen;
       setState(() {
         _intent = intent;
         _phase = _Phase.awaiting;
       });
-      _startStatusPolling(intent);
+      _startStatusPolling(intent, gen);
       _startHoldCountdown(intent.holdExpiresAt);
-      final paid = await widget.client.waitForPaid(intent.contributionId);
-      if (!mounted) return;
-      _statusTimer?.cancel();
-      _holdTimer?.cancel();
-      if (paid) {
-        setState(() => _phase = _Phase.paid);
+      // Bez limita: prva uplata s novog IBAN-a zna stajati na provjeri satima.
+      // Petlja živi dok živi ovaj intent u ovom widgetu.
+      final paid = await widget.client.waitForPaid(
+        intent.contributionId,
+        maxAttempts: null,
+        isCancelled: () => !mounted || gen != _intentGen,
+      );
+      if (!mounted || gen != _intentGen) return;
+      if (paid && _phase != _Phase.rejected) {
+        _statusTimer?.cancel();
+        _enterSuccess(intent, settled: true);
         widget.onPaid?.call(_amountCents, _publicDisplayName);
       }
     } catch (e) {
@@ -343,6 +380,30 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       setState(() {
         _phase = _Phase.idle;
         _error = appStrings.pinkaPaymentCreateFailed;
+      });
+    }
+  }
+
+  /// Prijelaz u uspjeh (`received`) ili namiru (`paid`). Proslava — animacija
+  /// ikone i haptika — okida TOČNO JEDNOM po intentu.
+  void _enterSuccess(PinkaContributionIntent intent, {required bool settled}) {
+    _holdTimer?.cancel(); // novac je stigao; kasna uplata se ionako kreditira
+    final target = settled ? _Phase.paid : _Phase.received;
+    if (_phase == target || _phase == _Phase.paid) return;
+    final id = intent.sid.isNotEmpty ? intent.sid : intent.contributionId;
+    if (_celebratedFor != id) {
+      _celebratedFor = id;
+      HapticFeedback.mediumImpact();
+    }
+    if (target == _Phase.paid) _slowReviewTimer?.cancel();
+    final wasShowingSuccess = _phase == _Phase.received;
+    setState(() => _phase = target);
+    if (!wasShowingSuccess) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _panelKey.currentContext;
+        if (ctx == null || !ctx.mounted) return;
+        Scrollable.ensureVisible(ctx,
+            alignment: 0.2, duration: const Duration(milliseconds: 300));
       });
     }
   }
@@ -360,25 +421,55 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     });
   }
 
-  /// Polla rail status endpoint (`/api/intents/<sid>`) svake 3 s dok QR čeka
-  /// uplatu — puni stepper "Korak M/N". Ukras uz `waitForPaid` (RPC ostaje
-  /// izvor istine za "plaćeno"); na grešku fetch vrati null i UI zadrži
-  /// zadnje poznato stanje / generički spinner.
-  void _startStatusPolling(PinkaContributionIntent intent) {
+  /// Polla rail status endpoint (`/api/intents/<sid>`) svake 3 s — puni
+  /// stepper "Korak M/N" i OKIDA uspjeh čim stage kaže da je uplata zaprimljena.
+  /// Ne staje na uspjehu: vrti se do `settled`/`rejected` (ili dok widget ne
+  /// umre / ne krene novi intent). Na grešku fetch vrati null i UI zadrži
+  /// zadnje poznato stanje.
+  void _startStatusPolling(PinkaContributionIntent intent, int gen) {
     final url = intent.statusUrl ??
         (intent.sid.isNotEmpty
             ? '${widget.config.intentStatusBase}${intent.sid}'
             : null);
     if (url == null) return;
     _statusTimer?.cancel();
+    final fetch = widget.statusFetcher ?? fetchIntentStatus;
+    var inFlight = false;
     Future<void> tick() async {
-      final s = await fetchIntentStatus(url);
-      if (!mounted || _phase != _Phase.awaiting) return;
-      if (s != null) setState(() => _intentStatus = s);
+      if (inFlight) return;
+      inFlight = true;
+      final s = await fetch(url);
+      inFlight = false;
+      if (!mounted || gen != _intentGen || s == null) return;
+      _onIntentStatus(intent, s);
     }
 
     tick();
     _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) => tick());
+  }
+
+  void _onIntentStatus(PinkaContributionIntent intent, PinkaIntentStatus s) {
+    if (_phase == _Phase.rejected) return;
+    final shownSuccess = _phase == _Phase.received || _phase == _Phase.paid;
+    if (s.isRejected || s.isSettled) _statusTimer?.cancel();
+    if (s.isRejected && shownSuccess) {
+      // Rijetko (0/49 izmjereno), ali moguće: uspjeh se povlači jasnom
+      // porukom, bez animacije.
+      _slowReviewTimer?.cancel();
+      setState(() {
+        _intentStatus = s;
+        _phase = _Phase.rejected;
+      });
+      return;
+    }
+    setState(() => _intentStatus = s);
+    if (!s.isReceived) return;
+    if (s.stage == 'received_processing' && _slowReviewTimer == null) {
+      _slowReviewTimer = Timer(const Duration(seconds: 60), () {
+        if (mounted) setState(() => _slowReview = true);
+      });
+    }
+    _enterSuccess(intent, settled: s.isSettled);
   }
 
   // ── On-chain (in-app DOMOVINA wallet) ────────────────────────────────────
@@ -451,6 +542,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
+      key: _panelKey,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -459,7 +551,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       ),
       child: switch (_phase) {
         _Phase.awaiting => _buildSepaQr(theme),
-        _Phase.paid => _buildPaid(theme),
+        _Phase.received || _Phase.paid => _buildPaid(theme),
+        _Phase.rejected => _buildRejected(theme),
         _ => _buildForm(theme),
       },
     );
@@ -972,9 +1065,13 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   /// Živi timeline SEPA uplate ("Korak M/N") iz rail statusa; dok rail još
   /// nema podataka (ili fetch ne uspije), generički spinner kao prije.
-  Widget _sepaProgress(ThemeData theme) {
+  /// [compact] = samo "Korak M/N" + traka, kao sekundarni detalj ispod uspjeha.
+  Widget _sepaProgress(ThemeData theme, {bool compact = false}) {
     final l = AppLocalizations.of(context);
     final s = _intentStatus;
+    if (compact && (s == null || s.steps.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     if (s == null || s.steps.isEmpty) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1007,7 +1104,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 style: theme.textTheme.labelLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const Spacer(),
-            if (!terminalError)
+            if (!terminalError && !s.isSettled)
               const SizedBox(
                   width: 14,
                   height: 14,
@@ -1025,15 +1122,17 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
             color: terminalError ? cs.error : cs.tertiary,
           ),
         ),
-        const SizedBox(height: 12),
-        for (var i = 0; i < s.steps.length; i++)
-          _stepRow(
-            theme,
-            s.steps[i],
-            number: i + 1,
-            isCurrent: !terminalError && i == current - 1,
-            isLast: i == s.steps.length - 1,
-          ),
+        if (!compact) ...[
+          const SizedBox(height: 12),
+          for (var i = 0; i < s.steps.length; i++)
+            _stepRow(
+              theme,
+              s.steps[i],
+              number: i + 1,
+              isCurrent: !terminalError && i == current - 1,
+              isLast: i == s.steps.length - 1,
+            ),
+        ],
         if (terminalError) ...[
           const SizedBox(height: 8),
           Text(
@@ -1043,6 +1142,9 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
             style:
                 theme.textTheme.bodySmall?.copyWith(color: cs.error),
           ),
+          if (s.isRejected && s.rejectedReason != null)
+            Text(l.pinkaIntentRejectedReason(s.rejectedReason!),
+                style: theme.textTheme.bodySmall?.copyWith(color: cs.error)),
         ],
       ],
     );
@@ -1189,17 +1291,109 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   Widget _buildPaid(ThemeData theme) {
     final l = AppLocalizations.of(context);
+    final cs = theme.colorScheme;
+    final icon = Icon(Icons.check_circle, color: cs.tertiary, size: 40);
+    // SEPA: ikona "iskoči" jednom. Ključ je intent, pa prijelaz received →
+    // paid zadrži isti element i animacija se NE ponavlja. On-chain putanja
+    // (bez intenta) ostaje kakva je bila.
+    final sepa = _intent != null;
     return Column(
       children: [
-        Icon(Icons.check_circle, color: theme.colorScheme.tertiary, size: 40),
+        if (sepa)
+          TweenAnimationBuilder<double>(
+            key: ValueKey('pinka-success-${_celebratedFor ?? ''}'),
+            tween: Tween(begin: 0.4, end: 1),
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.elasticOut,
+            builder: (_, v, child) => Transform.scale(scale: v, child: child),
+            child: icon,
+          )
+        else
+          icon,
         const SizedBox(height: 10),
         Text(l.pinkaThanksForSupport,
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(l.pinkaPaymentConfirmedOnchain,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        if (_phase == _Phase.received)
+          _settlementNote(theme)
+        else
+          Text(l.pinkaPaymentConfirmedOnchain,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: cs.onSurfaceVariant)),
+        if (sepa && _intentStatus != null) ...[
+          const SizedBox(height: 12),
+          _sepaProgress(theme, compact: true),
+        ],
+        const SizedBox(height: 14),
+        FilledButton.tonalIcon(
+          onPressed: _resetForAnother,
+          icon: const Icon(Icons.replay, size: 18),
+          label: Text(l.pinkaDonateAgain),
+        ),
+      ],
+    );
+  }
+
+  /// Mirna napomena ispod uspjeha dok namira traje. Bez lažnog napretka i bez
+  /// obećanja trajanja: prva uplata s novog IBAN-a zna čekati provjeru satima.
+  Widget _settlementNote(ThemeData theme) {
+    final l = AppLocalizations.of(context);
+    final cs = theme.colorScheme;
+    final muted =
+        theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant);
+    final s = _intentStatus;
+    if (s != null && s.isMinted) {
+      return Text(l.pinkaSepaMintedForwarding,
+          textAlign: TextAlign.center, style: muted);
+    }
+    return Column(
+      children: [
+        Text(l.pinkaSepaReceivedProcessing,
+            textAlign: TextAlign.center, style: muted),
+        const SizedBox(height: 6),
+        if (_slowReview)
+          Row(
+            key: const Key('pinka-first-payment-review'),
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline, size: 16, color: cs.tertiary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(l.pinkaSepaFirstPaymentReview,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          )
+        else
+          Text(l.pinkaSepaFirstPaymentReview,
+              textAlign: TextAlign.center, style: muted),
+      ],
+    );
+  }
+
+  /// Odbijeno NAKON prikazanog uspjeha: jasna poruka, bez animacije.
+  Widget _buildRejected(ThemeData theme) {
+    final l = AppLocalizations.of(context);
+    final cs = theme.colorScheme;
+    final reason = _intentStatus?.rejectedReason;
+    return Column(
+      children: [
+        Icon(Icons.error_outline, color: cs.error, size: 40),
+        const SizedBox(height: 10),
+        Text(l.pinkaIntentRejected,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w700)),
+        if (reason != null) ...[
+          const SizedBox(height: 4),
+          Text(l.pinkaIntentRejectedReason(reason),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: cs.onSurfaceVariant)),
+        ],
         const SizedBox(height: 14),
         FilledButton.tonalIcon(
           onPressed: _resetForAnother,
@@ -1214,8 +1408,12 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   /// ostaju (vjerojatno isti donator), poruka se čisti (potrošena na zidu),
   /// odabir mjesta se pušta hostu — to je mjesto sad zauzeto.
   void _resetForAnother() {
+    _intentGen++; // gasi rail polling i waitForPaid starog intenta
     _statusTimer?.cancel();
     _holdTimer?.cancel();
+    _slowReviewTimer?.cancel();
+    _slowReviewTimer = null;
+    _slowReview = false;
     widget.onClearSlot?.call();
     setState(() {
       _phase = _Phase.idle;
