@@ -16,6 +16,7 @@ import 'package:domovina_ai/pinka_sdk/src/models/pinka_link_preview.dart';
 import 'package:domovina_ai/pinka_sdk/src/models/pinka_public_contribution.dart';
 import 'package:domovina_ai/pinka_sdk/src/widgets/pinka_common.dart';
 import 'package:domovina_ai/pinka_sdk/src/widgets/pinka_wall_list.dart';
+import 'package:domovina_ai/widgets/cached_thumbnail.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       locale: const Locale('hr'),
@@ -256,5 +257,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(l.pinkaWallOpenLink), findsOneWidget);
     expect(find.text('Opis koji se vidi samo u sheetu.'), findsOneWidget);
+  });
+
+  group('OG slika previewa', () {
+    const cached = 'https://api.domovina.ai/storage/v1/render/image/public/'
+        'pinka-og-cache/abc.jpg?width=600&quality=80';
+
+    test('image_cached se prihvaća SAMO s našeg hosta', () {
+      PinkaLinkPreview? parse(Object? cachedUrl) => PinkaLinkPreview.fromJson({
+            'url': 'https://ff.hr/',
+            'title': 'FF',
+            'image': 'https://ff.hr/assets/og.png',
+            'image_cached': cachedUrl,
+          });
+      expect(parse(cached)!.imageCached, cached);
+      expect(parse('https://ff.hr/assets/og.png')!.imageCached, isNull);
+      expect(parse('http://api.domovina.ai/x.jpg')!.imageCached, isNull);
+      expect(parse(null)!.imageCached, isNull);
+    });
+
+    testWidgets('zid crta samo keširanu kopiju, nikad tuđi og:image',
+        (tester) async {
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 'bez-kopije',
+          preview: const PinkaLinkPreview(
+            url: 'https://ff.hr/',
+            title: 'Samo tuđa slika',
+            image: 'https://ff.hr/assets/og.png',
+          ),
+        ),
+      ])));
+      await tester.pump();
+      expect(find.byType(CachedThumbnail), findsNothing);
+
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 's-kopijom',
+          preview: const PinkaLinkPreview(
+            url: 'https://ff.hr/',
+            title: 'Keširana slika',
+            image: 'https://ff.hr/assets/og.png',
+            imageCached: cached,
+          ),
+        ),
+      ])));
+      await tester.pump();
+      final thumb = tester.widget<CachedThumbnail>(find.byType(CachedThumbnail));
+      expect(thumb.url, cached);
+      // Visina pločice se NE mijenja zbog slike (raspored bez rupa).
+      final tile = tester.widget<StaggeredGridTile>(find.byType(StaggeredGridTile));
+      expect(tile.mainAxisExtent, kPinkaWallTallTile);
+    });
   });
 }

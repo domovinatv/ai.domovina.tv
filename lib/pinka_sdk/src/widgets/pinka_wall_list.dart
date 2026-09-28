@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../../widgets/cached_thumbnail.dart';
 import '../models/pinka_link_preview.dart';
 import '../models/pinka_public_contribution.dart';
 import '../util/pinka_money.dart';
@@ -367,6 +368,41 @@ class _LinkPreviewCard extends StatelessWidget {
         ? p.siteName!.trim()
         : (host.isNotEmpty ? host : l.pinkaLink);
 
+    final image = p.imageCached;
+    final text = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$source ↗',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+        if (p.title?.isNotEmpty ?? false) ...[
+          const SizedBox(height: 2),
+          Text(
+            p.title!,
+            maxLines: detailed ? 3 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+        if (detailed && (p.description?.isNotEmpty ?? false)) ...[
+          const SizedBox(height: 4),
+          Text(
+            p.description!,
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -374,39 +410,61 @@ class _LinkPreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$source ↗',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
-          ),
-          if (p.title?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 2),
-            Text(
-              p.title!,
-              maxLines: detailed ? 3 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-          if (detailed && (p.description?.isNotEmpty ?? false)) ...[
-            const SizedBox(height: 4),
-            Text(
-              p.description!,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ],
-      ),
+      child: image == null
+          ? text
+          : detailed
+              // Sheet: slika preko cijele širine, OG omjer 1,91 : 1.
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: AspectRatio(
+                        aspectRatio: 1.91,
+                        child: _PreviewImage(url: image),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    text,
+                  ],
+                )
+              // Pločica ima FIKSNU visinu (staggered raspored bez rupa), pa
+              // slika ide lijevo kao kvadrat umjesto iznad teksta.
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: _PreviewImage(
+                          url: image,
+                          width: _kPreviewThumb,
+                          height: _kPreviewThumb),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(child: text),
+                  ],
+                ),
     );
   }
+}
+
+const double _kPreviewThumb = 64;
+
+/// Slika previewa iz NAŠEG storagea. Pad dohvata = slika nestane, kartica
+/// ostane tekstualna (bez ikone slomljene slike na javnom zidu).
+class _PreviewImage extends StatelessWidget {
+  final String url;
+  final double? width;
+  final double? height;
+
+  const _PreviewImage({required this.url, this.width, this.height});
+
+  @override
+  Widget build(BuildContext context) => CachedThumbnail(
+        url: url,
+        width: width,
+        height: height,
+        errorFallbackBuilder: (_) => const SizedBox.shrink(),
+      );
 }
