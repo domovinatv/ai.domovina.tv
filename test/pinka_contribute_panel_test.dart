@@ -245,8 +245,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_inPreview(find.text('Ana Anić')), findsOneWidget);
-    // Default iznos 5,00 € — isti tekst nosi i preset čip, zato scopeano.
-    expect(_inPreview(find.text('5 €')), findsOneWidget);
+    // Default iznos 1,00 € — isti tekst nosi i preset čip, zato scopeano.
+    expect(_inPreview(find.text('1 €')), findsOneWidget);
     expect(_inPreview(find.text('domovina.ai')), findsOneWidget);
     expect(_inPreview(find.text(l.pinkaPreviewNamePlaceholder)), findsNothing);
   });

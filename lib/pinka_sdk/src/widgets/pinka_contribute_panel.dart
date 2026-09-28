@@ -109,7 +109,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   _Phase _phase = _Phase.idle;
   _WalletPhase _walletPhase = _WalletPhase.idle;
 
-  int _amountCents = 500;
+  int _amountCents = 100; // default 1 € (preset čip); min kampanje ga diže
   final _customCtrl = TextEditingController();
   final _customFocus = FocusNode();
   final _nameCtrl = TextEditingController();
