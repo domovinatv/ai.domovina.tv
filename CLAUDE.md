@@ -687,6 +687,23 @@ reprodukciju pa otvori drawer mora ponoviti `play()` nakon animacije
 (`_revealPlayer`, 300/900 ms). Izmjereno 24.9.2026. na 390 px: seek je sjeo na
 5963 s, a poruka nije krenula.
 
+### Pinka SEPA — uspjeh na ZAPRIMANJU, namira u pozadini (od 28.9.2026.)
+
+Rail stage `received_processing` stiže ~1 s nakon SEPA Instant uplate, a mint
+(→ RPC `paid`) kod prve uplate s novog IBAN-a zna trajati 1 min – 8 h. Panel
+zato slavi na zaprimanju, sam se zatvori nakon 4 s i namiru prati u pozadini.
+Tok, mjerenja i zamke: `docs/2026-09-28-pinka-sepa-instant-i-zid.md`.
+
+**Rule**: `onPaid` (zid, kvadratić) samo na RPC `paid` — doprinos je u bazi
+plaćen tek tada. Rano prikazivanje ide kroz `onReceived` + optimistični unos na
+zidu (isti contribution id). Nijedna petlja u SEPA toku nema vremenski limit;
+gase je `dispose` i terminalni stage (`settled`/`rejected`).
+
+**Rule (OG slike)**: zid i obrazac crtaju SAMO `link_preview.image_cached`
+(`api.domovina.ai`, bucket `pinka-og-cache`), NIKAD tuđi `og:image` — to bi
+posjetiteljev IP odalo vlasniku tog hosta. Preview u obrascu ide preko edge
+funkcije `pinka-link-preview`, ne dohvatom iz preglednika.
+
 ## Logging
 
 `main.dart` exports a `log()` function that prefixes messages with `[DOMOVINA v{version}]`. Use it throughout the app for console debugging:

@@ -80,3 +80,8 @@ sesije — moguće da faza 2 već kreće; provjeriti prije dupliranja posla.)
 mobilnoj i desktop širini, tap centar → 1000 € u panel, tap rub → 1 € čip,
 tap zauzeta ćelija → bottom sheet s donatorom, hover labeli rade, SEPA/
 on-chain tok netaknut. Mapirano 38/38 doprinosa.
+
+## Vezani dokumenti
+
+- `docs/2026-09-28-pinka-sepa-instant-i-zid.md` — uspjeh na zaprimanju SEPA uplate,
+  let kartice na zid, OG slike u pločicama (28.9.2026.)
