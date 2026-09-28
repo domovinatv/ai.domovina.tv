@@ -19,10 +19,20 @@ class PinkaIntentStatus {
   final List<PinkaIntentStep> steps;
   final String? rejectedReason;
 
+  /// Rail procjena za `received_processing` (od 28.9.2026.): `true` = vjerojatno
+  /// prva uplata s novog IBAN-a → Monerium ručna provjera (1 min – 8 h);
+  /// `false` = poznati uplatitelj, mint za ~9 s; `null` = ne zna se / druga faza.
+  final bool? reviewExpected;
+
+  /// Koliko je intent već u trenutnoj fazi (rail `seconds_in_stage`).
+  final int? secondsInStage;
+
   const PinkaIntentStatus({
     required this.stage,
     required this.steps,
     this.rejectedReason,
+    this.reviewExpected,
+    this.secondsInStage,
   });
 
   bool get isRejected => stage == 'rejected';
@@ -91,6 +101,8 @@ PinkaIntentStatus? parseIntentStatus(Object? body) {
       steps: steps,
       rejectedReason:
           (status['rejected_reason'] ?? body['rejected_reason']) as String?,
+      reviewExpected: status['review_expected'] as bool?,
+      secondsInStage: (status['seconds_in_stage'] as num?)?.toInt(),
     );
   } catch (_) {
     return null;

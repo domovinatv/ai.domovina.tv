@@ -133,6 +133,7 @@ class _SepaClient extends PinkaClient {
 class _FakeRail {
   String stage = 'awaiting_payment';
   String? reason;
+  bool? reviewExpected;
   int calls = 0;
 
   Future<PinkaIntentStatus?> fetch(String url) async {
@@ -140,6 +141,7 @@ class _FakeRail {
     return PinkaIntentStatus(
       stage: stage,
       rejectedReason: reason,
+      reviewExpected: reviewExpected,
       steps: const [
         PinkaIntentStep(key: 'payment', status: 'proven'),
         PinkaIntentStep(key: 'processing', status: 'in_progress'),
@@ -437,6 +439,25 @@ void main() {
     });
   });
 
+  testWidgets('review_expected: true ističe provjeru odmah, false je skriva',
+      (tester) async {
+    final l = await AppLocalizations.delegate.load(const Locale('hr'));
+    final h = _SepaHarness();
+    await h.start(tester);
+
+    h.rail
+      ..stage = 'received_processing'
+      ..reviewExpected = true;
+    await h.tick(tester);
+    expect(find.byKey(const Key('pinka-first-payment-review')), findsOneWidget);
+
+    h.rail.reviewExpected = false;
+    await h.tick(tester);
+    expect(find.text(l.pinkaSepaReceivedProcessing), findsOneWidget);
+    expect(find.text(l.pinkaSepaFirstPaymentReview), findsNothing);
+    await h.finish(tester);
+  });
+
   group('parseIntentStatus', () {
     test('rejected_reason se čita iz status bloka', () {
       final s = parseIntentStatus({
@@ -452,6 +473,22 @@ void main() {
       expect(s.isRejected, isTrue);
       expect(s.rejectedReason, 'counterpart rejected');
       expect(s.steps, hasLength(2));
+    });
+
+    test('review_expected i seconds_in_stage', () {
+      final s = parseIntentStatus({
+        'status': {
+          'stage': 'received_processing',
+          'review_expected': true,
+          'seconds_in_stage': 75,
+        },
+      })!;
+      expect(s.reviewExpected, isTrue);
+      expect(s.secondsInStage, 75);
+      final n = parseIntentStatus({
+        'status': {'stage': 'minted', 'review_expected': null},
+      })!;
+      expect(n.reviewExpected, isNull);
     });
 
     test('stageovi zaprimanja', () {

@@ -1347,12 +1347,22 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       return Text(l.pinkaSepaMintedForwarding,
           textAlign: TextAlign.center, style: muted);
     }
+    // Rail zna reći je li ovo poznati uplatitelj (`false` — napomena o prvoj
+    // uplati bi lagala) ili vjerojatna provjera (`true` — ističe se ODMAH,
+    // ne tek nakon 60 s). `seconds_in_stage` pokriva panel otvoren kasnije.
+    final review = s?.reviewExpected;
+    if (review == false) {
+      return Text(l.pinkaSepaReceivedProcessing,
+          textAlign: TextAlign.center, style: muted);
+    }
+    final emphasise =
+        _slowReview || review == true || (s?.secondsInStage ?? 0) > 60;
     return Column(
       children: [
         Text(l.pinkaSepaReceivedProcessing,
             textAlign: TextAlign.center, style: muted),
         const SizedBox(height: 6),
-        if (_slowReview)
+        if (emphasise)
           Row(
             key: const Key('pinka-first-payment-review'),
             mainAxisAlignment: MainAxisAlignment.center,
