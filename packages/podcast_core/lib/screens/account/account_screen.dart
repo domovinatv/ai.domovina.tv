@@ -939,32 +939,45 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Future<void> _confirmDeleteAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => const _DeleteAccountDialog(),
-    );
-    if (confirmed != true || !mounted) return;
+  Future<void> _confirmDeleteAccount() => confirmAndDeleteAccount(
+        context,
+        onBusy: (busy) {
+          if (mounted) setState(() => _deleting = busy);
+        },
+      );
+}
 
-    setState(() => _deleting = true);
-    final result = await AuthService.instance.deleteAccount();
-    if (!mounted) return;
-    setState(() => _deleting = false);
+/// Type-to-confirm, delete the account and report the result. Shared by the
+/// account screen and the AccountChip menu, so deletion is one tap away from
+/// the avatar (App Store Guideline 5.1.1(v): reviewers must find it easily).
+///
+/// The caller's [context] may unmount once the session flips to anonymous
+/// (the AccountChip rebuilds), so everything needed afterwards is captured
+/// before the await and the snackbar goes through the root messenger.
+Future<void> confirmAndDeleteAccount(BuildContext context,
+    {ValueChanged<bool>? onBusy}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => const _DeleteAccountDialog(),
+  );
+  if (confirmed != true || !context.mounted) return;
 
-    final l = AppLocalizations.of(context);
-    rootScaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(
-        content: Text(result.message ??
-            (result.status == AuthFlowStatus.success
-                ? l.authAccountDeleted
-                : l.authDeleteFailed)),
-        duration: const Duration(seconds: 5),
-      ),
-    );
-    if (result.status == AuthFlowStatus.success) {
-      context.go('/');
-    }
-  }
+  final l = AppLocalizations.of(context);
+  final router = GoRouter.of(context);
+  onBusy?.call(true);
+  final result = await AuthService.instance.deleteAccount();
+  onBusy?.call(false);
+
+  rootScaffoldMessengerKey.currentState?.showSnackBar(
+    SnackBar(
+      content: Text(result.message ??
+          (result.status == AuthFlowStatus.success
+              ? l.authAccountDeleted
+              : l.authDeleteFailed)),
+      duration: const Duration(seconds: 5),
+    ),
+  );
+  if (result.status == AuthFlowStatus.success) router.go('/');
 }
 
 /// Potvrda odjave — dijeli ju AccountChip menu i Moj račun ekran.

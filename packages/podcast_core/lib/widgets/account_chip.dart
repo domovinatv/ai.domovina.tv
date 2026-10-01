@@ -6,7 +6,11 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../brand/app_brand.dart';
 import '../onboarding/ui/auth_sheet.dart';
-import '../screens/account/account_screen.dart' show confirmAndSignOut;
+import '../screens/account/account_screen.dart'
+    show confirmAndDeleteAccount, confirmAndSignOut;
+import '../screens/subscribe/paywall_screen.dart' show openPaywall;
+import '../screens/subscribe/upgrade_trigger.dart';
+import '../services/entitlement_service.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../router/nav.dart';
@@ -170,6 +174,18 @@ class _SignedInChip extends StatelessWidget {
             dense: true,
           ),
         ),
+        // Plus is reachable from the avatar, not only from deep inside the
+        // account screen (App Review 2.1(b): "cannot locate the In-App
+        // Purchases").
+        if (!EntitlementService.instance.isPlus.value)
+          PopupMenuItem(
+            value: 'plus',
+            child: ListTile(
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: Text(AppBrand.config.plusDisplayName),
+              dense: true,
+            ),
+          ),
         // „Moji kanali” postoje samo uz vlasništvo kanala (claim flow).
         if (AppBrand.config.flags.channelOwnership)
           PopupMenuItem(
@@ -193,6 +209,19 @@ class _SignedInChip extends StatelessWidget {
           child: ListTile(
             leading: const Icon(Icons.logout),
             title: Text(l.commonSignOut),
+            dense: true,
+          ),
+        ),
+        // App Store Guideline 5.1.1(v): account deletion must be easy to
+        // find, so it sits next to sign-out as well as in the account screen.
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'delete',
+          child: ListTile(
+            leading: Icon(Icons.delete_forever_outlined,
+                color: theme.colorScheme.error),
+            title: Text(l.authDeleteAccount,
+                style: TextStyle(color: theme.colorScheme.error)),
             dense: true,
           ),
         ),
@@ -261,6 +290,12 @@ class _SignedInChip extends StatelessWidget {
         break;
       case 'signout':
         confirmAndSignOut(context);
+        break;
+      case 'plus':
+        openPaywall(context, UpgradeTrigger.generic);
+        break;
+      case 'delete':
+        confirmAndDeleteAccount(context);
         break;
     }
   }
