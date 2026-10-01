@@ -72,6 +72,14 @@ class HomeAppBar extends StatelessWidget {
                     onPressed: onSearchTap,
                   ),
                   const SizedBox(width: 4),
+                  // With the Plus button the row overflows a phone, so Plus
+                  // and Sign in move forward where they are always visible
+                  // and the toggles scroll in at the end.
+                  if (AppBrand.config.flags.plusInHeader) ...[
+                    const _PlusButton(),
+                    const AccountChip(),
+                    const SizedBox(width: 8),
+                  ],
                   if (AppBrand.config.flags.voting) ...[
                     const VotingStreakChip(),
                     const SizedBox(width: 4),
@@ -79,9 +87,10 @@ class HomeAppBar extends StatelessWidget {
                   const LanguageToggleButton(),
                   const SizedBox(width: 4),
                   const ThemeToggleButton(),
-                  const SizedBox(width: 4),
-                  if (AppBrand.config.flags.plusInHeader) const _PlusButton(),
-                  const AccountChip(),
+                  if (!AppBrand.config.flags.plusInHeader) ...[
+                    const SizedBox(width: 4),
+                    const AccountChip(),
+                  ],
                 ],
               ),
             );
