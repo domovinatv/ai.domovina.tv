@@ -2615,14 +2615,14 @@ abstract class AppLocalizations {
   /// Body paragraph on the privacy policy screen explaining which user data is collected and why.
   ///
   /// In hr, this message translates to:
-  /// **'ITalk d.o.o. za informacijske tehnologije, kao voditelj obrade, prikuplja i obrađuje vaše podatke u skladu s Općom uredbom o zaštiti podataka (GDPR).\n\nKada se prijavite (putem Certilia IDP sustava, Googlea, Applea ili e-pošte), prikupljamo osnovne identifikacijske podatke (e-mail adresu, ime i prezime, te OIB ukoliko se prijavljujete putem e-Građani/Certilia sustava) isključivo u svrhu pružanja usluge. Vaš napredak slušanja, omiljene oznake i glasovanja pohranjuju se kako bi se sinkronizirali među uređajima.\n\nZa obradu \"Plus\" pretplata koristimo vanjske izvršitelje (Apple, Google, RevenueCat) te ne pohranjujemo niti imamo pristup podacima vaših bankovnih kartica. Primjenjujemo najviše tehničke i organizacijske mjere sigurnosti (enkripcija u prijenosu i pohrani).\n\nKao korisnik, imate pravo na pristup, ispravak, ograničenje obrade, prijenos i brisanje svojih podataka (svoj račun možete trajno obrisati u aplikaciji u svakom trenutku). Za sva pitanja o privatnosti ili ostvarivanje prava obratite se na ms@domovina.ai. U slučaju sumnje na povredu podataka, imate pravo podnijeti pritužbu Agenciji za zaštitu osobnih podataka (AZOP).'**
-  String get legalPrivacyDataBody;
+  /// **'ITalk d.o.o. za informacijske tehnologije, kao voditelj obrade, prikuplja i obrađuje vaše podatke u skladu s Općom uredbom o zaštiti podataka (GDPR).\n\nKada se prijavite (putem Certilia IDP sustava, Googlea, Applea ili e-pošte), prikupljamo osnovne identifikacijske podatke (e-mail adresu, ime i prezime, te OIB ukoliko se prijavljujete putem e-Građani/Certilia sustava) isključivo u svrhu pružanja usluge. Vaš napredak slušanja, omiljene oznake i glasovanja pohranjuju se kako bi se sinkronizirali među uređajima.\n\nZa obradu \"Plus\" pretplata koristimo vanjske izvršitelje (Apple, Google, RevenueCat) te ne pohranjujemo niti imamo pristup podacima vaših bankovnih kartica. Primjenjujemo najviše tehničke i organizacijske mjere sigurnosti (enkripcija u prijenosu i pohrani).\n\nKao korisnik, imate pravo na pristup, ispravak, ograničenje obrade, prijenos i brisanje svojih podataka (svoj račun možete trajno obrisati u aplikaciji u svakom trenutku). Za sva pitanja o privatnosti ili ostvarivanje prava obratite se na {email}. U slučaju sumnje na povredu podataka, imate pravo podnijeti pritužbu Agenciji za zaštitu osobnih podataka (AZOP).'**
+  String legalPrivacyDataBody(String email);
 
   /// Contact paragraph on the privacy policy screen with the support email address.
   ///
   /// In hr, this message translates to:
-  /// **'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za pitanja u vezi s privatnošću obratite se Matiji Stepaniću na ms@domovina.ai.'**
-  String get legalPrivacyContactBody;
+  /// **'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za pitanja u vezi s privatnošću obratite se Matiji Stepaniću na {email}.'**
+  String legalPrivacyContactBody(String email);
 
   /// Page title and app bar title for the terms of use screen.
   ///
@@ -2669,8 +2669,8 @@ abstract class AppLocalizations {
   /// Contact paragraph on the terms of use screen with the support email address.
   ///
   /// In hr, this message translates to:
-  /// **'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za upite kontaktirajte Matiju Stepanića na ms@domovina.ai.'**
-  String get legalTermsContactBody;
+  /// **'Aplikacijom upravlja ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, OIB: 54872935051. Za upite kontaktirajte Matiju Stepanića na {email}.'**
+  String legalTermsContactBody(String email);
 
   /// Magisterium score band label (>=90): the analysed content actively promotes Catholic teaching. Fallback when CDN scoreInterpretation is absent.
   ///

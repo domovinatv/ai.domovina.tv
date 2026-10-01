@@ -1550,12 +1550,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legalPrivacyDataTitle => 'What data we collect';
 
   @override
-  String get legalPrivacyDataBody =>
-      'ITalk d.o.o., acting as the Data Controller, processes your personal data in compliance with the General Data Protection Regulation (GDPR - Regulation EU 2016/679).\n\nWhen you sign in (via Certilia IDP, Google, Apple, or email), we collect basic identification data (email, name, and national ID/OIB if using the e-Citizens/Certilia system) solely to provide the service. Your playback progress, favourite markers, and votes are stored for cross-device synchronisation.\n\nFor \"Plus\" subscriptions, purchase data is processed via third-party processors (Apple, Google, RevenueCat); we do not store or access your credit card details. We implement the highest technical and organisational security measures (encryption in transit and at rest).\n\nYou have the right to access, rectify, restrict, port, and erase your data (you may permanently delete your account within the app at any time). For privacy enquiries, contact ms@domovina.ai. In case of suspected data breaches, you have the right to lodge a complaint with the Croatian Personal Data Protection Agency (AZOP).';
+  String legalPrivacyDataBody(String email) {
+    return 'ITalk d.o.o., acting as the Data Controller, processes your personal data in compliance with the General Data Protection Regulation (GDPR - Regulation EU 2016/679).\n\nWhen you sign in (via Certilia IDP, Google, Apple, or email), we collect basic identification data (email, name, and national ID/OIB if using the e-Citizens/Certilia system) solely to provide the service. Your playback progress, favourite markers, and votes are stored for cross-device synchronisation.\n\nFor \"Plus\" subscriptions, purchase data is processed via third-party processors (Apple, Google, RevenueCat); we do not store or access your credit card details. We implement the highest technical and organisational security measures (encryption in transit and at rest).\n\nYou have the right to access, rectify, restrict, port, and erase your data (you may permanently delete your account within the app at any time). For privacy enquiries, contact $email. In case of suspected data breaches, you have the right to lodge a complaint with the Croatian Personal Data Protection Agency (AZOP).';
+  }
 
   @override
-  String get legalPrivacyContactBody =>
-      'The application is operated by ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Croatia, VAT: 54872935051. For privacy-related enquiries, please contact Matija Stepanić at ms@domovina.ai.';
+  String legalPrivacyContactBody(String email) {
+    return 'The application is operated by ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Croatia, VAT: 54872935051. For privacy-related enquiries, please contact Matija Stepanić at $email.';
+  }
 
   @override
   String get legalTermsTitle => 'Terms of Use';
@@ -1584,8 +1586,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Articles, summaries, chapters and speaker labels are generated automatically using Artificial Intelligence (AI) and may contain errors or inaccuracies (hallucinations). The User utilises AI features at their own risk, and ITalk d.o.o. disclaims all liability for the accuracy and legal consequences of such generated content.';
 
   @override
-  String get legalTermsContactBody =>
-      'The application is operated by ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Croatia, VAT: 54872935051. For any enquiries, please contact Matija Stepanić at ms@domovina.ai.';
+  String legalTermsContactBody(String email) {
+    return 'The application is operated by ITalk d.o.o. za informacijske tehnologije, IX. Južna obala 20, 10000 Zagreb, Croatia, VAT: 54872935051. For any enquiries, please contact Matija Stepanić at $email.';
+  }
 
   @override
   String get magisteriumScoreActivelyPromotes =>

@@ -28,6 +28,7 @@ class BrandConfig {
     required this.endpoints,
     this.flags = const FeatureFlags(),
     this.sourceCodeUrl = 'https://github.com/domovinatv',
+    this.contactEmail = 'ms@domovina.ai',
     this.plusLifetime = true,
     this.featuredChannels = const [],
   });
@@ -43,6 +44,9 @@ class BrandConfig {
 
   /// Poveznica „GitHub” u podnožju naslovnice.
   final String sourceCodeUrl;
+
+  /// Contact address on the privacy and terms pages.
+  final String contactEmail;
 
   /// Puno ime proizvoda, npr. `DOMOVINA.ai` — naslovi, page meta, obavijesti.
   final String appName;

@@ -34,14 +34,14 @@ class PrivacyScreen extends StatelessWidget {
         Text(l.legalPrivacyDataTitle, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(
-          l.legalPrivacyDataBody,
+          l.legalPrivacyDataBody(AppBrand.config.contactEmail),
           style: body,
         ),
         const SizedBox(height: 24),
         Text(l.legalContactTitle, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(
-          l.legalPrivacyContactBody,
+          l.legalPrivacyContactBody(AppBrand.config.contactEmail),
           style: body,
         ),
         const SizedBox(height: 48),
