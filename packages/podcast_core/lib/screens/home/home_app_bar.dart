@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/entitlement_service.dart';
+import '../subscribe/paywall_screen.dart' show openPaywall;
+import '../subscribe/upgrade_trigger.dart';
 import '../../brand/app_brand.dart';
 import '../../services/voting_service.dart';
 import '../../theme/app_theme.dart';
@@ -77,6 +80,7 @@ class HomeAppBar extends StatelessWidget {
                   const SizedBox(width: 4),
                   const ThemeToggleButton(),
                   const SizedBox(width: 4),
+                  if (AppBrand.config.flags.plusInHeader) const _PlusButton(),
                   const AccountChip(),
                 ],
               ),
@@ -105,6 +109,7 @@ class HomeAppBar extends StatelessWidget {
                 const SizedBox(width: 4),
                 const ThemeToggleButton(),
                 const SizedBox(width: 4),
+                if (AppBrand.config.flags.plusInHeader) const _PlusButton(),
                 const AccountChip(),
               ],
             ),
@@ -459,6 +464,32 @@ class _SearchTrigger extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Opens the Plus paywall; hidden once the user is Plus. Shown only when the
+/// brand sets [FeatureFlags.plusInHeader].
+class _PlusButton extends StatelessWidget {
+  const _PlusButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: EntitlementService.instance.isPlus,
+      builder: (context, isPlus, _) {
+        if (isPlus) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: IconButton(
+            icon: Icon(Icons.workspace_premium_outlined,
+                size: 22, color: Theme.of(context).colorScheme.primary),
+            tooltip: l.authLearnAboutPlus(AppBrand.config.plusDisplayName),
+            onPressed: () => openPaywall(context, UpgradeTrigger.generic),
+          ),
+        );
+      },
     );
   }
 }

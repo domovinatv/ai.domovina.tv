@@ -151,6 +151,7 @@ class FeatureFlags {
     this.handoff = true,
     this.tv = true,
     this.passkeys = false,
+    this.plusInHeader = false,
   });
 
   /// Glasanje za podcaste (`/glasanje*`, rail na naslovnici).
@@ -179,4 +180,9 @@ class FeatureFlags {
   /// brend bez projekta ne prikazuje ni tile u auth sheetu ni sekciju u
   /// Mom računu.
   final bool passkeys;
+
+  /// A Plus button in the home header for everyone who is not Plus yet,
+  /// signed in or not. Without it the paywall is only reachable from the
+  /// account screen, which App Review could not find (Guideline 2.1(b)).
+  final bool plusInHeader;
 }
