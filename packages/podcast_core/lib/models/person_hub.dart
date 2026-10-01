@@ -14,6 +14,7 @@
 /// na profil iz imena govornika, reproduciraj [personSlug] točno.
 library;
 
+import '../services/cdn_config.dart';
 import '../brand/domain_score.dart';
 
 /// ASCII-fold imena → stabilni slug. Mora se poklapati s backend logikom koja
@@ -419,7 +420,7 @@ class PersonHub {
     return PersonHub(
       name: json['name'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
-      avatarUrl: json['avatar_url'] as String?,
+      avatarUrl: CdnConfig.rebaseOrNull(json['avatar_url'] as String?),
       channelCount: (json['channel_count'] as num?)?.toInt() ?? 0,
       episodeCount: (json['episode_count'] as num?)?.toInt() ?? 0,
       channels: rawChannels
@@ -514,7 +515,7 @@ class PersonSummary {
     return PersonSummary(
       slug: json['slug'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      avatarUrl: json['avatar_url'] as String?,
+      avatarUrl: CdnConfig.rebaseOrNull(json['avatar_url'] as String?),
       episodeCount: (json['episode_count'] as num?)?.toInt() ?? 0,
       channelCount: (json['channel_count'] as num?)?.toInt() ?? 0,
       totalDurationSeconds:

@@ -537,10 +537,18 @@ export default {
   },
 };
 
+// Origin the pipeline writes into absolute URLs inside the CDN data. A brand
+// with its own CDN name on the same bucket (cdn.podcasterium.com) rewrites
+// them, so its pages never load from this host. Mirrors CdnConfig.rebase.
+const DATA_CDN_ORIGIN = 'https://cdn.domovina.ai';
+
 async function fetchJson(url) {
   try {
     const res = await fetch(url, { cf: { cacheTtl: 300, cacheEverything: true } });
-    if (res.ok) return await res.json();
+    if (!res.ok) return null;
+    if (CDN === DATA_CDN_ORIGIN) return await res.json();
+    const text = await res.text();
+    return JSON.parse(text.split(`${DATA_CDN_ORIGIN}/`).join(`${CDN}/`));
   } catch (_) {}
   return null;
 }

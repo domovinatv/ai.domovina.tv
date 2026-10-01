@@ -3,6 +3,7 @@
 /// docs/backend-prompts/07-flutter-swap-mocks.md).
 library;
 
+import 'cdn_config.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart'
     show ChangeNotifier, TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -131,7 +132,8 @@ class WatchProgressService extends ChangeNotifier {
                 positionSeconds: (r['position_seconds'] as num).toInt(),
                 durationSeconds: (r['duration_seconds'] as num).toInt(),
                 episodeTitle: r['episode_title'] as String?,
-                episodeThumbnailUrl: r['episode_thumbnail_url'] as String?,
+                episodeThumbnailUrl:
+                    CdnConfig.rebaseOrNull(r['episode_thumbnail_url'] as String?),
                 lastWatchedAt: DateTime.parse(r['last_watched_at'] as String),
               ))
           .whereType<WatchProgress>()
@@ -295,7 +297,8 @@ class WatchProgressService extends ChangeNotifier {
           positionSeconds: (r['position_seconds'] as num).toInt(),
           durationSeconds: (r['duration_seconds'] as num).toInt(),
           episodeTitle: r['episode_title'] as String?,
-          episodeThumbnailUrl: r['episode_thumbnail_url'] as String?,
+          episodeThumbnailUrl:
+                    CdnConfig.rebaseOrNull(r['episode_thumbnail_url'] as String?),
           lastWatchedAt: DateTime.parse(r['last_watched_at'] as String),
         );
         final local = _byEpisode[remote.episodeId];

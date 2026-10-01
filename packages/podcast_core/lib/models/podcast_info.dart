@@ -1,3 +1,5 @@
+import '../services/cdn_config.dart';
+
 /// Model za info.json — yt-dlp metadata
 class PodcastInfo {
   final String id;
@@ -90,7 +92,7 @@ class PodcastInfo {
       likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
       commentCount: (json['comment_count'] as num?)?.toInt(),
       description: json['description'] as String? ?? '',
-      thumbnail: json['thumbnail'] as String? ?? '',
+      thumbnail: CdnConfig.rebase(json['thumbnail'] as String? ?? ''),
       webpageUrl: json['webpage_url'] as String? ?? '',
       tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),
       categories: (json['categories'] as List<dynamic>? ?? []).cast<String>(),

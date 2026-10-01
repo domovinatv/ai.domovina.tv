@@ -1,3 +1,4 @@
+import '../services/cdn_config.dart';
 import '../brand/domain_score.dart';
 
 /// Matcha kanonski YouTube channel ID `UC` + 22 znaka (base64url alfabet).
@@ -79,8 +80,8 @@ class ChannelDetail {
       version: json['version'] as String? ?? '1.0',
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      avatarSquare: json['avatar_square'] as String?,
-      avatarCover: json['avatar_cover'] as String?,
+      avatarSquare: CdnConfig.rebaseOrNull(json['avatar_square'] as String?),
+      avatarCover: CdnConfig.rebaseOrNull(json['avatar_cover'] as String?),
       youtubeChannelUrl: json['youtube_channel_url'] as String? ?? '',
       youtubeChannelId: canonicalUcId(
         json['youtube_channel_id'] as String?,
@@ -176,7 +177,7 @@ class ChannelVideo {
       durationDisplay: json['duration_display'] as String?,
       views: (json['views'] as num?)?.toInt(),
       likes: (json['likes'] as num?)?.toInt(),
-      thumbnail: json['thumbnail'] as String?,
+      thumbnail: CdnConfig.rebaseOrNull(json['thumbnail'] as String?),
       youtubeUrl: json['youtube_url'] as String?,
       abstract_: json['abstract'] as String?,
       topics: (json['topics'] as List<dynamic>? ?? []).cast<String>(),

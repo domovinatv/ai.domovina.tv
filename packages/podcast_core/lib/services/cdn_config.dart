@@ -8,6 +8,20 @@ class CdnConfig {
   /// Host CDN-a aktivnog brenda (`AppBrand.config.endpoints.cdn`).
   static String get base => AppBrand.config.endpoints.cdn;
 
+  /// Origin the pipeline writes into absolute URLs inside the CDN data
+  /// (`avatar_square`, `avatar_cover`, `thumbnail` in channel and info JSON).
+  static const String dataOrigin = 'https://cdn.domovina.ai';
+
+  /// Serves an absolute CDN URL from the data through the active brand's CDN
+  /// host, so a brand with its own CDN name (cdn.podcasterium.com, the same
+  /// bucket) never loads from [dataOrigin]. Other URLs pass unchanged.
+  static String rebase(String url) =>
+      url.startsWith('$dataOrigin/') && base != dataOrigin
+          ? base + url.substring(dataOrigin.length)
+          : url;
+
+  static String? rebaseOrNull(String? url) => url == null ? null : rebase(url);
+
   // Channel listing files se mijenjaju kako stižu novi videi, ali backend
   // uploader trenutno postavlja Cache-Control: immutable na sve fajlove.
   // Defensive frontend mjera: cache-buster s 5-minutnim bucket-om — dovoljno

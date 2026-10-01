@@ -1,3 +1,4 @@
+import '../services/cdn_config.dart';
 import 'channel_detail.dart' show canonicalUcId;
 import '../brand/domain_score.dart';
 
@@ -76,8 +77,8 @@ class ChannelSummary {
     return ChannelSummary(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      avatarSquare: json['avatar_square'] as String?,
-      avatarCover: json['avatar_cover'] as String?,
+      avatarSquare: CdnConfig.rebaseOrNull(json['avatar_square'] as String?),
+      avatarCover: CdnConfig.rebaseOrNull(json['avatar_cover'] as String?),
       avatarCoverDimensions:
           coverDim != null && coverDim is Map<String, dynamic>
               ? ImageDimensions.fromJson(coverDim)
