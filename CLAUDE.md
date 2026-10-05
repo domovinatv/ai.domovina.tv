@@ -422,7 +422,7 @@ pojaviti na **tri** mjesta — video traka, `video_panel.dart` i `_PlayerTab` u
 epizode, gdje `EpisodeVideo` uopće ne postoji.
 
 **Rule (stanje kontrole ide kroz singleton, ne kroz propove)**: iste kontrole
-crtaju tri odvojena stabla, a na mobitelu je player u `endDraweru` — prop
+crtaju tri odvojena stabla, a na mobitelu je player u bočnom panelu — prop
 drilling se tu neizbježno negdje ispusti. `PlaybackSpeed`, `BackgroundPlayback`
 i `PlayerMute` su zato singletoni; `VideoPanel` nema parametre za njih.
 (Povijest: `mutedAutoplay`/`onUnmute` su bili propovi i **nedostajali su na
@@ -540,7 +540,7 @@ crne plohe. **Nova integracija treće strane ide preko API-ja, ne iframea** (kao
 **Rule**: embed se nudi samo dok kod nas NEMA što pustiti
 (`EpisodeStatus.needsExternalSource`) — inače bi na stranici bila dva playera.
 Kad medija JEST na CDN-u, primarna radnja je NAŠ player („Gledaj epizodu" →
-`endDrawer` na uskom ekranu), a YouTube pada na tihu tekstualnu poveznicu.
+bočni panel na uskom ekranu), a YouTube pada na tihu tekstualnu poveznicu.
 Sintetički ID-evi (X izvor, `_yt_matched:false`) nemaju YouTube video iza sebe
 i ne smiju se ugrađivati.
 
@@ -681,11 +681,38 @@ s cache-busterom), izvan `EpisodeData.load`, bez memorije preko sesije i bez
 pollinga; 404/greška/nečitljiv JSON = sekcije nema. Zapis bez imena
 (`_unattributed`) se ne prikazuje.
 
-**Rule (otvaranje endDrawera pauzira web video)**: montiranje `Video` widgeta
-premjesti `<video>` u DOM-u i element se pauzira. Svaka radnja koja pusti
-reprodukciju pa otvori drawer mora ponoviti `play()` nakon animacije
-(`_revealPlayer`, 300/900 ms). Izmjereno 24.9.2026. na 390 px: seek je sjeo na
-5963 s, a poruka nije krenula.
+**Rule (radnja koja pusti reprodukciju pa otvori player ide kroz
+`_revealPlayer`)**: do v2.0.166 je player bio u `endDraweru`, čije je
+montiranje premještalo `<video>` u DOM-u i pauziralo ga (izmjereno 24.9.2026.
+na 390 px: seek je sjeo na 5963 s, a poruka nije krenula). Panel platna je sad
+uvijek montiran, ali `_revealPlayer` i dalje ponovi `play()` na 300/900 ms kao
+osigurač — osim ako je korisnik u međuvremenu pauzirao (`PlaybackIntent`).
+
+### Epizoda na uskom ekranu — tri stupca, ne draweri (od 5.10.2026.)
+
+Ispod 1100 px (`_kPlayerColumnMinWidth`) su sadržaj i player stupci na
+`EpisodePanelCanvas` (`widgets/episode_panel_canvas.dart`): kad uz panel ostane
+≥ 320 px, članak se suzi i oba se vide (iPhone landscape: 390 | 360); inače
+panel gura članak s ekrana. Mobitel u landscapeu skriva header i footer dok se
+čita. Odluke, mjerenja, zamke i otvoreno:
+`docs/2026-10-05-epizoda-tri-stupca.md`.
+
+**Rule (panel ostaje montiran)**: zatvoren panel se NE demontira ni `Offstage`-a —
+inače `<video>` putuje po DOM-u i pauzira se. Skrivanje ide kroz
+`ExcludeSemantics` + `ExcludeFocus` + `TickerMode`, omotače koji su uvijek u
+stablu.
+
+**Rule (programski skok na sekciju ide kroz `_scrollToSection`)**: on bilježi
+skok, pa ga sidro čitanja tijekom reflowa ne poništi nego ponovno pinna cilj.
+Izravan `jumpTo` na sekciju zaobilazi to i članak se vrati na staro mjesto.
+
+**Rule (landscape na mobitelu = platforma I dimenzije)**: `_isPhoneLandscape`
+traži iOS/Android. Bez toga nizak desktop prozor gubi header. Footer se u tom
+načinu NE skriva dok je autoplay utišan (izlaz „Uključi zvuk").
+
+**Rule (titlovi se ne režu)**: titl nema `maxLines`/ellipsis — puni tekst je
+vrijedniji od slike koju prekrije. Kad ne stane, smanjuje se font
+(`fittingSubtitleFontSize`), mjeren istim `DefaultTextStyle` kojim se crta.
 
 ### Pinka SEPA — uspjeh na ZAPRIMANJU, namira u pozadini (od 28.9.2026.)
 
