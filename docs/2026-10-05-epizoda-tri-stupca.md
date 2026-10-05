@@ -1,6 +1,6 @@
 # Epizoda na uskom ekranu — tri stupca umjesto drawera (5.10.2026.)
 
-v2.0.166, commit `114b41c`. Kod: `lib/widgets/episode_panel_canvas.dart`,
+v2.0.166, commit `114b41c`; popravak headera v2.0.167, `b0961a9`. Kod: `lib/widgets/episode_panel_canvas.dart`,
 `lib/screens/episode_screen.dart`, titlovi u `lib/widgets/episode_video.dart`.
 Testovi: `test/episode_panel_canvas_test.dart` (12),
 `test/subtitle_fit_test.dart` (3).
@@ -78,6 +78,27 @@ nizak desktop prozor (1000×560, devtools dolje) gubi header.
   je jedan od tri obavezna izlaza, CLAUDE.md „Muted autoplay").
 - App bar bira dva reda po širini STUPCA (`SliverLayoutBuilder` +
   `MediaQuery` override za breadcrumb), ne ekrana.
+
+### Skok na sekciju ispod floating headera (v2.0.167)
+
+Prva verzija je računala s PUNOM visinom app bara (najgori slučaj). Na iPhoneu
+je to značilo ~100 px praznine iznad naslova kad je header skriven (prijava
+korisnika s Chromea na iPhoneu, 5.10.). Sad `_floatingHeaderJumpDelta` mjeri
+`paintExtent` prvog slivera viewporta (app bar) i koristi ponašanje
+`RenderSliverFloatingPersistentHeader.performLayout`:
+
+- programski skok prema DOLJE skupi header za isti iznos;
+- skok prema GORE ga NE širi (osim ako je zadnji korisnikov scroll bio prema
+  gore — `_lastStartedScrollDirection`).
+
+Zato: ako je skok ≥ vidljivi dio headera → naslov na vrh (inset + 16 px);
+inače → naslov točno ispod trake. `snap: true` zna djelomično vidljiv header
+sam dovršiti ~200 ms nakon skoka (izmjereno: ostalo ~48 px praznine), pa
+jedno poravnanje 350 ms kasnije to zatvori.
+
+Razmak između sekcija na niskom ekranu (visina < 500 px) je 32 + 24 umjesto
+80 + 56 px (`article_section.dart`) — na ~340 px visine je stari razmak jeo
+trećinu ekrana.
 
 ## Titlovi — puni tekst, nikad ellipsis
 

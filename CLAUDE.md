@@ -705,6 +705,9 @@ stablu.
 **Rule (programski skok na sekciju ide kroz `_scrollToSection`)**: on bilježi
 skok, pa ga sidro čitanja tijekom reflowa ne poništi nego ponovno pinna cilj.
 Izravan `jumpTo` na sekciju zaobilazi to i članak se vrati na staro mjesto.
+U landscapeu na mobitelu `_scrollToSection` MJERI koliko je floating headera na
+ekranu (`_floatingHeaderJumpDelta`) — fiksna „puna visina" je na skrivenom
+headeru ostavljala ~100 px praznine iznad naslova.
 
 **Rule (landscape na mobitelu = platforma I dimenzije)**: `_isPhoneLandscape`
 traži iOS/Android. Bez toga nizak desktop prozor gubi header. Footer se u tom
