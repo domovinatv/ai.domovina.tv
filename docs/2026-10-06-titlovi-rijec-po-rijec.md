@@ -118,8 +118,33 @@ slike, 3 retka, istaknuto „se" u „Trudimo se to postati" na 01:25, što
 odgovara zvuku. Landscape 844×390: overlay preko slike kao prije, istaknuto
 „postati" na 01:26.
 
+## 5. Backfill bez LLM-a: dva puta (izmjereno 6.10.2026.)
+
+| skup | izvor vremena po riječi | trošak |
+|---|---|---|
+| 57 epizoda s `{audio}.speechmatics.json` (33 s Gemini tekstom) | uparivanje iz §3 | nula, nekoliko sekundi po epizodi |
+| ~3 300 Canary epizoda (3 383 kanonskih SRT-ova, audio lokalno za svih 3 383) | **nema ga na disku** | vidi niže |
+
+Canary vremena po riječi zapravo **vraća**, ali ih se baca:
+`modal_canary/canary_modal.py` zove `transcribe(timestamps=True)` i sprema samo
+`timestamp["segment"]` (u `.wav.canary.csv`). Spremanje `timestamp["word"]` je
+besplatno za buduće epizode. Za stare bi trebao novi GPU prolaz (Modal, plaća se).
+
+Preporučeni put za stare epizode je **forced alignment**: lokalno, bez LLM-a i
+plaćenog API-ja. Postojeći tekst cue-a poravna se s postojećim zvukom unutar
+granica cue-a, npr. torchaudio `MMS_FA` ili wav2vec2 CTC model za hrvatski.
+Poravnava točno tekst koji korisnik vidi, pa je usidreno 100 % riječi, ne 78 %.
+
+Neizmjereno, prije punog backfilla:
+- **Brzina na Macu**: probati 2–3 epizode i iz toga procijeniti ukupno trajanje.
+- **Collapse epizode** (~12 % Canary transkripata, vidi fetch
+  `docs/2026-09-19-speechmatics-kostur-gemini-sluh.md` §1.2): tekst ne odgovara
+  zvuku. Takve epizode preskočiti po niskoj pouzdanosti poravnanja, inače titl
+  ističe krive riječi.
+
 ## Otvoreno
 
-- Pipeline korak + backfill (§3).
+- Pipeline korak + backfill (§3, §5).
+- Frontend je LIVE od v2.0.168 (6.10.2026.); isticanje čeka prvi `words.json` na CDN-u.
 - Audio-only epizode nemaju titl ni prije ni sada (nema `EpisodeVideo`).
 - Isticanje u članku/transkriptu (isti `words.json`) nije rađeno.
