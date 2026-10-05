@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
@@ -54,6 +55,7 @@ import '../widgets/episode_status_card.dart';
 import '../widgets/youtube_embed.dart';
 import '../widgets/resume_hint_banner.dart';
 import '../widgets/table_of_contents.dart';
+import '../widgets/episode_panel_canvas.dart';
 import '../widgets/video_panel.dart';
 import '../widgets/view_mode_toggle_button.dart';
 import '../router/nav.dart';
@@ -669,7 +671,6 @@ class _EpisodeContent extends StatefulWidget {
 
 class _EpisodeContentState extends State<_EpisodeContent>
     with WidgetsBindingObserver {
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
   late final Map<String, GlobalKey> _sectionKeys;
   late final Map<String, GlobalKey> _magSectionKeys;
@@ -685,15 +686,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
   // Aktivan samo kad je !isWide && hasMag (inače nema tab bara).
   int _mobileTab = 0;
 
-  /// Sprjecava ponavljanje auto-open endDrawera ako korisnik zatvori panel.
-  bool _endDrawerAutoOpened = false;
+  /// Bočni stupci na uskom ekranu (sadržaj lijevo, player desno) — vidi
+  /// [EpisodePanelCanvas]. Do 5.10.2026. su to bili Scaffold `drawer` i
+  /// `endDrawer` preko članka.
+  final _panelKey = GlobalKey<EpisodePanelCanvasState>();
 
-  /// Kad app ode u background dok je endDrawer otvoren, Android unisti
-  /// SurfaceView pa media_kit auto-pauzira. Mitigacija: zatvori drawer
-  /// na `paused` (Video widget detacha -> audio nastavi) i reopen na
-  /// `resumed` da korisnik pri povratku (npr. klik na notifikaciju) vidi
-  /// player kakav je bio.
-  bool _endDrawerWasOpenBeforeBg = false;
+  /// Sprjecava ponavljanje auto-open playera ako ga korisnik zatvori.
+  bool _playerAutoOpened = false;
 
   // Video
   Player? _player;
@@ -733,8 +732,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
   /// Odgovor na „želi li korisnik da ovo svira?". Ožičen na
   /// `player.stream.playing` (jedini izvor koji hvata i media_kitove interne
   /// kontrole), s prozorom tolerancije oko poznatih framework tranzicija —
-  /// zatvaranje endDrawera (dispose `Video` widgeta → media_kit pauza) i
-  /// odlazak u pozadinu (SurfaceView teardown). Zamjenjuje raniji snapshot
+  /// fullscreen re-parent i odlazak u pozadinu (SurfaceView teardown). Zamjenjuje raniji snapshot
   /// „je li svirao kad je drawer otvoren", koji je poništavao korisnikovu
   /// Pauzu ako je stisnuta dok je drawer bio otvoren.
   /// Vidi `services/playback_intent.dart`.
@@ -1066,13 +1064,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final s = _scaffoldKey.currentState;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
-      if (s?.isEndDrawerOpen == true) {
-        _endDrawerWasOpenBeforeBg = true;
-        s!.closeEndDrawer();
-      }
       final intent = _playbackIntent;
       // Korisnikova Pauza je neopoziva — odlazak u pozadinu je ne poništava.
       if (intent != null && !intent.wantsPlayback) return;
@@ -1099,54 +1092,205 @@ class _EpisodeContentState extends State<_EpisodeContent>
           _player?.play();
         });
       }
-    } else if (state == AppLifecycleState.resumed) {
-      if (_endDrawerWasOpenBeforeBg) {
-        _endDrawerWasOpenBeforeBg = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _scaffoldKey.currentState?.openEndDrawer();
-        });
+    }
+  }
+
+  /// Je li bočni panel otvoren — čita ga `PopScope.canPop` (vidi build), pa
+  /// Back prvo zatvori panel, a tek onda napusti epizodu.
+  ///
+  /// Zatvaranje panela NE dira reprodukciju: panel ostaje montiran izvan
+  /// ekrana, pa `Video` ne prolazi kroz dispose (kod endDrawera je prolazio i
+  /// media_kit je pauzirao, zbog čega je postojao resume nakon zatvaranja).
+  bool _anyDrawerOpen = false;
+
+  void _onPanelChanged(EpisodePanelSide? side) {
+    final isOpen = side != null;
+    if (_anyDrawerOpen == isOpen || !mounted) return;
+    setState(() => _anyDrawerOpen = isOpen);
+  }
+
+  bool get _playerPanelOpen =>
+      _panelKey.currentState?.openSide == EpisodePanelSide.right;
+
+  void _openPlayerPanel() =>
+      _panelKey.currentState?.open(EpisodePanelSide.right);
+
+  void _togglePanel(EpisodePanelSide side) =>
+      _panelKey.currentState?.toggle(side);
+
+  /// Mobitel u landscapeu: header i footer su skriveni dok se čita, pa ekran
+  /// dijele samo članak i player. Povlačenje prstom prema dolje (scroll prema
+  /// gore) ih vrati, nastavak čitanja ih opet skrije.
+  bool _chromeHidden = true;
+
+  bool _onCenterScroll(UserScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical || !_isPhoneLandscape(context)) {
+      return false;
+    }
+    final hide = switch (n.direction) {
+      ScrollDirection.reverse => true,
+      ScrollDirection.forward => false,
+      ScrollDirection.idle => null,
+    };
+    if (hide != null && hide != _chromeHidden) {
+      setState(() => _chromeHidden = hide);
+    }
+    return false;
+  }
+
+  /// Footer epizode (gost traka, Zid podrške, mobilna navigacija). U
+  /// landscapeu na mobitelu se skupi dok je [_chromeHidden].
+  ///
+  /// - Ostaje MONTIRAN (samo se odreže na visinu nula): zamjena praznim
+  ///   widgetom bi pri svakoj promjeni smjera scrolla ponovno pokretala
+  ///   `PinkaSupportBar` (RPC kampanje) i traka bi kasnila za footerom.
+  /// - Skriven nosi donji inset: Scaffold tijelu skida donji padding čim
+  ///   `bottomNavigationBar` postoji, pa ga tijelo ne bi moglo čuvati.
+  /// - Dok je autoplay utišan, footer se NE skriva: gumb „Uključi zvuk" u
+  ///   donjoj traci je jedan od tri obavezna izlaza (CLAUDE.md „Muted
+  ///   autoplay").
+  Widget _immersiveFooter(BuildContext context, Widget footer) {
+    final inset = MediaQuery.paddingOf(context).bottom;
+    return ListenableBuilder(
+      listenable: PlayerMute.instance,
+      builder: (context, child) {
+        final hidden =
+            _chromeHidden &&
+            _isPhoneLandscape(context) &&
+            !PlayerMute.instance.autoplayBlocked;
+        return TweenAnimationBuilder<double>(
+          tween: Tween(end: hidden ? 0 : 1),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: child,
+          builder: (context, f, child) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRect(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: f,
+                  child: ExcludeFocus(
+                    excluding: f == 0,
+                    child: ExcludeSemantics(excluding: f == 0, child: child),
+                  ),
+                ),
+              ),
+              SizedBox(height: inset * (1 - f)),
+            ],
+          ),
+        );
+      },
+      child: footer,
+    );
+  }
+
+  /// Sidro čitanja dok se članak sužava/širi uz bočni stupac: sekcija koja
+  /// presijeca liniju čitanja i KOLIKO je kroz nju linija prošla (0–1).
+  /// Prelamanje teksta mijenja visine, pa bi apsolutni offset nakon
+  /// otvaranja stupca pokazivao na sasvim drugo mjesto u članku.
+  ({String ts, double fraction})? _readingAnchor;
+
+  /// Linija čitanja: 30 % visine viewporta ispod njegova vrha (globalno).
+  /// Ne ovisi o visini app bara, koja se mijenja s brojem redova.
+  double? _readingLineY() {
+    if (!_scrollController.hasClients) return null;
+    final vp =
+        _scrollController.position.context.notificationContext
+                ?.findRenderObject()
+            as RenderBox?;
+    if (vp == null || !vp.hasSize) return null;
+    return vp.localToGlobal(Offset.zero).dy + vp.size.height * 0.3;
+  }
+
+  /// Širina stupca članka (scroll viewport), ne ekrana.
+  double _columnWidth() {
+    final vp =
+        _scrollController.position.context.notificationContext
+                ?.findRenderObject()
+            as RenderBox?;
+    return vp != null && vp.hasSize
+        ? vp.size.width
+        : MediaQuery.sizeOf(context).width;
+  }
+
+  ({double top, double height})? _sectionBox(String ts) {
+    final box =
+        _sectionKeys[ts]?.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize || !box.attached) return null;
+    return (top: box.localToGlobal(Offset.zero).dy, height: box.size.height);
+  }
+
+  /// Zadnji programski skok na sekciju (tap u sadržaju, praćenje playera).
+  /// Skok je NAVIGACIJA: sidro koje bi ga pratilo vratilo bi članak na staro
+  /// mjesto — a `jumpTo` se u render stablu vidi tek u sljedećem layoutu, pa
+  /// bi snimka uzeta odmah nakon njega pokazivala stari raspored.
+  DateTime? _sectionJumpAt;
+  String? _sectionJumpTs;
+
+  bool get _sectionJumpRecent {
+    final at = _sectionJumpAt;
+    return at != null &&
+        DateTime.now().difference(at) < const Duration(milliseconds: 500);
+  }
+
+  void _captureReadingAnchor() {
+    _readingAnchor = null;
+    if (_sectionJumpRecent) return;
+    // Magisterium tab na mobitelu ima svoj scroll, a `_scrollController` je
+    // tada u skrivenom djetetu IndexedStacka.
+    if (_mobileTab != 0) return;
+    final line = _readingLineY();
+    if (line == null) return;
+    for (final ts in _sectionKeys.keys) {
+      final b = _sectionBox(ts);
+      if (b == null || b.height <= 0) continue;
+      if (b.top <= line && line < b.top + b.height) {
+        _readingAnchor = (ts: ts, fraction: (line - b.top) / b.height);
+        return;
       }
     }
   }
 
-  /// `onEndDrawerChanged` za oba layouta (mobilni s Magisteriumom i bez njega).
-  ///
-  /// Zatvaranje endDrawera dispose-a `Video` widget, a media_kit na to
-  /// pauzira player — bez resumea korisnik gubi zvuk na swipe-right, što je
-  /// glavni mobile use case (audio dok scrollaš po članku). Zato: otvori
-  /// prozor tolerancije pa nakon animacije vrati reprodukciju SAMO ako
-  /// namjera i dalje postoji. Ako je korisnik prije zatvaranja stisnuo Pauzu,
-  /// [PlaybackIntent.shouldResume] je false i ostaje pauzirano.
-  ///
-  /// Timing: Flutterov `DrawerController.close()` zove `drawerCallback(false)`
-  /// odmah nakon `fling()`, dakle na POČETKU close animacije; sadržaj drawera
-  /// se unmounta tek kad kontroler dođe u `dismissed`. Prozor tolerancije
-  /// stignemo otvoriti prije framework pauze.
-  /// Je li ijedan drawer otvoren — čita ga `PopScope.canPop` (vidi build).
-  /// Prati se ručno jer `ScaffoldState.isEndDrawerOpen` u trenutku buildanja
-  /// PopScope-a još nije pouzdan (Scaffold je dijete tog PopScope-a).
-  bool _anyDrawerOpen = false;
-
-  void _onDrawerChanged(bool isOpen) {
-    if (_anyDrawerOpen == isOpen) return;
-    setState(() => _anyDrawerOpen = isOpen);
+  /// Svaki frame u kojem je članak dobio novu širinu. Nedavni skok na
+  /// sekciju (tap u sadržaju zatvara panel pa se članak širi DOK skok traje)
+  /// ponovno se postavi pod app bar — inače bi prelamanje teksta iznad cilja
+  /// odvuklo sekciju s ekrana. Inače vrati sidro čitanja.
+  void _onCenterReflow() {
+    final ts = _sectionJumpTs;
+    if (_sectionJumpRecent && ts != null) {
+      if (_scrollController.hasClients &&
+          !_scrollController.position.isScrollingNotifier.value) {
+        _scrollLock = DateTime.now();
+        _jumpSectionToTop(ts);
+      }
+      return;
+    }
+    _restoreReadingAnchor();
   }
 
-  void _onEndDrawerChanged(bool isOpen) {
-    _onDrawerChanged(isOpen);
-    if (isOpen) return;
-    // Drawer zatvaramo i sami kad app ide u pozadinu — tada o reprodukciji
-    // odlučuje didChangeAppLifecycleState (poštuje i pref „u pozadini"),
-    // pa ovaj handler mora šutjeti da mu ne kontrira resumeom.
-    if (_endDrawerWasOpenBeforeBg) return;
-
-    final intent = _playbackIntent;
-    intent?.suppress();
-    if (intent == null) return;
-    Future<void>.delayed(const Duration(milliseconds: 120), () {
-      if (!mounted) return;
-      if (intent.shouldResume) _player?.play();
-    });
+  void _restoreReadingAnchor() {
+    final anchor = _readingAnchor;
+    if (anchor == null || !_scrollController.hasClients) return;
+    // Korisnik (ili animirani auto-scroll) je preuzeo scroll: `jumpTo` bi mu
+    // prekinuo povlačenje ili fling. Njegova pozicija ima prednost.
+    if (_scrollController.position.isScrollingNotifier.value ||
+        _sectionJumpRecent) {
+      _readingAnchor = null;
+      return;
+    }
+    final line = _readingLineY();
+    final b = _sectionBox(anchor.ts);
+    if (line == null || b == null) return;
+    final delta = b.top + anchor.fraction * b.height - line;
+    if (delta.abs() < 1) return;
+    final pos = _scrollController.position;
+    // Programski scroll — ne smije izgledati kao korisnikov (`_onScroll` bi
+    // inače blokirao auto-scroll iz playera i preskočio aktivnu sekciju).
+    _scrollLock = DateTime.now();
+    _scrollController.jumpTo(
+      (pos.pixels + delta).clamp(pos.minScrollExtent, pos.maxScrollExtent),
+    );
   }
 
   // ---------- helpers -------------------------------------------------------
@@ -1382,20 +1526,18 @@ class _EpisodeContentState extends State<_EpisodeContent>
           _setInitialChapter(Duration(seconds: startAt));
         }
 
-        // Mobile (Android/iOS/web): auto-open video endDrawer cim video postane
-        // spreman. Razlog: video je autoplay (na webu možda muted zbog browser
+        // Uži ekran (≤ 1100, player je desni stupac platna): otvori player
+        // čim je spreman. Video je autoplay (na webu možda muted zbog browser
         // policy-a, ali user vidi vizual), korisnik odmah ima video u fokusu.
-        // Ako mu smeta, swipe-right zatvara endDrawer (Flutter default gesture).
-        // Desktop (width > 900) ima inline video panel/stupac, ne endDrawer —
-        // tu auto-open nije primjenjiv.
-        if (!_endDrawerAutoOpened) {
+        // U landscapeu stoji uz članak; u portretu ga gura s ekrana, a
+        // swipe-right ili tap na rub članka ga zatvara. Šire (> 1100) je
+        // player stalni stupac pa auto-open nije primjenjiv.
+        if (!_playerAutoOpened) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            final width = MediaQuery.sizeOf(context).width;
-            // Mobile threshold — isto kao isWide u build() (width > 900).
-            if (width <= 900) {
-              _scaffoldKey.currentState?.openEndDrawer();
-              _endDrawerAutoOpened = true;
+            if (MediaQuery.sizeOf(context).width <= _kPlayerColumnMinWidth) {
+              _openPlayerPanel();
+              _playerAutoOpened = true;
             }
           });
         }
@@ -1570,6 +1712,16 @@ class _EpisodeContentState extends State<_EpisodeContent>
   static const _scrollAlignment = 0.18;
 
   void _scrollToSection(String timestamp) {
+    _sectionJumpAt = DateTime.now();
+    _sectionJumpTs = timestamp;
+    _readingAnchor = null;
+    _jumpSectionToTop(timestamp);
+    _scrollMagToSection(timestamp);
+  }
+
+  /// Postavi sekciju pod app bar. Bez bilježenja skoka — zove je i
+  /// [_onCenterReflow] da cilj ostane na mjestu dok se članak prelama.
+  void _jumpSectionToTop(String timestamp) {
     final ctx = _sectionKeys[timestamp]?.currentContext;
     if (ctx != null) {
       final box = ctx.findRenderObject() as RenderBox?;
@@ -1586,9 +1738,14 @@ class _EpisodeContentState extends State<_EpisodeContent>
         final currentY = box.localToGlobal(Offset.zero).dy;
         final topInset = MediaQuery.paddingOf(context).top;
         const gap = 16.0;
+        // Drugi red akcija postoji kad je STUPAC uži od 600 (vidi
+        // `_episodeAppBar`) — i na tabletu kad je player uz članak.
+        // Mobitel u landscapeu: app bar je floating i može, a ne mora biti
+        // na ekranu; računamo s punom visinom da naslov nikad ne završi
+        // ispod trake (kad je skrivena, sekcija samo sjedne malo niže).
         final pinned = _parallelActive
             ? topInset + kToolbarHeight + kParallelStickyHeaderHeight
-            : topInset + kToolbarHeight;
+            : topInset + kToolbarHeight + (_columnWidth() < 600 ? 46 : 0);
         final desiredY = pinned + gap;
         final target = (_scrollController.offset + (currentY - desiredY)).clamp(
           0.0,
@@ -1603,7 +1760,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
         );
       }
     }
-    _scrollMagToSection(timestamp);
   }
 
   void _scrollMagToSection(String timestamp) {
@@ -1675,23 +1831,25 @@ class _EpisodeContentState extends State<_EpisodeContent>
     }
   }
 
-  /// Na uskom ekranu je player u endDraweru — bez njega bi „Poslušaj" svirao
-  /// bez ikakvog vizuala (isto kao play u članku).
+  /// Na uskom ekranu je player bočni stupac koji može biti zatvoren — bez
+  /// otvaranja bi „Poslušaj" svirao bez ikakvog vizuala (isto kao play u
+  /// članku).
   ///
-  /// Otvaranje drawera montira `Video` widget, koji `<video>` premjesti u
-  /// DOM-u — a to po HTML specu PAUZIRA element (ista zamka kao ulazak u
-  /// fullscreen, vidi CLAUDE.md „media_kit web"). Izmjereno 24.9.2026. na
-  /// 390 px: seek je sjeo na 5963 s, a poruka nije krenula. Zato nakon
-  /// animacije ponovi `play()` (300/900 ms, kao `_resumeAfterTransition`).
+  /// Panel je montiran i dok je zatvoren, pa `<video>` ne bi smio putovati
+  /// po DOM-u. `play()` nakon animacije (300/900 ms) ipak ostaje kao osigurač:
+  /// kod endDrawera je premještanje elementa pauziralo reprodukciju
+  /// (izmjereno 24.9.2026. na 390 px: seek je sjeo, poruka nije krenula).
   void _revealPlayer() {
-    if (MediaQuery.sizeOf(context).width > 900) return;
-    final wasOpen = _scaffoldKey.currentState?.isEndDrawerOpen ?? false;
-    _scaffoldKey.currentState?.openEndDrawer();
+    if (MediaQuery.sizeOf(context).width > _kPlayerColumnMinWidth) return;
+    final wasOpen = _playerPanelOpen;
+    _openPlayerPanel();
     if (wasOpen) return;
     for (final ms in const [300, 900]) {
       Future<void>.delayed(Duration(milliseconds: ms), () {
         final player = _player;
         if (!mounted || player == null || player.state.playing) return;
+        // Korisnik je u međuvremenu stisnuo Pauzu — osigurač je ne poništava.
+        if (_playbackIntent?.wantsPlayback == false) return;
         player.play();
       });
     }
@@ -1766,7 +1924,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
       );
 
   void _drawerTap(String timestamp) {
-    _scaffoldKey.currentState?.closeDrawer();
+    _panelKey.currentState?.close();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _seekAndPlay(timestamp);
     });
@@ -1845,7 +2003,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final l = AppLocalizations.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
-    final showVideo = _videoReady && width > 1100;
+    final showVideo = _videoReady && width > _kPlayerColumnMinWidth;
     final wantEn = _language == EpisodeLanguage.en;
     // EN je superset HR-a — kad je toggle na EN, koristi EN verzije asseta
     // (sadrze i HR polja za fallback per-field). Inace HR original.
@@ -1875,7 +2033,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final isMobileWithTabs = !isWide && hasMag;
 
     final appBar = _episodeAppBar(
-      twoRow: width < 600,
       leading: _backLeading(context),
       title: _Breadcrumb(
         channelName: data.info.channel,
@@ -1941,7 +2098,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
             child: IconButton(
               icon: const Icon(Icons.ondemand_video),
               tooltip: l.episodeVideo,
-              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+              onPressed: () => _togglePanel(EpisodePanelSide.right),
             ),
           ),
       ],
@@ -2031,14 +2188,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 onPlayTap: _videoReady
                     ? (ts) {
                         _seekAndPlay(ts, preroll: true);
-                        // Na mobilu (!isWide) korisnik vidi samo text — bez
-                        // drawera, klik na play je "tihi seek" bez vizuala.
-                        // Otvori endDrawer s playerom da odmah vidi video.
-                        // Wide mode ima video panel/stupac side-by-side
-                        // pa drawer otvaranje nije potrebno.
-                        if (!isWide) {
-                          _scaffoldKey.currentState?.openEndDrawer();
-                        }
+                        // Dok je player bočni stupac platna (≤ 1100), klik na
+                        // play bez otvorenog playera bio bi "tihi seek" bez
+                        // vizuala — otvori ga. Šire je player stalni stupac.
+                        // `_revealPlayer` i ponovi `play()` nakon animacije.
+                        if (!showVideo) _revealPlayer();
                       }
                     : null,
                 magisterium: magPrimary,
@@ -2235,7 +2389,6 @@ class _EpisodeContentState extends State<_EpisodeContent>
       mobileMagScroll = CustomScrollView(
         slivers: [
           _episodeAppBar(
-            twoRow: width < 600,
             leading: _backLeading(context),
             title: _Breadcrumb(
               channelName: data.info.channel,
@@ -2274,7 +2427,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                   child: IconButton(
                     icon: const Icon(Icons.ondemand_video),
                     tooltip: l.episodeVideo,
-                    onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                    onPressed: () => _togglePanel(EpisodePanelSide.right),
                   ),
                 ),
             ],
@@ -2478,210 +2631,207 @@ class _EpisodeContentState extends State<_EpisodeContent>
         children: [scrollBody, mobileMagScroll!],
       );
     } else {
-      // Mobitel bez Magisteriuma: samo scroll content, Drawer za TOC
+      // Mobitel bez Magisteriuma: samo scroll content, TOC u lijevom panelu
       body = scrollBody;
     }
+
+    // Platno je UVIJEK u stablu, i kad nema nijednog panela — inače bi se pri
+    // `_videoReady` (desktop) tijelo premjestilo u novo podstablo i članak bi
+    // izgubio scroll.
+    body = EpisodePanelCanvas(
+      key: _panelKey,
+      onChanged: _onPanelChanged,
+      onCenterReflowStart: _captureReadingAnchor,
+      onCenterReflow: _onCenterReflow,
+      onCenterReflowEnd: () => _readingAnchor = null,
+      center: NotificationListener<UserScrollNotification>(
+        onNotification: _onCenterScroll,
+        child: body,
+      ),
+      left: isWide
+          ? null
+          : TableOfContents(
+              article: articleForUi,
+              activeTimestamp: _activeTimestamp,
+              scrollTimestamp: _scrollTimestamp,
+              onSectionTap: _drawerTap,
+            ),
+      right: _videoReady && !showVideo
+          ? VideoPanel(
+              player: _player!,
+              seekUndo: _seekUndo,
+              youtubeId: widget.data.youtubeId,
+              audioOnly: data.isAudioOnly,
+              posterUrl: _audioArtUrl,
+              controller: _videoController!,
+              chapters: _videoChapters,
+              activeTimestamp: _activeTimestamp,
+              onChapterTap: _seekAndPlay,
+              onSeek: _onVideoSeek,
+              sponsorRanges: _sponsorRanges,
+              sponsorsInVideo: _sponsorsInVideo,
+              onSponsorListen: _listenSponsor,
+              totalDurationSeconds: data.info.duration,
+              speakerTimeline: data.speakerTimeline,
+              speakers: summaryForUi.summary.speakers,
+              width: null,
+            )
+          : null,
+    );
 
     return EpisodeLanguageScope(
       language: _language,
       hasTranslationEn: data.hasTranslationEn,
       child: PopScope(
-        // Back mora prvo zatvoriti otvoreni drawer, pa tek onda napustiti
-        // epizodu. Bez ovoga je korisnik koji je na mobitelu otvorio video u
-        // `endDraweru` i stisnuo Back ISPADAO IZ EPIZODE — Scaffold drawer nije
-        // ruta, pa ga Navigator ne vidi kao nešto što se ima popati.
+        // Back mora prvo zatvoriti otvoreni bočni panel, pa tek onda napustiti
+        // epizodu. Panel nije ruta, pa ga Navigator ne vidi kao nešto što se
+        // ima popati (s endDrawerom je korisnik ISPADAO IZ EPIZODE).
         canPop: !_anyDrawerOpen,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop || !mounted) return;
-          _scaffoldKey.currentState?.closeEndDrawer();
-          _scaffoldKey.currentState?.closeDrawer();
+          _panelKey.currentState?.close();
         },
         child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: theme.colorScheme.surfaceContainerLow,
-        onEndDrawerChanged: _onEndDrawerChanged,
-        onDrawerChanged: _onDrawerChanged,
-        drawer: isWide
-            ? null
-            : Drawer(
-                child: SafeArea(
-                  child: TableOfContents(
-                    article: articleForUi,
-                    activeTimestamp: _activeTimestamp,
-                    scrollTimestamp: _scrollTimestamp,
-                    onSectionTap: _drawerTap,
+          backgroundColor: theme.colorScheme.surfaceContainerLow,
+          // SliverAppBar (primary: true) respektira top safe area, pa top: false.
+          // Bottom: true samo kad nema bottomNavigationBara (inace bi stvorilo gap).
+          body: SafeArea(
+            top: false,
+            bottom: !showMobileBottomBar,
+            child: Stack(
+              children: [
+                body,
+                Positioned(
+                  top: 12,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, -0.2),
+                            end: Offset.zero,
+                          ).animate(anim),
+                          child: child,
+                        ),
+                      ),
+                      child: _resumeHintSeconds == null
+                          ? const SizedBox.shrink()
+                          : ResumeHintBanner(
+                              key: ValueKey(_resumeHintSeconds),
+                              seconds: _resumeHintSeconds!,
+                            ),
+                    ),
                   ),
                 ),
-              ),
-        endDrawer: _videoReady && !showVideo
-            ? Drawer(
-                width: 360,
-                child: SafeArea(
-                  child: VideoPanel(
-                    player: _player!,
-                    seekUndo: _seekUndo,
-                    youtubeId: widget.data.youtubeId,
-                    audioOnly: data.isAudioOnly,
-                    posterUrl: _audioArtUrl,
-                    controller: _videoController!,
-                    chapters: _videoChapters,
-                    activeTimestamp: _activeTimestamp,
-                    onChapterTap: _seekAndPlay,
-                    onSeek: _onVideoSeek,
-                    sponsorRanges: _sponsorRanges,
-                    sponsorsInVideo: _sponsorsInVideo,
-                    onSponsorListen: _listenSponsor,
-                    totalDurationSeconds: data.info.duration,
-                    speakerTimeline: data.speakerTimeline,
-                    speakers: summaryForUi.summary.speakers,
-                    width: null,
+              ],
+            ),
+          ),
+          // Dno ekrana: "gost" traka (samo neprijavljenima) + sticky "Zid
+          // podrške" (sam se sakrije bez aktivne kampanje) + postojeća mobilna
+          // navigacija. Donji safe area primjenjuje SAMO vanjski SafeArea —
+          // pojedine trake se pale/gase pa nijedna ne zna je li najniža.
+          bottomNavigationBar: _immersiveFooter(
+            context,
+            SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AnonymousSignInBar(applyBottomSafeArea: false),
+                  PinkaSupportBar.episode(
+                    youtubeId: data.youtubeId,
+                    channelRefs: _channelSupportRefs,
+                    applyBottomSafeArea: false,
+                    onOpen: (_, viaChannel) => drillDown(
+                      context,
+                      _supportPath(viaChannel: viaChannel),
+                    ),
                   ),
-                ),
-              )
-            : null,
-        // SliverAppBar (primary: true) respektira top safe area, pa top: false.
-        // Bottom: true samo kad nema bottomNavigationBara (inace bi stvorilo gap).
-        body: SafeArea(
-          top: false,
-          bottom: !showMobileBottomBar,
-          child: Stack(
-            children: [
-              body,
-              Positioned(
-                top: 12,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    transitionBuilder: (child, anim) => FadeTransition(
-                      opacity: anim,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, -0.2),
-                          end: Offset.zero,
-                        ).animate(anim),
-                        child: child,
+                  if (showMobileBottomBar)
+                    Material(
+                      color: theme.colorScheme.surface,
+                      elevation: 3,
+                      child: SizedBox(
+                        height: 64,
+                        child: Row(
+                          children: [
+                            _BottomBarButton(
+                              icon: Icons.menu,
+                              label: l.episodeContents,
+                              isActive: false,
+                              onTap: () => _togglePanel(EpisodePanelSide.left),
+                            ),
+                            if (isMobileWithTabs) ...[
+                              _BottomBarButton(
+                                icon: _mobileTab == 0
+                                    ? Icons.article
+                                    : Icons.article_outlined,
+                                label: l.episodeArticle,
+                                isActive: _mobileTab == 0,
+                                onTap: () => setState(() => _mobileTab = 0),
+                              ),
+                              _BottomBarButton(
+                                icon: _mobileTab == 1
+                                    ? Icons.menu_book
+                                    : Icons.menu_book_outlined,
+                                label: 'Magisterium',
+                                isActive: _mobileTab == 1,
+                                onTap: () => setState(() => _mobileTab = 1),
+                              ),
+                            ],
+                            // Na mobitelu player živi u bočnom panelu, pa je ovo
+                            // jedina površina koju korisnik vidi kad hladno otvori
+                            // share link. Ako je browser nametnuo muted autoplay,
+                            // gumb preuzima ulogu unmutea: tap je user gesture koji
+                            // browser traži, pa zvuk pali ODMAH (i usput otvara
+                            // player). Bez toga je epizoda u mrtvoj točki — vrti se
+                            // bez zvuka i nema se gdje kliknuti.
+                            ListenableBuilder(
+                              listenable: PlayerMute.instance,
+                              builder: (context, _) {
+                                final blocked =
+                                    PlayerMute.instance.autoplayBlocked;
+                                return _BottomBarButton(
+                                  icon: blocked
+                                      ? Icons.volume_off
+                                      : Icons.ondemand_video,
+                                  label: blocked
+                                      ? l.mediaBoostVolume
+                                      : l.episodeVideo,
+                                  isActive: blocked,
+                                  onTap: _videoReady
+                                      ? () {
+                                          if (blocked) {
+                                            PlayerMute.instance.setMuted(false);
+                                            if (!(_player?.state.playing ??
+                                                true)) {
+                                              _player?.play();
+                                            }
+                                          }
+                                          // Unmute uz već otvoren player ga
+                                          // ne smije zatvoriti.
+                                          if (blocked && _playerPanelOpen) {
+                                            return;
+                                          }
+                                          _togglePanel(EpisodePanelSide.right);
+                                        }
+                                      : null,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    child: _resumeHintSeconds == null
-                        ? const SizedBox.shrink()
-                        : ResumeHintBanner(
-                            key: ValueKey(_resumeHintSeconds),
-                            seconds: _resumeHintSeconds!,
-                          ),
-                  ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-        // Dno ekrana: "gost" traka (samo neprijavljenima) + sticky "Zid
-        // podrške" (sam se sakrije bez aktivne kampanje) + postojeća mobilna
-        // navigacija. Donji safe area primjenjuje SAMO vanjski SafeArea —
-        // pojedine trake se pale/gase pa nijedna ne zna je li najniža.
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AnonymousSignInBar(applyBottomSafeArea: false),
-            PinkaSupportBar.episode(
-              youtubeId: data.youtubeId,
-              channelRefs: _channelSupportRefs,
-              applyBottomSafeArea: false,
-              onOpen: (_, viaChannel) =>
-                  drillDown(context, _supportPath(viaChannel: viaChannel)),
             ),
-            if (showMobileBottomBar)
-              Material(
-                color: theme.colorScheme.surface,
-                elevation: 3,
-                child: SizedBox(
-                    height: 64,
-                    child: Row(
-                      children: [
-                        _BottomBarButton(
-                          icon: Icons.menu,
-                          label: l.episodeContents,
-                          isActive: false,
-                          onTap: () {
-                            final s = _scaffoldKey.currentState;
-                            if (s == null) return;
-                            if (s.isDrawerOpen) {
-                              s.closeDrawer();
-                            } else {
-                              s.openDrawer();
-                            }
-                          },
-                        ),
-                        if (isMobileWithTabs) ...[
-                          _BottomBarButton(
-                            icon: _mobileTab == 0
-                                ? Icons.article
-                                : Icons.article_outlined,
-                            label: l.episodeArticle,
-                            isActive: _mobileTab == 0,
-                            onTap: () => setState(() => _mobileTab = 0),
-                          ),
-                          _BottomBarButton(
-                            icon: _mobileTab == 1
-                                ? Icons.menu_book
-                                : Icons.menu_book_outlined,
-                            label: 'Magisterium',
-                            isActive: _mobileTab == 1,
-                            onTap: () => setState(() => _mobileTab = 1),
-                          ),
-                        ],
-                        // Na mobitelu player živi u `endDraweru`, pa je ovo
-                        // jedina površina koju korisnik vidi kad hladno otvori
-                        // share link. Ako je browser nametnuo muted autoplay,
-                        // gumb preuzima ulogu unmutea: tap je user gesture koji
-                        // browser traži, pa zvuk pali ODMAH (i usput otvara
-                        // player). Bez toga je epizoda u mrtvoj točki — vrti se
-                        // bez zvuka i nema se gdje kliknuti.
-                        ListenableBuilder(
-                          listenable: PlayerMute.instance,
-                          builder: (context, _) {
-                            final blocked =
-                                PlayerMute.instance.autoplayBlocked;
-                            return _BottomBarButton(
-                              icon: blocked
-                                  ? Icons.volume_off
-                                  : Icons.ondemand_video,
-                              label: blocked
-                                  ? l.mediaBoostVolume
-                                  : l.episodeVideo,
-                              isActive: blocked,
-                              onTap: _videoReady
-                                  ? () {
-                                      if (blocked) {
-                                        PlayerMute.instance.setMuted(false);
-                                        if (!(_player?.state.playing ??
-                                            true)) {
-                                          _player?.play();
-                                        }
-                                      }
-                                      final s = _scaffoldKey.currentState;
-                                      if (s == null) return;
-                                      if (s.isEndDrawerOpen) {
-                                        s.closeEndDrawer();
-                                      } else {
-                                        s.openEndDrawer();
-                                      }
-                                    }
-                                  : null,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-              ),
-          ],
           ),
         ),
-      ),
       ),
     );
   }
@@ -2697,7 +2847,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     final l = AppLocalizations.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width > 900;
-    final showVideo = _videoReady && width > 1100;
+    final showVideo = _videoReady && width > _kPlayerColumnMinWidth;
     // Ugrađeni YouTube ima smisla samo kad kod nas NEMA što pustiti — inače bi
     // na stranici bila dva playera. Sintetički ID-evi (X, ne-YT izvori) nemaju
     // YouTube video iza sebe.
@@ -2715,13 +2865,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
     // Na širokom ekranu embed ide u desni stupac — na isto mjesto gdje stoji
     // `VideoPanel` kad medija postoji, pa reprodukcija uvijek živi na istoj
     // strani ekrana i ne gura status-karticu ispod pregiba.
-    final showEmbedPanel = embedYouTube && !showVideo && width > 1100;
+    final showEmbedPanel =
+        embedYouTube && !showVideo && width > _kPlayerColumnMinWidth;
 
     final scrollBody = CustomScrollView(
       controller: _scrollController,
       slivers: [
         _episodeAppBar(
-          twoRow: width < 600,
           leading: _backLeading(context),
           title: _Breadcrumb(
             channelName: data.info.channel,
@@ -2758,7 +2908,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 child: IconButton(
                   icon: const Icon(Icons.ondemand_video),
                   tooltip: l.episodeVideo,
-                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  onPressed: () => _togglePanel(EpisodePanelSide.right),
                 ),
               ),
           ],
@@ -2799,8 +2949,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: () =>
-                              _scaffoldKey.currentState?.openEndDrawer(),
+                          onPressed: _openPlayerPanel,
                           icon: Icon(
                             data.isAudioOnly
                                 ? Icons.headphones
@@ -2930,113 +3079,118 @@ class _EpisodeContentState extends State<_EpisodeContent>
       body = scrollBody;
     }
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: theme.colorScheme.surfaceContainerLow,
-      onEndDrawerChanged: _onEndDrawerChanged,
-      endDrawer: _videoReady && !showVideo
-          ? Drawer(
-              width: 360,
-              child: SafeArea(
-                child: VideoPanel(
-                  player: _player!,
-                  seekUndo: _seekUndo,
-                  youtubeId: widget.data.youtubeId,
-                  audioOnly: data.isAudioOnly,
-                  posterUrl: _audioArtUrl,
-                  controller: _videoController!,
-                  chapters: const [],
-                  onChapterTap: (_) {},
-                  onSeek: _onVideoSeek,
-                  sponsorRanges: _sponsorRanges,
-                  sponsorsInVideo: _sponsorsInVideo,
-                  onSponsorListen: _listenSponsor,
-                  totalDurationSeconds: data.info.duration,
-                  speakerTimeline: data.speakerTimeline,
-                  width: null,
-                ),
-              ),
+    // Isti model kao standardni layout: player je desni stupac platna.
+    body = EpisodePanelCanvas(
+      key: _panelKey,
+      onChanged: _onPanelChanged,
+      center: NotificationListener<UserScrollNotification>(
+        onNotification: _onCenterScroll,
+        child: body,
+      ),
+      right: _videoReady && !showVideo
+          ? VideoPanel(
+              player: _player!,
+              seekUndo: _seekUndo,
+              youtubeId: widget.data.youtubeId,
+              audioOnly: data.isAudioOnly,
+              posterUrl: _audioArtUrl,
+              controller: _videoController!,
+              chapters: const [],
+              onChapterTap: (_) {},
+              onSeek: _onVideoSeek,
+              sponsorRanges: _sponsorRanges,
+              sponsorsInVideo: _sponsorsInVideo,
+              onSponsorListen: _listenSponsor,
+              totalDurationSeconds: data.info.duration,
+              speakerTimeline: data.speakerTimeline,
+              width: null,
             )
           : null,
-      body: SafeArea(
-        top: false,
-        bottom: !isWide,
-        child: Stack(
-          children: [
-            body,
-            Positioned(
-              top: 12,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  transitionBuilder: (child, anim) => FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, -0.2),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: child,
+    );
+
+    return PopScope(
+      canPop: !_anyDrawerOpen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !mounted) return;
+        _panelKey.currentState?.close();
+      },
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
+        body: SafeArea(
+          top: false,
+          bottom: !isWide,
+          child: Stack(
+            children: [
+              body,
+              Positioned(
+                top: 12,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, -0.2),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
+                      ),
                     ),
+                    child: _resumeHintSeconds == null
+                        ? const SizedBox.shrink()
+                        : ResumeHintBanner(
+                            key: ValueKey(_resumeHintSeconds),
+                            seconds: _resumeHintSeconds!,
+                          ),
                   ),
-                  child: _resumeHintSeconds == null
-                      ? const SizedBox.shrink()
-                      : ResumeHintBanner(
-                          key: ValueKey(_resumeHintSeconds),
-                          seconds: _resumeHintSeconds!,
-                        ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      // "Gost" traka + sticky "Zid podrške" iznad (opcionalne) mobilne
-      // navigacije — vidi standardni layout gore.
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AnonymousSignInBar(applyBottomSafeArea: false),
-          PinkaSupportBar.episode(
-            youtubeId: data.youtubeId,
-            channelRefs: _channelSupportRefs,
-            applyBottomSafeArea: false,
-            onOpen: (_, viaChannel) =>
-                drillDown(context, _supportPath(viaChannel: viaChannel)),
+            ],
           ),
-          if (!isWide)
-            Material(
-              color: theme.colorScheme.surface,
-              elevation: 3,
-              child: SizedBox(
-                  height: 64,
-                  child: Row(
-                    children: [
-                      _BottomBarButton(
-                        icon: Icons.ondemand_video,
-                        label: l.episodeVideo,
-                        isActive: false,
-                        onTap: _videoReady
-                            ? () {
-                                final s = _scaffoldKey.currentState;
-                                if (s == null) return;
-                                if (s.isEndDrawerOpen) {
-                                  s.closeEndDrawer();
-                                } else {
-                                  s.openEndDrawer();
-                                }
-                              }
-                            : null,
-                      ),
-                    ],
-                  ),
+        ),
+        // "Gost" traka + sticky "Zid podrške" iznad (opcionalne) mobilne
+        // navigacije — vidi standardni layout gore.
+        bottomNavigationBar: _immersiveFooter(
+          context,
+          SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AnonymousSignInBar(applyBottomSafeArea: false),
+                PinkaSupportBar.episode(
+                  youtubeId: data.youtubeId,
+                  channelRefs: _channelSupportRefs,
+                  applyBottomSafeArea: false,
+                  onOpen: (_, viaChannel) =>
+                      drillDown(context, _supportPath(viaChannel: viaChannel)),
                 ),
+                if (!isWide)
+                  Material(
+                    color: theme.colorScheme.surface,
+                    elevation: 3,
+                    child: SizedBox(
+                      height: 64,
+                      child: Row(
+                        children: [
+                          _BottomBarButton(
+                            icon: Icons.ondemand_video,
+                            label: l.episodeVideo,
+                            isActive: false,
+                            onTap: _videoReady
+                                ? () => _togglePanel(EpisodePanelSide.right)
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+          ),
         ),
       ),
     );
@@ -3213,14 +3367,66 @@ Widget? _backLeading(BuildContext context) {
   );
 }
 
-SliverAppBar _episodeAppBar({
+/// Iznad ove širine player je stalni desni stupac; ispod nje je bočni panel
+/// [EpisodePanelCanvas] koji se otvara/zatvara.
+const double _kPlayerColumnMinWidth = 1100;
+
+/// Mobitel položen u landscape: iOS/Android (na webu je to OS preglednika) i
+/// kratka strana ispod 600 px. Tu header i footer epizode ustupaju mjesto
+/// članku i playeru (vidi `_chromeHidden`). Bez uvjeta platforme bi nizak
+/// prozor preglednika na laptopu (1000×560, devtools dolje) izgubio header.
+bool _isPhoneLandscape(BuildContext context) {
+  final platform = Theme.of(context).platform;
+  if (platform != TargetPlatform.iOS && platform != TargetPlatform.android) {
+    return false;
+  }
+  final size = MediaQuery.sizeOf(context);
+  return size.width > size.height && size.shortestSide < 600;
+}
+
+/// Episode app bar. Dva reda se biraju po širini STUPCA (`crossAxisExtent`),
+/// ne ekrana: na mobitelu u landscapeu članak dijeli ekran s playerom
+/// ([EpisodePanelCanvas]) pa je 844 px ekrana samo ~480 px app bara.
+Widget _episodeAppBar({
+  required Widget title,
+  required List<Widget> actions,
+  Widget? leading,
+}) {
+  return SliverLayoutBuilder(
+    builder: (context, constraints) {
+      final w = constraints.crossAxisExtent;
+      final immersive = _isPhoneLandscape(context);
+      // I `_Breadcrumb` bira raspored po `MediaQuery` širini — dajemo mu
+      // širinu stupca, inače u landscapeu crta desktopni breadcrumb u 480 px.
+      final mq = MediaQuery.of(context);
+      return MediaQuery(
+        data: mq.copyWith(size: Size(w, mq.size.height)),
+        child: _episodeSliverAppBar(
+          title: title,
+          actions: actions,
+          twoRow: w < 600,
+          immersive: immersive,
+          leading: leading,
+        ),
+      );
+    },
+  );
+}
+
+SliverAppBar _episodeSliverAppBar({
   required Widget title,
   required List<Widget> actions,
   required bool twoRow,
+  required bool immersive,
   Widget? leading,
 }) {
   return SliverAppBar(
-    pinned: true,
+    // Landscape na mobitelu: app bar odlazi s čitanjem, a povlačenje prema
+    // dolje (scroll prema gore) ga odmah vrati — visina je ondje prevrijedna
+    // za stalno prikovanu traku od 102 px.
+    pinned: !immersive,
+    floating: immersive,
+    snap: immersive,
     automaticallyImplyLeading: false,
     leading: leading,
     // 0 jer _Breadcrumb nosi vlastiti rubni padding (na mobitelu kao content

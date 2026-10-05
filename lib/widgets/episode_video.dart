@@ -659,6 +659,82 @@ class _SubtitleToggleButton extends StatelessWidget {
 // Renderira se kroz `controls` builder pa postoji i u fullscreen ruti.
 // ---------------------------------------------------------------------------
 
+TextStyle _subtitleStyle(double fontSize) =>
+    TextStyle(fontSize: fontSize, height: 1.3, fontWeight: FontWeight.w500);
+
+/// Najveći font ≤ [base] uz koji cijeli [text] stane u [maxWidth]×[maxHeight].
+/// Donja granica 9 px: ispod toga titl ionako nije čitljiv, pa radije pusti da
+/// prijeđe gornji rub nego da postane točkica.
+@visibleForTesting
+double fittingSubtitleFontSize(
+  String text,
+  double base, {
+  required double maxWidth,
+  required double maxHeight,
+  TextScaler textScaler = TextScaler.noScaling,
+}) => _fittingFontSize(
+  text,
+  base,
+  maxWidth: maxWidth,
+  maxHeight: maxHeight,
+  textScaler: textScaler,
+);
+
+/// Zadnji izračuni po (tekst, okvir, skala). Position stream fira ~5×/s, a
+/// isti cue traje sekundama — bez ovoga bi svaki tick ponovio do 15 layouta.
+final Map<String, double> _fitCache = {};
+
+double _fittingFontSize(
+  String text,
+  double base, {
+  required double maxWidth,
+  required double maxHeight,
+  TextScaler textScaler = TextScaler.noScaling,
+  TextStyle baseStyle = const TextStyle(),
+}) {
+  if (maxWidth <= 0 || maxHeight <= 0) return base;
+  final key =
+      '$base|${maxWidth.round()}|${maxHeight.round()}|'
+      '${textScaler.scale(10)}|${baseStyle.fontFamily}|$text';
+  final cached = _fitCache[key];
+  if (cached != null) return cached;
+  if (_fitCache.length > 64) _fitCache.clear();
+  return _fitCache[key] = _measureFit(
+    text,
+    base,
+    maxWidth: maxWidth,
+    maxHeight: maxHeight,
+    textScaler: textScaler,
+    baseStyle: baseStyle,
+  );
+}
+
+double _measureFit(
+  String text,
+  double base, {
+  required double maxWidth,
+  required double maxHeight,
+  required TextScaler textScaler,
+  required TextStyle baseStyle,
+}) {
+  var size = base;
+  while (size > 9) {
+    final tp = TextPainter(
+      // Isti stil kao `Text` u overlayu: on spaja DefaultTextStyle (Inter iz
+      // teme) s našim — mjerenje bez fonta teme daje krivi broj redaka.
+      text: TextSpan(text: text, style: baseStyle.merge(_subtitleStyle(size))),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+    )..layout(maxWidth: maxWidth);
+    final fits = tp.height <= maxHeight;
+    tp.dispose();
+    if (fits) return size;
+    size -= 1;
+  }
+  return 9;
+}
+
 class _SubtitleOverlay extends StatelessWidget {
   final Player player;
   final SpeakerTimeline timeline;
@@ -680,56 +756,72 @@ class _SubtitleOverlay extends StatelessWidget {
           stream: player.stream.position,
           initialData: player.state.position,
           builder: (context, snapshot) {
+            // Zatvoren bočni panel (TickerMode off): titl se ionako ne vidi,
+            // pa ne trošimo layout teksta 5×/s.
+            if (!TickerMode.valuesOf(context).enabled) {
+              return const SizedBox.shrink();
+            }
             final cue = timeline.cueAt(snapshot.data ?? Duration.zero);
             if (cue == null || cue.text.isEmpty) {
               return const SizedBox.shrink();
             }
-            return LayoutBuilder(builder: (context, constraints) {
-              // Font skalira s veličinom playera: mali panel ~13px,
-              // fullscreen 1080p ~24px — kao YouTube auto-size.
-              final fontSize =
-                  (constraints.maxWidth * 0.022).clamp(12.0, 24.0);
-              return Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  // Tik iznad bottom control bara — YouTube pozicija (~10%
-                  // od dna), skalira s visinom playera umjesto fiksnog 12%+36
-                  // koji je na malom side-panelu gurao titl u sredinu slike.
-                  padding: EdgeInsets.only(
-                    bottom: (constraints.maxHeight * 0.06).clamp(8.0, 54.0) + 30,
-                    left: 12,
-                    right: 12,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * 0.88,
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // Font skalira s veličinom playera: mali panel ~13px,
+                // fullscreen 1080p ~24px — kao YouTube auto-size.
+                final baseFont = (constraints.maxWidth * 0.022).clamp(
+                  12.0,
+                  24.0,
+                );
+                final bottomPad =
+                    (constraints.maxHeight * 0.06).clamp(8.0, 54.0) + 30;
+                final boxWidth = constraints.maxWidth * 0.88;
+                // Titl se NIKAD ne reže: korisnici čitaju dok slušaju, pa je
+                // puni tekst važniji od slike koju prekrije. Raste prema gore
+                // od istog sidra iznad trake; tek ako ni tako ne stane u
+                // player (mali panel, dugačak cue), smanjuje se font.
+                final fontSize = _fittingFontSize(
+                  cue.text,
+                  baseFont,
+                  maxWidth: boxWidth - 20,
+                  maxHeight: constraints.maxHeight - bottomPad - 8 - 10,
+                  textScaler: MediaQuery.textScalerOf(context),
+                  baseStyle: DefaultTextStyle.of(context).style,
+                );
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    // Tik iznad bottom control bara — YouTube pozicija (~10%
+                    // od dna), skalira s visinom playera umjesto fiksnog 12%+36
+                    // koji je na malom side-panelu gurao titl u sredinu slike.
+                    padding: EdgeInsets.only(
+                      bottom: bottomPad,
+                      left: 12,
+                      right: 12,
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withAlpha(190),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        cue.text,
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: fontSize,
-                          height: 1.3,
-                          fontWeight: FontWeight.w500,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: boxWidth),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(190),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          cue.text,
+                          textAlign: TextAlign.center,
+                          style: _subtitleStyle(fontSize)
+                              .copyWith(color: Colors.white),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            });
+                );
+              },
+            );
           },
         );
       },
