@@ -63,6 +63,10 @@ class CdnConfig {
       '$base/data/$ytId/article.magisterium_full_v2.en.json';
   static String diarizedSrtUrl(String ytId) => '$base/data/$ytId/diarized.srt';
 
+  /// Vrijeme po riječi za cue-ove iz `diarized.srt` (Speechmatics, poravnato
+  /// s tekstom koji je Gemini uredio). Postoji samo za novije epizode.
+  static String wordsUrl(String ytId) => '$base/data/$ytId/words.json';
+
   /// Sponzori ugrađeni u snimku (KORAK 9.85) — postoji za svaku objavljenu
   /// epizodu; `sponsors: []` znači da ih nema. Vidi `SponsorsInVideo`.
   static String sponsorsInVideoUrl(String ytId) =>

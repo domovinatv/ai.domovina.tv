@@ -102,8 +102,11 @@ void main() {
           body: '1\n00:00:01,000 --> 00:00:02,000\n[SPEAKER_00] Dobar dan\n',
         ));
 
-    expect(log.length, 2);
-    expect(log[1], contains('/data/abc123/diarized.srt?v='));
+    // `words.json` se vuče paralelno (vidi `_loadWordTimings`), pa brojimo
+    // samo SRT zahtjeve.
+    final srt = log.where((u) => u.contains('diarized.srt')).toList();
+    expect(srt.length, 2);
+    expect(srt[1], contains('/data/abc123/diarized.srt?v='));
   });
 
   test('channel listing zadržava svoj cache-buster i ne retrya', () async {

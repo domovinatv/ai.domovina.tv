@@ -4,7 +4,7 @@
 /// Native: SharedPreferences.
 library;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'local_prefs.dart';
@@ -28,4 +28,26 @@ Future<void> saveSubtitlesPref(bool value) async {
   }
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool(subtitlesEnabledKey, value);
+}
+
+/// Je li CC uključen — jedno stanje za cijelu aplikaciju.
+///
+/// Singleton, ne prop ni `State` polje: isti titl crtaju overlay preko slike
+/// (i njegova kopija u fullscreen ruti), CC gumb u traci i [SubtitleStrip]
+/// ispod playera na mobitelu u portraitu, koji živi IZVAN `EpisodeVideo`.
+/// Isto pravilo kao `PlaybackSpeed`/`PlayerMute` (CLAUDE.md, „stanje kontrole
+/// ide kroz singleton").
+class SubtitlesEnabled extends ValueNotifier<bool> {
+  SubtitlesEnabled._() : super(false) {
+    loadSubtitlesPref().then((saved) {
+      if (saved != null) value = saved;
+    });
+  }
+
+  static final SubtitlesEnabled instance = SubtitlesEnabled._();
+
+  void toggle() {
+    value = !value;
+    saveSubtitlesPref(value);
+  }
 }

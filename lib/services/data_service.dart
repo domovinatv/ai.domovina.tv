@@ -319,12 +319,25 @@ class DataService {
 
   /// Ucitaj diariziran SRT i parsiraj u SpeakerTimeline.
   /// Vraća null ako fajl ne postoji (nije obavezan asset).
+  ///
+  /// Uz SRT paralelno vuče i `words.json` (vrijeme po riječi). Njega nema za
+  /// starije epizode, pa njegov izostanak ili kvar samo gasi isticanje riječi.
   Future<SpeakerTimeline?> loadSpeakerTimeline() async {
+    final wordsF = _loadWordTimings();
     try {
       final raw = await _fetch(CdnConfig.diarizedSrtUrl(youtubeId));
-      return _parseSrt(raw);
+      return _parseSrt(raw).withWordTimings(await wordsF);
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<Map<int, List<WordTiming>>> _loadWordTimings() async {
+    try {
+      final raw = await _fetch(CdnConfig.wordsUrl(youtubeId));
+      return parseWordTimings(json.decode(raw));
+    } catch (_) {
+      return const {};
     }
   }
 }

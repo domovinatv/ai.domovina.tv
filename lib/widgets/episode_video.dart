@@ -37,6 +37,7 @@ import '../services/screen_orientation.dart';
 import '../services/seek_undo.dart';
 import '../services/subtitle_prefs.dart';
 import 'playback_controls.dart';
+import 'subtitle_caption.dart';
 import 'rotated_fullscreen.dart';
 
 /// Boje govornika po redoslijedu iz speakers liste — dijeli se s
@@ -98,10 +99,6 @@ class EpisodeVideo extends StatefulWidget {
 class _EpisodeVideoState extends State<EpisodeVideo> {
   final GlobalKey<VideoState> _videoKey = GlobalKey<VideoState>();
 
-  /// CC stanje — ValueNotifier da overlay i gumb (i njihove fullscreen
-  /// kopije u media_kit ruti) dijele stanje bez setState-a preko ruta.
-  final ValueNotifier<bool> _subtitlesOn = ValueNotifier<bool>(false);
-
   void Function()? _removeFsListener;
 
   /// Zatvarač naše rotacijske rute dok je otvorena (null = nije otvorena).
@@ -115,9 +112,6 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   @override
   void initState() {
     super.initState();
-    loadSubtitlesPref().then((saved) {
-      if (mounted && saved != null) _subtitlesOn.value = saved;
-    });
     _removeFsListener = addFullscreenChangeListener(_onBrowserFullscreenChange);
     _setupAutoPip();
   }
@@ -133,7 +127,6 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   @override
   void dispose() {
     _removeFsListener?.call();
-    _subtitlesOn.dispose();
     // Ekran se rastavlja s bravom orijentacije na sebi (npr. deep-link
     // navigacija iz fullscreena) — ne ostavljaj uređaj zaključan u landscapeu.
     if (_lockedOrientation) {
@@ -360,10 +353,10 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   /// flag (vidi `services/media_element_mute_web.dart`).
   void _toggleMute() => PlayerMute.instance.toggle();
 
-  void _toggleSubtitles() {
-    _subtitlesOn.value = !_subtitlesOn.value;
-    saveSubtitlesPref(_subtitlesOn.value);
-  }
+  /// CC stanje je singleton ([SubtitlesEnabled]): dijele ga overlay, gumb,
+  /// njihove kopije u media_kitovoj fullscreen ruti i [SubtitleStrip] ispod
+  /// playera, koji živi izvan ovog widgeta.
+  void _toggleSubtitles() => SubtitlesEnabled.instance.toggle();
 
   /// YouTube kratice: https://support.google.com/youtube/answer/7631406
   Map<ShortcutActivator, VoidCallback> get _keyboardShortcuts => {
@@ -396,7 +389,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       };
 
   Widget _subtitleButton() => _SubtitleToggleButton(
-        enabled: _subtitlesOn,
+        enabled: SubtitlesEnabled.instance,
         onToggle: _toggleSubtitles,
       );
 
@@ -547,14 +540,26 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
               }
               return Stack(
                 children: [
+              // Na mobitelu u portraitu titl crta `SubtitleStrip` ISPOD slike
+              // (VideoPanel / jednostavni prikaz) — osim u fullscreenu, gdje
+              // ispod slike nema ničega. `isFullscreen` mora čitati kontekst
+              // ispod media_kitove rute, zato `Builder`.
               if (timeline != null)
                 Positioned.fill(
-                  child: IgnorePointer(
-                    child: _SubtitleOverlay(
-                      player: widget.player,
-                      timeline: timeline,
-                      enabled: _subtitlesOn,
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      final below = subtitlesBelowPlayer(context) &&
+                          !inRotated &&
+                          !isFullscreen(context);
+                      if (below) return const SizedBox.shrink();
+                      return IgnorePointer(
+                        child: _SubtitleOverlay(
+                          player: widget.player,
+                          timeline: timeline,
+                          enabled: SubtitlesEnabled.instance,
+                        ),
+                      );
+                    },
                   ),
                 ),
               AdaptiveVideoControls(state),
@@ -752,16 +757,21 @@ class _SubtitleOverlay extends StatelessWidget {
       valueListenable: enabled,
       builder: (context, on, _) {
         if (!on) return const SizedBox.shrink();
-        return StreamBuilder<Duration>(
-          stream: player.stream.position,
-          initialData: player.state.position,
-          builder: (context, snapshot) {
-            // Zatvoren bočni panel (TickerMode off): titl se ionako ne vidi,
-            // pa ne trošimo layout teksta 5×/s.
-            if (!TickerMode.valuesOf(context).enabled) {
-              return const SizedBox.shrink();
-            }
-            final cue = timeline.cueAt(snapshot.data ?? Duration.zero);
+        // Zatvoren bočni panel (TickerMode off): titl se ionako ne vidi,
+        // pa ne trošimo layout teksta.
+        if (!TickerMode.valuesOf(context).enabled) {
+          return const SizedBox.shrink();
+        }
+        return CaptionClock(
+          player: player,
+          keyOf: (ms) {
+            final cue = timeline.cueAt(Duration(milliseconds: ms));
+            return cue == null
+                ? null
+                : (identityHashCode(cue), cue.activeWordAt(ms));
+          },
+          builder: (context, ms) {
+            final cue = timeline.cueAt(Duration(milliseconds: ms));
             if (cue == null || cue.text.isEmpty) {
               return const SizedBox.shrink();
             }
@@ -810,11 +820,25 @@ class _SubtitleOverlay extends StatelessWidget {
                           color: Colors.black.withAlpha(190),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(
-                          cue.text,
+                        // Isticanje mijenja samo boju, pa izračun fonta nad
+                        // golim tekstom vrijedi i za obojeni.
+                        child: Text.rich(
+                          captionSpan(
+                            cue.tokens,
+                            from: 0,
+                            to: cue.tokens.length,
+                            active: cue.activeWordAt(ms),
+                            style: _subtitleStyle(fontSize),
+                            colors: CaptionColors(
+                              spoken: Colors.white,
+                              upcoming: Colors.white.withAlpha(170),
+                              activeText: Colors.white,
+                              activeFill: Theme.of(
+                                context,
+                              ).colorScheme.tertiary,
+                            ),
+                          ),
                           textAlign: TextAlign.center,
-                          style: _subtitleStyle(fontSize)
-                              .copyWith(color: Colors.white),
                         ),
                       ),
                     ),

@@ -717,6 +717,24 @@ načinu NE skriva dok je autoplay utišan (izlaz „Uključi zvuk").
 vrijedniji od slike koju prekrije. Kad ne stane, smanjuje se font
 (`fittingSubtitleFontSize`), mjeren istim `DefaultTextStyle` kojim se crta.
 
+### Titlovi riječ po riječ + titl ispod playera (od 6.10.2026.)
+
+`data/<id>/words.json` (Speechmatics vrijeme po riječi, poravnato s Geminijevim
+tekstom iz `diarized.srt`) pali isticanje izgovorene riječi. Na mobitelu u
+portraitu titl crta `SubtitleStrip` ISPOD slike, a svugdje drugdje (i u svakom
+fullscreenu) overlay preko slike. Ugovor, mjerenja i pipeline dug:
+`docs/2026-10-06-titlovi-rijec-po-rijec.md`.
+
+**Rule (ugovor je SRT)**: `words.json` vrijedi za cue samo ako ima točno
+onoliko riječi koliko `text.split(/\s+/)` tog cue-a. Inače cue ostaje bez
+isticanja, nikad s pomaknutim.
+
+**Rule (isticanje = samo boja)**: debljina ili veličina aktivne riječi
+raširi redak i tekst se prelomi drukčije na svakoj riječi.
+
+**Rule (traka ispod playera ima fiksnu visinu)**: dugačak cue se lista po
+stranicama (`pageTokens`), ne raste. Inače seek bar skače sa svakim cue-om.
+
 ### Pinka SEPA — uspjeh na ZAPRIMANJU, namira u pozadini (od 28.9.2026.)
 
 Rail stage `received_processing` stiže ~1 s nakon SEPA Instant uplate, a mint

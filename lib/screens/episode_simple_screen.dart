@@ -36,6 +36,7 @@ import '../widgets/anonymous_signin_bar.dart';
 import '../widgets/audio_poster.dart';
 import '../widgets/clip_share_sheet.dart';
 import '../widgets/episode_video.dart';
+import '../widgets/subtitle_caption.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/language_toggle_chip.dart';
 import '../widgets/magisterium_v2_view.dart';
@@ -1149,6 +1150,15 @@ class _PlayerTab extends StatelessWidget {
           ),
 
           if (ytMode) YouTubeModeBar(onExit: onExitYtMode),
+
+          // Mobitel u portraitu: titl ispod slike (isto kao u `VideoPanel`).
+          if (videoReady &&
+              !ytMode &&
+              !audioOnly &&
+              player != null &&
+              data.speakerTimeline != null &&
+              subtitlesBelowPlayer(context))
+            SubtitleStrip(player: player!, timeline: data.speakerTimeline!),
 
           // Seek bar
           if (videoReady && !ytMode) ...[
