@@ -131,6 +131,10 @@ class _IterationBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Nizak ekran (mobitel u landscapeu, ~340 px visine): razmak od 80 + 56 px
+    // između sekcija pojede trećinu ekrana pa se vidi više praznine nego
+    // teksta. Tamo ga stišćemo.
+    final compact = MediaQuery.sizeOf(context).height < 500;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
@@ -153,7 +157,7 @@ class _IterationBlock extends StatelessWidget {
             // padding iznad njega — inace naslov sjedne ~80px prenisko (mobile).
             // Isti razlog kao paralelni desktop layout koji padding drzi izvan keya.
             return Padding(
-              padding: const EdgeInsets.only(top: 80),
+              padding: EdgeInsets.only(top: compact ? 32 : 80),
               child: KeyedSubtree(
                 key: sectionKeys[sec.screenshotTimestamp],
                 child: ArticleSectionCard(
@@ -163,7 +167,7 @@ class _IterationBlock extends StatelessWidget {
                   sectionMagisterium: magisterium?.forTimestamp(
                     sec.screenshotTimestamp,
                   ),
-                  padding: const EdgeInsets.only(bottom: 56),
+                  padding: EdgeInsets.only(bottom: compact ? 24 : 56),
                   showScreenshot: showScreenshot,
                   clipEndSec: showScreenshot ? endSec : null,
                   personHighlight: sec.screenshotTimestamp == highlightTimestamp

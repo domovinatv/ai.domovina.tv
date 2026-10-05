@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter/rendering.dart' show RenderViewport, ScrollDirection;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
@@ -1738,11 +1739,39 @@ class _EpisodeContentState extends State<_EpisodeContent>
         final currentY = box.localToGlobal(Offset.zero).dy;
         final topInset = MediaQuery.paddingOf(context).top;
         const gap = 16.0;
+        // Mobitel u landscapeu: app bar je floating — vidi
+        // `_floatingHeaderJumpDelta`.
+        if (_isPhoneLandscape(context)) {
+          final delta = _floatingHeaderJumpDelta(currentY, topInset + gap);
+          if (delta != null) {
+            final pos = _scrollController.position;
+            _scrollController.jumpTo(
+              (pos.pixels + delta).clamp(0.0, pos.maxScrollExtent),
+            );
+            // `snap: true` zna nakon skoka sam dovršiti djelomično vidljiv
+            // header (animacija ~200 ms) — tada naslov ostane ispod praznine
+            // gdje je traka bila. Jedno poravnanje nakon snapa to zatvori.
+            Future<void>.delayed(const Duration(milliseconds: 350), () {
+              if (!mounted || _sectionJumpTs != timestamp) return;
+              if (!_scrollController.hasClients ||
+                  _scrollController.position.isScrollingNotifier.value) {
+                return;
+              }
+              final b = _sectionBox(timestamp);
+              if (b == null) return;
+              final d = _floatingHeaderJumpDelta(b.top, topInset + gap);
+              if (d == null || d.abs() < 1) return;
+              final p = _scrollController.position;
+              _scrollLock = DateTime.now();
+              _scrollController.jumpTo(
+                (p.pixels + d).clamp(0.0, p.maxScrollExtent),
+              );
+            });
+            return;
+          }
+        }
         // Drugi red akcija postoji kad je STUPAC uži od 600 (vidi
         // `_episodeAppBar`) — i na tabletu kad je player uz članak.
-        // Mobitel u landscapeu: app bar je floating i može, a ne mora biti
-        // na ekranu; računamo s punom visinom da naslov nikad ne završi
-        // ispod trake (kad je skrivena, sekcija samo sjedne malo niže).
         final pinned = _parallelActive
             ? topInset + kToolbarHeight + kParallelStickyHeaderHeight
             : topInset + kToolbarHeight + (_columnWidth() < 600 ? 46 : 0);
@@ -1760,6 +1789,47 @@ class _EpisodeContentState extends State<_EpisodeContent>
         );
       }
     }
+  }
+
+  /// Pomak scrolla koji sekciju (trenutno na globalnom [sectionY]) postavlja
+  /// ispod floating app bara — onoliko koliko ga NAKON skoka bude na ekranu.
+  ///
+  /// Floating header (`RenderSliverFloatingPersistentHeader.performLayout`) se
+  /// na programski skok prema dolje skupi za isti iznos, a na skok prema gore
+  /// se NE širi. Zato: ako je skok dovoljno dug da header sakrije, sekcija ide
+  /// na vrh ([hiddenY] = inset + razmak). Inače header ostaje kakav jest i
+  /// sekcija ide točno ispod njega. Fiksni „najgori slučaj" (puna visina) je
+  /// na skrivenom headeru ostavljao ~100 px praznog prostora iznad naslova.
+  ///
+  /// Null kad se header ne da izmjeriti — tada vrijedi običan izračun.
+  double? _floatingHeaderJumpDelta(double sectionY, double hiddenY) {
+    final scrollBox =
+        _scrollController.position.context.notificationContext
+                ?.findRenderObject();
+    if (scrollBox is! RenderBox || !scrollBox.hasSize) return null;
+    RenderViewport? viewport;
+    void find(RenderObject o) {
+      if (viewport != null) return;
+      if (o is RenderViewport) {
+        viewport = o;
+        return;
+      }
+      o.visitChildren(find);
+    }
+
+    scrollBox.visitChildren(find);
+    final header = viewport?.firstChild;
+    final geometry = header?.geometry;
+    if (geometry == null) return null;
+    final top = scrollBox.localToGlobal(Offset.zero).dy;
+    final y = sectionY - top;
+    final insetAndGap = hiddenY;
+    // Vidljivi dio trake ispod statusnog inseta (paintExtent ga uključuje).
+    final topInset = MediaQuery.paddingOf(context).top;
+    final visible = math.max(0.0, geometry.paintExtent - topInset);
+    final toTop = y - insetAndGap;
+    if (toTop >= visible) return toTop;
+    return toTop - visible;
   }
 
   void _scrollMagToSection(String timestamp) {
