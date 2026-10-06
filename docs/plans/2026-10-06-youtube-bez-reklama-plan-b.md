@@ -82,6 +82,32 @@ flowchart LR
 4. Prije starta: dnevni smoke test ekstraktora u CI-ju i alarm u Telegram (kroz
    `scripts/telegram-notify.rb`), jer će kvar biti redovit, ne iznimka.
 
+## Plan A — što je isporučeno i što je otvoreno (v2.0.169, 6.10.2026.)
+
+- `/yt/:videoId` (`lib/screens/youtube_watch/`): samo app bar, player i gumb
+  „Otvori obrađenu epizodu" kad postoji `summary.json` (dohvat kroz
+  `DataService.loadSummary`, dakle s retryjem na cachiran 404).
+- Web: postojeći `YouTubeEmbed`. U Safariju/Firefoxu nema `credentialless`
+  iframea pod našim COEP-om, pa ekran nudi youtube.com.
+- Native: `webview_flutter`, embed kao HTML s `baseUrl: https://domovina.ai/`.
+  Razlog: YouTube embed bez Referera vraća grešku 152/153, a golim
+  `loadRequest` WebView ga ne šalje. Navigacija izvan `/embed/` ide van
+  (`openUrl`). Conditional import je na `dart.library.js_interop`, pa web/wasm
+  build `webview_flutter` uopće ne vidi.
+- Provjereno: lokalno u Chromeu na 1280 px i 390 px (obrađena epizoda
+  `aue1GuuMsbA` s gumbom, `dQw4w9WgXcQ` bez), produkcija `/yt/<id>` vraća 200.
+
+Otvoreno:
+
+1. **Native nije isproban.** Prvi nightly build s `webview_flutter` (iOS pods,
+   Android) i ručna provjera da embed u WebViewu ne javlja 152/153 i da
+   fullscreen radi.
+2. `/yt/` nije u AASA ni u Android App Links, pa link otvara preglednik. Ako
+   ruta ostaje, dodati je na oba mjesta (pravilo iz `CLAUDE.md`).
+3. Ruta svjesno ugrađuje proizvoljan video pod našim brandom, suprotno pravilu
+   za `_QueuedEpisodeScreen` („embed samo uz pogodak u listinzima"). Nema OG
+   injecta u workeru ni `noindex`.
+
 ## Legitimna alternativa koja već postoji
 
 Epizode koje obradi fetch pipeline idu s našeg CDN-a (`video_h264.mp4`), bez

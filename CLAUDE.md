@@ -544,6 +544,12 @@ bočni panel na uskom ekranu), a YouTube pada na tihu tekstualnu poveznicu.
 Sintetički ID-evi (X izvor, `_yt_matched:false`) nemaju YouTube video iza sebe
 i ne smiju se ugrađivati.
 
+**`/yt/:videoId` (od v2.0.169)**: samostalni ekran koji pušta BILO KOJI
+YouTube video kroz isti službeni embed (native: `webview_flutter` s `baseUrl`
+na domovina.ai zbog Referera) + gumb na obrađenu epizodu. Reklame ostaju.
+Varijanta bez reklama je zapisana i NIJE odobrena; native još nije isproban:
+`docs/plans/2026-10-06-youtube-bez-reklama-plan-b.md`.
+
 ### Cachiran 404 na CDN-u — web vidi 404, native 200 (isti URL)
 
 Per-epizoda datoteke (`data/<id>/*.json`, `diarized.srt`) su `immutable` i
