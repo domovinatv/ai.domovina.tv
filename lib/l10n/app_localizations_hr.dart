@@ -4085,4 +4085,17 @@ class AppLocalizationsHr extends AppLocalizations {
   String sponsorsInVideoRubricAt(String time) {
     return 'Sponzorirana rubrika na $time';
   }
+
+  @override
+  String get ytWatchTitle => 'YouTube video';
+
+  @override
+  String get ytWatchOpenEpisode => 'Otvori obrađenu epizodu';
+
+  @override
+  String get ytWatchInvalidId => 'Neispravna YouTube poveznica.';
+
+  @override
+  String get ytWatchEmbedUnsupported =>
+      'Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.';
 }

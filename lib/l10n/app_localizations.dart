@@ -6412,6 +6412,30 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Sponzorirana rubrika na {time}'**
   String sponsorsInVideoRubricAt(String time);
+
+  /// App bar title of the standalone YouTube watch screen (/yt/:id).
+  ///
+  /// In hr, this message translates to:
+  /// **'YouTube video'**
+  String get ytWatchTitle;
+
+  /// Button on /yt/:id shown when domovina.ai already has an AI-processed episode for this video.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori obrađenu epizodu'**
+  String get ytWatchOpenEpisode;
+
+  /// Shown on /yt/:id when the id is not a valid 11-character YouTube video id.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neispravna YouTube poveznica.'**
+  String get ytWatchInvalidId;
+
+  /// Shown on web browsers (Safari, Firefox) that cannot embed YouTube under our cross-origin isolation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.'**
+  String get ytWatchEmbedUnsupported;
 }
 
 class _AppLocalizationsDelegate

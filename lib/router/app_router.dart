@@ -26,6 +26,7 @@ import '../screens/tv/tv_episode_screen.dart';
 import '../screens/tv/tv_home_screen.dart';
 import '../screens/tv/tv_person_screen.dart';
 import '../screens/voting/voting_screen.dart';
+import '../screens/youtube_watch/youtube_watch_screen.dart';
 import '../services/tv_mode.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
@@ -387,6 +388,19 @@ GoRouter createRouter() {
               startAtSeconds: startAt,
               initialLanguageEn: true,
             ),
+          );
+        },
+      ),
+      // Samostalni YouTube player za BILO KOJI video (službeni nocookie
+      // embed, bez blokiranja reklama). Gumb na obrađenu epizodu ako postoji.
+      // Nije u AASA/Android App Links popisima — eksperimentalna ruta.
+      GoRoute(
+        path: '/yt/:videoId',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          return NoTransitionPage(
+            key: ValueKey('yt-$videoId'),
+            child: YouTubeWatchScreen(videoId: videoId),
           );
         },
       ),

@@ -4041,4 +4041,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String sponsorsInVideoRubricAt(String time) {
     return 'Sponsored segment at $time';
   }
+
+  @override
+  String get ytWatchTitle => 'YouTube video';
+
+  @override
+  String get ytWatchOpenEpisode => 'Open processed episode';
+
+  @override
+  String get ytWatchInvalidId => 'Invalid YouTube link.';
+
+  @override
+  String get ytWatchEmbedUnsupported =>
+      'This browser cannot show the YouTube player inside the page, so the video opens on YouTube.';
 }

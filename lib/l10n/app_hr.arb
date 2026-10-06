@@ -5019,5 +5019,21 @@
         "type": "String"
       }
     }
+  },
+  "ytWatchTitle": "YouTube video",
+  "@ytWatchTitle": {
+    "description": "App bar title of the standalone YouTube watch screen (/yt/:id)."
+  },
+  "ytWatchOpenEpisode": "Otvori obrađenu epizodu",
+  "@ytWatchOpenEpisode": {
+    "description": "Button on /yt/:id shown when domovina.ai already has an AI-processed episode for this video."
+  },
+  "ytWatchInvalidId": "Neispravna YouTube poveznica.",
+  "@ytWatchInvalidId": {
+    "description": "Shown on /yt/:id when the id is not a valid 11-character YouTube video id."
+  },
+  "ytWatchEmbedUnsupported": "Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.",
+  "@ytWatchEmbedUnsupported": {
+    "description": "Shown on web browsers (Safari, Firefox) that cannot embed YouTube under our cross-origin isolation."
   }
 }

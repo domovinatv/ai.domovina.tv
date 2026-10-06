@@ -1050,5 +1050,9 @@
   "sponsorsInVideoListenShort": "Listen",
   "sponsorsInVideoRubricShort": "Segment",
   "sponsorsInVideoMessageAt": "Sponsor message at {time}",
-  "sponsorsInVideoRubricAt": "Sponsored segment at {time}"
+  "sponsorsInVideoRubricAt": "Sponsored segment at {time}",
+  "ytWatchTitle": "YouTube video",
+  "ytWatchOpenEpisode": "Open processed episode",
+  "ytWatchInvalidId": "Invalid YouTube link.",
+  "ytWatchEmbedUnsupported": "This browser cannot show the YouTube player inside the page, so the video opens on YouTube."
 }
