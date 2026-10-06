@@ -12,15 +12,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/domovinatv/ai.domovina.tv.git"
+    "url": "git+https://github.com/domovinatv/domovina.ai.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/domovinatv/ai.domovina.tv/issues"
+    "url": "https://github.com/domovinatv/domovina.ai/issues"
   },
-  "homepage": "https://github.com/domovinatv/ai.domovina.tv#readme",
+  "homepage": "https://github.com/domovinatv/domovina.ai#readme",
   "devDependencies": {
     "@playwright/test": "^1.58.2"
   }
