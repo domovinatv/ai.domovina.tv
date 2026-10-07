@@ -5035,5 +5035,40 @@
   "ytWatchEmbedUnsupported": "Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.",
   "@ytWatchEmbedUnsupported": {
     "description": "Shown on web browsers (Safari, Firefox) that cannot embed YouTube under our cross-origin isolation."
+  },
+  "findInEpisodeTitle": "Pronađi u epizodi",
+  "@findInEpisodeTitle": {
+    "description": "Heading of the in-episode transcript search on the episode screen."
+  },
+  "findInEpisodeHint": "Riječ, ime ili fraza",
+  "@findInEpisodeHint": {
+    "description": "Placeholder of the in-episode transcript search field."
+  },
+  "findInEpisodeClear": "Obriši",
+  "findInEpisodeNoHits": "Nema pogodaka u ovoj epizodi.",
+  "findInEpisodeError": "Pretraga trenutno ne radi. Pokušaj ponovno malo kasnije.",
+  "findInEpisodeCount": "{count, plural, one{{count} trenutak} few{{count} trenutka} other{{count} trenutaka}}",
+  "@findInEpisodeCount": {
+    "description": "Number of transcript moments matching the query.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "findInEpisodeCountPartial": "Prikazano {shown} od {total} trenutaka",
+  "@findInEpisodeCountPartial": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "findInEpisodeApproximate": "Približni pogoci",
+  "@findInEpisodeApproximate": {
+    "description": "Subheading above hits that matched only through typo tolerance."
   }
 }

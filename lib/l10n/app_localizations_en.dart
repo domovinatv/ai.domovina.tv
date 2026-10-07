@@ -4054,4 +4054,39 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ytWatchEmbedUnsupported =>
       'This browser cannot show the YouTube player inside the page, so the video opens on YouTube.';
+
+  @override
+  String get findInEpisodeTitle => 'Find in episode';
+
+  @override
+  String get findInEpisodeHint => 'Word, name or phrase';
+
+  @override
+  String get findInEpisodeClear => 'Clear';
+
+  @override
+  String get findInEpisodeNoHits => 'No matches in this episode.';
+
+  @override
+  String get findInEpisodeError =>
+      'Search is not working right now. Try again a little later.';
+
+  @override
+  String findInEpisodeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moments',
+      one: '$count moment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String findInEpisodeCountPartial(int shown, int total) {
+    return 'Showing $shown of $total moments';
+  }
+
+  @override
+  String get findInEpisodeApproximate => 'Approximate matches';
 }

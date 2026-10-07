@@ -6436,6 +6436,54 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.'**
   String get ytWatchEmbedUnsupported;
+
+  /// Heading of the in-episode transcript search on the episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pronađi u epizodi'**
+  String get findInEpisodeTitle;
+
+  /// Placeholder of the in-episode transcript search field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Riječ, ime ili fraza'**
+  String get findInEpisodeHint;
+
+  /// No description provided for @findInEpisodeClear.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obriši'**
+  String get findInEpisodeClear;
+
+  /// No description provided for @findInEpisodeNoHits.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema pogodaka u ovoj epizodi.'**
+  String get findInEpisodeNoHits;
+
+  /// No description provided for @findInEpisodeError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraga trenutno ne radi. Pokušaj ponovno malo kasnije.'**
+  String get findInEpisodeError;
+
+  /// Number of transcript moments matching the query.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} trenutak} few{{count} trenutka} other{{count} trenutaka}}'**
+  String findInEpisodeCount(int count);
+
+  /// No description provided for @findInEpisodeCountPartial.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikazano {shown} od {total} trenutaka'**
+  String findInEpisodeCountPartial(int shown, int total);
+
+  /// Subheading above hits that matched only through typo tolerance.
+  ///
+  /// In hr, this message translates to:
+  /// **'Približni pogoci'**
+  String get findInEpisodeApproximate;
 }
 
 class _AppLocalizationsDelegate

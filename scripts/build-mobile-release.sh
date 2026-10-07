@@ -27,6 +27,7 @@ fi
 [[ -n "${CERTILIA_SERVER_URL:-}" ]] && DEFINES="${DEFINES} --dart-define=CERTILIA_SERVER_URL=${CERTILIA_SERVER_URL}"
 [[ -n "${MEILI_URL:-}" ]]          && DEFINES="${DEFINES} --dart-define=MEILI_URL=${MEILI_URL}"
 [[ -n "${MEILI_SEARCH_KEY:-}" ]]   && DEFINES="${DEFINES} --dart-define=MEILI_SEARCH_KEY=${MEILI_SEARCH_KEY}"
+[[ -n "${MEILI_SEGMENTS_SEARCH_KEY:-}" ]] && DEFINES="${DEFINES} --dart-define=MEILI_SEGMENTS_SEARCH_KEY=${MEILI_SEGMENTS_SEARCH_KEY}"
 # RevenueCat publishable SDK keys — public by design (appl_…/goog_… ili test_…
 # za TestStore QA). Bez njih mobile build radi, ali paywall purchase je no-op.
 [[ -n "${RC_PUBLIC_SDK_KEY_IOS:-}" ]]     && DEFINES="${DEFINES} --dart-define=RC_PUBLIC_SDK_KEY_IOS=${RC_PUBLIC_SDK_KEY_IOS}"

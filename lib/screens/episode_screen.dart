@@ -45,6 +45,7 @@ import '../pinka_sdk/pinka_sdk.dart';
 import '../widgets/summary_section.dart';
 import '../widgets/sponsors_in_video_section.dart';
 import '../widgets/chapters_section.dart';
+import '../widgets/find_in_episode_section.dart';
 import '../widgets/article_section.dart';
 import '../widgets/magisterium_panel.dart';
 import '../widgets/magisterium_v2_view.dart';
@@ -1993,6 +1994,20 @@ class _EpisodeContentState extends State<_EpisodeContent>
         onJump: _videoReady ? _jumpSponsor : null,
       );
 
+  /// „Pronađi u epizodi" — tap na trenutak skoči u playeru i, na uskom
+  /// ekranu, otvori panel playera (isto kao „Poslušaj" sponzora).
+  Widget _findInEpisodeSection() => FindInEpisodeSection(
+        youtubeId: widget.data.youtubeId,
+        onJump: _videoReady
+            ? (sec) {
+                log('FindInEpisode: jump ${sec}s');
+                _sponsorClip = null;
+                _seekToAndPlay(Duration(seconds: sec));
+                _revealPlayer();
+              }
+            : null,
+      );
+
   void _drawerTap(String timestamp) {
     _panelKey.currentState?.close();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2247,6 +2262,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
               ),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
+              _findInEpisodeSection(),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              const SizedBox(height: 12),
               ArticleSection(
                 article: articleForUi,
                 youtubeId: data.youtubeId,
@@ -2376,6 +2394,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
                         outline: data.outline!,
                         videoId: data.isAudioOnly ? null : data.youtubeId,
                       ),
+                      Divider(
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                      const SizedBox(height: 12),
+                      _findInEpisodeSection(),
                       Divider(
                         height: 1,
                         color: theme.colorScheme.outlineVariant,
@@ -3010,6 +3034,21 @@ class _EpisodeContentState extends State<_EpisodeContent>
                       audioOnly: data.isAudioOnly,
                     ),
                     const SizedBox(height: 16),
+                    // Transkript postoji prije članka — pretraga radi već tada,
+                    // a s njom i skok na izgovorenu riječ.
+                    if (_videoReady &&
+                        data.status.stage.index >=
+                            EpisodeStage.transcribed.index) ...[
+                      FindInEpisodeSection(
+                        youtubeId: data.youtubeId,
+                        horizontalPadding: 0,
+                        onJump: (sec) {
+                          _seekToAndPlay(Duration(seconds: sec));
+                          _revealPlayer();
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     // Primarna radnja slijedi FAZU, ne izvor: kad je medija
                     // kod nas, korisnika vodimo u naš player. Na uskom ekranu
                     // je player u endDraweru, pa bez ovog gumba na mobitelu

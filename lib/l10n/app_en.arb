@@ -1054,5 +1054,13 @@
   "ytWatchTitle": "YouTube video",
   "ytWatchOpenEpisode": "Open processed episode",
   "ytWatchInvalidId": "Invalid YouTube link.",
-  "ytWatchEmbedUnsupported": "This browser cannot show the YouTube player inside the page, so the video opens on YouTube."
+  "ytWatchEmbedUnsupported": "This browser cannot show the YouTube player inside the page, so the video opens on YouTube.",
+  "findInEpisodeTitle": "Find in episode",
+  "findInEpisodeHint": "Word, name or phrase",
+  "findInEpisodeClear": "Clear",
+  "findInEpisodeNoHits": "No matches in this episode.",
+  "findInEpisodeError": "Search is not working right now. Try again a little later.",
+  "findInEpisodeCount": "{count, plural, one{{count} moment} other{{count} moments}}",
+  "findInEpisodeCountPartial": "Showing {shown} of {total} moments",
+  "findInEpisodeApproximate": "Approximate matches"
 }

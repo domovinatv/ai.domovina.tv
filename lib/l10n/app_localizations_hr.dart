@@ -4098,4 +4098,40 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get ytWatchEmbedUnsupported =>
       'Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.';
+
+  @override
+  String get findInEpisodeTitle => 'Pronađi u epizodi';
+
+  @override
+  String get findInEpisodeHint => 'Riječ, ime ili fraza';
+
+  @override
+  String get findInEpisodeClear => 'Obriši';
+
+  @override
+  String get findInEpisodeNoHits => 'Nema pogodaka u ovoj epizodi.';
+
+  @override
+  String get findInEpisodeError =>
+      'Pretraga trenutno ne radi. Pokušaj ponovno malo kasnije.';
+
+  @override
+  String findInEpisodeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trenutaka',
+      few: '$count trenutka',
+      one: '$count trenutak',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String findInEpisodeCountPartial(int shown, int total) {
+    return 'Prikazano $shown od $total trenutaka';
+  }
+
+  @override
+  String get findInEpisodeApproximate => 'Približni pogoci';
 }
