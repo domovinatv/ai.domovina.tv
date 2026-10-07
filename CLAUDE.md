@@ -723,6 +723,21 @@ načinu NE skriva dok je autoplay utišan (izlaz „Uključi zvuk").
 vrijedniji od slike koju prekrije. Kad ne stane, smanjuje se font
 (`fittingSubtitleFontSize`), mjeren istim `DefaultTextStyle` kojim se crta.
 
+### Pronađi u epizodi + članak klizi uz reprodukciju (od 7.10.2026.)
+
+Pretraga transkripta (Meili `segments`, `services/transcript_search.dart`) i
+„odjavna špica" (`_creditsScroll`: dok player svira, članak klizi kroz sekciju
+proporcionalno vremenu). Mjerenja, zamke i otvoreno:
+`docs/2026-10-07-pronadi-u-epizodi-i-odjavna-spica.md`.
+
+**Rule (Meili `sort` ne drži kronologiju)**: `sort` se primjenjuje iza
+`words`/`typo`, pa tipfeleri stižu zadnji — redoslijed po vremenu slaže klijent.
+
+**Rule (špica ide samo naprijed)**: nikad ne scrolla unatrag, staje 8 s nakon
+ručnog scrolla i ne vuče korisnika koji je više od ekrana daleko. Novi
+programski scroll članka postavlja `_scrollLock`, inače ga `_onScroll` pročita
+kao ručni i ugasi špicu.
+
 ### Titlovi riječ po riječ + titl ispod playera (od 6.10.2026.)
 
 `data/<id>/words.json` (Speechmatics vrijeme po riječi, poravnato s Geminijevim
