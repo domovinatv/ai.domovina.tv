@@ -15,7 +15,10 @@ import '../models/channel_detail.dart' show ChannelVideo;
 import '../models/episode_status.dart';
 import '../models/person_hub.dart' show personSlug;
 import '../models/podcast_article.dart' show PodcastSection;
+import '../models/sponsored_moment.dart';
 import '../models/sponsors_in_video.dart';
+import '../services/sponsored_moments_controller.dart';
+import '../services/sponsored_moments_service.dart';
 import '../services/background_audio.dart';
 import '../services/background_playback.dart';
 import '../services/episode_language.dart';
@@ -793,6 +796,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
   bool _sponsorClipEntered = false;
   DateTime? _sponsorClipStartedAt;
 
+  /// PLAĆENI sponzorski trenuci (`public_live_moments`) — zaseban sloj od
+  /// [_sponsorsInVideo]. Dohvat isto lijen i izvan [EpisodeData.load]; null
+  /// dok ne stigne, i zauvijek kad ih nema ili dohvat padne.
+  SponsoredMomentsController? _sponsored;
+
   @override
   void initState() {
     super.initState();
@@ -807,6 +815,12 @@ class _EpisodeContentState extends State<_EpisodeContent>
     ) {
       if (!mounted || found == null || !found.hasNamed) return;
       setState(() => _sponsorsInVideo = found);
+    });
+    SponsoredMomentsService.instance.loadLive(widget.data.youtubeId).then((
+      found,
+    ) {
+      if (!mounted || found == null) return;
+      setState(() => _sponsored = SponsoredMomentsController(found));
     });
 
     // 1) URL forsiranje (npr. /v/<id>/en) — najjaci signal.
@@ -1056,6 +1070,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     MediaSession.clear();
     _playbackIntent?.dispose();
     _seekUndo?.dispose();
+    _sponsored?.dispose();
     final player = _player;
     if (player != null) {
       PlayerMute.instance.detach(player);
@@ -1591,6 +1606,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
 
   void _onVideoPosition(Duration pos) {
     _checkSponsorClip(pos);
+    _sponsored?.onPosition(pos);
     // URL sync na webu — adresna traka prati player na 1Hz.
     // Nema veze sa seekLockom; želimo da se address bar updatea i tijekom
     // ručno-induciranog seeka (čim novi pos stigne).
@@ -2012,6 +2028,22 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _revealPlayer();
   }
 
+  /// „Poslušaj" na plaćenom trenutku: skok na početak i reprodukcija. Kraj se
+  /// ne javlja — to je oglas, ne poruka koju je korisnik tražio do kraja.
+  void _listenSponsored(SponsoredMoment m) {
+    log('SponsoredMoment: listen ${m.slotKey}');
+    _sponsorClip = null;
+    _seekToAndPlay(m.startPosition);
+    _revealPlayer();
+  }
+
+  /// Plaćeni trenuci po sekciji članka (sidro je vrijeme).
+  Map<String, List<SponsoredMoment>> get _sponsoredMarks =>
+      _sponsored?.moments.marksBySection([
+        for (final s in _sortedSections) (ts: s.ts, seconds: s.dur.inSeconds),
+      ]) ??
+      const {};
+
   /// Nepouzdan raspon (zahvala, poglavlje): samo skok na trenutak, bez
   /// zaustavljanja. Adresna traka se sama poravna na `/v/<id>/t/<sec>`.
   void _jumpSponsor(SponsorInVideoSegment seg) {
@@ -2361,6 +2393,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                 magisterium: magPrimary,
                 sponsorMarks: _sponsorMarks,
                 onSponsorListen: _videoReady ? _listenSponsor : null,
+                sponsoredMarks: _sponsoredMarks,
+                sponsoredMoments: _sponsored,
+                onSponsoredListen: _videoReady ? _listenSponsored : null,
               ),
               Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 12),
@@ -2514,6 +2549,9 @@ class _EpisodeContentState extends State<_EpisodeContent>
                             : null,
                         sponsorMarks: _sponsorMarks,
                         onSponsorListen: _videoReady ? _listenSponsor : null,
+                        sponsoredMarks: _sponsoredMarks,
+                        sponsoredMoments: _sponsored,
+                        onSponsoredListen: _videoReady ? _listenSponsored : null,
                       ),
                     ),
                   ),
@@ -2687,6 +2725,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
               sponsorRanges: _sponsorRanges,
               sponsorsInVideo: _sponsorsInVideo,
               onSponsorListen: _listenSponsor,
+              sponsoredMoments: _sponsored,
+              onSponsoredListen: _listenSponsored,
               totalDurationSeconds: data.info.duration,
               speakerTimeline: data.speakerTimeline,
               speakers: summaryForUi.summary.speakers,
@@ -2721,6 +2761,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
             sponsorRanges: _sponsorRanges,
             sponsorsInVideo: _sponsorsInVideo,
             onSponsorListen: _listenSponsor,
+            sponsoredMoments: _sponsored,
+            onSponsoredListen: _listenSponsored,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: summaryForUi.summary.speakers,
@@ -2771,6 +2813,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
             sponsorRanges: _sponsorRanges,
             sponsorsInVideo: _sponsorsInVideo,
             onSponsorListen: _listenSponsor,
+            sponsoredMoments: _sponsored,
+            onSponsoredListen: _listenSponsored,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
             speakers: summaryForUi.summary.speakers,
@@ -2840,6 +2884,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
               sponsorRanges: _sponsorRanges,
               sponsorsInVideo: _sponsorsInVideo,
               onSponsorListen: _listenSponsor,
+              sponsoredMoments: _sponsored,
+              onSponsoredListen: _listenSponsored,
               totalDurationSeconds: data.info.duration,
               speakerTimeline: data.speakerTimeline,
               speakers: summaryForUi.summary.speakers,
@@ -3254,6 +3300,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
             sponsorRanges: _sponsorRanges,
             sponsorsInVideo: _sponsorsInVideo,
             onSponsorListen: _listenSponsor,
+            sponsoredMoments: _sponsored,
+            onSponsoredListen: _listenSponsored,
             totalDurationSeconds: data.info.duration,
             speakerTimeline: data.speakerTimeline,
           ),
@@ -3285,6 +3333,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
               sponsorRanges: _sponsorRanges,
               sponsorsInVideo: _sponsorsInVideo,
               onSponsorListen: _listenSponsor,
+              sponsoredMoments: _sponsored,
+              onSponsoredListen: _listenSponsored,
               totalDurationSeconds: data.info.duration,
               speakerTimeline: data.speakerTimeline,
               width: null,

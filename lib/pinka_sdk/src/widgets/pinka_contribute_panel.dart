@@ -5,7 +5,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../../services/locale_service.dart';
@@ -19,6 +18,7 @@ import '../util/pinka_intent_status.dart';
 import '../util/pinka_money.dart';
 import '../wallet/pinka_wallet.dart';
 import 'pinka_common.dart';
+import 'pinka_sepa_qr.dart';
 import 'pinka_wall_list.dart' show PinkaLinkPreviewCard;
 
 /// Doprinos kako ga panel javlja hostu — na zaprimanju ([PinkaContributePanel.
@@ -1073,7 +1073,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           ),
           const SizedBox(height: 12),
         ],
-        Center(child: _qrBox(widget.config.eip681(dest, _amountCents))),
+        Center(child: PinkaQrBox(data: widget.config.eip681(dest, _amountCents))),
         const SizedBox(height: 12),
         Text(
           l.pinkaScanWithWallet(fmtEur(_amountCents)),
@@ -1101,32 +1101,11 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
   }
 
   Widget _buildSepaQr(ThemeData theme) {
-    final l = AppLocalizations.of(context);
     final intent = _intent!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(l.pinkaScanInBankApp,
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 4),
-        Text(l.pinkaAmountLabel(intent.amountEur),
-            style: theme.textTheme.bodyMedium),
-        const SizedBox(height: 10),
-        _qrBox(intent.epcQrData),
-        const SizedBox(height: 10),
-        PinkaCopyRow(
-          label: 'IBAN',
-          value: _fmtIban(intent.iban),
-          copyValue: _cleanIban(intent.iban),
-        ),
-        PinkaCopyRow(
-            label: l.pinkaRecipient, value: intent.beneficiaryName),
-        PinkaCopyRow(
-          label: l.pinkaPaymentReference,
-          value: intent.memo,
-          multiline: true,
-        ),
+        PinkaSepaQr(intent: intent),
         const SizedBox(height: 12),
         _holdCountdown(theme),
         _sepaProgress(theme),
@@ -1579,26 +1558,6 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     _schedulePreview(); // poruka je obrisana → preview samo iz polja poveznice
   }
 
-  Widget _qrBox(String data) {
-    // Tanka bijela margina oko QR-a; veličina prati širinu panela.
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LayoutBuilder(
-        builder: (_, c) => QrImageView(
-          data: data,
-          version: QrVersions.auto,
-          // Raste sa širinom panela (desni stupac 400 px → ~260), ali ne ispod
-          // pouzdanog skena ni preko razumne veličine na mobitelu.
-          size: c.maxWidth.isFinite ? c.maxWidth.clamp(180.0, 260.0) : 220,
-          errorCorrectionLevel: QrErrorCorrectLevel.M,
-        ),
-      ),
-    );
-  }
 }
 
 /// Pregled kartice zida DOK korisnik tipka. Namjerno vlastiti render, a ne
@@ -1737,17 +1696,3 @@ final _eurAmountFormatter = TextInputFormatter.withFunction((oldValue, newValue)
       ? newValue
       : oldValue;
 });
-
-/// Rail API zna vratiti IBAN s proizvoljnim razmacima (npr. zadnje dvije
-/// znamenke odvojene) — normaliziraj pa grupiraj po 4 za čitljiv prikaz.
-String _cleanIban(String iban) => iban.replaceAll(RegExp(r'\s+'), '');
-
-String _fmtIban(String iban) {
-  final clean = _cleanIban(iban);
-  final sb = StringBuffer();
-  for (var i = 0; i < clean.length; i += 4) {
-    if (i > 0) sb.write(' ');
-    sb.write(clean.substring(i, i + 4 > clean.length ? clean.length : i + 4));
-  }
-  return sb.toString();
-}

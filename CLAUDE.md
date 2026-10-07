@@ -694,6 +694,39 @@ na 390 px: seek je sjeo na 5963 s, a poruka nije krenula). Panel platna je sad
 uvijek montiran, ali `_revealPlayer` i dalje ponovi `play()` na 300/900 ms kao
 osigurač — osim ako je korisnik u međuvremenu pauzirao (`PlaybackIntent`).
 
+### Plaćeni sponzorski trenuci — `SponsoredMoment` (od 7.10.2026., nedeployano)
+
+Samoposlužni oglas na `domovina_tv`: izlog `/c/:slug/oglasi`, karta + checkout
+`/v/:id/sponzoriraj` (`?narudzba=<id>` = stanje narudžbe), prikaz
+„Sponzorirano · {brand}" na epizodi. Ugovor: `domovina-api/docs/sponzorski-trenuci-ugovor.md`;
+plan, stanje i otvoreno: `docs/plans/2026-10-06-mvp-sponzorski-trenuci-zakljucak.md`.
+
+**Rule (dva sloja, nikad jedan)**: `SponsoredMoment` (`public_live_moments`,
+kupljeno NAKON snimanja, „Sponzorirano · {brand}", DSA čl. 26) NIJE
+`SponsorsInVideo` (autorov partner u snimci, „Uz podršku"). Odvojen model,
+izvor i widgeti; boja je `AppTheme.sponsoredAccent` (zlatna), ne `tertiary`.
+
+**Rule (tri mjesta, jedan kontroler)**: traka ide u `EpisodeVideo` (kroz
+`controls:` builder, da postoji i u fullscreenu), `VideoPanel` i `_PlayerTab`.
+Sva tri slušaju isti `SponsoredMomentsController.active`, koji ekran hrani
+pozicijom. Bez `_PlayerTab` audio-only epizoda ne pokazuje tko je platio.
+
+**Rule (mjerenje)**: `impression` jednom po sesiji po trenutku, `play_through`
+samo bez skoka (ulazak skokom se ne računa), prag skoka kao `SeekUndo` (≥ 1 s).
+Ugovor v1 nema tablicu — `LogSponsoredMomentSink` je privremen; ništa se ne
+naplaćuje po prikazu.
+
+**Rule (`functions.invoke` baca, ne vraća)**: svaki ne-2xx je
+`FunctionException` s tijelom u `details`; greška u `res.data` stiže samo uz
+200. Kodove greške uspoređuj po prefiksu do prve dvotočke
+(`slot_taken:<key>`, `invalid_sponsor:<polje>`) — vidi
+`PinkaClient._invokeContribute`.
+
+**Rule (lokalni checkout ne šalji)**: lokalni edge runtime nema
+`PINKA_INTENTS_URL`, pa `pinka-contribute` stvara intent na PRODUKCIJSKOM
+`mpt.domovina.ai`. Lokalni e2e plaćanja ide kroz `create_sponsor_contribution`
+→ `attach_intent` → `mark_contribution_paid` nad lokalnom bazom.
+
 ### Epizoda na uskom ekranu — tri stupca, ne draweri (od 5.10.2026.)
 
 Ispod 1100 px (`_kPlayerColumnMinWidth`) su sadržaj i player stupci na

@@ -35,8 +35,10 @@ import '../services/browser_fullscreen.dart';
 import '../services/player_mute.dart';
 import '../services/screen_orientation.dart';
 import '../services/seek_undo.dart';
+import '../services/sponsored_moments_controller.dart';
 import '../services/subtitle_prefs.dart';
 import 'playback_controls.dart';
+import 'sponsored_moment_widgets.dart';
 import 'subtitle_caption.dart';
 import 'rotated_fullscreen.dart';
 
@@ -81,6 +83,11 @@ class EpisodeVideo extends StatefulWidget {
   /// (speaker badge gore). Vanjska instanca ovo NIKAD ne postavlja.
   final VoidCallback? onExitRotatedFullscreen;
 
+  /// Plaćeni sponzorski trenuci — oznaka „Sponzorirano · {brand}" preko slike
+  /// dok trenutak svira. Kroz `controls:` builder pa je vidljiva i u
+  /// fullscreenu, gdje panela i trake ispod slike nema.
+  final SponsoredMomentsController? sponsoredMoments;
+
   const EpisodeVideo({
     super.key,
     required this.player,
@@ -90,6 +97,7 @@ class EpisodeVideo extends StatefulWidget {
     this.onYouTubeMode,
     this.seekUndo,
     this.onExitRotatedFullscreen,
+    this.sponsoredMoments,
   });
 
   @override
@@ -307,6 +315,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
           onYouTubeMode: widget.onYouTubeMode,
           seekUndo: widget.seekUndo,
           onExitRotatedFullscreen: exit,
+          sponsoredMoments: widget.sponsoredMoments,
         ),
         onClosed: _onRotatedFullscreenClosed,
       ),
@@ -573,6 +582,23 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
                   },
                 ),
               ),
+              // Oznaka plaćenog trenutka — iznad kontrola I iznad
+              // `UnmuteOverlay` (koji preko cijele slike hvata tap), inače bi
+              // tap na brand utišani autoplay pretvorio u „uključi zvuk". U
+              // fullscreenu je gornji lijevi kut `_SpeakerBadge`, pa ide niže.
+              if (widget.sponsoredMoments != null)
+                Builder(
+                  builder: (context) => Positioned(
+                    top: inRotated || isFullscreen(context) ? 56 : 8,
+                    left: 8,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 260),
+                      child: SponsoredMomentVideoBadge(
+                        controller: widget.sponsoredMoments!,
+                      ),
+                    ),
+                  ),
+                ),
               // Iznad kontrola u Z-osi jer mora primiti tap — media_kitov
               // control layer inače proguta klik (playAndPauseOnTap).
               // Kroz `controls:` builder pa pilula postoji i u fullscreen ruti.

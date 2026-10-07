@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
+import '../models/sponsored_moment.dart';
 import '../models/sponsors_in_video.dart';
+import '../services/sponsored_moments_controller.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 import '../services/share_links.dart';
@@ -18,6 +20,7 @@ import '../services/clip_service.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
 import 'cached_thumbnail.dart';
+import 'sponsored_moment_widgets.dart';
 import 'sponsors_in_video_section.dart';
 
 class ArticleSection extends StatelessWidget {
@@ -48,6 +51,12 @@ class ArticleSection extends StatelessWidget {
   final Map<String, List<SponsorInVideoMark>> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// PLAĆENI trenuci po timestampu sekcije (vidi
+  /// [SponsoredMoments.marksBySection]) — zaseban sloj od [sponsorMarks].
+  final Map<String, List<SponsoredMoment>> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const ArticleSection({
     super.key,
     required this.article,
@@ -61,6 +70,9 @@ class ArticleSection extends StatelessWidget {
     this.highlightSpeaks = true,
     this.sponsorMarks = const {},
     this.onSponsorListen,
+    this.sponsoredMarks = const {},
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
@@ -95,6 +107,9 @@ class ArticleSection extends StatelessWidget {
             highlightSpeaks: highlightSpeaks,
             sponsorMarks: sponsorMarks,
             onSponsorListen: onSponsorListen,
+            sponsoredMarks: sponsoredMarks,
+            sponsoredMoments: sponsoredMoments,
+            onSponsoredListen: onSponsoredListen,
           ),
         ),
       ],
@@ -115,6 +130,12 @@ class _IterationBlock extends StatelessWidget {
   final Map<String, List<SponsorInVideoMark>> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// PLAĆENI trenuci po timestampu sekcije (vidi
+  /// [SponsoredMoments.marksBySection]) — zaseban sloj od [sponsorMarks].
+  final Map<String, List<SponsoredMoment>> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const _IterationBlock({
     required this.iteration,
     required this.youtubeId,
@@ -127,6 +148,9 @@ class _IterationBlock extends StatelessWidget {
     this.highlightSpeaks = true,
     this.sponsorMarks = const {},
     this.onSponsorListen,
+    this.sponsoredMarks = const {},
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
@@ -178,6 +202,10 @@ class _IterationBlock extends StatelessWidget {
                   sponsorMarks:
                       sponsorMarks[sec.screenshotTimestamp] ?? const [],
                   onSponsorListen: onSponsorListen,
+                  sponsoredMarks:
+                      sponsoredMarks[sec.screenshotTimestamp] ?? const [],
+                  sponsoredMoments: sponsoredMoments,
+                  onSponsoredListen: onSponsoredListen,
                 ),
               ),
             );
@@ -291,6 +319,11 @@ class ArticleSectionCard extends StatefulWidget {
   final List<SponsorInVideoMark> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// Plaćeni trenuci koji počinju u ovoj sekciji (sidro je vrijeme).
+  final List<SponsoredMoment> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const ArticleSectionCard({
     super.key,
     required this.section,
@@ -306,6 +339,9 @@ class ArticleSectionCard extends StatefulWidget {
     this.personNeedle,
     this.sponsorMarks = const [],
     this.onSponsorListen,
+    this.sponsoredMarks = const [],
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
@@ -414,6 +450,12 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
             SponsorsInVideoSectionMark(
               marks: widget.sponsorMarks,
               onListen: widget.onSponsorListen,
+            ),
+          if (widget.sponsoredMarks.isNotEmpty)
+            SponsoredMomentSectionMark(
+              moments: widget.sponsoredMarks,
+              controller: widget.sponsoredMoments,
+              onListen: widget.onSponsoredListen,
             ),
           // Timestamp badge + play button + score badge + subtitle.
           // Na uskom stupcu (mobitel, landscape uz player) naslov ide u svoj

@@ -1,4 +1,6 @@
+import '../models/sponsored_moment.dart';
 import '../models/sponsors_in_video.dart';
+import '../services/sponsored_moments_controller.dart';
 import 'package:flutter/material.dart';
 
 import '../models/magisterium_data.dart';
@@ -58,6 +60,11 @@ class ParallelArticleView extends StatelessWidget {
   final Map<String, List<SponsorInVideoMark>> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// Plaćeni trenuci po timestampu sekcije (kao [ArticleSection]).
+  final Map<String, List<SponsoredMoment>> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const ParallelArticleView({
     super.key,
     required this.article,
@@ -72,6 +79,9 @@ class ParallelArticleView extends StatelessWidget {
     this.highlightSpeaks = true,
     this.sponsorMarks = const {},
     this.onSponsorListen,
+    this.sponsoredMarks = const {},
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
@@ -122,6 +132,10 @@ class ParallelArticleView extends StatelessWidget {
                       sponsorMarks:
                           sponsorMarks[sec.screenshotTimestamp] ?? const [],
                       onSponsorListen: onSponsorListen,
+                      sponsoredMarks:
+                          sponsoredMarks[sec.screenshotTimestamp] ?? const [],
+                      sponsoredMoments: sponsoredMoments,
+                      onSponsoredListen: onSponsoredListen,
                     ),
                   ),
                   SizedBox(width: columnGap),

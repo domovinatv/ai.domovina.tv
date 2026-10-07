@@ -16,6 +16,7 @@ import '../../widgets/cached_thumbnail.dart';
 import '../../router/nav.dart';
 import '../../services/share_language.dart';
 import '../../services/share_links.dart';
+import '../../services/sponsored_moments_service.dart' show SponsorCampaign;
 
 /// Channel detail screen — prikazuje listu video zapisa za određeni kanal.
 ///
@@ -111,6 +112,16 @@ class _ChannelScreenState extends State<ChannelScreen> {
                     followLabel: l.channelFollow,
                     followingLabel: l.channelFollowing,
                   ),
+                  // Izlog sponzorskih trenutaka — samo kanal s kampanjom.
+                  if (SponsorCampaign.forChannel(widget.channelId) != null)
+                    IconButton(
+                      icon: const Icon(Icons.campaign_outlined),
+                      tooltip: l.sponsorStoreEntry,
+                      onPressed: () => drillDown(
+                        context,
+                        '/c/${widget.channelId.replaceAll('_', '-')}/oglasi',
+                      ),
+                    ),
                   // "Preuzmi vlasništvo" — vidljivo samo kad kanal ima kanonski
                   // UC… ID (Faza 0). Vodi na claim flow (/c/<slug>/claim).
                   if (_resolvedUcId != null)

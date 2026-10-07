@@ -25,6 +25,15 @@ class AppTheme {
           ? const BorderSide(color: Color(0x29FFFFFF))
           : BorderSide.none;
 
+  /// Boja PLAĆENOG sponzorskog trenutka (pojas na seek baru, rub oznake).
+  /// Namjerno nije `tertiary` (crvena) — tu boju nose autorovi sponzori u
+  /// snimci (`SponsorsInVideo`), a plaćeni oglas se mora razlikovati na prvi
+  /// pogled. Zlatna prati navy brand.
+  static Color sponsoredAccent(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0xFFF2C14E)
+          : const Color(0xFFA67C00);
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: croBlue,

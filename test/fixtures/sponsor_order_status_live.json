@@ -1,0 +1,64 @@
+{
+  "paid": [
+    {
+      "state": "paid",
+      "underpaid": false,
+      "amount_cents": 8000,
+      "amount_received_cents": 8000,
+      "paid_at": "2026-10-07T13:54:27.499365+00:00",
+      "slot_unassigned": false,
+      "slots": [
+        {
+          "state": "sold",
+          "end_sec": 180,
+          "slot_key": "fO7iltytw0I@44",
+          "live_from": "2026-10-07T13:54:27.499365+00:00",
+          "start_sec": 44,
+          "live_until": "2026-11-06T13:54:27.499365+00:00",
+          "youtube_id": "fO7iltytw0I"
+        }
+      ],
+      "invoice_state": "skipped",
+      "invoice_number": null,
+      "hidden": false
+    }
+  ],
+  "underpaid": [
+    {
+      "state": "failed",
+      "underpaid": true,
+      "amount_cents": 5000,
+      "amount_received_cents": null,
+      "paid_at": null,
+      "slot_unassigned": false,
+      "slots": [],
+      "invoice_state": "skipped",
+      "invoice_number": null,
+      "hidden": false
+    }
+  ],
+  "pending": [
+    {
+      "state": "pending",
+      "underpaid": false,
+      "amount_cents": 8000,
+      "amount_received_cents": null,
+      "paid_at": null,
+      "slot_unassigned": false,
+      "slots": [
+        {
+          "state": "free",
+          "end_sec": 220,
+          "slot_key": "WRE248YCIeI@33",
+          "live_from": null,
+          "start_sec": 33,
+          "live_until": null,
+          "youtube_id": "WRE248YCIeI"
+        }
+      ],
+      "invoice_state": "skipped",
+      "invoice_number": null,
+      "hidden": false
+    }
+  ]
+}

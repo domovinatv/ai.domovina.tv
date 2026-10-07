@@ -7,7 +7,8 @@
  *  3. OG/social tagovi — za /v/<ytId> i /?v=<ytId> fetchamo info.json + summary.json
  *     s CDN-a i injectamo bogate meta tagove PRIJE nego crawler dobije odgovor.
  *     Isti obrazac za /p/<slug> (person hub), /c/<slug> (kanal) i
- *     /c/<slug>/doniraj|/support (Zid podrške).
+ *     /c/<slug>/doniraj|/support (Zid podrške), /c/<slug>/oglasi i
+ *     /v/<ytId>/sponzoriraj (izlog sponzorskih trenutaka).
  *  4. JSON-LD — VideoObject (/v/), ProfilePage+Person (/p/), PodcastSeries+
  *     ItemList (/c/), DonateAction (/c/…/doniraj) za Google rich-result kartice
  *  5. COEP/COOP headeri — potrebni za Flutter Skwasm (WebAssembly renderer)
@@ -392,6 +393,27 @@ export default {
       return htmlResponse(await (await indexPromise).text(), 'no-store');
     }
 
+    // Karta sponzorskih trenutaka epizode — /v/<id>/sponzoriraj. Zasebna
+    // grana jer bi OG epizode obećavao gledanje, a stranica je ponuda brandu.
+    // Bez cijena u OG-u: odgovor se edge-cachira 1 h, a cijene i stanje
+    // trenutaka žive u bazi. Ruta mora ostati usklađena s app_router.dart.
+    const sponsorVMatch = path.match(/^\/v\/([A-Za-z0-9_-]{6,20})\/sponzoriraj$/);
+    if (sponsorVMatch) {
+      const id = sponsorVMatch[1];
+      const [info, summary] = await Promise.all([
+        fetchJson(`${CDN}/data/${id}/info.json`),
+        fetchJson(`${CDN}/data/${id}/summary.json`),
+      ]);
+      if (info) {
+        const indexHtml = await (await indexPromise).text();
+        return htmlResponse(
+          injectSponsorEpisodeTags(indexHtml, id, info, summary),
+          'public, max-age=3600, s-maxage=3600',
+        );
+      }
+      return htmlResponse(await (await indexPromise).text(), 'no-store');
+    }
+
     // Person-hub profil — /p/<slug>. Slug se koristi DOSLOVNO (bez `-`↔`_`
     // transformacije koju rade kanali) jer je primarni ključ u bazi. Fetchamo
     // agregat s domovina-rag i injectamo osobno-specifične OG tagove PRIJE nego
@@ -417,18 +439,27 @@ export default {
 
     // Kanal — /c/<slug> i Zid podrške /c/<slug>/doniraj | /c/<slug>/support.
     // Slug koristi crtice, CDN channel id podvlake — isti mapping kao
-    // lib/router/app_router.dart (slug.replaceAll('-', '_')). Ostale /c/
-    // podrute (npr. /c/<slug>/claim) namjerno padaju na SPA fallback.
+    // lib/router/app_router.dart (slug.replaceAll('-', '_')). /c/<slug>/oglasi
+    // je izlog sponzorskih trenutaka. Ostale /c/ podrute (npr.
+    // /c/<slug>/claim) namjerno padaju na SPA fallback.
     const cSupportMatch = path.match(/^\/c\/([a-z0-9-]{2,80})\/(doniraj|support)$/);
-    const cMatch = !cSupportMatch && path.match(/^\/c\/([a-z0-9-]{2,80})$/);
-    if (cSupportMatch || cMatch) {
-      const slug = (cSupportMatch || cMatch)[1];
+    // Izlog sponzorskih trenutaka — /c/<slug>/oglasi.
+    const cAdsMatch = !cSupportMatch && path.match(/^\/c\/([a-z0-9-]{2,80})\/oglasi$/);
+    const cMatch = !cSupportMatch && !cAdsMatch && path.match(/^\/c\/([a-z0-9-]{2,80})$/);
+    if (cSupportMatch || cAdsMatch || cMatch) {
+      const slug = (cSupportMatch || cAdsMatch || cMatch)[1];
       const channelId = slug.replace(/-/g, '_');
       const channel = await fetchJson(
         `${CDN}/channels/data/${channelId}.json?${channelCacheBuster()}`,
       );
       if (channel && channel.name) {
         const indexHtml = await (await indexPromise).text();
+        if (cAdsMatch) {
+          return htmlResponse(
+            injectSponsorStoreTags(indexHtml, slug, channel),
+            'public, max-age=3600, s-maxage=3600',
+          );
+        }
         if (cSupportMatch) {
           // Kampanja preko ISTOG RPC-a koji app zove (PinkaClient
           // .campaignForSubject): refs = [UC… id, interni channel id].
@@ -1543,6 +1574,72 @@ function injectSupportTags(indexHtml, slug, variant, ch, campaign) {
   <meta name="twitter:data1" content="${x(name)}">
   <meta name="twitter:label2" content="Načini podrške">
   <meta name="twitter:data2" content="SEPA · EURe (Gnosis)">
+
+  <script type="application/ld+json">
+${jsonLd}
+  </script>`;
+
+  return stripHeadMeta(indexHtml).replace('</head>', `${tags}\n</head>`);
+}
+
+/**
+ * OG za izlog sponzorskih trenutaka kanala (/c/<slug>/oglasi). Publika je
+ * brand, ne slušatelj: naslov govori što se kupuje. Bez cijena (edge cache).
+ */
+function injectSponsorStoreTags(indexHtml, slug, ch) {
+  const name = (ch.name || '').trim();
+  const url = `${SITE}/c/${slug}/oglasi`;
+  const title = `Oglašavanje na kanalu ${name}`;
+  const desc = `Izaberite trenutak u epizodi kanala ${name} i Vaš brand bit će `
+    + 'označen kao sponzor upravo tog dijela. Samoposluga: plaćanje SEPA '
+    + 'uplatom, oglas ide uživo čim uplata stigne, račun se izdaje automatski.';
+  const image = ch.avatar_cover || ch.avatar_square || `${SITE}/og-image.png`;
+  return injectSponsorTags(indexHtml, { title, desc, url, image, name, slug });
+}
+
+/** OG za kartu sponzorskih trenutaka epizode (/v/<id>/sponzoriraj). */
+function injectSponsorEpisodeTags(indexHtml, id, info, summary) {
+  const epTitle = ((summary?.summary?.title_hr) || info.title || '')
+    .replace(/\s+/g, ' ').trim();
+  const url = `${SITE}/v/${id}/sponzoriraj`;
+  const title = `Sponzorirajte trenutak: ${epTitle}`;
+  const desc = 'Odaberite trenutak u ovoj epizodi i Vaš brand bit će označen '
+    + 'kao sponzor tog dijela, uz naslov sekcije koju sponzorirate. Plaćanje '
+    + 'SEPA uplatom, oglas ide uživo automatski.';
+  const image = `${CDN}/images/${id}/og-share.jpg`;
+  return injectSponsorTags(indexHtml, { title, desc, url, image, name: info.channel || '' });
+}
+
+function injectSponsorTags(indexHtml, { title, desc, url, image, name }) {
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description: desc,
+    url,
+    publisher: { '@type': 'Organization', name: 'DOMOVINA.ai', url: SITE },
+  }, null, 2);
+  const tags = `
+  <title>${x(title)} – DOMOVINA.ai</title>
+  <meta name="description" content="${x(desc)}">
+  <link rel="canonical" href="${url}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="hr_HR">
+  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:logo" content="${SITE}/og-image-square.png">
+  <meta property="og:title" content="${x(title)}">
+  <meta property="og:description" content="${x(desc)}">
+  <meta property="og:url" content="${url}">
+  <meta property="og:image" content="${x(image)}">
+  <meta property="og:image:alt" content="${x(title)}">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${x(title)}">
+  <meta name="twitter:description" content="${x(desc)}">
+  <meta name="twitter:image" content="${x(image)}">
+  <meta name="twitter:label1" content="Kanal">
+  <meta name="twitter:data1" content="${x(name)}">
 
   <script type="application/ld+json">
 ${jsonLd}

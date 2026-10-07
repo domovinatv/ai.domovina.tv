@@ -4134,4 +4134,368 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get findInEpisodeApproximate => 'Približni pogoci';
+
+  @override
+  String get sponsoredLabel => 'Sponzorirano';
+
+  @override
+  String sponsoredBy(String brand) {
+    return 'Sponzorirano · $brand';
+  }
+
+  @override
+  String sponsoredPaidBy(String brand) {
+    return 'Plaća: $brand';
+  }
+
+  @override
+  String get sponsoredWebsite => 'Web stranica';
+
+  @override
+  String sponsoredAt(String time) {
+    return 'Sponzorirani trenutak na $time';
+  }
+
+  @override
+  String get sponsoredListen => 'Poslušaj';
+
+  @override
+  String get sponsoredNow => 'Upravo svira';
+
+  @override
+  String get sponsorStoreEntry => 'Oglašavanje';
+
+  @override
+  String sponsorStoreTitle(String channel) {
+    return 'Oglašavanje na kanalu $channel';
+  }
+
+  @override
+  String get sponsorStoreIntro =>
+      'Izaberi trenutak u epizodi i tvoj brand bit će označen kao sponzor upravo tog dijela. Plaćaš jednom, SEPA uplatom, a oglas ide uživo čim uplata stigne.';
+
+  @override
+  String get sponsorStoreEmpty =>
+      'Ovaj kanal trenutno nema ponudu sponzorskih trenutaka.';
+
+  @override
+  String get sponsorStoreLoadFailed => 'Ponudu nije moguće učitati.';
+
+  @override
+  String sponsorStoreFreeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count slobodnih trenutaka',
+      few: '$count slobodna trenutka',
+      one: '$count slobodan trenutak',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sponsorStoreFromPrice(String price) {
+    return 'od $price €';
+  }
+
+  @override
+  String get sponsorStoreAvoidTitle => 'Ne prikazuj me uz…';
+
+  @override
+  String get sponsorStoreAvoidHint =>
+      'Sigurnost branda biraš ti. Oznake tema su gruba procjena, pa uz svaku epizodu vidiš i njezine stvarne teme.';
+
+  @override
+  String get sponsorStoreAllFiltered =>
+      'Nijedna epizoda ne odgovara odabranom filtru.';
+
+  @override
+  String get sponsorTopicFaith => 'Vjera';
+
+  @override
+  String get sponsorTopicPolitics => 'Politika';
+
+  @override
+  String get sponsorTopicBusiness => 'Posao i tehnologija';
+
+  @override
+  String get sponsorMapTitle => 'Sponzorski trenuci';
+
+  @override
+  String get sponsorMapIntro =>
+      'Svaki trenutak je dio epizode uz naslov sekcije članka koja u njemu počinje. Poslušaj ga prije kupnje.';
+
+  @override
+  String get sponsorMapTopics => 'Teme epizode';
+
+  @override
+  String get sponsorStateFree => 'Slobodno';
+
+  @override
+  String get sponsorStateHeld => 'Netko upravo plaća';
+
+  @override
+  String get sponsorStateSold => 'Zauzeto';
+
+  @override
+  String sponsorStateSoldUntil(String date) {
+    return 'Zauzeto do $date';
+  }
+
+  @override
+  String get sponsorStateBlocked => 'Nije u ponudi';
+
+  @override
+  String get sponsorZoneZatvaranje => 'Zatvaranje';
+
+  @override
+  String get sponsorZoneTijelo => 'Središnji dio';
+
+  @override
+  String get sponsorZoneOtvaranje => 'Otvaranje';
+
+  @override
+  String sponsorPriceGross(String price) {
+    return '$price € s PDV-om';
+  }
+
+  @override
+  String sponsorRunDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'uživo $count dana nakon uplate',
+      few: 'uživo $count dana nakon uplate',
+      one: 'uživo $count dan nakon uplate',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sponsorPick => 'Izaberi';
+
+  @override
+  String get sponsorLegend => 'Traka prikazuje cijelu epizodu.';
+
+  @override
+  String get sponsorCheckoutTitle => 'Narudžba';
+
+  @override
+  String sponsorCheckoutMoment(String range, String zone) {
+    return 'Trenutak $range · $zone';
+  }
+
+  @override
+  String get sponsorCheckoutChange => 'Promijeni trenutak';
+
+  @override
+  String get sponsorCreativeSection => 'Oglas';
+
+  @override
+  String get sponsorFieldBrand => 'Naziv branda';
+
+  @override
+  String get sponsorFieldBrandHelp =>
+      'Prikazuje se uz oznaku „Sponzorirano“ i ne može biti anoniman.';
+
+  @override
+  String get sponsorFieldTagline => 'Jedna rečenica (neobavezno)';
+
+  @override
+  String get sponsorFieldLink => 'Poveznica, https:// (neobavezno)';
+
+  @override
+  String get sponsorFieldLogo =>
+      'Logo: PNG, JPG ili WebP, najviše 200 kB (neobavezno)';
+
+  @override
+  String get sponsorLogoPick => 'Dodaj logo';
+
+  @override
+  String get sponsorLogoRemove => 'Ukloni logo';
+
+  @override
+  String get sponsorLogoTooBig => 'Logo je veći od 200 kB.';
+
+  @override
+  String get sponsorLogoBadType => 'Logo mora biti PNG, JPG ili WebP.';
+
+  @override
+  String get sponsorLogoUploadFailed =>
+      'Logo nije učitan. Pokušaj ponovno ili nastavi bez njega.';
+
+  @override
+  String get sponsorCompanySection => 'Podaci za račun';
+
+  @override
+  String get sponsorFieldCompany => 'Naziv tvrtke';
+
+  @override
+  String get sponsorFieldOib => 'OIB (neobavezno)';
+
+  @override
+  String get sponsorFieldVat => 'PDV ID (neobavezno)';
+
+  @override
+  String get sponsorFieldStreet => 'Ulica i kućni broj';
+
+  @override
+  String get sponsorFieldCity => 'Grad';
+
+  @override
+  String get sponsorFieldPostal => 'Poštanski broj';
+
+  @override
+  String get sponsorFieldCountry => 'Država (HR, SI, DE…)';
+
+  @override
+  String get sponsorFieldEmail => 'Adresa e-pošte za račun';
+
+  @override
+  String get sponsorFieldReference => 'Broj narudžbenice (neobavezno)';
+
+  @override
+  String get sponsorPreviewTitle => 'Ovako će oglas izgledati';
+
+  @override
+  String get sponsorTermsAccept => 'Prihvaćam uvjete oglašavanja';
+
+  @override
+  String get sponsorTermsRead => 'Pročitaj uvjete';
+
+  @override
+  String get sponsorTermsTitle => 'Uvjeti oglašavanja';
+
+  @override
+  String get sponsorTermsBody =>
+      'Oglas se objavljuje automatski čim uplata stigne, bez prethodnog odobrenja, i traje onoliko dana koliko je navedeno uz trenutak.\n\nOglas je označen kao „Sponzorirano“ uz naziv Vašeg branda, sukladno članku 26. Uredbe (EU) 2022/2065.\n\nNije dopušten sadržaj koji je nezakonit, obmanjujući, uvredljiv ili diskriminirajući, kao ni oglašavanje duhanskih proizvoda, oružja, igara na sreću te lijekova na recept.\n\nVlasnik kanala može povući oglas koji krši ove uvjete. U tom slučaju, kao i kad uplata stigne nakon što je trenutak prodan drugome, iznos Vam vraćamo ručno.\n\nCijena uključuje PDV. Račun se izdaje automatski i šalje na adresu e-pošte navedenu u narudžbi.';
+
+  @override
+  String get sponsorErrorRequired => 'Obavezno polje';
+
+  @override
+  String get sponsorErrorOib => 'OIB nije ispravan';
+
+  @override
+  String get sponsorErrorVat => 'PDV ID nije ispravan (npr. HR12345678903)';
+
+  @override
+  String get sponsorErrorEmail => 'Adresa e-pošte nije ispravna';
+
+  @override
+  String get sponsorErrorLink => 'Poveznica mora počinjati s https://';
+
+  @override
+  String sponsorErrorTooLong(int max) {
+    return 'Najviše $max znakova';
+  }
+
+  @override
+  String get sponsorErrorCountry => 'Dvoslovna oznaka države, npr. HR';
+
+  @override
+  String get sponsorErrorTerms => 'Za narudžbu je potrebno prihvatiti uvjete.';
+
+  @override
+  String get sponsorSubmit => 'Nastavi na plaćanje';
+
+  @override
+  String get sponsorSlotTaken =>
+      'Netko je upravo uzeo taj trenutak. Karta je osvježena, izaberi drugi.';
+
+  @override
+  String get sponsorTooManyHolds =>
+      'Već imaš tri neplaćene narudžbe. Plati jednu ili pričekaj da istekne.';
+
+  @override
+  String get sponsorCheckoutFailed =>
+      'Narudžbu nije moguće kreirati. Pokušaj ponovno.';
+
+  @override
+  String sponsorCheckoutFieldRejected(String field) {
+    return 'Provjeri polje „$field“.';
+  }
+
+  @override
+  String get sponsorPayTitle => 'Plaćanje';
+
+  @override
+  String get sponsorMemoVerbatim =>
+      'Opis plaćanja kopiraj doslovno, bez ijedne izmjene. Po njemu sparujemo uplatu s narudžbom. Ako ga knjigovodstvo skrati ili prepiše, uplata se neće spariti automatski.';
+
+  @override
+  String sponsorHoldUntil(String time) {
+    return 'Trenutak je rezerviran za tebe do $time.';
+  }
+
+  @override
+  String get sponsorHoldExpired =>
+      'Rezervacija je istekla. Ako uplata ipak stigne, a trenutak je još slobodan, dodjeljujemo ga automatski.';
+
+  @override
+  String get sponsorWaitingPayment =>
+      'Čekamo uplatu. Stranica se sama osvježi kad stigne.';
+
+  @override
+  String get sponsorOrderLinkHint =>
+      'Spremi ovu poveznicu. Preko nje uvijek vidiš stanje narudžbe.';
+
+  @override
+  String get sponsorPaidTitle => 'Uplata je stigla, oglas je uživo';
+
+  @override
+  String sponsorPaidUntil(String date) {
+    return 'Trenutak je tvoj do $date';
+  }
+
+  @override
+  String get sponsorUnderpaid =>
+      'Uplata je manja od cijene trenutka, pa trenutak nije dodijeljen. Javit ćemo ti se radi povrata ili doplate.';
+
+  @override
+  String get sponsorSlotUnassigned =>
+      'Uplata je stigla nakon isteka rezervacije, a trenutak je u međuvremenu prodan. Iznos vraćamo ručno.';
+
+  @override
+  String get sponsorHidden =>
+      'Vlasnik kanala povukao je oglas. Iznos vraćamo ručno.';
+
+  @override
+  String get sponsorOrderExpired => 'Narudžba je istekla bez uplate.';
+
+  @override
+  String get sponsorOrderFailed => 'Plaćanje nije uspjelo.';
+
+  @override
+  String sponsorInvoiceSent(String number) {
+    return 'Račun $number poslan je na adresu e-pošte iz narudžbe.';
+  }
+
+  @override
+  String get sponsorInvoicePending => 'Račun stiže e-poštom nakon obrade.';
+
+  @override
+  String get sponsorStatsPending =>
+      'Broj prikaza i klikova prikazat ćemo ovdje čim mjerenje bude uključeno.';
+
+  @override
+  String get sponsorViewOnEpisode => 'Pogledaj na epizodi';
+
+  @override
+  String get sponsorOrderNotFound => 'Narudžba nije pronađena.';
+
+  @override
+  String sponsorLeaseEnded(String date) {
+    return 'Trenutak je bio uživo do $date';
+  }
+
+  @override
+  String get sponsorLeavePayTitle => 'Napustiti plaćanje?';
+
+  @override
+  String get sponsorLeavePayBody =>
+      'Trenutak ostaje rezerviran do isteka, ali QR kod i opis plaćanja više nećeš vidjeti. Stanje narudžbe ostaje na poveznici iz adresne trake.';
+
+  @override
+  String get sponsorLeavePayConfirm => 'Napusti';
 }

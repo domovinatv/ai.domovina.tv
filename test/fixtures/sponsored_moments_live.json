@@ -1,0 +1,28 @@
+[
+    {
+        "slot_key": "fO7iltytw0I@44",
+        "youtube_id": "fO7iltytw0I",
+        "start_sec": 44,
+        "end_sec": 180,
+        "brand": "Primjer d.o.o.",
+        "tagline": "Jedna re\u010denica.",
+        "link_url": "https://primjer.hr",
+        "logo_url": null,
+        "logo_path": null,
+        "live_from": "2026-10-07T13:54:27.499365+00:00",
+        "live_until": "2026-11-06T13:54:27.499365+00:00"
+    },
+    {
+        "slot_key": "KvIhy5SESYs@1005",
+        "youtube_id": "KvIhy5SESYs",
+        "start_sec": 1005,
+        "end_sec": 1620,
+        "brand": "E2E Brand",
+        "tagline": "Re\u010denica <b>bez</b> HTML-a.",
+        "link_url": "https://e2e.example.com",
+        "logo_url": null,
+        "logo_path": null,
+        "live_from": "2026-10-07T13:54:54.097379+00:00",
+        "live_until": "2026-11-06T13:54:54.097379+00:00"
+    }
+]

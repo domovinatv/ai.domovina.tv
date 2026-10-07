@@ -27,6 +27,8 @@ import '../screens/tv/tv_home_screen.dart';
 import '../screens/tv/tv_person_screen.dart';
 import '../screens/voting/voting_screen.dart';
 import '../screens/youtube_watch/youtube_watch_screen.dart';
+import '../screens/sponsor/sponsor_episode_screen.dart';
+import '../screens/sponsor/sponsor_store_screen.dart';
 import '../services/tv_mode.dart';
 
 /// App router — go_router s NoTransitionPage za instant navigaciju.
@@ -118,6 +120,20 @@ GoRouter createRouter() {
             );
           },
         ),
+      // Izlog sponzorskih trenutaka kanala (plan
+      // docs/plans/2026-10-06-mvp-sponzorski-trenuci-domovina-tv.md). Ruta je
+      // generička, ali ponudu ima samo kanal sa `SponsorCampaign` — ostali
+      // dobiju prazno stanje. Worker je zna (OG), vidi `web/_worker.js`.
+      GoRoute(
+        path: '/c/:slug/oglasi',
+        pageBuilder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          return NoTransitionPage(
+            key: ValueKey('sponsor-store-$slug'),
+            child: SponsorStoreScreen(channelId: slug.replaceAll('-', '_')),
+          );
+        },
+      ),
       // Channel ownership claim flow (vidi docs/channel-ownership-and-safe-payout-plan.md)
       GoRoute(
         path: '/c/:slug/claim',
@@ -238,6 +254,23 @@ GoRouter createRouter() {
             );
           },
         ),
+      // Karta sponzorskih trenutaka epizode → checkout → SEPA → stanje.
+      // `?narudzba=<contribution_id>` otvara izravno stanje narudžbe (kupac se
+      // vraća preko poveznice iz checkouta). Ključ nosi samo epizodu — ista
+      // stranica s drugim query parametrom ne smije baciti formu/hold.
+      GoRoute(
+        path: '/v/:videoId/sponzoriraj',
+        pageBuilder: (context, state) {
+          final videoId = state.pathParameters['videoId']!;
+          return NoTransitionPage(
+            key: ValueKey('sponsor-v-$videoId'),
+            child: SponsorEpisodeScreen(
+              youtubeId: videoId,
+              orderId: state.uri.queryParameters['narudzba'],
+            ),
+          );
+        },
+      ),
       // Android TV reader mode — "Čitaj kao blog" prikaz s PiP videom u
       // kutu. Samo TV: na desktopu/mobitelu se redirecta na klasični
       // episode screen (na webu nema D-pad-a, nema smisla).
