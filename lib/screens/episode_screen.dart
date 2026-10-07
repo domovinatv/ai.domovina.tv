@@ -1644,7 +1644,11 @@ class _EpisodeContentState extends State<_EpisodeContent>
         break;
       }
     }
-    if (newTs == null || newTs == _activeTimestamp) return;
+    if (newTs == null) return;
+    if (newTs == _activeTimestamp) {
+      _creditsScroll(pos, newTs);
+      return;
+    }
 
     // Sprjecava flicker: odmah nakon seekLocka, ne dopusti backward jump
     // na raniji chapter (preroll -2s uzrokuje kratki period na prethodnom).
@@ -1677,6 +1681,80 @@ class _EpisodeContentState extends State<_EpisodeContent>
   }
 
   // ---------- scroll --------------------------------------------------------
+
+  /// Visina zone koja na vrhu prekriva članak (safe area + app bar; u
+  /// paralelnom layoutu i sticky naslovi stupaca). Mobitel u landscapeu ima
+  /// floating header koji se na scroll prema dolje skrije — tada samo inset.
+  double _pinnedTop() {
+    final topInset = MediaQuery.paddingOf(context).top;
+    if (_isPhoneLandscape(context)) return topInset;
+    // Drugi red akcija postoji kad je STUPAC uži od 600 (vidi
+    // `_episodeAppBar`) — i na tabletu kad je player uz članak.
+    return _parallelActive
+        ? topInset + kToolbarHeight + kParallelStickyHeaderHeight
+        : topInset + kToolbarHeight + (_columnWidth() < 600 ? 46 : 0);
+  }
+
+  /// Koliko dugo „odjavna špica" miruje nakon što korisnik sam scrolla.
+  static const _kCreditsPauseAfterManual = Duration(seconds: 8);
+
+  /// „Odjavna špica": dok player svira unutar iste sekcije, članak polako
+  /// klizi kroz nju proporcionalno vremenu — na početku sekcije naslov je pod
+  /// app barom, na kraju je dno teksta na ~60 % ekrana, a onda skok na sljedeću
+  /// sekciju preuzme `_onVideoPosition`. Tko gleda u landscapeu tako vidi tekst
+  /// ispod slike, ne samo naslov i screenshot.
+  ///
+  /// Samo naprijed: korisnik koji je odčitao unaprijed čeka da ga reprodukcija
+  /// sustigne. Ručni scroll je pauzira [_kCreditsPauseAfterManual]; ako je
+  /// korisnik daleko od cilja (više od ekrana), čita nešto drugo i ne vučemo ga.
+  void _creditsScroll(Duration pos, String ts) {
+    if (_sponsorClip != null) return;
+    // Mobilni tab Magisterium: članak je skriven u IndexedStacku.
+    if (_mobileTab != 0) return;
+    if (_player?.state.playing != true) return;
+    if (!_scrollController.hasClients) return;
+    final now = DateTime.now();
+    final manual = _lastManualScroll;
+    if (manual != null && now.difference(manual) < _kCreditsPauseAfterManual) {
+      return;
+    }
+    // Skok na sekciju (i snap floating headera nakon njega) mora prvo sjesti.
+    final jumpAt = _sectionJumpAt;
+    if (jumpAt != null &&
+        now.difference(jumpAt) < const Duration(milliseconds: 600)) {
+      return;
+    }
+    final idx = _sortedSections.indexWhere((s) => s.ts == ts);
+    if (idx < 0) return;
+    final start = _sortedSections[idx].dur;
+    final end = idx + 1 < _sortedSections.length
+        ? _sortedSections[idx + 1].dur
+        : Duration(seconds: widget.data.info.duration);
+    final span = (end - start).inMilliseconds;
+    if (span <= 0) return;
+    final progress = ((pos - start).inMilliseconds / span).clamp(0.0, 1.0);
+
+    final b = _sectionBox(ts);
+    if (b == null) return;
+    final p = _scrollController.position;
+    final pinned = _pinnedTop() + 16;
+    final visible = p.viewportDimension - pinned;
+    final travel = b.height - visible * 0.6;
+    if (travel <= 0) return; // sekcija stane na ekran — nema se kamo klizati
+    final sectionAtTop = p.pixels + (b.top - pinned);
+    final target =
+        (sectionAtTop + progress * travel).clamp(0.0, p.maxScrollExtent);
+    final delta = target - p.pixels;
+    if (delta < 0.5 || delta > visible) return;
+    _scrollLock = now;
+    _scrollController.animateTo(
+      target,
+      // Position stream stiže ~5×/s; linearni korak po tiku daje jednoliko
+      // klizanje bez trzaja.
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.linear,
+    );
+  }
 
   void _onScroll() {
     final now = DateTime.now();
@@ -1773,10 +1851,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         }
         // Drugi red akcija postoji kad je STUPAC uži od 600 (vidi
         // `_episodeAppBar`) — i na tabletu kad je player uz članak.
-        final pinned = _parallelActive
-            ? topInset + kToolbarHeight + kParallelStickyHeaderHeight
-            : topInset + kToolbarHeight + (_columnWidth() < 600 ? 46 : 0);
-        final desiredY = pinned + gap;
+        final desiredY = _pinnedTop() + gap;
         final target = (_scrollController.offset + (currentY - desiredY)).clamp(
           0.0,
           _scrollController.position.maxScrollExtent,

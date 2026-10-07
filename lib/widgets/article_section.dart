@@ -246,6 +246,9 @@ class ArticleIterationHeader extends StatelessWidget {
   }
 }
 
+/// Ispod ove širine kartice naslov sekcije ide u vlastiti red.
+const double _kTitleOwnLineBelow = 520;
+
 class ArticleSectionCard extends StatefulWidget {
   final PodcastSection section;
   final String youtubeId;
@@ -412,123 +415,142 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
               marks: widget.sponsorMarks,
               onListen: widget.onSponsorListen,
             ),
-          // Timestamp badge + play button + score badge + subtitle
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withAlpha(25),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withAlpha(80),
-                    width: 1,
+          // Timestamp badge + play button + score badge + subtitle.
+          // Na uskom stupcu (mobitel, landscape uz player) naslov ide u svoj
+          // red preko cijele širine: stisnut uz ikone prelamao se u 3–4 retka,
+          // a ispod ikona je ostajala praznina.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final title = Text(
+                subtitle,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+              final controls = <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withAlpha(25),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withAlpha(80),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    section.screenshotTimestamp,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
-                child: Text(
-                  section.screenshotTimestamp,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
+                if (widget.onPlayTap != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: Icon(
+                          Icons.play_circle_outline,
+                          size: 20,
+                          color: theme.colorScheme.primary,
+                        ),
+                        tooltip: l.sectionPlayFrom(section.screenshotTimestamp),
+                        onPressed: () =>
+                            widget.onPlayTap!(section.screenshotTimestamp),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              if (widget.onPlayTap != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.only(left: 2),
                   child: SizedBox(
                     width: 28,
                     height: 28,
                     child: IconButton(
                       padding: EdgeInsets.zero,
                       icon: Icon(
-                        Icons.play_circle_outline,
-                        size: 20,
-                        color: theme.colorScheme.primary,
+                        Icons.link,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                      tooltip: l.sectionPlayFrom(section.screenshotTimestamp),
-                      onPressed: () =>
-                          widget.onPlayTap!(section.screenshotTimestamp),
+                      tooltip: l.sectionCopyLink,
+                      onPressed: () => _copyShareLink(context),
                     ),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.only(left: 2),
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: Icon(
-                      Icons.link,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
+                if (widget.clipEndSec != null &&
+                    widget.clipEndSec! >
+                        _tsToSeconds(section.screenshotTimestamp))
+                  ClipShareButton(
+                    videoId: widget.youtubeId,
+                    startSec: _tsToSeconds(section.screenshotTimestamp),
+                    endSec: widget.clipEndSec!,
+                    title: subtitle,
+                  ),
+                if (mag?.score != null) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
                     ),
-                    tooltip: l.sectionCopyLink,
-                    onPressed: () => _copyShareLink(context),
-                  ),
-                ),
-              ),
-              if (widget.clipEndSec != null &&
-                  widget.clipEndSec! >
-                      _tsToSeconds(section.screenshotTimestamp))
-                ClipShareButton(
-                  videoId: widget.youtubeId,
-                  startSec: _tsToSeconds(section.screenshotTimestamp),
-                  endSec: widget.clipEndSec!,
-                  title: subtitle,
-                ),
-              if (mag?.score != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MagisteriumSection.scoreColor(
-                      mag!.score,
-                    ).withAlpha(25),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
+                    decoration: BoxDecoration(
                       color: MagisteriumSection.scoreColor(
-                        mag.score,
-                      ).withAlpha(80),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.church,
-                        size: 12,
-                        color: MagisteriumSection.scoreColor(mag.score),
+                        mag!.score,
+                      ).withAlpha(25),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: MagisteriumSection.scoreColor(
+                          mag.score,
+                        ).withAlpha(80),
                       ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${mag.score}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.church,
+                          size: 12,
                           color: MagisteriumSection.scoreColor(mag.score),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Text(
+                          '${mag.score}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: MagisteriumSection.scoreColor(mag.score),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  subtitle,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+                ],
+              ];
+              if (constraints.maxWidth < _kTitleOwnLineBelow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: controls),
+                    const SizedBox(height: 6),
+                    title,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ...controls,
+                  const SizedBox(width: 6),
+                  Expanded(child: title),
+                ],
+              );
+            },
           ),
           // Screenshot — AspectRatio rezervira mjesto PRIJE async load-a slike.
           // Bez ovoga: section anchor scroll na page load promaši target jer
