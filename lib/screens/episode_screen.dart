@@ -703,6 +703,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
   Player? _player;
   VideoController? _videoController;
   StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<bool>? _playingSub;
   bool _videoReady = false;
 
   /// Sortirane sekcije kao (Duration, timestampString) za sync Video→Text
@@ -1062,8 +1063,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _creditsProgress.dispose();
     PlaybackSpeed.instance.removeListener(_applyPlaybackRate);
     _positionSub?.cancel();
+    _playingSub?.cancel();
     _resumeHintTimer?.cancel();
     WatchProgressService.instance.flush();
     BackgroundAudio.instance.detach();
@@ -1462,6 +1465,10 @@ class _EpisodeContentState extends State<_EpisodeContent>
       }
 
       _positionSub = player.stream.position.listen(_onVideoPosition);
+      // Na pauzi position stream utihne, pa traka špice ne bi nestala sama.
+      _playingSub = player.stream.playing.listen((playing) {
+        if (!playing) _stopCredits();
+      });
 
       if (mounted) {
         // Namjera se veže tek sad: `openAndResume` je gotov, pa je
@@ -1711,28 +1718,65 @@ class _EpisodeContentState extends State<_EpisodeContent>
         : topInset + kToolbarHeight + (_columnWidth() < 600 ? 46 : 0);
   }
 
-  /// Koliko dugo „odjavna špica" miruje nakon što korisnik sam scrolla.
-  static const _kCreditsPauseAfterManual = Duration(seconds: 8);
+  /// Koliko dugo „odjavna špica" miruje nakon što korisnik dodirne članak
+  /// ili ga sam scrolla.
+  static const _kCreditsPauseAfterTouch = Duration(seconds: 20);
 
-  /// „Odjavna špica": dok player svira unutar iste sekcije, članak polako
-  /// klizi kroz nju proporcionalno vremenu — na početku sekcije naslov je pod
-  /// app barom, na kraju je dno teksta na ~60 % ekrana, a onda skok na sljedeću
-  /// sekciju preuzme `_onVideoPosition`. Tko gleda u landscapeu tako vidi tekst
-  /// ispod slike, ne samo naslov i screenshot.
+  /// Razmak između dva koraka špice, u vremenu REPRODUKCIJE (prati brzinu i
+  /// pauzu). Tekst između koraka stoji mirno da se može čitati.
+  static const _kCreditsStep = Duration(seconds: 15);
+
+  /// Trajanje jednog koraka — kratko i mekano, da oko ne izgubi redak.
+  static const _kCreditsStepAnim = Duration(milliseconds: 700);
+
+  /// Pozicija reprodukcije od koje se puni traka do sljedećeg koraka. `null`
+  /// = špica ne radi (nema trake).
+  Duration? _creditsCycleFrom;
+
+  /// Napunjenost trake do sljedećeg koraka (0..1), `null` = traka skrivena.
+  /// Notifier, ne `setState`: mijenja se ~5×/s, a crta je samo tanka traka.
+  final ValueNotifier<double?> _creditsProgress = ValueNotifier(null);
+
+  /// Do kada traje animirani korak — `_onScroll` ga ne smije pročitati kao
+  /// korisnikov scroll (inače bi se špica sama ugasila).
+  DateTime? _creditsAnimatingUntil;
+
+  /// Zadnji dodir članka (prst, miš). Dodir = „čitam, ne diraj".
+  DateTime? _creditsTouchedAt;
+
+  void _stopCredits() {
+    _creditsCycleFrom = null;
+    _creditsProgress.value = null;
+  }
+
+  /// „Odjavna špica": dok player svira unutar iste sekcije, članak se svakih
+  /// [_kCreditsStep] pomakne jednim mekanim korakom do mjesta koje odgovara
+  /// vremenu — na početku sekcije naslov je pod app barom, na kraju je dno
+  /// teksta na ~60 % ekrana, a onda skok na sljedeću sekciju preuzme
+  /// `_onVideoPosition`. Između koraka tekst stoji (čita se), a tanka traka
+  /// na dnu članka se puni i najavljuje sljedeći pomak.
+  ///
+  /// Do v2.0.171 je špica klizila neprekidno (`animateTo` 5×/s). Čitanje
+  /// pokretnog teksta je naporno, a na iOS Safariju bez cross-origin
+  /// izolacije rasterizacija ide na glavnoj niti, pa je stalno klizanje
+  /// dugog članka gušilo i ostatak UI-ja.
   ///
   /// Samo naprijed: korisnik koji je odčitao unaprijed čeka da ga reprodukcija
-  /// sustigne. Ručni scroll je pauzira [_kCreditsPauseAfterManual]; ako je
-  /// korisnik daleko od cilja (više od ekrana), čita nešto drugo i ne vučemo ga.
+  /// sustigne. Dodir ili ručni scroll je pauzira [_kCreditsPauseAfterTouch];
+  /// ako je korisnik izvan sekcije, čita nešto drugo i ne vučemo ga.
   void _creditsScroll(Duration pos, String ts) {
-    if (_sponsorClip != null) return;
-    // Mobilni tab Magisterium: članak je skriven u IndexedStacku.
-    if (_mobileTab != 0) return;
-    if (_player?.state.playing != true) return;
-    if (!_scrollController.hasClients) return;
+    if (_sponsorClip != null ||
+        // Mobilni tab Magisterium: članak je skriven u IndexedStacku.
+        _mobileTab != 0 ||
+        _player?.state.playing != true ||
+        !_scrollController.hasClients) {
+      return _stopCredits();
+    }
     final now = DateTime.now();
-    final manual = _lastManualScroll;
-    if (manual != null && now.difference(manual) < _kCreditsPauseAfterManual) {
-      return;
+    for (final at in [_lastManualScroll, _creditsTouchedAt]) {
+      if (at != null && now.difference(at) < _kCreditsPauseAfterTouch) {
+        return _stopCredits();
+      }
     }
     // Skok na sekciju (i snap floating headera nakon njega) mora prvo sjesti.
     final jumpAt = _sectionJumpAt;
@@ -1741,34 +1785,101 @@ class _EpisodeContentState extends State<_EpisodeContent>
       return;
     }
     final idx = _sortedSections.indexWhere((s) => s.ts == ts);
-    if (idx < 0) return;
+    if (idx < 0) return _stopCredits();
     final start = _sortedSections[idx].dur;
     final end = idx + 1 < _sortedSections.length
         ? _sortedSections[idx + 1].dur
         : Duration(seconds: widget.data.info.duration);
     final span = (end - start).inMilliseconds;
-    if (span <= 0) return;
-    final progress = ((pos - start).inMilliseconds / span).clamp(0.0, 1.0);
+    if (span <= 0) return _stopCredits();
 
     final b = _sectionBox(ts);
-    if (b == null) return;
+    if (b == null) return _stopCredits();
     final p = _scrollController.position;
     final pinned = _pinnedTop() + 16;
     final visible = p.viewportDimension - pinned;
     final travel = b.height - visible * 0.6;
-    if (travel <= 0) return; // sekcija stane na ekran — nema se kamo klizati
+    // Sekcija stane na ekran — nema se kamo klizati.
+    if (travel <= 0) return _stopCredits();
     final sectionAtTop = p.pixels + (b.top - pinned);
-    final target =
-        (sectionAtTop + progress * travel).clamp(0.0, p.maxScrollExtent);
-    final delta = target - p.pixels;
-    if (delta < 0.5 || delta > visible) return;
-    _scrollLock = now;
-    _scrollController.animateTo(
-      target,
-      // Position stream stiže ~5×/s; linearni korak po tiku daje jednoliko
-      // klizanje bez trzaja.
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.linear,
+    // Korisnik je izvan sekcije: čita nešto drugo.
+    if (p.pixels < sectionAtTop - visible ||
+        p.pixels > sectionAtTop + b.height) {
+      return _stopCredits();
+    }
+    double targetAt(Duration t) {
+      final progress = ((t - start).inMilliseconds / span).clamp(0.0, 1.0);
+      return (sectionAtTop + progress * travel).clamp(0.0, p.maxScrollExtent);
+    }
+
+    var from = _creditsCycleFrom;
+    // Novi ciklus, ili je korisnik premotao unatrag.
+    if (from == null || pos < from) from = _creditsCycleFrom = pos;
+    final elapsed = pos - from;
+
+    if (elapsed >= _kCreditsStep) {
+      _creditsCycleFrom = pos;
+      final delta = targetAt(pos) - p.pixels;
+      if (delta >= 8) {
+        // Korak nikad dulji od tri četvrtine ekrana — oko mora naći redak
+        // koji je upravo čitalo.
+        final to = p.pixels + math.min(delta, visible * 0.75);
+        _creditsAnimatingUntil =
+            now.add(_kCreditsStepAnim + const Duration(milliseconds: 150));
+        _scrollLock = now;
+        _scrollController.animateTo(
+          to,
+          duration: _kCreditsStepAnim,
+          curve: Curves.easeInOutCubic,
+        );
+      }
+      _creditsProgress.value = 0;
+      return;
+    }
+    // Traka se puni samo ako će se na kraju ciklusa nešto i pomaknuti —
+    // korisnik koji je odčitao unaprijed ne treba najavu koraka koji neće doći.
+    final willMove = targetAt(from + _kCreditsStep) - p.pixels >= 8;
+    _creditsProgress.value = willMove
+        ? elapsed.inMilliseconds / _kCreditsStep.inMilliseconds
+        : null;
+  }
+
+  /// Članak s trakom špice na dnu. Dodir bilo gdje u članku je pauzira —
+  /// `Listener` ne hvata gestu, pa tapovi i scroll rade kao i prije.
+  Widget _withCreditsBar(Widget scrollBody) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        _creditsTouchedAt = DateTime.now();
+        _stopCredits();
+      },
+      child: Stack(
+        children: [
+          scrollBody,
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: RepaintBoundary(
+                child: ValueListenableBuilder<double?>(
+                  valueListenable: _creditsProgress,
+                  builder: (context, v, _) {
+                    if (v == null) return const SizedBox.shrink();
+                    final scheme = Theme.of(context).colorScheme;
+                    return LinearProgressIndicator(
+                      value: v.clamp(0.0, 1.0),
+                      minHeight: 3,
+                      backgroundColor: scheme.outlineVariant.withAlpha(60),
+                      color: scheme.primary.withAlpha(170),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1782,6 +1893,8 @@ class _EpisodeContentState extends State<_EpisodeContent>
         now.difference(scLock) < const Duration(milliseconds: 300)) {
       return;
     }
+    final stepUntil = _creditsAnimatingUntil;
+    if (stepUntil != null && now.isBefore(stepUntil)) return;
     _lastManualScroll = now;
     _updateActiveSectionFromScroll();
   }
@@ -1808,6 +1921,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
   static const _scrollAlignment = 0.18;
 
   void _scrollToSection(String timestamp) {
+    _stopCredits();
     _sectionJumpAt = DateTime.now();
     _sectionJumpTs = timestamp;
     _readingAnchor = null;
@@ -2583,11 +2697,13 @@ class _EpisodeContentState extends State<_EpisodeContent>
           ]
         : const [];
 
-    final scrollBody = CustomScrollView(
-      controller: _scrollController,
-      slivers: useParallel
-          ? [appBar, ...parallelSlivers]
-          : [appBar, standardContent],
+    final scrollBody = _withCreditsBar(
+      CustomScrollView(
+        controller: _scrollController,
+        slivers: useParallel
+            ? [appBar, ...parallelSlivers]
+            : [appBar, standardContent],
+      ),
     );
 
     // Mobile Magisterium tab — zasebni scroll view s istim SliverAppBar patternom
