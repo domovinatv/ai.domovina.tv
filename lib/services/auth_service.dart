@@ -177,7 +177,8 @@ class AuthService extends ChangeNotifier {
 
   bool _initialized = false;
 
-  /// Pozove se iz main.dart NAKON Supabase.initialize() + signInAnonymously().
+  /// Pozove se iz main.dart NAKON Supabase.initialize(). Bez sesije je
+  /// `_user == null` (gost) — anonimne prijave su ugašene.
   /// Pretplaća se na auth state changes i drži _user u syncu.
   Future<void> init() async {
     if (_initialized) return;
@@ -593,11 +594,7 @@ class AuthService extends ChangeNotifier {
       // Sesija je možda već server-side mrtva — lokalni cleanup je dovoljan.
       log('deleteAccount signOut: $e');
     }
-    try {
-      await client.auth.signInAnonymously();
-    } catch (e) {
-      log('deleteAccount: anon re-signin failed — $e');
-    }
+    // Bez nove anonimne sesije: korisnik nastavlja kao gost.
     return AuthFlowResult(
         AuthFlowStatus.success, appStrings.serviceAccountDeleted);
   }
@@ -607,9 +604,8 @@ class AuthService extends ChangeNotifier {
     final client = _client();
     if (client == null) return;
     try {
+      // Odjava ostavlja gosta bez sesije (nema nove anonimne prijave).
       await client.auth.signOut();
-      // Odmah kreiraj novu anonymous sesiju da app ostane funkcionalan.
-      await client.auth.signInAnonymously();
       if (context.mounted) {
         _snack(context, appStrings.serviceSignedOutGuest);
       }

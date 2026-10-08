@@ -7,8 +7,10 @@ import '../../main.dart' show log;
 import '../../models/channel_detail.dart';
 import '../../models/sponsor_offer.dart';
 import '../../models/sponsor_topic.dart';
+import '../../onboarding/ui/auth_sheet.dart';
 import '../../pinka_sdk/pinka_sdk.dart';
 import '../../router/nav.dart';
+import '../../services/auth_service.dart';
 import '../../services/channel_cache.dart';
 import '../../services/sponsored_moments_service.dart';
 import '../../services/url_sync.dart';
@@ -138,8 +140,20 @@ class _SponsorEpisodeScreenState extends State<SponsorEpisodeScreen> {
       _formError = null;
     });
     final client = PinkaClient.instance;
+    // Sesija je mogla nestati između odabira trenutka i slanja forme. Forma
+    // živi u `_formData` i preživi prijavu unutar sheeta (OTP, passkey);
+    // web OAuth je full-page redirect i nju NE preživi — zato `_pick` traži
+    // prijavu prije forme, a ovo je samo osigurač.
+    if (!AuthService.instance.isSignedIn && !await _signIn()) {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _formError = l.sponsorSignInRequired;
+        });
+      }
+      return;
+    }
     try {
-      await client.ensureSession();
       var order = draft.order;
       final logo = draft.logo;
       if (logo != null) {
@@ -203,6 +217,16 @@ class _SponsorEpisodeScreenState extends State<SponsorEpisodeScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l.sponsorSlotTaken)));
       _loadOffers();
+    } on PinkaLoginRequired {
+      // Backend ne vidi pravi račun (anonimna sesija, istekao token).
+      log('SponsorCheckout: login_required');
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _formError = l.sponsorSignInRequired;
+      });
+      // Prijavljenom korisniku sheet ne bi ponudio ništa novo.
+      if (!AuthService.instance.isSignedIn) await _signIn();
     } on PinkaSponsorRejected catch (e) {
       log('SponsorCheckout: rejected $e');
       if (!mounted) return;
@@ -223,6 +247,32 @@ class _SponsorEpisodeScreenState extends State<SponsorEpisodeScreen> {
         _formError = l.sponsorCheckoutFailed;
       });
     }
+  }
+
+  /// Sponzorski checkout (i upload loga) traži pravi račun — gost i
+  /// anonimna sesija dobivaju `login_required`. Vraća je li korisnik nakon
+  /// sheeta prijavljen.
+  Future<bool> _signIn() async {
+    final l = AppLocalizations.of(context);
+    await showAuthSheet(
+      context,
+      headlineOverride: l.sponsorSignInHeadline,
+      subtitleOverride: l.sponsorSignInSubtitle,
+    );
+    return AuthService.instance.isSignedIn;
+  }
+
+  /// Odabir trenutka vodi na formu tek s pravim računom: prijava PRIJE
+  /// forme, jer web OAuth je full-page redirect i upisana forma ga ne bi
+  /// preživjela.
+  Future<void> _pick(SponsorOffer offer) async {
+    setState(() {
+      _selected = offer;
+      _formError = null;
+    });
+    if (!AuthService.instance.isSignedIn && !await _signIn()) return;
+    if (!mounted || _selected?.slotKey != offer.slotKey) return;
+    setState(() => _phase = _Phase.form);
   }
 
   /// `invalid_sponsor:<polje>` → naziv polja kako ga korisnik vidi u formi.
@@ -423,13 +473,7 @@ class _SponsorEpisodeScreenState extends State<SponsorEpisodeScreen> {
             selected: o.slotKey == _selected?.slotKey,
             onListen: () =>
                 drillDown(context, '/v/${widget.youtubeId}/t/${o.start}'),
-            onPick: o.state.isBuyable
-                ? () => setState(() {
-                    _selected = o;
-                    _formError = null;
-                    _phase = _Phase.form;
-                  })
-                : null,
+            onPick: o.state.isBuyable ? () => _pick(o) : null,
           ),
         ),
     ];

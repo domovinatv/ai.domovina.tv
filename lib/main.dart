@@ -105,29 +105,15 @@ void main() async {
       anonKey: _supabaseAnonKey,
       debug: false,
     );
-    // Anonymous sign-in ako nema postojeće sesije. Trigger backend-side
-    // (on_auth_user_created) automatski kreira profile red.
-    final client = Supabase.instance.client;
-    // Ako URL nosi auth parametre (povratak s magic link / OAuth redirecta),
-    // NE prijavljuj anonimno — inače anon sesija pregazi/utrkuje stvarnu sesiju
-    // koja stiže iz URL-a → /auth/callback zaglavi na "Prijava u tijeku".
-    final hasAuthCallback = kIsWeb &&
-        (Uri.base.fragment.contains('access_token') ||
-            Uri.base.queryParameters.containsKey('code') ||
-            Uri.base.path.contains('/auth/callback') ||
-            Uri.base.path.contains('/login-callback'));
-    if (client.auth.currentUser == null && !hasAuthCallback) {
-      try {
-        await client.auth.signInAnonymously();
-        log('Supabase: signed in anonymously');
-      } catch (e) {
-        log('Supabase: anonymous sign-in failed — $e');
-      }
-    } else if (hasAuthCallback) {
-      log('Supabase: auth callback URL detektiran — preskačem anon sign-in');
-    } else {
-      log('Supabase: restored session for ${client.auth.currentUser?.id}');
-    }
+    // Bez sesije = gost: sve javno se čita anon ključem, a gostujuća
+    // donacija ide bez prijave. Anonimne prijave su ugašene (8.10.2026.,
+    // domovina-api ugovor v2 §9) — klijent NIKAD ne zove signInAnonymously.
+    // Postojeće anonimne sesije se i dalje vraćaju dok ne isteknu.
+    final user = Supabase.instance.client.auth.currentUser;
+    log(user == null
+        ? 'Supabase: no session — guest'
+        : 'Supabase: restored session for ${user.id} '
+            '(anon=${user.isAnonymous})');
   } else {
     log('Supabase: SUPABASE_URL / SUPABASE_ANON_KEY not set; running offline');
   }

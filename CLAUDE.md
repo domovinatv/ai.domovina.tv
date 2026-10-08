@@ -285,6 +285,29 @@ ili duplo (dvije sestre primijene isti inset) ili nula (sve se sakriju).
 
 Prolaz kroz auth UI/UX + otvoreni backlog: `docs/auth-ux-backlog.md`.
 
+### Bez anonimnih prijava — gost nema sesiju (od 8.10.2026., nedeployano)
+
+Anonimne Supabase prijave su ugašene (99 % korisnika bilo je anonimno, 3
+konverzije). Bez sesije korisnik je **gost**: javno čita anon ključem, a
+donacija ide gostujućom granom `pinka-contribute` (Supabase klijent sam šalje
+anon ključ kao bearer; limit 30/sat/IP → `rate_limited`). Ugovor:
+`domovina-api/docs/sponzorski-trenuci-ugovor.md` §9. Postojeće anonimne
+sesije rade dok ne isteknu (`AuthService.isAnonymous` je `true` i za gosta).
+
+**Rule**: klijent NIKAD ne zove `signInAnonymously` — ni pri pokretanju, ni
+nakon odjave/brisanja računa, ni prije edge funkcije. Čuva
+`test/no_anonymous_sign_in_test.dart`. Što traži pravi račun (mjesto na zidu,
+sponzorski checkout, upload loga) dobiva `401 login_required` →
+`PinkaLoginRequired` i nudi prijavu (`onSignInRequested` / `showAuthSheet`),
+nikad generičku grešku. Sponzorski checkout traži prijavu PRIJE forme — web
+OAuth je full-page redirect i upisana forma ga ne bi preživjela.
+
+**Rule (redoslijed)**: ovaj frontend NE ide u produkciju prije koraka 1
+backendovog redoslijeda (`domovina-api` zaključak §7) — stari backend
+donaciju bez sesije odbija. Turnstile namjerno NIJE ugrađen (iframe pod našim
+COEP-om radi samo u Chromiumu, native nema SDK), pa `TURNSTILE_SECRET_KEY` na
+backendu mora ostati nepostavljen.
+
 ### Backend placement — Cloudflare Worker vs Supabase Edge Function
 
 **Rule (decide by purpose):** does the backend code read/write our Postgres

@@ -4207,6 +4207,14 @@
       }
     }
   },
+  "pinkaSlotSignInRequired": "Za rezervaciju mjesta na zidu prijavi se. Običnu donaciju možeš poslati i bez prijave.",
+  "@pinkaSlotSignInRequired": {
+    "description": "Mjesto na zidu (kvadratić, sjedalo) traži račun; gost dobiva login_required."
+  },
+  "pinkaGuestRateLimited": "Previše uplata s ove mreže u zadnjih sat vremena. Pokušaj malo kasnije ili se prijavi.",
+  "@pinkaGuestRateLimited": {
+    "description": "Gostujuća donacija: backend vratio rate_limited (30 na sat po IP-u)."
+  },
   "pinkaSlotTakenError": "Netko je bio brži — taj je kvadratić upravo zauzet. Odaberi drugi.",
   "@pinkaSlotTakenError": {
     "description": "Pogreška kad server odbije rezervaciju jer je mjesto u međuvremenu zauzeto (409 slot_taken)."
@@ -5428,6 +5436,18 @@
   "sponsorTooManyHolds": "Već imaš tri neplaćene narudžbe. Plati jednu ili pričekaj da istekne.",
   "@sponsorTooManyHolds": {
     "description": "409 too_many_holds."
+  },
+  "sponsorSignInRequired": "Za narudžbu sponzorskog trenutka prijavi se. Upisani podaci ostaju u obrascu.",
+  "@sponsorSignInRequired": {
+    "description": "Sponzorski checkout traži račun; poruka kad prijava nije dovršena."
+  },
+  "sponsorSignInHeadline": "Prijavi se za narudžbu",
+  "@sponsorSignInHeadline": {
+    "description": "Naslov auth sheeta otvorenog iz sponzorskog checkouta."
+  },
+  "sponsorSignInSubtitle": "Narudžba, račun i stanje plaćanja vezani su uz tvoj račun.",
+  "@sponsorSignInSubtitle": {
+    "description": "Podnaslov auth sheeta iz sponzorskog checkouta."
   },
   "sponsorCheckoutFailed": "Narudžbu nije moguće kreirati. Pokušaj ponovno.",
   "@sponsorCheckoutFailed": {

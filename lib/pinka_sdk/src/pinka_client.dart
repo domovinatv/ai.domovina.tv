@@ -173,18 +173,12 @@ class PinkaClient {
     }
   }
 
-  /// Osiguraj barem anonimnu sesiju prije poziva edge fn-a.
-  Future<void> ensureSession() async {
-    final auth = _client.auth;
-    if (auth.currentSession != null) return;
-    try {
-      await auth.signInAnonymously();
-    } catch (e) {
-      _log('anon sign-in failed — $e');
-    }
-  }
-
   /// Kreira pending doprinos + payment intent na rail-u; vraća SEPA/EPC podatke.
+  ///
+  /// Gost (bez sesije) donira bez prijave — klijent tada sam šalje anon ključ
+  /// kao bearer, a backend vodi gostujuću granu (limit po IP-u). Anonimna
+  /// prijava se NE radi (ugovor v2 §9). Gost s [slotKeys] dobiva
+  /// [PinkaLoginRequired]: mjesto traži pravi račun.
   /// Ime/poruka/poveznica se šalju samo kad NIJE anonimno (zid skriva anonimne).
   ///
   /// [linkUrl] je MOST prema zasebnom stupcu `contributions.link_url`: edge
@@ -202,7 +196,6 @@ class PinkaClient {
     bool anonymous = false,
     List<String>? slotKeys,
   }) async {
-    await ensureSession();
     final data = await _invokeContribute({
       'campaign_id': campaignId,
       'amount_cents': amountCents,
@@ -222,14 +215,15 @@ class PinkaClient {
   /// Odgovor je isti kao za donaciju, pa ga prikazuje isti SEPA blok
   /// ([PinkaSepaQr]); `holdExpiresAt` kaže do kada je trenutak zaključan.
   ///
-  /// Baca [PinkaSlotTaken] (409 `slot_taken`, netko je bio brži) ili
-  /// [PinkaSponsorRejected] (validacija, `too_many_holds`, rail nedostupan).
+  /// Baca [PinkaSlotTaken] (409 `slot_taken`, netko je bio brži),
+  /// [PinkaLoginRequired] (401 — gost ili anonimna sesija; checkout traži
+  /// pravi račun) ili [PinkaSponsorRejected] (validacija, `too_many_holds`,
+  /// rail nedostupan).
   Future<PinkaContributionIntent> contributeSponsor({
     required String campaignId,
     required List<String> slotKeys,
     required PinkaSponsorOrder order,
   }) async {
-    await ensureSession();
     final data = await _invokeContribute({
       'campaign_id': campaignId,
       'slot_keys': slotKeys,
@@ -283,6 +277,7 @@ class PinkaClient {
       final m = RegExp(r'slot_taken:(\S+)').firstMatch(err);
       throw PinkaSlotTaken(m?.group(1));
     }
+    if (code == 'login_required') throw const PinkaLoginRequired();
     if (sponsor) {
       throw PinkaSponsorRejected(
         code,
@@ -298,7 +293,6 @@ class PinkaClient {
   /// dohvaća tuđi URL. `null` na bilo što (nema previewa, greška, limit).
   Future<PinkaLinkPreview?> linkPreview(String url) async {
     try {
-      await ensureSession();
       final res = await _client.functions.invoke(
         config.linkPreviewFn,
         body: {'url': url},
@@ -375,6 +369,15 @@ class PinkaClient {
     if (data['error'] != null) throw PinkaFailure(data['error'].toString());
     return PinkaOnchainConfirm.fromJson(data);
   }
+}
+
+/// `401 login_required` — gost (bez sesije) je tražio nešto što traži pravi
+/// račun: rezervaciju mjesta (`slot_keys`: kvadratić, sjedalo) ili sponzorski
+/// checkout. UI tu nudi prijavu, ne generičku grešku.
+class PinkaLoginRequired implements Exception {
+  const PinkaLoginRequired();
+  @override
+  String toString() => 'PinkaLoginRequired';
 }
 
 class PinkaFailure implements Exception {

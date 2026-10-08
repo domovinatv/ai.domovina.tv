@@ -106,7 +106,7 @@ flutter test test/sponsored_moment_contract_test.dart test/sponsored_moments_tes
 node scripts/test-social-tags.mjs http://localhost:8788   # worker lokalno (vidi gore) ili produkcija nakon deploya
 ```
 
-## Gašenje anonimnih prijava — audit frontenda (8.10.2026., nije implementirano)
+## Gašenje anonimnih prijava — audit frontenda (8.10.2026., implementirano, nedeployano)
 
 Backend je u `domovina-api` `6d6947e` (ugovor v2 §9, zaključak §7) prešao na
 gostujuću donaciju: klijent **nigdje** ne smije zvati `signInAnonymously`, a
@@ -141,6 +141,29 @@ stari produkcijski backend donaciju bez sesije odbija.
   (isti mehanizam kao YouTube embed, CLAUDE.md „COEP zabranjuje SVAKI tuđi iframe").
 - iOS/Android: Turnstile nema nativni SDK; samo WebView.
 
-Prijedlog: frontend bez Turnstilea, `TURNSTILE_SECRET_KEY` na backendu
-nepostavljen; limit 30 / sat / IP štiti donaciju bez mjesta, a mjesta (P9) već
-traže račun. Odluka čeka korisnika.
+**Odluka (8.10.2026.): bez Turnstilea.** Frontend ne šalje token,
+`TURNSTILE_SECRET_KEY` na backendu MORA ostati nepostavljen (inače svaka
+gostujuća donacija dobije `403 captcha_failed`). Limit 30 / sat / IP štiti
+donaciju bez mjesta, a mjesta (P9) već traže račun.
+
+### Implementacija (8.10.2026.)
+
+- `signInAnonymously` maknut iz `main.dart`, `AuthService.signOut`,
+  `AuthService.deleteAccount`; `PinkaClient.ensureSession` je obrisan
+  (`contribute`, `contributeSponsor`, `linkPreview` idu bez njega).
+- `PinkaClient._invokeContribute`: `login_required` → `PinkaLoginRequired`
+  (i za donaciju i za sponzora); `rate_limited` ostaje `PinkaFailure` s kodom.
+- `PinkaContributePanel`: `login_required` → poruka
+  `pinkaSlotSignInRequired` + gumb „Prijavi se" (`onSignInRequested`), u SEPA
+  i on-chain grani; `rate_limited` → `pinkaGuestRateLimited`.
+- `SponsorEpisodeScreen`: odabir trenutka traži prijavu prije forme
+  (`_pick`); `_submit` ponovno provjeri račun i obradi `login_required` bez
+  gubitka `_formData`. Nakon web OAuth redirecta korisnik se vraća na kartu i
+  ponovno bira trenutak (odabir se ne pamti preko redirecta).
+- Testovi: `test/no_anonymous_sign_in_test.dart` (tripwire, provjereno da
+  pada), `sponsored_moments_test.dart` (gost bez sesije šalje samo
+  `pinka-contribute` s `Bearer <anon>`, `login_required`, `rate_limited`),
+  `pinka_contribute_panel_test.dart` (gumb prijave na `login_required`).
+
+**Nije provjereno**: lokalni e2e protiv backenda `6d6947e` (gost donacija bez
+sesije, gost s kvadratićem → 401, sponzorski checkout s prijavom).

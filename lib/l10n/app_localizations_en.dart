@@ -3365,6 +3365,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pinkaSlotSignInRequired =>
+      'Sign in to reserve a spot on the wall. A regular donation works without signing in.';
+
+  @override
+  String get pinkaGuestRateLimited =>
+      'Too many payments from this network in the last hour. Try again a bit later or sign in.';
+
+  @override
   String get pinkaSlotTakenError =>
       'Someone was faster — that square has just been taken. Pick another one.';
 
@@ -4359,6 +4367,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sponsorTooManyHolds =>
       'You already have three unpaid orders. Pay one or wait for it to expire.';
+
+  @override
+  String get sponsorSignInRequired =>
+      'Sign in to order a sponsored moment. What you entered stays in the form.';
+
+  @override
+  String get sponsorSignInHeadline => 'Sign in to order';
+
+  @override
+  String get sponsorSignInSubtitle =>
+      'The order, invoice and payment status are tied to your account.';
 
   @override
   String get sponsorCheckoutFailed =>

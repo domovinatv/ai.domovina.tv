@@ -3387,6 +3387,14 @@ class AppLocalizationsHr extends AppLocalizations {
   }
 
   @override
+  String get pinkaSlotSignInRequired =>
+      'Za rezervaciju mjesta na zidu prijavi se. Običnu donaciju možeš poslati i bez prijave.';
+
+  @override
+  String get pinkaGuestRateLimited =>
+      'Previše uplata s ove mreže u zadnjih sat vremena. Pokušaj malo kasnije ili se prijavi.';
+
+  @override
   String get pinkaSlotTakenError =>
       'Netko je bio brži — taj je kvadratić upravo zauzet. Odaberi drugi.';
 
@@ -4406,6 +4414,17 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get sponsorTooManyHolds =>
       'Već imaš tri neplaćene narudžbe. Plati jednu ili pričekaj da istekne.';
+
+  @override
+  String get sponsorSignInRequired =>
+      'Za narudžbu sponzorskog trenutka prijavi se. Upisani podaci ostaju u obrascu.';
+
+  @override
+  String get sponsorSignInHeadline => 'Prijavi se za narudžbu';
+
+  @override
+  String get sponsorSignInSubtitle =>
+      'Narudžba, račun i stanje plaćanja vezani su uz tvoj račun.';
 
   @override
   String get sponsorCheckoutFailed =>

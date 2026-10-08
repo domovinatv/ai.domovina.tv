@@ -127,8 +127,7 @@ class SponsoredMomentsService {
   }
 
   /// Upload loga prije plaćanja (ugovor §4). Vraća put za `logo_path`.
-  /// Traži sesiju (anonimna je dovoljna) — pozivatelj je osigura preko
-  /// `PinkaClient.ensureSession`.
+  /// Traži pravi račun — `SponsorEpisodeScreen` prijavu traži prije forme.
   Future<String> uploadLogo(Uint8List bytes, String extension) async {
     final ext = extension.toLowerCase();
     if (!SponsorCampaign.logoExtensions.contains(ext)) {

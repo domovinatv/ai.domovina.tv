@@ -90,6 +90,21 @@ class _CapturingClient extends PinkaClient {
   }
 }
 
+/// Gost s mjestom na zidu: backend vraća `401 login_required`.
+class _LoginRequiredClient extends PinkaClient {
+  @override
+  Future<PinkaContributionIntent> contribute({
+    required String campaignId,
+    required int amountCents,
+    String? displayName,
+    String? message,
+    String? linkUrl,
+    bool anonymous = false,
+    List<String>? slotKeys,
+  }) async =>
+      throw const PinkaLoginRequired();
+}
+
 /// SEPA tok bez mreže: `contribute` vrati intent sa status URL-om, RPC
 /// `contribution_status` čita [rpcState]. `waitForPaid` je PRAVI (s fake
 /// asyncom), pa test mjeri i da petlja nema limit.
@@ -601,5 +616,36 @@ void main() {
       expect(st('expired').isReceived, isFalse);
       expect(parseIntentStatus({'stage': 'x'}), isNull);
     });
+  });
+
+  testWidgets('mjesto bez računa: login_required nudi prijavu, ne grešku',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var signInCalls = 0;
+    await tester.pumpWidget(_wrap(PinkaContributePanel(
+      campaign: _campaign,
+      client: _LoginRequiredClient(),
+      config: PinkaConfig.defaults,
+      selectedSlotKey: 'grid@1',
+      selectedSlotPriceCents: 500,
+      selectedSlotLabel: 'Zlatni krug',
+      onSignInRequested: (_) async => signInCalls++,
+    )));
+    await tester.pumpAndSettle();
+    final before = find.text('Prijavi se').evaluate().length;
+
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Za rezervaciju mjesta na zidu prijavi se'),
+        findsOneWidget);
+    expect(find.text('Uplatu nije bilo moguće pripremiti. Pokušaj ponovno.'),
+        findsNothing);
+    expect(find.text('Prijavi se').evaluate().length, before + 1);
+
+    await tester.tap(find.text('Prijavi se').last);
+    await tester.pumpAndSettle();
+    expect(signInCalls, 1);
   });
 }

@@ -150,6 +150,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
 
   String? _error;
   String? _walletNote;
+
+  /// Backend je odbio mjesto jer gost nema račun (`login_required`) — uz
+  /// grešku se nudi prijava umjesto „pokušaj ponovno".
+  bool _needsSignIn = false;
   PinkaContributionIntent? _intent;
 
   /// Živi rail progress SEPA intenta (stepper "Korak M/N" ispod QR-a).
@@ -296,7 +300,16 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     if (open == null) return;
     await open(context);
     if (!mounted) return;
-    setState(_prefillFromAuth); // i sakrij "Prijavi se" ako je prijava uspjela
+    setState(() {
+      _prefillFromAuth(); // i sakrij "Prijavi se" ako je prijava uspjela
+      // Ne po imenu: prijavljen račun zna nemati display name. Ako je
+      // korisnik odustao, sljedeće slanje ionako opet dobije login_required.
+      if (_needsSignIn) {
+        _needsSignIn = false;
+        _error = null;
+        _walletNote = null;
+      }
+    });
   }
 
   /// Fokus na prazno "Ostalo" polje predispuni predloženim iznosom (19,91),
@@ -392,6 +405,17 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       });
       widget.onSlotConflict?.call(e.slotKey ?? widget.selectedSlotKey);
       return null;
+    } on PinkaLoginRequired {
+      // Mjesto (kvadratić, sjedalo) traži pravi račun; obična donacija ne.
+      if (!mounted) return null;
+      setState(() {
+        _phase = _Phase.idle;
+        _walletPhase = _WalletPhase.idle;
+        _needsSignIn = true;
+        _error = appStrings.pinkaSlotSignInRequired;
+        _walletNote = appStrings.pinkaSlotSignInRequired;
+      });
+      return null;
     }
   }
 
@@ -437,6 +461,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     setState(() {
       _phase = _Phase.creating;
       _error = null;
+      _needsSignIn = false;
     });
     try {
       final intent = await _createContribution();
@@ -474,7 +499,10 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       if (!mounted) return;
       setState(() {
         _phase = _Phase.idle;
-        _error = appStrings.pinkaPaymentCreateFailed;
+        // Kod se uspoređuje po prefiksu do prve dvotočke (ugovor).
+        _error = e is PinkaFailure && e.code.split(':').first == 'rate_limited'
+            ? appStrings.pinkaGuestRateLimited
+            : appStrings.pinkaPaymentCreateFailed;
       });
     }
   }
@@ -601,6 +629,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
     if (_hasSlot && !_validateLink(onchain: true)) return;
     setState(() {
       _walletNote = null;
+      _needsSignIn = false;
       _walletPhase = _WalletPhase.connecting;
     });
     try {
@@ -724,6 +753,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
           Text(_error!,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.error)),
+          if (_needsSignIn) _signInForSlotButton(theme),
         ],
         const SizedBox(height: 12),
         if (onchain) _onchainSection(theme) else _sepaButton(theme, creating),
@@ -855,6 +885,27 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Izlaz iz `login_required`: prijava preko hosta. Bez hosta (SDK bez
+  /// auth flowa) ostaje samo poruka.
+  Widget _signInForSlotButton(
+    ThemeData theme, {
+    Alignment alignment = Alignment.centerLeft,
+  }) {
+    if (widget.onSignInRequested == null) return const SizedBox.shrink();
+    return Align(
+      alignment: alignment,
+      child: TextButton.icon(
+        onPressed: _signIn,
+        style: TextButton.styleFrom(
+          visualDensity: VisualDensity.compact,
+          foregroundColor: theme.colorScheme.tertiary,
+        ),
+        icon: const Icon(Icons.login, size: 16),
+        label: Text(AppLocalizations.of(context).commonSignIn),
       ),
     );
   }
@@ -1057,6 +1108,8 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            if (_needsSignIn)
+              _signInForSlotButton(theme, alignment: Alignment.center),
           ],
           const SizedBox(height: 12),
           Row(
@@ -1553,6 +1606,7 @@ class _PinkaContributePanelState extends State<PinkaContributePanel> {
       _holdExpiresAt = null;
       _error = null;
       _walletNote = null;
+      _needsSignIn = false;
       _msgCtrl.clear();
     });
     _schedulePreview(); // poruka je obrisana → preview samo iz polja poveznice

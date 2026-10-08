@@ -319,7 +319,7 @@ void main() {
         httpClient: c,
         authOptions: const sb.AuthClientOptions(autoRefreshToken: false),
       );
-      return _SessionlessClient(supa);
+      return PinkaClient(client: supa);
     }
 
     const order = PinkaSponsorOrder(
@@ -378,8 +378,8 @@ void main() {
           headers: {'content-type': 'text/plain'},
         ),
       );
-      final pc = _SessionlessClient(
-        sb.SupabaseClient(
+      final pc = PinkaClient(
+        client: sb.SupabaseClient(
           'http://localhost',
           'anon',
           httpClient: c,
@@ -401,13 +401,66 @@ void main() {
         throwsA(isA<PinkaSlotTaken>()),
       );
     });
+
+    test('gost s mjestom: 401 login_required → PinkaLoginRequired', () async {
+      final c = client(401, {'error': 'login_required'});
+      await expectLater(
+        c.contribute(campaignId: 'x', amountCents: 500, slotKeys: const ['g']),
+        throwsA(isA<PinkaLoginRequired>()),
+      );
+    });
+
+    test('sponzor bez računa: 401 login_required → PinkaLoginRequired', () async {
+      final c = client(401, {'error': 'login_required'});
+      await expectLater(
+        c.contributeSponsor(campaignId: 'x', slotKeys: const ['a'], order: order),
+        throwsA(isA<PinkaLoginRequired>()),
+      );
+    });
+
+    test('gostujući limit: 429 rate_limited → PinkaFailure s kodom', () async {
+      final c = client(429, {'error': 'rate_limited'});
+      await expectLater(
+        c.contribute(campaignId: 'x', amountCents: 500),
+        throwsA(
+          isA<PinkaFailure>().having((e) => e.code, 'code', 'rate_limited'),
+        ),
+      );
+    });
   });
-}
 
-/// Test ne treba GoTrue: preskače anonimnu prijavu.
-class _SessionlessClient extends PinkaClient {
-  _SessionlessClient(sb.SupabaseClient client) : super(client: client);
-
-  @override
-  Future<void> ensureSession() async {}
+  group('gostujuća donacija (bez anonimne prijave)', () {
+    test('bez sesije: samo pinka-contribute, bearer je anon ključ', () async {
+      final requests = <http.BaseRequest>[];
+      final c = MockClient((req) async {
+        requests.add(req);
+        if (!req.url.path.endsWith('/functions/v1/pinka-contribute')) {
+          return http.Response('', 404);
+        }
+        return http.Response(
+          jsonEncode({
+            'contribution_id': 'c1',
+            'iban': 'HR1210010051863000160',
+            'reference': 'HR00 1',
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final pc = PinkaClient(
+        client: sb.SupabaseClient(
+          'http://localhost',
+          'anon-key',
+          httpClient: c,
+          authOptions: const sb.AuthClientOptions(autoRefreshToken: false),
+        ),
+      );
+      await pc.contribute(campaignId: 'x', amountCents: 500);
+      // Nijedan poziv prema GoTrueu (`/auth/v1/signup` = anonimna prijava).
+      expect(requests.map((r) => r.url.path), [
+        '/functions/v1/pinka-contribute',
+      ]);
+      expect(requests.single.headers['Authorization'], 'Bearer anon-key');
+    });
+  });
 }

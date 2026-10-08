@@ -5480,6 +5480,18 @@ abstract class AppLocalizations {
   /// **'Iznos ne smije biti manji od cijene mjesta ({price} €).'**
   String pinkaSlotBelowPrice(String price);
 
+  /// Mjesto na zidu (kvadratić, sjedalo) traži račun; gost dobiva login_required.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za rezervaciju mjesta na zidu prijavi se. Običnu donaciju možeš poslati i bez prijave.'**
+  String get pinkaSlotSignInRequired;
+
+  /// Gostujuća donacija: backend vratio rate_limited (30 na sat po IP-u).
+  ///
+  /// In hr, this message translates to:
+  /// **'Previše uplata s ove mreže u zadnjih sat vremena. Pokušaj malo kasnije ili se prijavi.'**
+  String get pinkaGuestRateLimited;
+
   /// Pogreška kad server odbije rezervaciju jer je mjesto u međuvremenu zauzeto (409 slot_taken).
   ///
   /// In hr, this message translates to:
@@ -6934,6 +6946,24 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Već imaš tri neplaćene narudžbe. Plati jednu ili pričekaj da istekne.'**
   String get sponsorTooManyHolds;
+
+  /// Sponzorski checkout traži račun; poruka kad prijava nije dovršena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za narudžbu sponzorskog trenutka prijavi se. Upisani podaci ostaju u obrascu.'**
+  String get sponsorSignInRequired;
+
+  /// Naslov auth sheeta otvorenog iz sponzorskog checkouta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se za narudžbu'**
+  String get sponsorSignInHeadline;
+
+  /// Podnaslov auth sheeta iz sponzorskog checkouta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Narudžba, račun i stanje plaćanja vezani su uz tvoj račun.'**
+  String get sponsorSignInSubtitle;
 
   /// Checkout error.
   ///
