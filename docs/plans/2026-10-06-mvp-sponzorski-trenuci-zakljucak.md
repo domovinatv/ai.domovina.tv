@@ -167,3 +167,8 @@ donaciju bez mjesta, a mjesta (P9) već traže račun.
 
 **Nije provjereno**: lokalni e2e protiv backenda `6d6947e` (gost donacija bez
 sesije, gost s kvadratićem → 401, sponzorski checkout s prijavom).
+
+## Review nakon produkcije (8.10.2026.)
+
+Nalazi i redoslijed popravaka: [`../2026-10-08-review-sponzorski-trenuci-frontend.md`](../2026-10-08-review-sponzorski-trenuci-frontend.md).
+Backend: `domovina-api/docs/review-2026-10-08-sponzorski-trenuci.md`.
