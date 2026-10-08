@@ -105,3 +105,42 @@ Sada obje grane idu kroz `_invokeContribute` i bacaju `PinkaSlotTaken`.
 flutter test test/sponsored_moment_contract_test.dart test/sponsored_moments_test.dart test/sponsored_moment_layout_test.dart
 node scripts/test-social-tags.mjs http://localhost:8788   # worker lokalno (vidi gore) ili produkcija nakon deploya
 ```
+
+## Gašenje anonimnih prijava — audit frontenda (8.10.2026., nije implementirano)
+
+Backend je u `domovina-api` `6d6947e` (ugovor v2 §9, zaključak §7) prešao na
+gostujuću donaciju: klijent **nigdje** ne smije zvati `signInAnonymously`, a
+sponzorski checkout, logo i svaka rezervacija mjesta traže pravi račun
+(`401 login_required`). Stanje frontenda:
+
+| Mora se mijenjati | Danas | Promjena |
+|---|---|---|
+| `lib/main.dart` (start) | anonimna prijava pri pokretanju | maknuti; bez sesije = gost |
+| `AuthService.signOut` | nakon odjave nova anonimna sesija | odjava ostavi gosta bez sesije |
+| `AuthService.deleteAccount` | isto | isto |
+| `PinkaClient.ensureSession` | anonimna prijava prije donacije / previewa / checkouta | gost donira bez sesije; checkout traži račun |
+| `PinkaContributePanel` s mjestom (grid, sjedalo) | generička greška | `login_required` → postojeći `onSignInRequested` |
+| `SponsorEpisodeScreen` | `ensureSession` pa checkout | prijava prije forme / na `login_required` |
+
+**Već kompatibilno:** `AuthService.isAnonymous` vraća `true` i bez korisnika
+(`?? true`), pa gost traka, paywall, handoff i favoriti nudge rade isto.
+`watch_progress`, favoriti, novčanik i ownership već provjeravaju
+`user == null` i padaju na lokalno. Postojeće anonimne sesije rade do gašenja u
+GoTrueu, a zatim istekom postaju gost bez rušenja.
+
+**Redoslijed je ugovor:** ovaj frontend NE smije u produkciju prije koraka 1
+backendovog redoslijeda (migracije + `pinka-contribute` s gostujućom granom) —
+stari produkcijski backend donaciju bez sesije odbija.
+
+**Turnstile — otvorena odluka.** Ugovor traži token za gostujuću donaciju
+(backend ga provodi tek kad je postavljen `TURNSTILE_SECRET_KEY`). Zamke:
+
+- Web: Turnstile crta iframe s `challenges.cloudflare.com`, a naš
+  `COEP: credentialless` odbija svaki tuđi iframe bez atributa `credentialless`
+  postavljenog prije `src` — radi u Chromeu/Edgeu, **ne u Safariju ni Firefoxu**
+  (isti mehanizam kao YouTube embed, CLAUDE.md „COEP zabranjuje SVAKI tuđi iframe").
+- iOS/Android: Turnstile nema nativni SDK; samo WebView.
+
+Prijedlog: frontend bez Turnstilea, `TURNSTILE_SECRET_KEY` na backendu
+nepostavljen; limit 30 / sat / IP štiti donaciju bez mjesta, a mjesta (P9) već
+traže račun. Odluka čeka korisnika.
