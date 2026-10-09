@@ -168,6 +168,19 @@ funkciju nad cijelim payloadom (95,8 kB za 217 kandidata) — nije napravljeno.
 > unatoč web-bolu, i kad bi Expo bio bolji: `docs/tech-stack-assessment-flutter-vs-expo.md`.
 > TL;DR: ne prepisivati; web zamke su omeđene i dokumentirane.
 
+### Boot splash — miče se SAMO na prvi frame (od 9.10.2026.)
+
+`#boot-intro` u `web/index.html` pokriva sve do `flutter-first-frame`. Fiksni
+timeout od 6 s ga je na Slow 4G micao 13 s prije Fluttera (bijela stranica s
+legal footerom). Pozadina `html` i splasha = `scaffoldBackgroundColor` teme
+(čita `localStorage['theme_mode']`). Mjerenja i odluke:
+`docs/2026-10-09-boot-splash.md`, reprodukcija `scripts/measure-boot.py`.
+
+**Rule**: splash se ne miče timeoutom koji ne zna je li Flutter tu; osigurač
+kreće tek kad je kod aplikacije preuzet. Mijenjaš li boje teme, mijenjaj i
+`--boot-bg` u `index.html`. Opis i linkovi u splashu ostaju u izvornom HTML-u
+(Google OAuth provjera).
+
 ### SharedPreferences crashes on web release builds
 
 `SharedPreferences` throws `MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)` in dart2js release mode. The method channel plugin registration is stripped during minification.

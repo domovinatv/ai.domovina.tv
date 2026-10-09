@@ -45,6 +45,25 @@
        snackbar u lib/services/app_install_banner.dart. -->
   <meta name="apple-itunes-app" content="app-id=6781716801">
 
+  <!-- Boja prije prvog Flutter framea. Splash i <body> nose pozadinu teme koju
+       će Flutter nacrtati (ThemeController: localStorage 'theme_mode', default
+       tamna), pa prijelaz splash → aplikacija nema bljeska, a ni u jednom
+       trenutku nije vidljiva bijela stranica. Boje = AppTheme.dark()/light()
+       scaffoldBackgroundColor. -->
+  <script>
+    try {
+      if (localStorage.getItem('theme_mode') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch (_) {}
+  </script>
+  <style>
+    :root{--boot-bg:#111318;--boot-fg:#e2e2e9;--boot-mark:#fff;--boot-dim:rgba(226,226,233,.62);--boot-track:rgba(255,255,255,.12);}
+    :root[data-theme="light"]{--boot-bg:#faf7f2;--boot-fg:#1a1b20;--boot-mark:#002F6C;--boot-dim:rgba(26,27,32,.62);--boot-track:rgba(0,47,108,.12);}
+    /* Samo html (canvas), ne body: body bi prekrio #legal-footer (z-index:-1). */
+    html{background:var(--boot-bg);}
+  </style>
+
   <!-- Theme -->
   <meta name="theme-color" content="#002F6C">
 
@@ -97,23 +116,42 @@
   <!-- Statički uvod / splash: čitljiv ljudima I crawlerima opis svrhe aplikacije.
        Google OAuth branding verification traži da home page jasno objasni što app
        radi; Flutter SPA inače renderira prazan <body> pa crawler/reviewer ne vidi
-       nikakav tekst. Ovaj blok je u izvornom HTML-u (uvijek vidljiv, bez JS-a) i
-       miče se na 'flutter-first-frame' kad Flutter oboji prvi frame. -->
-  <div id="boot-intro" role="main" aria-label="DOMOVINA.ai">
+       nikakav tekst. Opis i linkovi zato MORAJU ostati u izvornom HTML-u (bez
+       JS-a); vizualno su sekundarni, ispod wordmarka i indikatora.
+       Splash se miče ISKLJUČIVO na 'flutter-first-frame' — ispod njega nema
+       ničega što bi korisnik mogao gledati. Mjerenje i odluke:
+       docs/2026-10-09-boot-splash.md. -->
+  <div id="boot-intro" role="main" aria-label="DOMOVINA.ai" aria-busy="true">
     <style>
-      #boot-intro{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:#002F6C;color:#fff;font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;padding:28px;overflow:auto;}
-      #boot-intro .bi-wrap{max-width:660px;text-align:center;}
-      #boot-intro h1{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:clamp(34px,6vw,54px);margin:0 0 6px;letter-spacing:.5px;}
-      #boot-intro .bi-tag{font-size:clamp(15px,2.4vw,19px);opacity:.92;margin:0 0 22px;font-weight:500;}
-      #boot-intro p{font-size:15px;line-height:1.62;opacity:.92;margin:0 0 14px;}
-      #boot-intro a{color:#fff;}
-      #boot-intro .bi-links{margin-top:20px;font-size:14px;opacity:.85;}
+      #boot-intro{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;background:var(--boot-bg);color:var(--boot-fg);font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;padding:0 24px;overflow:auto;transition:opacity .4s ease;}
+      #boot-intro .bi-main{flex:1 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px 0 32px;}
+      #boot-intro h1{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:clamp(34px,7vw,52px);margin:0;letter-spacing:.3px;color:var(--boot-mark);}
+      #boot-intro h1 span{color:#FF0000;}
+      #boot-intro .bi-tag{font-size:clamp(15px,2.4vw,18px);margin:8px 0 0;font-weight:500;opacity:.9;}
+      #boot-intro .bi-progress{width:min(240px,60vw);height:3px;margin:32px auto 0;border-radius:3px;background:var(--boot-track);overflow:hidden;position:relative;}
+      #boot-intro .bi-progress i{position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:3px;background:#FF0000;animation:bi-slide 1.4s ease-in-out infinite;}
+      @keyframes bi-slide{0%{transform:translateX(-100%)}100%{transform:translateX(290%)}}
+      @media (prefers-reduced-motion:reduce){#boot-intro .bi-progress i{animation:none;width:100%;opacity:.5;}}
+      #boot-intro .bi-load{margin:12px 0 0;font-size:13px;color:var(--boot-dim);min-height:1.5em;}
+      #boot-intro .bi-note{margin:6px auto 0;max-width:340px;font-size:13px;line-height:1.5;color:var(--boot-dim);}
+      #boot-intro .bi-note[hidden]{display:block;visibility:hidden;} /* mjesto ostaje rezervirano: bez skoka wordmarka */
+      #boot-intro button{margin-top:14px;font:600 14px 'Inter',system-ui,sans-serif;color:#fff;background:#002F6C;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;}
+      #boot-intro button[hidden]{display:none;}
+      #boot-intro .bi-about{flex:0 0 auto;max-width:620px;padding:0 0 88px;text-align:center;color:var(--boot-dim);}
+      #boot-intro .bi-about p{font-size:13px;line-height:1.6;margin:0 0 10px;}
+      #boot-intro a{color:inherit;}
+      #boot-intro .bi-links{font-size:13px;margin-top:12px;}
       #boot-intro .bi-links a{margin:0 6px;white-space:nowrap;}
-      #boot-intro .bi-load{margin-top:24px;font-size:13px;opacity:.55;}
     </style>
-    <div class="bi-wrap">
-      <h1>DOMOVINA.ai</h1>
+    <div class="bi-main">
+      <h1>DOMOVINA<span>.ai</span></h1>
       <p class="bi-tag">AI-obrađeni hrvatski katolički podcasti</p>
+      <div class="bi-progress" aria-hidden="true"><i></i></div>
+      <p class="bi-load" id="bi-load" aria-live="polite">Preuzimanje aplikacije…</p>
+      <p class="bi-note" id="bi-note" hidden>Veza je spora. Aplikacija se preuzima samo prvi put; sljedeće otvaranje bit će brzo.</p>
+      <button type="button" id="bi-retry" hidden onclick="location.reload()">Pokušaj ponovno</button>
+    </div>
+    <div class="bi-about">
       <p>DOMOVINA.ai transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije te provjerava njihovu usklađenost s katoličkim naukom (Magisterium AI). Korisnici mogu pretraživati epizode, čitati transkripte i sažetke te slušati obrađeni sadržaj.</p>
       <p>Vlasnici YouTube kanala mogu potvrditi vlasništvo svojega kanala kako bi upravljali svojim sadržajem i isplatama. Za tu potvrdu aplikacija traži isključivo pristup za čitanje (<em>youtube.readonly</em>): provjerava da prijavljeni korisnik upravlja kanalom i pritom ništa ne objavljuje niti mijenja na YouTubeu.</p>
       <div class="bi-links">
@@ -121,7 +159,6 @@
         <a href="/terms">Uvjeti korištenja</a> ·
         <a href="mailto:stepanic.matija@gmail.com">Kontakt</a>
       </div>
-      <p class="bi-load">Učitavanje aplikacije…</p>
     </div>
   </div>
 
@@ -147,18 +184,59 @@
   </footer>
 
   <script>
-    // Makni statički uvod kad Flutter oboji prvi frame; fallback timeout da
-    // nikad trajno ne blokira aplikaciju ako event izostane.
+    // Splash živi dok Flutter ne nacrta prvi frame. Do 9.10.2026. ga je micao
+    // i fiksni timeout od 6 s, a na Slow 4G prvi frame stiže na ~20 s — 13 s
+    // bijele stranice s legal footerom (docs/2026-10-09-boot-splash.md §1).
     (function () {
+      var intro = document.getElementById('boot-intro');
+      if (!intro) return;
+      var load = document.getElementById('bi-load');
+      var note = document.getElementById('bi-note');
+      var retry = document.getElementById('bi-retry');
+      var done = false;
       function hideIntro() {
-        var el = document.getElementById('boot-intro');
-        if (!el) return;
-        el.style.transition = 'opacity .4s ease';
-        el.style.opacity = '0';
-        setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); }, 450);
+        if (done) return;
+        done = true;
+        intro.setAttribute('aria-busy', 'false');
+        intro.style.opacity = '0';
+        setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 450);
       }
       window.addEventListener('flutter-first-frame', hideIntro, { once: true });
-      setTimeout(hideIntro, 6000);
+
+      // Istinite faze: preuzimanje traje dok ne stigne kod aplikacije
+      // (main.dart.wasm, ili main.dart.js na pregledniku bez WasmGC).
+      try {
+        new PerformanceObserver(function (list) {
+          list.getEntries().forEach(function (e) {
+            if (!done && /\/main\.dart\.(wasm|js)(\?|$)/.test(e.name)) {
+              load.textContent = 'Pokretanje…';
+              note.hidden = true;
+              // Osigurač ako event izostane (promjena enginea): kod je stigao,
+              // main() do runApp traje ≤ ~3 s, pa 20 s nikad ne otkrije prazninu.
+              setTimeout(hideIntro, 20000);
+            }
+          });
+        }).observe({ type: 'resource', buffered: true });
+      } catch (_) {}
+
+      setTimeout(function () { if (!done && load.textContent !== 'Pokretanje…') note.hidden = false; }, 8000);
+
+      // Kod koji se nije dao učitati (mreža pukla, skripta 404) → ponudi
+      // ponovni pokušaj umjesto vječnog vrtuljka. Samo do prvog framea.
+      function failed() {
+        if (done) return;
+        load.textContent = 'Učitavanje je zapelo.';
+        note.hidden = true;
+        retry.hidden = false;
+      }
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t.tagName === 'SCRIPT' && /flutter_bootstrap|passkeys_bundle|main\.dart|skwasm|canvaskit/.test(t.src || '')) failed();
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = String((e.reason && (e.reason.message || e.reason)) || '');
+        if (/failed to fetch|networkerror|load failed|wasm|compile|instantiate/i.test(r)) failed();
+      });
     })();
   </script>
 
