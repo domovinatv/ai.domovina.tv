@@ -79,26 +79,30 @@ class CdnJsonCache {
   ///
   /// [onUpdate] se zove samo kad je revalidacija donijela DRUGAČIJE tijelo od
   /// vraćenog.
+  ///
+  /// [bucket] je [StoreBucket.mutable] za channel-level datoteke, a
+  /// [StoreBucket.episode] za `episode.json` (ista strategija, ograničen broj).
   Future<String> getMutable(
     String url, {
     void Function(String body)? onUpdate,
+    StoreBucket bucket = StoreBucket.mutable,
   }) async {
-    if (!enabled) return _fetchOrThrow(url);
+    if (!enabled || !_store.supports(bucket)) return _fetchOrThrow(url);
 
-    final stored = await _store.get(StoreBucket.mutable, url);
+    final stored = await _store.get(bucket, url);
     if (stored == null) {
       final res = await _httpGet(url);
       if (res.statusCode != 200) {
         throw Exception('HTTP ${res.statusCode}: $url');
       }
       _revalidated.add(url);
-      unawaited(_store.put(StoreBucket.mutable, url,
+      unawaited(_store.put(bucket, url,
           StoredEntry(res.body, etag: res.headers['etag'])));
       return res.body;
     }
 
     if (_revalidated.add(url)) {
-      unawaited(_revalidate(url, stored, onUpdate));
+      unawaited(_revalidate(url, stored, onUpdate, bucket));
     }
     return stored.body;
   }
@@ -107,6 +111,7 @@ class CdnJsonCache {
     String url,
     StoredEntry stored,
     void Function(String body)? onUpdate,
+    StoreBucket bucket,
   ) async {
     try {
       final etag = stored.etag;
@@ -116,7 +121,7 @@ class CdnJsonCache {
               : null);
       if (res.statusCode != 200) return; // 304, 404, 5xx: ostaje spremljeno
       if (res.body == stored.body) return;
-      await _store.put(StoreBucket.mutable, url,
+      await _store.put(bucket, url,
           StoredEntry(res.body, etag: res.headers['etag']));
       onUpdate?.call(res.body);
     } catch (e) {

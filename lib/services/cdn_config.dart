@@ -48,6 +48,12 @@ class CdnConfig {
       '$base/channels/images/$channelId/avatar_cover.jpg?${_channelCacheBuster()}';
 
   // JSON podaci
+
+  /// Objedinjena datoteka epizode (vidi `EpisodeBundle`): popis postojećih
+  /// datoteka + sadržaj za prvi prikaz. Promjenjiva, pa bez `?v=` kao
+  /// listinzi (origin `max-age=60` + ETag).
+  static String episodeBundleUrl(String ytId) =>
+      '$base/data/$ytId/episode.json';
   static String infoUrl(String ytId) => '$base/data/$ytId/info.json';
   static String summaryUrl(String ytId) => '$base/data/$ytId/summary.json';
   static String outlineUrl(String ytId) => '$base/data/$ytId/outline.json';

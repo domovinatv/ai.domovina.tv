@@ -10,6 +10,7 @@ import '../../models/episode_status.dart';
 import '../../models/channel_index.dart';
 import '../../services/app_install_banner.dart';
 import '../../services/cdn_config.dart';
+import '../../services/episode_prefetch.dart';
 import '../../services/channel_cache.dart';
 import '../../services/local_prefs.dart';
 import '../../services/page_meta.dart';
@@ -332,6 +333,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
   @override
   void dispose() {
     _graceTimer?.cancel();
+    _idlePrefetchTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -344,8 +346,26 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
     final poolFinal = HomeFeed.heroPoolComplete(cache) ||
         (_graceElapsed && HomeFeed.hasMinimumData(cache));
     if (!poolFinal) return null;
-    return _lockedPicks = HomeFeed.pickFeaturedCarousel(cache.feedVideos);
+    final picks = HomeFeed.pickFeaturedCarousel(cache.feedVideos);
+    _scheduleIdlePrefetch(picks);
+    return _lockedPicks = picks;
   }
+
+  /// Kad se hero smiri, predučitaj epizodu koju korisnik najvjerojatnije
+  /// otvara: prvi hero pick i prve iz „Nastavi slušati". Odgoda pušta slike
+  /// naslovnice ispred. Vidi [EpisodePrefetch].
+  void _scheduleIdlePrefetch(List<FeaturedPick> picks) {
+    _idlePrefetchTimer?.cancel();
+    _idlePrefetchTimer = Timer(_idlePrefetchDelay, () {
+      EpisodePrefetch.instance.idle([
+        if (picks.isNotEmpty) picks.first.video.video.id,
+        for (final wp in widget.continueWatching.take(3)) wp.episodeId,
+      ]);
+    });
+  }
+
+  static const _idlePrefetchDelay = Duration(seconds: 2);
+  Timer? _idlePrefetchTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -526,6 +546,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                   wp.episodeId,
                                   lang: shareLanguageForVideo(wp.episodeId),
                                 ),
+                                prefetchEpisodeId: wp.episodeId,
                                 onTap: () => onVideoTap(wp.episodeId),
                               ))
                           .toList(),
@@ -565,6 +586,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                   fv.video.id,
                                   lang: shareLanguageForVideo(fv.video.id),
                                 ),
+                                prefetchEpisodeId: fv.video.id,
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
                           .toList(),
@@ -605,6 +627,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                                   fv.video.id,
                                   lang: shareLanguageForVideo(fv.video.id),
                                 ),
+                                prefetchEpisodeId: fv.video.id,
                                 onTap: () => onVideoTap(fv.video.id),
                               ))
                           .toList(),

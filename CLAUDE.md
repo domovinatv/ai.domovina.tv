@@ -624,6 +624,14 @@ stale-while-revalidate disk cache (`CdnJsonCache`). Mjerenja, ugovori za
 `max-age=60` + ETag i edge to poštuje (izmjereno 9.10.2026.). U debug buildu i
 uz `?nocache=1` cache je ugašen.
 
+**Rule (ekran epizode čita `episode.json` prvi)**: `DataService._get` pita
+`data/<id>/episode.json` (`EpisodeBundle`) i datoteku koje NEMA na njegovom
+popisu ne traži — taj 404 je izmjeren na R2, pa mu se vjeruje (za razliku od
+404 s CDN-a). Pipeline ga zato mora regenerirati nakon SVAKOG uploada u
+`data/<id>/`. Predučitavanje ide samo kroz `EpisodePrefetch` (hover/dodir +
+hero/„Nastavi slušati" u mirovanju), nikad za sve klikabilne epizode. Vidi §8
+dokumenta gore.
+
 **Rule (listing v2 mora čitati i stari build)**: `version` ostaje **string**
 (stari build radi `as String?`), a v2 bez `pipeline` objekta ide tek kad stari
 native buildovi ispadnu iz upotrebe — inače im sve epizode izgledaju

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../services/cdn_config.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_thumbnail.dart';
 import '../../l10n/app_localizations.dart';
 import 'home_feed.dart';
 import 'hero_section.dart';
@@ -205,6 +207,23 @@ class _HeroCarouselState extends State<HeroCarousel> {
                   ),
                 ),
               ),
+            // Slike SVIH pickova drže se učitane i dekodirane od prvog
+            // prikaza. Bez toga rotacija montira novu karticu čija slika tek
+            // tada kreće s mreže, pa se svakih 7 s umjesto nje vidi tamni
+            // placeholder (na sporoj mreži sekundama). Isti parametri kao
+            // `HeroSection._coverImage` → isti ključ u ImageCacheu, pa vidljiva
+            // kartica sliku dobije iz memorije u prvom frameu.
+            Offstage(
+              child: Column(
+                children: [
+                  for (final pick in widget.picks)
+                    CachedThumbnail(
+                      url: CdnConfig.thumbnailUrl(pick.video.video.id),
+                      fit: BoxFit.cover,
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
         _controlBar(theme),

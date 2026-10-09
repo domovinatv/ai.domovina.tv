@@ -13,9 +13,12 @@ implementiran i LIVE od v2.0.173; `home.json`, skraćeni listinzi i `search.json
 | Q1 listinzi bez `?v=` | gotovo (`CdnConfig.channelsIndexUrl`) | — (preporuka: ne mijenjati `generated_at` bez promjene sadržaja) |
 | Q2 prefetch po svježini, pool | gotovo (`ChannelCache.prefetchAll`) | — |
 | Q3 dokazivo konačan hero | gotovo (`HomeFeed.heroPoolComplete`) | — |
-| P1 `home.json` | čita ga uz fallback (`HomeSnapshot`) | **treba napraviti** |
-| P2 skraćeni listing + `search.json` | čita v1 i v2 (`VideoPipeline.fromBits`, `SearchCorpus`) | **treba napraviti** |
+| P1 `home.json` | čita ga uz fallback (`HomeSnapshot`) | isporučeno (9.10., v1, 85 epizoda, `max-age=60`) |
+| P2 skraćeni listing + `search.json` | čita v1 i v2 (`VideoPipeline.fromBits`, `SearchCorpus`) | `search.json` isporučen (9.10.); listing v2 čeka |
 | O1 disk cache | gotovo (`CdnJsonCache`, `cdn_store*.dart`) | — |
+| §8 `episode.json` po epizodi | čita ga uz fallback (`EpisodeBundle`) — nedeployano | **treba napraviti** |
+| §8 predučitavanje po namjeri | gotovo (`EpisodePrefetch`) — nedeployano | — |
+| §8 članak prije titlova | gotovo (`loadWithProgress(onTimeline:)`) — nedeployano | — |
 
 Testovi: `test/home_feed_hero_pool_test.dart`, `test/home_snapshot_test.dart`,
 `test/slim_listing_test.dart`, `test/cdn_json_cache_test.dart`.
@@ -365,3 +368,97 @@ pripremljene statične datoteke (nikad 6,9 MB izvora), odgovor sprema u
 `caches.default` (izračun jednom po datacentru, kao OG injekcija u
 `web/_worker.js`), a klijent uvijek ima statičan fallback. Pretraga po tekstu
 ostaje na Meiliju / `domovina-rag`.
+
+## 8. Ekran epizode: jedna datoteka, predučitavanje, članak prije titlova (9.10.2026.)
+
+Pitanje je bilo može li se u pozadini učitati sve epizode na koje se s
+naslovnice može kliknuti. Mjerenje je pokazalo da je prvi problem drugdje:
+**broj zahtjeva**, ne bajtovi.
+
+### 8.1 Mjerenje
+
+`python3 scripts/measure-episode-bundle.py 12` (12 najnovijih epizoda s
+člankom, 9.10.2026.):
+
+- ekran epizode (`EpisodeData.load`) traži 17 datoteka + do 3 HEAD probea
+  medije. Svaki 404 se ponavlja s cache-busterom (`DataService._get`), pa je to
+  **28,8 zahtjeva po otvaranju** u prosjeku, većinom uzaludnih;
+- na uzorku od 100 nasumičnih epizoda s člankom legacy Magisterium varijante
+  gotovo ne postoje (`article.magisterium.json` 12/100, `_full*` 6/100,
+  `_batch*` 0/100, EN prijevodi 1/100, `words.json` 1/100);
+- bajtova je malo (~106 KB brotli), od toga su `diarized.srt` + `words.json`
+  ~66 KB, a trebaju tek kad krene reprodukcija.
+
+Predučitati sve klikabilne epizode (30–50) bilo bi ~1 000 zahtjeva, ~600 od
+njih 404, i 3–5 MB uz naslovnicu — na sporoj mreži upravo ondje gdje boli.
+
+### 8.2 `data/<id>/episode.json` (pipeline) — jedan zahtjev umjesto ~29
+
+Hibrid, ne „sve u jednu datoteku": u njoj je ono što treba za prvi prikaz
+(`info`, `summary`, `outline`, `article`, `article.magisterium` kad postoji) i
+**izmjereni popis datoteka** koje za epizodu postoje. Titlovi, vrijeme po
+riječi i EN prijevodi ostaju zasebni i traže se samo ako su na popisu. Puni
+ugovor: doc komentar u `lib/models/episode_bundle.dart`.
+
+Isto mjerenje: bundle je **32,6 KB brotli** u prosjeku (16–59 KB), a broj
+zahtjeva pada s **28,8 na 3** (bundle + datoteke s popisa koje nisu u
+njemu; kod najnovijih epizoda `diarized.srt` i `words.json`). Skripta ne
+broji `sponsors_in_video.json`, koji ekran traži zasebno. Sve u jednoj datoteci (sa SRT-om i `words.json`) bilo bi
+~3× veće, a ekran bi čekao bajtove koje prvi prikaz ne treba.
+
+Klijent (`DataService._get`, `_bundle`): bundle ide kroz
+`CdnJsonCache.getMutable` u zaseban, ograničen bucket (`StoreBucket.episode`:
+native 20 MB LRU, web 150 zapisa), jer je promjenjiv — pipeline ga prepisuje
+kad stigne nova datoteka. Datoteka koje NEMA na popisu klijent ne traži: 404 iz
+izmjerenog popisa je istina, za razliku od 404 s CDN-a (vidi CLAUDE.md
+„Cachiran 404"). Medija se čita s popisa, bez HEAD probea. Bez bundlea (404,
+nepoznata verzija) ostaje stari put — zauvijek, za epizode koje backfill nije
+pokrio.
+
+Cijena dok pipeline ne isporuči bundle: jedan zahtjev više po otvaranju
+(`episode.json` 404, koji edge cachira), prije starog puta.
+
+**Rule za pipeline**: bundle se regenerira kao ZADNJI korak svakog uploada u
+`data/<id>/` (prijevod, Magisterium, `words.json`, medija). Datoteka koje nema
+na popisu klijent ne vidi dok se bundle ne obnovi.
+
+### 8.3 Predučitavanje po namjeri (frontend, `EpisodePrefetch`)
+
+- **mirovanje**: 2 s nakon što se hero latcha — prvi hero pick i prve 3 iz
+  „Nastavi slušati";
+- **namjera**: miš iznad kartice ili prst na njoj (`PrefetchOnIntent` oko
+  `EpisodeRailCard` i `HeroSection`); dodir prethodi `onTap`-u ~100–300 ms;
+- samo prvi prikaz (`DataService.prefetchFirstPaint`): s bundleom jedan
+  zahtjev, bez njega `info`/`summary`/`outline`/`article`;
+- najviše 2 epizode odjednom, 40 po sesiji, ništa uz Save-Data ili 2G
+  (`network_hints.dart`; Safari/Firefox taj API nemaju pa se tamo ne gasi);
+- odgovori ostaju u memoriji `DataService` (LRU, 80 odgovora) koja dijeli i
+  zahtjeve u letu — klik usred predučitavanja ne šalje isti zahtjev dvaput.
+  Na nativeu idu i u disk cache (offline).
+
+### 8.4 Članak prije titlova
+
+`EpisodeData.loadWithProgress(onTimeline:)`: epizoda s člankom vraća se čim
+stigne sve osim `diarized.srt`/`words.json`; puni podaci stižu kao zamjena
+(`EpisodeScreen._data`). `_EpisodeContent` titlove čita samo u `build`, pa
+zamjena ne dira player. Epizoda bez članka čeka sve, jer bi joj kartica faze
+bez transkripta krivo pokazala „u obradi". Jednostavni prikaz i TV i dalje
+koriste `EpisodeData.load`.
+
+Testovi: `test/episode_bundle_test.dart`, `test/data_service_stale_404_test.dart`.
+
+### 8.5 Tamni placeholder u hero karuselu
+
+Prijava 9.10.: slika se pojavi, pa neko vrijeme stoji tamni placeholder.
+Uzrok: `HeroCarousel` kroz `AnimatedSwitcher` svakih 7 s montira NOVU
+`HeroSection`, a njena slika (`thumb-1280.webp`) tek tada kreće s mreže; dok ne
+stigne, vidi se `surfaceContainerHighest` (u tamnoj temi gotovo crn). Popravak:
+`Offstage` sloj u karuselu drži `CachedThumbnail` svih pickova montiran od
+prvog prikaza, s istim parametrima kao `HeroSection._coverImage`, pa je ključ u
+ImageCacheu isti i rotacija sliku dobije iz memorije. Provjereno nad lokalnim
+release buildom: sve `thumb-1280` hero slike kreću u istom trenutku, a ne tek
+na rotaciji. Na sporoj mreži nije izmjereno.
+
+Zamka pri mjerenju: u kartici koja nije vidljiva (`document.visibilityState ==
+"hidden"`) Flutter ne crta frameove, pa slike ne kreću desecima sekundi. To nije
+kvar aplikacije; tako je 9.10. izgledalo kao da produkcija drži slike 33 s.

@@ -20,8 +20,10 @@ class StoredEntry {
 /// Vrsta zapisa. [mutable] (listinzi, `index.json`, `home.json`,
 /// `search.json`) je mali i ograničen skup, bez izbacivanja. [immutable]
 /// (per-epizoda datoteke) raste s brojem otvorenih epizoda pa ima gornju
-/// granicu i izbacuje najdavnije korištene.
-enum StoreBucket { mutable, immutable }
+/// granicu i izbacuje najdavnije korištene. [episode] (`data/<id>/episode.json`)
+/// je promjenjiv kao [mutable], ali raste s brojem otvorenih epizoda pa ima
+/// gornju granicu kao [immutable].
+enum StoreBucket { mutable, immutable, episode }
 
 /// Apstrakcija da testovi mogu podmetnuti memorijsku pohranu.
 abstract class CdnStore {
@@ -29,7 +31,7 @@ abstract class CdnStore {
   Future<void> put(StoreBucket bucket, String url, StoredEntry entry);
   Future<void> clear();
 
-  /// Podržava li platforma [bucket]. Web pohranjuje samo [StoreBucket.mutable]:
+  /// Podržava li platforma [bucket]. Web ne pohranjuje [StoreBucket.immutable]:
   /// per-epizoda datoteke su `immutable` na CDN-u pa ih preglednikov HTTP
   /// cache ionako servira bez mreže (i offline).
   bool supports(StoreBucket bucket);

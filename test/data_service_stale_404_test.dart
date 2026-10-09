@@ -18,11 +18,19 @@ import 'package:domovina_ai/services/data_service.dart';
 /// cache adresa, pa ide na origin.
 void main() {
   const svc = DataService(youtubeId: 'abc123');
+  setUp(DataService.resetMemoryForTest);
 
   /// Klijent koji goli URL (bez `?v=`) uvijek odbija 404-om, a cache-bustanu
   /// varijantu poslužuje — točna simulacija otrovanog CF zapisa.
+  // `episode.json` (objedinjena datoteka) se ovdje ne broji: ovi testovi
+  // pokrivaju stari put, kojim klijent ide kad nje nema. Vidi
+  // `test/episode_bundle_test.dart`.
+  bool isBundle(http.BaseRequest req) =>
+      req.url.path.endsWith('/episode.json');
+
   MockClient poisonedCdn(List<String> log, {String body = '{}'}) =>
       MockClient((req) async {
+        if (isBundle(req)) return http.Response('Not Found', 404);
         log.add(req.url.toString());
         if (req.url.queryParameters.containsKey('v')) {
           return http.Response(body, 200);
@@ -32,6 +40,7 @@ void main() {
 
   /// Klijent koji 404-a bez obzira na cache-buster — datoteke doista nema.
   MockClient emptyCdn(List<String> log) => MockClient((req) async {
+        if (isBundle(req)) return http.Response('Not Found', 404);
         log.add(req.url.toString());
         return http.Response('<!doctype html>Not Found', 404);
       });
@@ -65,6 +74,7 @@ void main() {
     await http.runWithClient(() async {
       await svc.loadInfo();
     }, () => MockClient((req) async {
+          if (isBundle(req)) return http.Response('Not Found', 404);
           log.add(req.url.toString());
           return http.Response('{}', 200);
         }));

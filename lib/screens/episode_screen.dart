@@ -125,6 +125,13 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
         onProgress: (asset, done, ok) {
           if (mounted) setState(() => _assetStatus[asset] = (done, ok));
         },
+        // Članak se crta prije titlova; oni stignu kao zamjena podataka.
+        // `_EpisodeContent` ih čita samo u buildu, pa zamjena ne dira player.
+        onTimeline: (full) {
+          if (mounted && _data?.youtubeId == full.youtubeId) {
+            setState(() => _data = full);
+          }
+        },
       );
       if (mounted) {
         setState(() => _data = data);

@@ -8,11 +8,19 @@ import 'cdn_store.dart';
 /// Datoteke u `<app support>/cdn_cache/<bucket>/`. Ime datoteke je base64url
 /// URL-a; ETag u susjednoj `.etag` datoteci. Vrijeme zadnjeg čitanja je
 /// `lastModified` datoteke (osvježava se pri čitanju) — po njemu
-/// [StoreBucket.immutable] izbacuje najdavnije korištene iznad [_immutableCap].
+/// [StoreBucket.immutable] i [StoreBucket.episode] izbacuju najdavnije
+/// korištene iznad svoje granice ([_capFor]).
 CdnStore createStore() => _IoCdnStore();
 
 class _IoCdnStore implements CdnStore {
   static const _immutableCap = 40 * 1024 * 1024;
+  static const _episodeCap = 20 * 1024 * 1024;
+
+  static int? _capFor(StoreBucket bucket) => switch (bucket) {
+        StoreBucket.immutable => _immutableCap,
+        StoreBucket.episode => _episodeCap,
+        StoreBucket.mutable => null,
+      };
 
   Future<Directory?>? _root;
 
@@ -45,7 +53,7 @@ class _IoCdnStore implements CdnStore {
       final etagFile = File('${f.path}.etag');
       final etag =
           await etagFile.exists() ? await etagFile.readAsString() : null;
-      if (bucket == StoreBucket.immutable) {
+      if (_capFor(bucket) != null) {
         await f.setLastModified(DateTime.now());
       }
       return StoredEntry(body, etag: etag);
@@ -72,11 +80,12 @@ class _IoCdnStore implements CdnStore {
       } else if (await etagFile.exists()) {
         await etagFile.delete();
       }
-      if (bucket == StoreBucket.immutable) await _evict(f.parent);
+      final cap = _capFor(bucket);
+      if (cap != null) await _evict(f.parent, cap);
     } catch (_) {}
   }
 
-  Future<void> _evict(Directory dir) async {
+  Future<void> _evict(Directory dir, int cap) async {
     final files = <File, FileStat>{};
     var total = 0;
     await for (final e in dir.list()) {
@@ -87,11 +96,11 @@ class _IoCdnStore implements CdnStore {
       files[e] = st;
       total += st.size;
     }
-    if (total <= _immutableCap) return;
+    if (total <= cap) return;
     final oldestFirst = files.entries.toList()
       ..sort((a, b) => a.value.modified.compareTo(b.value.modified));
     for (final e in oldestFirst) {
-      if (total <= _immutableCap) break;
+      if (total <= cap) break;
       total -= e.value.size;
       await e.key.delete();
       final etag = File('${e.key.path}.etag');

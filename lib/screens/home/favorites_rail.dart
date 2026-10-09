@@ -101,6 +101,7 @@ class _FavoritesRailState extends State<FavoritesRail> {
                 item.episodeId,
                 lang: shareLanguageForVideo(item.episodeId),
               ),
+              prefetchEpisodeId: item.episodeId,
               onTap: () => widget.onVideoTap(item.episodeId),
             ),
         ],
