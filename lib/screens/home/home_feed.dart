@@ -139,7 +139,8 @@ class HomeFeed {
             recencyScore(daysAgoFor(a.video.date)) * 0.4;
         final bScore = (b.video.magisteriumScore ?? 0) * 0.6 +
             recencyScore(daysAgoFor(b.video.date)) * 0.4;
-        return bScore.compareTo(aScore);
+        final byScore = bScore.compareTo(aScore);
+        return byScore != 0 ? byScore : newestFirst(a, b);
       });
       // Izvuci top N i seedaj početak po danu u godini. Karusel počinje od
       // današnjeg dnevnog picka pa nastavlja po rangu (i rotira natrag), tako
@@ -170,8 +171,11 @@ class HomeFeed {
       return hasMag && score >= 70;
     }).toList();
     if (hiQuality.isNotEmpty) {
-      hiQuality.sort((a, b) => (b.video.magisteriumScore ?? 0)
-          .compareTo(a.video.magisteriumScore ?? 0));
+      hiQuality.sort((a, b) {
+        final byScore = (b.video.magisteriumScore ?? 0)
+            .compareTo(a.video.magisteriumScore ?? 0);
+        return byScore != 0 ? byScore : newestFirst(a, b);
+      });
       return hiQuality
           .take(limit)
           .map((v) => FeaturedPick(
@@ -189,8 +193,7 @@ class HomeFeed {
         .where((v) => v.video.pipeline?.hasMagisterium ?? false)
         .toList();
     if (magisterium.isNotEmpty) {
-      magisterium.sort((a, b) =>
-          (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      magisterium.sort(newestFirst);
       return magisterium
           .take(limit)
           .map((v) => FeaturedPick(
@@ -210,7 +213,7 @@ class HomeFeed {
     final readyPool = all.where(isReadyForHome).toList();
     final pool = readyPool.isNotEmpty ? readyPool : all;
     final sorted = List<FeedVideo>.from(pool)
-      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      ..sort(newestFirst);
     return sorted
         .take(limit)
         .map((v) => FeaturedPick(
@@ -221,6 +224,19 @@ class HomeFeed {
               candidatePool: pool.length,
             ))
         .toList();
+  }
+
+  /// Najnovije prvo, uz deterministički tie-break.
+  ///
+  /// `date` je dan (`YYYY-MM-DD`), pa više epizoda istog dana ima jednak ključ.
+  /// Bazen ([ChannelCache.feedVideos]) je složen redom kojim su listinzi kanala
+  /// STIGLI, a taj je red na svakom učitavanju drukčiji — bez tie-breaka su se
+  /// kartice istog dana premetale sa svakim novim listingom i rail „Najnovije
+  /// epizode" je treperio (prijava 9.10.2026.). `id` nema značenje, ali je
+  /// stabilan: isti bazen uvijek daje isti redoslijed.
+  static int newestFirst(FeedVideo a, FeedVideo b) {
+    final byDate = (b.video.date ?? '').compareTo(a.video.date ?? '');
+    return byDate != 0 ? byDate : a.video.id.compareTo(b.video.id);
   }
 
   /// "Najnovije epizode" rail — cross-channel sortirano po datumu desc.
@@ -234,7 +250,7 @@ class HomeFeed {
             excludeFeatured == null || v.video.id != excludeFeatured.video.id)
         .toList();
     final sorted = List<FeedVideo>.from(filtered)
-      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      ..sort(newestFirst);
     return sorted.take(limit).toList();
   }
 
@@ -267,7 +283,7 @@ class HomeFeed {
             excludeFeatured == null || v.video.id != excludeFeatured.video.id)
         .toList();
     final sorted = List<FeedVideo>.from(filtered)
-      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      ..sort(newestFirst);
     return sorted.take(limit).toList();
   }
 
