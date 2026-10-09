@@ -285,7 +285,7 @@ ili duplo (dvije sestre primijene isti inset) ili nula (sve se sakriju).
 
 Prolaz kroz auth UI/UX + otvoreni backlog: `docs/auth-ux-backlog.md`.
 
-### Bez anonimnih prijava — gost nema sesiju (od 8.10.2026., nedeployano)
+### Bez anonimnih prijava — gost nema sesiju (LIVE od v2.0.172)
 
 Anonimne Supabase prijave su ugašene (99 % korisnika bilo je anonimno, 3
 konverzije). Bez sesije korisnik je **gost**: javno čita anon ključem, a
@@ -608,7 +608,7 @@ otrovani zapis ostane 404 (provjereno). Varijantu čisti samo
 Isto pravilo kao kod verifikacije purgea: s `Vary: Origin` postoje dva zapisa,
 pa i provjera i purge moraju ići u obje varijante.
 
-### Naslovnica bez čekanja kataloga + disk cache (od 9.10.2026., nedeployano)
+### Naslovnica bez čekanja kataloga + disk cache (LIVE od v2.0.173, 9.10.2026.)
 
 Naslovnica je povlačila svih 50 listinga (6,9 MB sirovo / 1,3 MB preko žice)
 pri svakom otvaranju. Sada: listinzi bez `?v=` (304 umjesto punog downloada),

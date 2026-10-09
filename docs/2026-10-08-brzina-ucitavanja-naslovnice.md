@@ -1,12 +1,12 @@
 # Brzina učitavanja naslovnice i offline — mjerenje i plan
 
 **Datum:** 8.10.2026. · **Status (9.10.2026.):** frontend za sve korake
-implementiran (nedeployano); `home.json`, skraćeni listinzi i `search.json`
+implementiran i LIVE od v2.0.173; `home.json`, skraćeni listinzi i `search.json`
 čekaju pipeline — vidi §0
 **Reprodukcija svih brojki:** `python3 scripts/measure-home-payload.py`
 (+ `curl` naredbe u §2.3)
 
-## 0. Stanje implementacije (9.10.2026.)
+## 0. Stanje implementacije (9.10.2026., LIVE v2.0.173)
 
 | korak | frontend | pipeline (`fetch.domovina.tv`) |
 |---|---|---|
