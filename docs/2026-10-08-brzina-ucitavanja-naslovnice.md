@@ -340,6 +340,15 @@ epizode se na nativeu čitaju offline. Media (video/audio) nije dio ovoga.
   ništa ne puca). Purge nakon prvog uploada skraćuje to — u obje `Vary: Origin`
   varijante.
 
+- **Bijeli ekran prije prvog Flutter framea** (prijava 9.10., nije mjereno):
+  `web/index.html` miče plavi `#boot-intro` na `flutter-first-frame` ILI nakon
+  fiksnih 6 s; `<body>` nema pozadinu, pa na sporoj mreži ostane bijela
+  stranica s legal footerom (koji je namjerno trajno u DOM-u zbog Google OAuth
+  provjere). Uz to `main()` serijski čeka mrežne inite prije `runApp`, a
+  worker `main.dart.wasm`/skwasm šalje s `CDN-Cache-Control: no-store`. Plan
+  i ograničenja: handoff `~/.claude/handoffs/domovina.ai/2026-10-09-2100-boot-splash.md`
+  (izvan repoa); rezultat ide u zaseban `docs/…-boot-splash.md`.
+
 ## 7. Zašto ne Worker koji drži JSON u memoriji (odluka 9.10.2026.)
 
 Razmatrano: Cloudflare Worker koji sve listinge drži u memoriji i frontendu
