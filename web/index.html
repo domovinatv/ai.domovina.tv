@@ -80,8 +80,8 @@
        Preconnect usput ugrije gstatic za google_fonts. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap">
 
   <!-- Corbado passkeys Web SDK (bundle.js, pinned 2.5.0 — najnoviji objavljeni).
        Mora se učitati SINKRONO prije flutter_bootstrap.js jer passkeys_web
@@ -130,6 +130,10 @@
       #boot-intro h1{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:clamp(34px,7vw,52px);margin:0;letter-spacing:.3px;color:var(--boot-mark);}
       #boot-intro h1 span{color:#FF0000;}
       #boot-intro .bi-tag{font-size:clamp(15px,2.4vw,18px);margin:8px 0 0;font-weight:500;opacity:.9;}
+      #boot-intro .bi-verse{margin:32px auto 0;max-width:560px;width:100%;display:flex;flex-direction:column;justify-content:center;transition:opacity .45s ease;}
+      #boot-intro .bi-verse blockquote{margin:0;font-family:'Lora',Georgia,serif;font-style:italic;font-weight:400;font-size:clamp(17px,2.6vw,21px);line-height:1.55;}
+      #boot-intro .bi-verse figcaption{margin-top:14px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--boot-dim);}
+      #boot-intro .bi-verse figcaption::before{content:"";display:inline-block;width:20px;height:2px;margin:0 10px 3px 0;background:#FF0000;vertical-align:middle;}
       #boot-intro .bi-progress{width:min(240px,60vw);height:3px;margin:32px auto 0;border-radius:3px;background:var(--boot-track);overflow:hidden;position:relative;}
       #boot-intro .bi-progress i{position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:3px;background:#FF0000;animation:bi-slide 1.4s ease-in-out infinite;}
       @keyframes bi-slide{0%{transform:translateX(-100%)}100%{transform:translateX(290%)}}
@@ -148,6 +152,146 @@
     <div class="bi-main">
       <h1>DOMOVINA<span>.ai</span></h1>
       <p class="bi-tag">AI-obrađeni hrvatski katolički podcasti</p>
+      <!-- Citat za čitanje dok se čeka — isti skup kao TV splash (KS Jeruzalemska
+           Biblija, provjereno na biblija.ks.hr: docs/splash-bible-citations-factcheck.md).
+           U HTML-u stoji Mt 10,26-27 (native TV splash) za preglednik bez JS-a;
+           skripta ispod ga odmah, prije prvog iscrtavanja, zamijeni nasumičnim
+           (različitim od prošlog) i zatim vrti promiješani krug dok se aplikacija
+           ne učita; svaki citat stoji prema duljini. Popis MORA biti doslovno [Mt 10,26-27] +
+           defaultBibleVerses iz lib/screens/tv/widgets/tv_loading_tips.dart —
+           čuva test/boot_splash_verses_test.dart. -->
+      <figure class="bi-verse">
+        <blockquote id="bi-verse-text">Ne bojte ih se dakle. Ta ništa nije skriveno što se neće otkriti ni tajno što se neće doznati. Što vam govorim u tami, recite na svjetlu; i što na uho čujete, propovijedajte na krovovima.</blockquote>
+        <figcaption id="bi-verse-ref">Matej 10,26-27</figcaption>
+      </figure>
+      <script>
+        (function () {
+          var verses = [
+        [
+        "Ne bojte ih se dakle. Ta ništa nije skriveno što se neće otkriti ni tajno što se neće doznati. Što vam govorim u tami, recite na svjetlu; i što na uho čujete, propovijedajte na krovovima.",
+        "Matej 10,26-27"
+        ],
+        [
+        "Ta ništa nije zastrto, osim zato da se očituje; i ništa skriveno, osim zato da dođe na vidjelo!",
+        "Marko 4,22"
+        ],
+        [
+        "Ta ništa nije tajno što se neće očitovati; ništa skriveno što se neće saznati i na vidjelo doći.",
+        "Luka 8,17"
+        ],
+        [
+        "Ništa nije skriveno što se neće otkriti ni tajno što se neće saznati.",
+        "Luka 12,2"
+        ],
+        [
+        "Naša je pak domovina na nebesima, odakle iščekujemo Spasitelja, Gospodina našega Isusa Krista.",
+        "Filipljanima 3,20"
+        ],
+        [
+        "Upoznat ćete istinu i istina će vas osloboditi.",
+        "Ivan 8,32"
+        ],
+        [
+        "Vaša riječ neka bude: ‘Da, da, – ne, ne!’ Što je više od toga, od Zloga je.",
+        "Matej 5,37"
+        ],
+        [
+        "U svijetu imate muku, ali hrabri budite – ja sam pobijedio svijet!",
+        "Ivan 16,33"
+        ],
+        [
+        "Doista, gdje ti je blago, ondje će ti biti i srce.",
+        "Matej 6,21"
+        ],
+        [
+        "Tražite stoga najprije Kraljevstvo i pravednost njegovu, a sve će vam se ostalo dodati.",
+        "Matej 6,33"
+        ],
+        [
+        "Ja sam Put i Istina i Život: nitko ne dolazi Ocu osim po meni.",
+        "Ivan 14,6"
+        ],
+        [
+        "Podajte dakle caru carevo, a Bogu Božje.",
+        "Matej 22,21"
+        ],
+        [
+        "Žetve je mnogo, a radnikâ malo.",
+        "Matej 9,37"
+        ],
+        [
+        "Ta iz obilja srca usta mu govore.",
+        "Luka 6,45"
+        ]
+        ];
+          var text = document.getElementById('bi-verse-text');
+          var ref = document.getElementById('bi-verse-ref');
+          var fig = text.parentNode;
+
+          // Redoslijed: nasumičan početak različit od prošlog učitavanja, pa
+          // svi citati promiješani bez ponavljanja, pa ispočetka.
+          var last = -1;
+          try { last = parseInt(localStorage.getItem('boot_verse'), 10); } catch (_) {}
+          function shuffled(avoidFirst) {
+            var a = [], j, k, t;
+            for (j = 0; j < verses.length; j++) a.push(j);
+            for (j = a.length - 1; j > 0; j--) { k = Math.floor(Math.random() * (j + 1)); t = a[j]; a[j] = a[k]; a[k] = t; }
+            if (a.length > 1 && a[0] === avoidFirst) { t = a[0]; a[0] = a[1]; a[1] = t; }
+            return a;
+          }
+          var order = shuffled(last), pos = 0;
+
+          function show(i) {
+            text.textContent = verses[i][0];
+            ref.textContent = verses[i][1];
+            try { localStorage.setItem('boot_verse', String(i)); } catch (_) {}
+          }
+
+          // Koliko citat stoji: ~350 ms po riječi (sabrano čitanje) + 2,5 s
+          // da oko uđe u tekst; 5–15 s. Mt 22,21 (8 riječi) ≈ 5,3 s,
+          // Mt 10,26-27 (33 riječi) ≈ 14 s.
+          function dwell(i) {
+            var words = verses[i][0].split(/\s+/).length;
+            return Math.max(5000, Math.min(15000, 2500 + words * 350));
+          }
+
+          // Okvir (citat + izvor) visok kao najdulji citat u trenutnoj širini —
+          // inače bi wordmark i traka napretka skakali sa svakom promjenom.
+          // Kraći citat je centriran u okviru, izvor ostaje odmah ispod njega.
+          function reserve() {
+            var probe = text.cloneNode(false), max = 0, j;
+            fig.style.minHeight = ''; // inače bi svako mjerenje dodalo prošlu rezervu
+            probe.removeAttribute('id');
+            probe.style.cssText = 'position:absolute;visibility:hidden;width:' + text.clientWidth + 'px';
+            fig.appendChild(probe);
+            for (j = 0; j < verses.length; j++) { probe.textContent = verses[j][0]; max = Math.max(max, probe.offsetHeight); }
+            fig.removeChild(probe);
+            fig.style.minHeight = (max + fig.offsetHeight - text.offsetHeight) + 'px';
+          }
+
+          show(order[0]);
+          reserve();
+          window.addEventListener('resize', reserve);
+          // Lora stiže asinkrono; prvo mjerenje je fallback fontom.
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserve);
+
+          var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          function next() {
+            if (!document.getElementById('boot-intro')) return; // aplikacija je tu
+            pos++;
+            if (pos >= order.length) { order = shuffled(order[order.length - 1]); pos = 0; }
+            var i = order[pos];
+            if (still) { show(i); setTimeout(next, dwell(i)); return; }
+            fig.style.opacity = '0';
+            setTimeout(function () {
+              show(i);
+              fig.style.opacity = '1';
+              setTimeout(next, dwell(i));
+            }, 450);
+          }
+          setTimeout(next, dwell(order[0]));
+        })();
+      </script>
       <div class="bi-progress" aria-hidden="true"><i></i></div>
       <p class="bi-load" id="bi-load" aria-live="polite">Preuzimanje aplikacije…</p>
       <p class="bi-note" id="bi-note" hidden>Veza je spora. Aplikacija se preuzima samo prvi put; sljedeće otvaranje bit će brzo.</p>
@@ -204,20 +348,36 @@
         setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 450);
       }
       // 'flutter-first-frame' znači da je frame SLOŽEN; skwasm ga rasterizira u
-      // workeru i na platno stigne kasnije (izmjereno 45–85 ms, na sporijem
-      // stroju s otvorenim DevToolsima 1–2 s praznog platna). Zato čekamo da
-      // <canvas> stvarno postoji u shadow rootu flt-glass-panea + dva framea.
+      // workeru i na platno stigne kasnije. Ni postojanje <canvas> elementa nije
+      // dovoljno: na sporijem stroju (otvoren DevTools) platno je 2–3 s stajalo
+      // prazno (prijava 9.10.2026.). Zato platno presnimimo u sličicu 8×8 i
+      // čekamo neprozirne piksele — naslovnica uvijek crta neprozirnu pozadinu.
+      // Osigurač: 8 s nakon eventa.
+      function painted(c, cb) {
+        if (!window.createImageBitmap || !c || !c.width) return cb(false);
+        createImageBitmap(c, { resizeWidth: 8, resizeHeight: 8 }).then(function (bmp) {
+          var o = document.createElement('canvas');
+          o.width = o.height = 8;
+          var g = o.getContext('2d', { willReadFrequently: true });
+          g.drawImage(bmp, 0, 0);
+          var d = g.getImageData(0, 0, 8, 8).data, opaque = 0, j;
+          for (j = 3; j < d.length; j += 4) if (d[j] > 200) opaque++;
+          cb(opaque > 32);
+        }, function () { cb(false); });
+      }
       function hideWhenPainted() {
         var started = Date.now();
         (function poll() {
           if (done) return;
           var gp = document.querySelector('flt-glass-pane');
           var c = gp && gp.shadowRoot && gp.shadowRoot.querySelector('canvas');
-          if ((c && c.width > 0) || Date.now() - started > 3000) {
-            requestAnimationFrame(function () { requestAnimationFrame(hideIntro); });
-          } else {
-            requestAnimationFrame(poll);
-          }
+          painted(c, function (ok) {
+            if (ok || Date.now() - started > 8000) {
+              requestAnimationFrame(function () { requestAnimationFrame(hideIntro); });
+            } else {
+              setTimeout(poll, 100);
+            }
+          });
         })();
       }
       window.addEventListener('flutter-first-frame', hideWhenPainted, { once: true });

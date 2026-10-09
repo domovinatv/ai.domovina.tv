@@ -82,7 +82,61 @@ mobilni): splash do 20,1 s, prvi frame 20,1 s, **praznina 0 ms**; snimke svake
 python3 scripts/measure-boot.py http://localhost:8788/ --profile slow4g --mobile --shots /tmp/shots
 ```
 
-## 4. Otvoreno (sljedeći koraci, po učinku)
+## 3a. Splash se miče tek kad je platno NACRTANO (v2.0.176 → 2.0.178)
+
+Dvije prijave nakon prvog deploya, obje s otvorenim DevToolsima uz Slow 4G:
+
+1. v2.0.175: 1–2 s nakon `flutter-first-frame` vidio se samo legal footer.
+   Event znači da je frame *složen*; skwasm ga rasterizira u workeru.
+   → v2.0.176: čeka se `<canvas>` u shadow rootu `flt-glass-pane`, a
+   `flutter-view` nosi boju teme (footer više ne proviruje).
+2. Lokalno nakon toga: 2–3 s praznog ekrana u boji teme. Platno je postojalo,
+   ali je bilo prazno. → Platno se presnima u 8×8 (`createImageBitmap`) i
+   splash se miče tek kad je > 32 od 64 piksela neprozirno (naslovnica uvijek
+   crta neprozirnu pozadinu). Osigurač 8 s nakon eventa.
+
+Kod mene (Mac, Slow 4G) razmaci su mali, ali poredak je sad zajamčen:
+
+| CPU | firstFrame | canvas | painted | fade |
+|---|---|---|---|---|
+| 1× | 20 342 | 20 402 | 20 512 | 20 635 |
+| 6× | 20 947 | 21 076 | 21 204 | 21 309 |
+
+```bash
+python3 scripts/measure-boot.py http://localhost:8788/ --profile slow4g --cpu 6
+```
+
+## 4. Citat dok se čeka (isti skup kao TV splash)
+
+Splash prikazuje nasumičan biblijski citat iz istog skupa kao Android TV:
+Mt 10,26-27 (native TV splash) + 13 citata iz `defaultBibleVerses`
+(`lib/screens/tv/widgets/tv_loading_tips.dart`). Tekst je KS Jeruzalemska
+Biblija, provjeren na biblija.ks.hr (`docs/splash-bible-citations-factcheck.md`)
+— zato web nema vlastiti popis, nego doslovnu kopiju koju čuva
+`test/boot_splash_verses_test.dart`.
+
+- U HTML-u stoji Mt 10,26-27 (preglednik bez JS-a, crawler); inline skripta
+  odmah iza njega, prije prvog iscrtavanja, izabere nasumičan citat različit
+  od prošlog učitavanja (`localStorage['boot_verse']`).
+- **Krug dok se čeka:** citati se izmjenjuju promiješanim redom bez
+  ponavljanja (pa novi krug), fade 0,45 s; uz `prefers-reduced-motion` bez
+  animacije. Rotacija staje kad `#boot-intro` nestane.
+- **Trajanje po duljini:** `2,5 s + 350 ms × riječi`, ograničeno na 5–15 s
+  (sabrano čitanje, ne skeniranje). Mt 9,37 (6 riječi) → 5 s, Luka 8,17
+  (17) → 8,5 s, Mt 10,26-27 (33) → 14 s. Izmjereno u pregledniku: izmjene na
+  0 / 9 / 18 s za Luka 8,17 → Mt 5,37 → Mk 4,22.
+- **Bez skakanja:** okvir (citat + izvor) dobiva `min-height` najduljeg citata
+  u trenutnoj širini; mjeri se ponovno na `resize` i kad stigne Lora
+  (`document.fonts.ready`). Wordmark i traka napretka stoje na istom pikselu
+  kroz cijeli krug (mobitel y = 65 / 361, desktop 132 / 454).
+- Lora Italic (`ital` dodan u Google Fonts `<link>`), atribucija s crvenom
+  crticom kao na TV-u.
+- Na brzoj vezi citat se vidi ~1,5 s — svjesno: kratak pogled, bez čekanja.
+- Novi/izmijenjeni citat: prvo fact-check na biblija.ks.hr, pa Dart popis,
+  pa `web/index.html` (test pada dok nisu isti), pa po potrebi PNG-ovi za
+  TV (`scripts/generate-premium-splash-taglines.py`).
+
+## 5. Otvoreno (sljedeći koraci, po učinku)
 
 1. Fontovi: ~0,7 MB TTF-ova je ~3 s na Slow 4G (= 3 s timeout u `main()`).
    Subset (latin + latin-ext) kao asset ili manje varijanti.

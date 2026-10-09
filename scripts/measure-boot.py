@@ -45,7 +45,18 @@ INIT = r"""
   const poll = () => {
     const gp = document.querySelector('flt-glass-pane');
     const c = gp && gp.shadowRoot && gp.shadowRoot.querySelector('canvas');
-    if (c && c.width > 0) { m.canvas = t(); return; }
+    if (c && c.width > 0 && !m.canvas) m.canvas = t();
+    // Platno postoji ≠ platno nacrtano: presnimi u 8×8 i traži neprozirne piksele.
+    if (c && c.width > 0 && window.createImageBitmap) {
+      createImageBitmap(c, {resizeWidth: 8, resizeHeight: 8}).then(b => {
+        const o = document.createElement('canvas'); o.width = o.height = 8;
+        const g = o.getContext('2d'); g.drawImage(b, 0, 0);
+        const d = g.getImageData(0, 0, 8, 8).data; let n = 0;
+        for (let j = 3; j < d.length; j += 4) if (d[j] > 200) n++;
+        if (n > 32) m.painted = t(); else setTimeout(poll, 50);
+      }, () => setTimeout(poll, 50));
+      return;
+    }
     requestAnimationFrame(poll);
   };
   requestAnimationFrame(poll);
@@ -139,7 +150,7 @@ def main():
                   f"visibility={marks.get('visibility')}")
             print(f"  html ttfb {nav['ttfb']:>6} ms   html gotov {nav['html']:>6}")
             for k in ["fcp", "dcl", "introFade", "introGone", "mainStart",
-                      "runApp", "firstFrame", "canvas"]:
+                      "runApp", "firstFrame", "canvas", "painted"]:
                 v = marks.get(k)
                 print(f"  {k:<10} {('—' if v is None else str(v)):>6} ms")
             if marks.get("mainStart") and marks.get("runApp"):
@@ -153,7 +164,7 @@ def main():
                     print(f"    {r['start']:>6}–{r['end']:>6} ms  ttfb {r['ttfb']:>5}  "
                           f"{r['kb']:>5} KB  {r['name'][:90]}")
     if a.runs > 1:
-        for k in ["introFade", "mainStart", "runApp", "firstFrame", "canvas"]:
+        for k in ["introFade", "mainStart", "runApp", "firstFrame", "canvas", "painted"]:
             vals = [m[k] for m in out if m.get(k)]
             if vals:
                 print(f"median {k:<10} {statistics.median(vals):>8.0f} ms  (n={len(vals)})")

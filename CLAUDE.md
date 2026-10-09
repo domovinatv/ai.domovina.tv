@@ -179,7 +179,9 @@ legal footerom). Pozadina `html` i splasha = `scaffoldBackgroundColor` teme
 **Rule**: splash se ne miče timeoutom koji ne zna je li Flutter tu; osigurač
 kreće tek kad je kod aplikacije preuzet. Mijenjaš li boje teme, mijenjaj i
 `--boot-bg` u `index.html`. Opis i linkovi u splashu ostaju u izvornom HTML-u
-(Google OAuth provjera).
+(Google OAuth provjera). Citat u splashu je doslovna kopija TV skupa
+(`defaultBibleVerses` + Mt 10,26-27) — mijenja se samo uz fact-check na
+biblija.ks.hr, čuva `test/boot_splash_verses_test.dart`.
 
 ### SharedPreferences crashes on web release builds
 
