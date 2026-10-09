@@ -16,9 +16,9 @@ implementiran i LIVE od v2.0.173; `home.json`, skraćeni listinzi i `search.json
 | P1 `home.json` | čita ga uz fallback (`HomeSnapshot`) | isporučeno (9.10., v1, 85 epizoda, `max-age=60`) |
 | P2 skraćeni listing + `search.json` | čita v1 i v2 (`VideoPipeline.fromBits`, `SearchCorpus`) | `search.json` isporučen (9.10.); listing v2 čeka |
 | O1 disk cache | gotovo (`CdnJsonCache`, `cdn_store*.dart`) | — |
-| §8 `episode.json` po epizodi | čita ga uz fallback (`EpisodeBundle`) — nedeployano | **treba napraviti** |
-| §8 predučitavanje po namjeri | gotovo (`EpisodePrefetch`) — nedeployano | — |
-| §8 članak prije titlova | gotovo (`loadWithProgress(onTimeline:)`) — nedeployano | — |
+| §8 `episode.json` po epizodi | čita ga uz fallback (`EpisodeBundle`) — LIVE v2.0.174 | **treba napraviti** |
+| §8 predučitavanje po namjeri | gotovo (`EpisodePrefetch`) — LIVE v2.0.174 | — |
+| §8 članak prije titlova | gotovo (`loadWithProgress(onTimeline:)`) — LIVE v2.0.174 | — |
 
 Testovi: `test/home_feed_hero_pool_test.dart`, `test/home_snapshot_test.dart`,
 `test/slim_listing_test.dart`, `test/cdn_json_cache_test.dart`.
