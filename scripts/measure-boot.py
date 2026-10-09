@@ -8,7 +8,7 @@ kartica ne crta Flutter frameove pa bi `flutter-first-frame` lagao.
 
 Upotreba:
   python3 scripts/measure-boot.py [URL] [--profile none|4g|slow4g|3g]
-                                  [--mobile] [--runs N] [--shots DIR]
+                                  [--mobile] [--runs N] [--shots DIR] [--cpu 4]
 
 Profili (download/upload kbit/s, RTT ms) — brojke kao Lighthouse/DevTools:
   4g      9000 / 1500 /  60   (DevTools „Fast 4G")
@@ -39,6 +39,16 @@ INIT = r"""
     return log(...a);
   };
   window.addEventListener('flutter-first-frame', () => { m.firstFrame = t(); });
+  // Prvi <canvas> u flutter-viewu = frame je stvarno predan na ekran (skwasm
+  // rasterizira u workeru, pa event i slika nisu isti trenutak). Platno je u
+  // shadow rootu flt-glass-panea, pa MutationObserver na documentu ne vidi.
+  const poll = () => {
+    const gp = document.querySelector('flt-glass-pane');
+    const c = gp && gp.shadowRoot && gp.shadowRoot.querySelector('canvas');
+    if (c && c.width > 0) { m.canvas = t(); return; }
+    requestAnimationFrame(poll);
+  };
+  requestAnimationFrame(poll);
   document.addEventListener('DOMContentLoaded', () => {
     m.dcl = t();
     const intro = document.getElementById('boot-intro');
@@ -64,7 +74,7 @@ WATCH = ["passkeys_bundle.js", "flutter_bootstrap.js", "main.dart.mjs",
          "auth/v1/token", "rest/v1/", "fonts.gstatic.com"]
 
 
-def run_once(pw, url, profile, mobile, shots=None):
+def run_once(pw, url, profile, mobile, shots=None, cpu=1):
     browser = pw.chromium.launch(channel="chrome", headless=False)
     ctx = browser.new_context(
         viewport={"width": 390, "height": 844} if mobile else {"width": 1440, "height": 900},
@@ -82,6 +92,8 @@ def run_once(pw, url, profile, mobile, shots=None):
             "offline": False, "latency": rtt,
             "downloadThroughput": down * 1000 / 8,
             "uploadThroughput": up * 1000 / 8})
+    if cpu > 1:
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": cpu})
     page.bring_to_front()
     page.goto(url, wait_until="commit")
     # --shots: snimka ekrana svake 2 s do prvog framea (vizualna potvrda da
@@ -114,19 +126,20 @@ def main():
     ap.add_argument("--mobile", action="store_true")
     ap.add_argument("--runs", type=int, default=1)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--cpu", type=float, default=1, help="CPU throttling (4 = DevTools 4x slowdown)")
     ap.add_argument("--shots", help="direktorij za snimke svake 2 s")
     a = ap.parse_args()
     out = []
     with sync_playwright() as pw:
         for i in range(a.runs):
-            marks, res, nav = run_once(pw, a.url, a.profile, a.mobile, a.shots)
+            marks, res, nav = run_once(pw, a.url, a.profile, a.mobile, a.shots, a.cpu)
             out.append(marks)
             print(f"\n== run {i+1}  {a.url}  profil={a.profile}  "
                   f"{'mobile 390' if a.mobile else 'desktop 1440'}  "
                   f"visibility={marks.get('visibility')}")
             print(f"  html ttfb {nav['ttfb']:>6} ms   html gotov {nav['html']:>6}")
             for k in ["fcp", "dcl", "introFade", "introGone", "mainStart",
-                      "runApp", "firstFrame"]:
+                      "runApp", "firstFrame", "canvas"]:
                 v = marks.get(k)
                 print(f"  {k:<10} {('—' if v is None else str(v)):>6} ms")
             if marks.get("mainStart") and marks.get("runApp"):
@@ -140,7 +153,7 @@ def main():
                     print(f"    {r['start']:>6}–{r['end']:>6} ms  ttfb {r['ttfb']:>5}  "
                           f"{r['kb']:>5} KB  {r['name'][:90]}")
     if a.runs > 1:
-        for k in ["introFade", "mainStart", "runApp", "firstFrame"]:
+        for k in ["introFade", "mainStart", "runApp", "firstFrame", "canvas"]:
             vals = [m[k] for m in out if m.get(k)]
             if vals:
                 print(f"median {k:<10} {statistics.median(vals):>8.0f} ms  (n={len(vals)})")

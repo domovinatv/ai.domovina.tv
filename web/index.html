@@ -62,6 +62,8 @@
     :root[data-theme="light"]{--boot-bg:#faf7f2;--boot-fg:#1a1b20;--boot-mark:#002F6C;--boot-dim:rgba(26,27,32,.62);--boot-track:rgba(0,47,108,.12);}
     /* Samo html (canvas), ne body: body bi prekrio #legal-footer (z-index:-1). */
     html{background:var(--boot-bg);}
+    /* Prazan/još nenacrtan Flutter frame ne smije otkriti #legal-footer. */
+    flutter-view{background:var(--boot-bg);}
   </style>
 
   <!-- Theme -->
@@ -201,7 +203,24 @@
         intro.style.opacity = '0';
         setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 450);
       }
-      window.addEventListener('flutter-first-frame', hideIntro, { once: true });
+      // 'flutter-first-frame' znači da je frame SLOŽEN; skwasm ga rasterizira u
+      // workeru i na platno stigne kasnije (izmjereno 45–85 ms, na sporijem
+      // stroju s otvorenim DevToolsima 1–2 s praznog platna). Zato čekamo da
+      // <canvas> stvarno postoji u shadow rootu flt-glass-panea + dva framea.
+      function hideWhenPainted() {
+        var started = Date.now();
+        (function poll() {
+          if (done) return;
+          var gp = document.querySelector('flt-glass-pane');
+          var c = gp && gp.shadowRoot && gp.shadowRoot.querySelector('canvas');
+          if ((c && c.width > 0) || Date.now() - started > 3000) {
+            requestAnimationFrame(function () { requestAnimationFrame(hideIntro); });
+          } else {
+            requestAnimationFrame(poll);
+          }
+        })();
+      }
+      window.addEventListener('flutter-first-frame', hideWhenPainted, { once: true });
 
       // Istinite faze: preuzimanje traje dok ne stigne kod aplikacije
       // (main.dart.wasm, ili main.dart.js na pregledniku bez WasmGC).
