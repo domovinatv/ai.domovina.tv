@@ -130,12 +130,8 @@ class HomeFeed {
     }
 
     // Tier 1 — Najbolji izbor, s dnevnom rotacijom kroz top N kandidata.
-    final hiQualityRecent = all.where((v) {
-      final score = v.video.magisteriumScore ?? 0;
-      final hasMag = v.video.pipeline?.hasMagisterium ?? false;
-      final d = daysAgoFor(v.video.date);
-      return hasMag && score >= 70 && d != null && d <= 14;
-    }).toList();
+    final hiQualityRecent =
+        all.where((v) => _isHiQualityRecent(v, now)).toList();
 
     if (hiQualityRecent.isNotEmpty) {
       hiQualityRecent.sort((a, b) {
@@ -275,8 +271,54 @@ class HomeFeed {
     return sorted.take(limit).toList();
   }
 
+  /// Prozor svježine za tier 1 hero izbora (dana).
+  static const int heroRecentDays = 14;
+
+  static bool _isHiQualityRecent(FeedVideo v, DateTime now) {
+    final score = v.video.magisteriumScore ?? 0;
+    final hasMag = v.video.pipeline?.hasMagisterium ?? false;
+    final date = DateTime.tryParse(v.video.date ?? '');
+    if (date == null) return false;
+    return hasMag && score >= 70 && now.difference(date).inDays <= heroRecentDays;
+  }
+
+  /// Je li bazen hero izbora **dokazivo konačan** prije nego je prefetch
+  /// svih kanala gotov.
+  ///
+  /// Najbrži put je `home.json` (`HomeSnapshot`), koji po ugovoru nosi sve
+  /// kandidate. Bez njega:
+  ///
+  /// `index.json` nosi datum zadnje epizode svakog kanala
+  /// (`latest_video.date`, izmjereno 9.10.2026.: na svih 50 kanala jednak
+  /// najnovijem datumu u listingu). Kanal čija je zadnja epizoda starija od
+  /// [heroRecentDays] ne može dati tier 1 kandidata, pa kad su učitani svi
+  /// kanali koji MOGU (tog dana 11 od 50), nijedan kanal koji stigne kasnije
+  /// više ne mijenja tier 1 — a samim tim ni izbor, jer se tier 2–4 koriste
+  /// samo kad je tier 1 prazan.
+  ///
+  /// Zato vrijedi samo uz neprazan tier 1. Prazan tier 1 znači pad na tier 2
+  /// („bilo koji datum"), koji traži cijeli katalog → čeka se `done`. Kanal
+  /// bez datuma ili s nečitljivim datumom tretira se kao „može" (ne
+  /// zaključujemo iz izostanka podatka). Kanal kojem dohvat padne nikad nije
+  /// učitan, pa i tada odlučuje `done`.
+  static bool heroPoolComplete(ChannelCache cache, {DateTime? now}) {
+    // `home.json` po ugovoru nosi sve tier 1/2 kandidate (`HomeSnapshot`).
+    if (cache.done || cache.homeSnapshot != null) return true;
+    final index = cache.index;
+    if (index == null) return false;
+    final at = now ?? DateTime.now();
+    for (final c in index.channels) {
+      if (cache.isLoaded(c.id)) continue;
+      final latest = DateTime.tryParse(c.latestVideo?.date ?? '');
+      if (latest == null) return false;
+      if (at.difference(latest).inDays <= heroRecentDays) return false;
+    }
+    return cache.allVideos.any((v) => _isHiQualityRecent(v, at));
+  }
+
   /// Provjeri ima li dovoljno podataka da feed nije prazan/skeleton.
   static bool hasMinimumData(ChannelCache cache) {
+    if (cache.homeSnapshot != null) return true;
     if (cache.total == 0) return false;
     return cache.loaded >= (cache.total * 0.3).ceil() || cache.done;
   }

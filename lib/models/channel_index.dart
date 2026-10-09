@@ -14,7 +14,7 @@ class ChannelIndex {
 
   factory ChannelIndex.fromJson(Map<String, dynamic> json) {
     return ChannelIndex(
-      version: json['version'] as String? ?? '1.0',
+      version: json['version']?.toString() ?? '1.0',
       channelCount: json['channel_count'] as int? ?? 0,
       channels: (json['channels'] as List<dynamic>? ?? [])
           .map((e) => ChannelSummary.fromJson(e as Map<String, dynamic>))

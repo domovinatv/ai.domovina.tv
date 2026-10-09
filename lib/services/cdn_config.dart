@@ -5,12 +5,9 @@
 class CdnConfig {
   static const String base = 'https://cdn.domovina.ai';
 
-  // Channel listing files se mijenjaju kako stižu novi videi, ali backend
-  // uploader trenutno postavlja Cache-Control: immutable na sve fajlove.
-  // Defensive frontend mjera: cache-buster s 5-minutnim bucket-om — dovoljno
-  // svjeze da novi video bude vidljiv brzo, dovoljno stabilno da CDN moze
-  // servirati istu URL verziju vise klijenata. Per-video JSON (article,
-  // summary, info, ...) su pravo immutable pa nemaju cache-buster.
+  // 5-minutni cache-buster. Danas služi SAMO za probe URL-ove i drugi pokušaj
+  // nakon 404 (CDN cachira 404 do 4 h) — NE za listinge kanala, vidi
+  // [channelsIndexUrl].
   static String _channelCacheBuster() {
     final bucket = DateTime.now().millisecondsSinceEpoch ~/ 300000;
     return 'v=$bucket';
@@ -24,10 +21,27 @@ class CdnConfig {
       '$url${url.contains('?') ? '&' : '?'}${_channelCacheBuster()}';
 
   // Channels
-  static String channelsIndexUrl() =>
-      '$base/channels/data/index.json?${_channelCacheBuster()}';
+  //
+  // Listinzi su BEZ cache-bustera. Origin šalje
+  // `Cache-Control: public, max-age=60, must-revalidate` + ETag, i edge to
+  // poštuje (izmjereno 9.10.2026.: `HIT` uz `age: 34`, nakon isteka
+  // `REVALIDATED`). Preglednik zato nakon 60 s pošalje `If-None-Match` i za
+  // nepromijenjen listing dobije 304 s 0 bajtova. Do v2.0.172 je ovdje stajao
+  // 5-minutni `?v=` (iz vremena kad je uploader stavljao `immutable` na sve) —
+  // novi URL svakih 5 min značio je novi cache zapis bez ETag-a, tj. svih
+  // 1,3 MB listinga iznova na svakom posjetu. Najgori slučaj sada: novi video
+  // vidljiv ~2 min kasnije (60 s edge + 60 s preglednik).
+  // Vidi `docs/2026-10-08-brzina-ucitavanja-naslovnice.md` §2.3 i Q1.
+  static String channelsIndexUrl() => '$base/channels/data/index.json';
   static String channelUrl(String channelId) =>
-      '$base/channels/data/$channelId.json?${_channelCacheBuster()}';
+      '$base/channels/data/$channelId.json';
+
+  /// Gotov izbor epizoda za naslovnicu (vidi `HomeSnapshot`). Ista cache
+  /// pravila kao listinzi: bez bustera, revalidacija preko ETag-a.
+  static String homeSnapshotUrl() => '$base/channels/data/home.json';
+
+  /// Tekst za pretragu koji skraćeni listing ne nosi (vidi `SearchCorpus`).
+  static String searchCorpusUrl() => '$base/channels/data/search.json';
   static String channelAvatarUrl(String channelId) =>
       '$base/channels/images/$channelId/avatar_square.jpg?${_channelCacheBuster()}';
   static String channelCoverUrl(String channelId) =>

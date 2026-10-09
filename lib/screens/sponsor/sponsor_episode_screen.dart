@@ -98,7 +98,8 @@ class _SponsorEpisodeScreenState extends State<SponsorEpisodeScreen> {
 
   Future<void> _loadEpisode() async {
     try {
-      final detail = await channelCache.loadChannel(_campaign.channelId);
+      final detail =
+          await channelCache.loadChannelWithText(_campaign.channelId);
       final v = detail.videos.where((v) => v.id == widget.youtubeId);
       if (mounted && v.isNotEmpty) setState(() => _video = v.first);
     } catch (e) {

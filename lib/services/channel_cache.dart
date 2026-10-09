@@ -3,11 +3,32 @@ import 'package:flutter/foundation.dart';
 import '../main.dart' show log;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
+import '../models/home_snapshot.dart';
+import '../models/search_corpus.dart';
 import 'data_service.dart';
 
 /// Singleton in-memory cache za index + sve channel detaile.
 /// go_router kreira novi HomeScreen za svaku navigaciju — cache prezivljava.
 final channelCache = ChannelCache();
+
+/// Epizoda s kontekstom kanala (isti oblik kao `FeedVideo` u `home_feed.dart`).
+typedef FeedVideoRecord = ({
+  String channelId,
+  String channelName,
+  ChannelVideo video,
+});
+
+/// Koliko listinga kanala se dohvaća istovremeno. Preglednik ionako drži do 6
+/// HTTP/1.1 veza po hostu; preko HTTP/2 je to umjereno ograničenje da prefetch
+/// ne zagrabi svu propusnost sporoj vezi kojoj trebaju i slike.
+const _kPrefetchConcurrency = 6;
+
+/// Kanali poredani po datumu zadnje epizode, najsvježiji prvo. Kanal bez
+/// `latest_video` ide na kraj. Stabilno (ne mijenja ulaznu listu).
+List<ChannelSummary> byFreshness(List<ChannelSummary> channels) =>
+    List<ChannelSummary>.from(channels)
+      ..sort((a, b) =>
+          (b.latestVideo?.date ?? '').compareTo(a.latestVideo?.date ?? ''));
 
 class ChannelCache extends ChangeNotifier {
   ChannelIndex? _index;
@@ -53,8 +74,127 @@ class ChannelCache extends ChangeNotifier {
   /// Ucitaj index (samo jednom, cacheira se).
   Future<ChannelIndex> loadIndex() async {
     if (_index != null) return _index!;
-    _index = await ChannelService.loadIndex();
+    // Spremljeni index stiže odmah; noviji (novi kanal, nova zadnja epizoda)
+    // zamijeni ga kad revalidacija završi. Redoslijed naslovnice se tada NE
+    // preračunava ispod korisnika — novi poredak vrijedi od sljedećeg ulaska.
+    _index = await ChannelService.loadIndex(onUpdate: (fresh) {
+      _index = fresh;
+      _total = fresh.channels.length;
+      notifyListeners();
+    });
     return _index!;
+  }
+
+  HomeSnapshot? _homeSnapshot;
+  Future<HomeSnapshot?>? _homeSnapshotFuture;
+
+  /// `home.json` ako je stigao; `null` dok nije ili ako ga nema.
+  HomeSnapshot? get homeSnapshot => _homeSnapshot;
+
+  /// Učitaj `home.json` (jednom). Kad stigne, notificira — hero i railovi
+  /// naslovnice tada ne čekaju listinge. Vidi [feedVideos].
+  Future<HomeSnapshot?> loadHomeSnapshot() {
+    return _homeSnapshotFuture ??= () async {
+      final snap = await ChannelService.loadHomeSnapshot(onUpdate: (fresh) {
+        _homeSnapshot = fresh;
+        notifyListeners();
+      });
+      if (snap != null) {
+        _homeSnapshot = snap;
+        log('ChannelCache: home.json — ${snap.episodes.length} epizoda');
+        notifyListeners();
+      } else {
+        log('ChannelCache: home.json nedostupan — puni listinzi');
+      }
+      return snap;
+    }();
+  }
+
+  /// Bazen epizoda za hero i railove naslovnice: `home.json` ∪ učitani
+  /// listinzi, bez duplikata. Zapis iz listinga ima prednost (puniji je).
+  /// Bez `home.json` jednako [allVideos].
+  List<FeedVideoRecord> get feedVideos {
+    final full = allVideos;
+    final snap = _homeSnapshot;
+    if (snap == null) return full;
+    final seen = {for (final v in full) v.video.id};
+    return [
+      ...full,
+      for (final e in snap.episodes)
+        if (seen.add(e.video.id))
+          (
+            channelId: e.channelId,
+            channelName: _channelName(e.channelId),
+            video: e.video,
+          ),
+    ];
+  }
+
+  String _channelName(String channelId) {
+    final idx = _index;
+    if (idx != null) {
+      for (final c in idx.channels) {
+        if (c.id == channelId) return c.name;
+      }
+    }
+    return channelId;
+  }
+
+  SearchCorpus? _searchCorpus;
+  Future<void>? _searchCorpusFuture;
+
+  /// Učitaj `search.json` (jednom) i nadopuni njime sve učitane listinge;
+  /// listinzi koji stignu kasnije nadopunjuju se pri ubacivanju u cache.
+  /// Zovu ga ekrani kojima treba tekst epizode (pretraga, sponzorski izlog) —
+  /// naslovnica ne. Dok su listinzi v1 (tekst nose sami), `search.json` ne
+  /// postoji i ovo je jedan 404 po sesiji.
+  Future<void> ensureSearchText() {
+    return _searchCorpusFuture ??= () async {
+      final corpus = await ChannelService.loadSearchCorpus();
+      if (corpus == null) return;
+      _applySearchCorpus(corpus);
+      log('ChannelCache: search.json — ${corpus.byId.length} epizoda');
+    }();
+  }
+
+  void _applySearchCorpus(SearchCorpus corpus) {
+    _searchCorpus = corpus;
+    for (final id in _cache.keys.toList()) {
+      _cache[id] = _withSearchText(_cache[id]!);
+    }
+    notifyListeners();
+  }
+
+  /// Postavi `search.json` bez mrežnog dohvata — samo za testove.
+  @visibleForTesting
+  void seedSearchCorpusForTest(SearchCorpus corpus) {
+    _searchCorpusFuture = Future.value();
+    _applySearchCorpus(corpus);
+  }
+
+  /// [loadChannel] uz tekst za pretragu (sažetak, teme, govornici).
+  Future<ChannelDetail> loadChannelWithText(String channelId) async {
+    await ensureSearchText();
+    return loadChannel(channelId);
+  }
+
+  ChannelDetail _withSearchText(ChannelDetail detail) {
+    final corpus = _searchCorpus;
+    if (corpus == null) return detail;
+    return detail.withVideos([
+      for (final v in detail.videos)
+        if (corpus.byId[v.id] case final t?)
+          v.withSearchText(
+              abstract: t.abstract, topics: t.topics, speakers: t.speakers)
+        else
+          v,
+    ]);
+  }
+
+  /// Novija verzija listinga stigla revalidacijom (vidi `CdnJsonCache`).
+  void _replaceChannel(String channelId, ChannelDetail fresh) {
+    _cache[channelId] = _withSearchText(fresh);
+    notifyListeners();
   }
 
   /// Dohvati cached channel detail — null ako jos nije ucitan.
@@ -90,7 +230,8 @@ class ChannelCache extends ChangeNotifier {
   Future<ChannelDetail> loadChannel(String channelId) async {
     final cached = _cache[channelId];
     if (cached != null) return cached;
-    final detail = await ChannelService.loadChannel(channelId);
+    final detail = _withSearchText(await ChannelService.loadChannel(channelId,
+        onUpdate: (fresh) => _replaceChannel(channelId, fresh)));
     _cache[channelId] = detail;
     return detail;
   }
@@ -128,13 +269,38 @@ class ChannelCache extends ChangeNotifier {
         }
       }
     }
+    // Epizoda iz `home.json` čiji listing još nije stigao (npr. kartica na
+    // naslovnici prije pozadinskog prefetcha) — `shareLanguageForVideo` i
+    // ostali sinkroni pozivatelji ionako žele samo naslov/zastavice.
+    for (final e in _homeSnapshot?.episodes ?? const <HomeSnapshotEpisode>[]) {
+      if (e.video.id == videoId) {
+        return (
+          channelId: e.channelId,
+          channelName: _channelName(e.channelId),
+          video: e.video,
+        );
+      }
+    }
     return null;
   }
 
   /// Ubaci kanal u cache bez mrežnog dohvata — samo za testove.
   @visibleForTesting
   void seedForTest(ChannelDetail detail) {
-    _cache[detail.id] = detail;
+    _cache[detail.id] = _withSearchText(detail);
+  }
+
+  /// Postavi `home.json` bez mrežnog dohvata — samo za testove.
+  @visibleForTesting
+  void seedHomeSnapshotForTest(HomeSnapshot snapshot) {
+    _homeSnapshot = snapshot;
+  }
+
+  /// Postavi index bez mrežnog dohvata — samo za testove.
+  @visibleForTesting
+  void seedIndexForTest(ChannelIndex index) {
+    _index = index;
+    _total = index.channels.length;
   }
 
   /// Isprazni cache — samo za testove (singleton je globalan, pa bi stanje
@@ -143,6 +309,10 @@ class ChannelCache extends ChangeNotifier {
   void resetForTest() {
     _cache.clear();
     _index = null;
+    _homeSnapshot = null;
+    _homeSnapshotFuture = null;
+    _searchCorpus = null;
+    _searchCorpusFuture = null;
     _loaded = 0;
     _total = 0;
     _done = false;
@@ -171,9 +341,7 @@ class ChannelCache extends ChangeNotifier {
       return null;
     }
 
-    final ordered = List<ChannelSummary>.from(idx.channels)
-      ..sort((a, b) => (b.latestVideo?.date ?? '')
-          .compareTo(a.latestVideo?.date ?? ''));
+    final ordered = byFreshness(idx.channels);
 
     const batchSize = 6;
     for (var i = 0; i < ordered.length; i += batchSize) {
@@ -185,8 +353,20 @@ class ChannelCache extends ChangeNotifier {
     return null;
   }
 
+  /// Je li listing kanala već u cacheu (uspješno učitan).
+  bool isLoaded(String channelId) => _cache.containsKey(channelId);
+
   /// Prefetchaj sve kanale iz indexa u pozadini.
   /// Noop ako je vec u tijeku ili zavrseno.
+  ///
+  /// Redoslijed je po svježini (`latest_video.date` iz indexa, najnoviji prvo):
+  /// hero i railovi naslovnice grade se od najnovijih epizoda, pa kanali koji
+  /// ih nose moraju stići prvi — vidi [HomeFeed.heroPoolComplete].
+  ///
+  /// Dohvat ide kroz pool od [_kPrefetchConcurrency] aktivnih zahtjeva, a ne u
+  /// šestorkama s `Future.wait`: šestorka je čekala svoj najsporiji kanal prije
+  /// sljedeće, pa je jedan spori listing blokirao ostalih pet (9 sekvencijalnih
+  /// rundi za 50 kanala). U poolu sljedeći kanal kreće čim bilo koji završi.
   Future<void> prefetchAll(List<ChannelSummary> channels) async {
     if (_prefetching || _done) return;
     _prefetching = true;
@@ -197,14 +377,16 @@ class ChannelCache extends ChangeNotifier {
 
     log('ChannelCache: prefetching ${channels.length} channels...');
 
-    const batchSize = 6;
-    for (var i = 0; i < channels.length; i += batchSize) {
-      final batch = channels.skip(i).take(batchSize);
-      await Future.wait(
-        batch.map((ch) => _loadOne(ch.id)),
-        eagerError: false,
-      );
+    final queue = byFreshness(channels).iterator;
+    Future<void> worker() async {
+      while (queue.moveNext()) {
+        await _loadOne(queue.current.id);
+      }
     }
+
+    await Future.wait(
+      List.generate(_kPrefetchConcurrency, (_) => worker()),
+    );
 
     _done = true;
     _prefetching = false;
@@ -219,8 +401,9 @@ class ChannelCache extends ChangeNotifier {
       return;
     }
     try {
-      final detail = await ChannelService.loadChannel(channelId);
-      _cache[channelId] = detail;
+      final detail = await ChannelService.loadChannel(channelId,
+          onUpdate: (fresh) => _replaceChannel(channelId, fresh));
+      _cache[channelId] = _withSearchText(detail);
     } catch (e) {
       log('ChannelCache: failed $channelId: $e');
     }

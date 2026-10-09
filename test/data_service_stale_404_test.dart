@@ -109,7 +109,10 @@ void main() {
     expect(srt[1], contains('/data/abc123/diarized.srt?v='));
   });
 
-  test('channel listing zadržava svoj cache-buster i ne retrya', () async {
+  // Od 9.10.2026. listing ide BEZ `?v=`: origin šalje `max-age=60` + ETag i
+  // edge to poštuje, pa preglednik revalidira (304) umjesto da svakih 5 min
+  // skida sve iznova. Vidi `CdnConfig.channelsIndexUrl`.
+  test('channel listing ide bez cache-bustera i ne retrya', () async {
     final log = <String>[];
     await http.runWithClient(() async {
       await ChannelService.loadChannel('iva_kraljevic');
@@ -119,6 +122,7 @@ void main() {
         }));
 
     expect(log.length, 1);
-    expect(log.single, contains('/channels/data/iva_kraljevic.json?v='));
+    expect(log.single,
+        'https://cdn.domovina.ai/channels/data/iva_kraljevic.json');
   });
 }

@@ -72,9 +72,28 @@ class ChannelDetail {
         !host.contains('youtu.be');
   }
 
+  ChannelDetail withVideos(List<ChannelVideo> videos) => ChannelDetail(
+        version: version,
+        id: id,
+        name: name,
+        avatarSquare: avatarSquare,
+        avatarCover: avatarCover,
+        youtubeChannelUrl: youtubeChannelUrl,
+        youtubeChannelId: youtubeChannelId,
+        youtubePlaylistUrl: youtubePlaylistUrl,
+        description: description,
+        tags: tags,
+        followerCount: followerCount,
+        videoCount: videoCount,
+        totalDurationSeconds: totalDurationSeconds,
+        avgMagisteriumScore: avgMagisteriumScore,
+        latestVideoDate: latestVideoDate,
+        videos: videos,
+      );
+
   factory ChannelDetail.fromJson(Map<String, dynamic> json) {
     return ChannelDetail(
-      version: json['version'] as String? ?? '1.0',
+      version: json['version']?.toString() ?? '1.0',
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       avatarSquare: json['avatar_square'] as String?,
@@ -105,7 +124,7 @@ class ChannelVideo {
   final String? titleHr;
   final String? date;
   final int? durationSeconds;
-  final String? durationDisplay;
+  final String? _durationDisplay;
   final int? views;
   final int? likes;
   final String? thumbnail;
@@ -128,7 +147,7 @@ class ChannelVideo {
     this.titleHr,
     this.date,
     this.durationSeconds,
-    this.durationDisplay,
+    String? durationDisplay,
     this.views,
     this.likes,
     this.thumbnail,
@@ -140,7 +159,49 @@ class ChannelVideo {
     this.pipeline,
     this.source,
     this.soundLink,
-  });
+  }) : _durationDisplay = durationDisplay;
+
+  /// Trajanje za prikaz („20:14", „1:40:06"). Listing ga nosi kao
+  /// `duration_display`, ali `home.json` i skraćeni listing (v2) ne — tada se
+  /// računa iz [durationSeconds] u istom obliku koji piše pipeline.
+  String? get durationDisplay {
+    final given = _durationDisplay;
+    if (given != null) return given;
+    final secs = durationSeconds;
+    if (secs == null || secs <= 0) return null;
+    String two(int n) => n.toString().padLeft(2, '0');
+    final h = secs ~/ 3600, m = (secs % 3600) ~/ 60, s = secs % 60;
+    return h > 0 ? '$h:${two(m)}:${two(s)}' : '$m:${two(s)}';
+  }
+
+  /// Kopija s tekstom za pretragu (sažetak, teme, govornici) iz
+  /// `search.json` — skraćeni listing (v2) ga ne nosi. Prazno polje u kopiji
+  /// ostaje kakvo je bilo.
+  ChannelVideo withSearchText({
+    String? abstract,
+    List<String> topics = const [],
+    List<String> speakers = const [],
+  }) {
+    return ChannelVideo(
+      id: id,
+      title: title,
+      titleHr: titleHr,
+      date: date,
+      durationSeconds: durationSeconds,
+      durationDisplay: _durationDisplay,
+      views: views,
+      likes: likes,
+      thumbnail: thumbnail,
+      youtubeUrl: youtubeUrl,
+      abstract_: abstract_ ?? abstract,
+      topics: this.topics.isNotEmpty ? this.topics : topics,
+      speakers: this.speakers.isNotEmpty ? this.speakers : speakers,
+      magisteriumScore: magisteriumScore,
+      pipeline: pipeline,
+      source: source,
+      soundLink: soundLink,
+    );
+  }
 
   /// Display title — prefer Croatian title.
   String get displayTitle => titleHr ?? title;
@@ -180,9 +241,12 @@ class ChannelVideo {
       topics: (json['topics'] as List<dynamic>? ?? []).cast<String>(),
       speakers: speakers,
       magisteriumScore: json['magisterium_score'] as int?,
+      // v1 listing nosi `pipeline` objekt, v2 (skraćeni) bitmask `p`.
       pipeline: json['pipeline'] != null
           ? VideoPipeline.fromJson(json['pipeline'] as Map<String, dynamic>)
-          : null,
+          : json['p'] is num
+              ? VideoPipeline.fromBits((json['p'] as num).toInt())
+              : null,
       source: json['source'] as String? ?? json['_source'] as String?,
       soundLink:
           json['sound_link'] as String? ?? json['_sound_link'] as String?,
@@ -215,6 +279,34 @@ class VideoPipeline {
     required this.hasMagisterium,
     this.hasArticleEn = false,
   });
+
+  /// Zastavice kao bitmask (`p` u `home.json` i skraćenom listingu). Redoslijed
+  /// bitova je ugovor s pipelineom i ne smije se mijenjati, samo nadopunjavati
+  /// na kraju:
+  ///
+  /// | bit | zastavica |
+  /// |---|---|
+  /// | 0 | `has_transcript` |
+  /// | 1 | `has_diarized` |
+  /// | 2 | `has_summary` |
+  /// | 3 | `has_article` |
+  /// | 4 | `has_magisterium` |
+  /// | 5 | `has_translation_en` |
+  /// | 6 | `has_summary_en` |
+  /// | 7 | `has_article_en` |
+  /// | 8 | `has_magisterium_en` |
+  factory VideoPipeline.fromBits(int bits) {
+    bool bit(int i) => bits & (1 << i) != 0;
+    return VideoPipeline(
+      hasTranscript: bit(0),
+      hasDiarized: bit(1),
+      hasSummary: bit(2),
+      hasArticle: bit(3),
+      hasMagisterium: bit(4),
+      // Isto pravilo kao [VideoPipeline.fromJson]: dovoljno je jedno od dva.
+      hasArticleEn: bit(7) || bit(5),
+    );
+  }
 
   factory VideoPipeline.fromJson(Map<String, dynamic> json) {
     return VideoPipeline(

@@ -608,6 +608,27 @@ otrovani zapis ostane 404 (provjereno). Varijantu čisti samo
 Isto pravilo kao kod verifikacije purgea: s `Vary: Origin` postoje dva zapisa,
 pa i provjera i purge moraju ići u obje varijante.
 
+### Naslovnica bez čekanja kataloga + disk cache (od 9.10.2026., nedeployano)
+
+Naslovnica je povlačila svih 50 listinga (6,9 MB sirovo / 1,3 MB preko žice)
+pri svakom otvaranju. Sada: listinzi bez `?v=` (304 umjesto punog downloada),
+prefetch po svježini kroz pool, hero se latcha čim je *dokazivo* konačan
+(`HomeFeed.heroPoolComplete`), `home.json` (~6 KB) kad ga pipeline isporuči, i
+stale-while-revalidate disk cache (`CdnJsonCache`). Mjerenja, ugovori za
+`home.json`/`search.json`/listing v2 i zašto ne Worker s podacima u memoriji:
+`docs/2026-10-08-brzina-ucitavanja-naslovnice.md`.
+
+**Rule (CDN JSON ide kroz `CdnJsonCache`)**: promjenjive datoteke
+(`channels/data/*`) kroz `getMutable` s `onUpdate`, per-epizoda kroz
+`DataService._get`. Novi channel-level fajl NE dobiva `?v=` — origin šalje
+`max-age=60` + ETag i edge to poštuje (izmjereno 9.10.2026.). U debug buildu i
+uz `?nocache=1` cache je ugašen.
+
+**Rule (listing v2 mora čitati i stari build)**: `version` ostaje **string**
+(stari build radi `as String?`), a v2 bez `pipeline` objekta ide tek kad stari
+native buildovi ispadnu iz upotrebe — inače im sve epizode izgledaju
+neobrađene.
+
 ### Thumbnail caching + WebP varijante — `CachedThumbnail`
 
 Sve slike epizoda idu kroz `CachedThumbnail` (`lib/widgets/cached_thumbnail.dart`):

@@ -95,6 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // su ih runtime-overridali — vidi services/page_meta.dart).
     resetPageMeta();
     _indexFuture = _channelCache.loadIndex();
+    // `home.json` paralelno s indexom: kad stigne (~10 KB), hero i railovi
+    // se crtaju bez čekanja listinga. Bez njega (404 dok ga pipeline ne
+    // generira) sve ide starim putem — vidi `HomeSnapshot`.
+    unawaited(_channelCache.loadHomeSnapshot());
     // Prefetch svih channel detalja čim index stigne — DETERMINISTIČKI, neovisno
     // o build timingu i simpleMode pref-u. (Ranije se zvao iz onChannelsLoaded
     // iza `if (!_simpleModeLoaded) return;`, što je preskakalo prefetch kad bi
@@ -300,7 +304,8 @@ class _ChannelGridView extends StatefulWidget {
 /// stranice). Sada se izbor izračuna **jednom**, kad je bazen konačan, i više
 /// se ne dira; do tada stoji [HeroSkeleton] iste visine.
 ///
-/// Konačan bazen = `channelCache.done`. Sigurnosni ventil je [_graceWindow]:
+/// Konačan bazen = [HomeFeed.heroPoolComplete]: svi kanali koji mogu nositi
+/// tier 1 kandidata su učitani (ili je prefetch gotov). Sigurnosni ventil je [_graceWindow]:
 /// ako se prefetch zaglavi na jednom kanalu, nakon njega se latcha ono što
 /// imamo (uz [HomeFeed.hasMinimumData]) da hero ne ostane skeleton zauvijek.
 class _ChannelGridViewState extends State<_ChannelGridView> {
@@ -336,10 +341,10 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
   List<FeaturedPick>? _featuredPicks(ChannelCache cache) {
     final locked = _lockedPicks;
     if (locked != null) return locked;
-    final poolFinal = cache.done ||
+    final poolFinal = HomeFeed.heroPoolComplete(cache) ||
         (_graceElapsed && HomeFeed.hasMinimumData(cache));
     if (!poolFinal) return null;
-    return _lockedPicks = HomeFeed.pickFeaturedCarousel(cache.allVideos);
+    return _lockedPicks = HomeFeed.pickFeaturedCarousel(cache.feedVideos);
   }
 
   @override
@@ -429,7 +434,7 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
 
             // Search rezultati su sada u overlay-u (Cmd+K). Channel grid
             // uvijek pokazuje pun listing po aktivnom sort modu.
-            final allVids = channelCache.allVideos;
+            final allVids = channelCache.feedVideos;
             final hasMinData = HomeFeed.hasMinimumData(channelCache);
             // Uži izbor (do 5) za hero karusel; prvi je dnevni pick. `null` =
             // bazen još nije konačan, hero stoji na skeletonu (vidi
@@ -451,7 +456,8 @@ class _ChannelGridViewState extends State<_ChannelGridView> {
                 HomeAppBar(onSearchTap: onSearchTap),
                 SliverToBoxAdapter(
                   child: _HomeHeader(
-                    cacheProgress: channelCache.done
+                    cacheProgress: channelCache.done ||
+                            channelCache.homeSnapshot != null
                         ? null
                         : (channelCache.loaded, channelCache.total),
                     isMobile: isMobile,

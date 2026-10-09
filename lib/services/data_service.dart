@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
+import '../models/home_snapshot.dart';
+import '../models/search_corpus.dart';
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
@@ -13,6 +15,7 @@ import '../models/magisterium_full_v2_data.dart';
 import '../models/speaker_timeline.dart';
 import '../models/sponsors_in_video.dart';
 import 'cdn_config.dart';
+import 'cdn_json_cache.dart';
 
 /// Bačen kad info.json za dani YouTube ID ne postoji na CDN-u (HTTP 404).
 class VideoNotFoundException implements Exception {
@@ -24,26 +27,78 @@ class VideoNotFoundException implements Exception {
 }
 
 /// Učitava channel index i detail s CDN-a.
+///
+/// Sve ide kroz [CdnJsonCache.getMutable]: pri ponovnom otvaranju vraća se
+/// spremljena verzija odmah, a nova (ako je ima) stiže kroz `onUpdate`.
 class ChannelService {
-  static Future<ChannelIndex> loadIndex() async {
-    final response = await http.get(Uri.parse(CdnConfig.channelsIndexUrl()));
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: channels/index.json');
-    }
-    return ChannelIndex.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
+  static Future<ChannelIndex> loadIndex({
+    void Function(ChannelIndex index)? onUpdate,
+  }) async {
+    final body = await CdnJsonCache.instance.getMutable(
+      CdnConfig.channelsIndexUrl(),
+      onUpdate: onUpdate == null ? null : (b) => onUpdate(_parseIndex(b)),
     );
+    return _parseIndex(body);
   }
 
-  static Future<ChannelDetail> loadChannel(String channelId) async {
-    final url = CdnConfig.channelUrl(channelId);
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: $url');
-    }
-    return ChannelDetail.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
+  static ChannelIndex _parseIndex(String body) =>
+      ChannelIndex.fromJson(jsonDecode(body) as Map<String, dynamic>);
+
+  static Future<ChannelDetail> loadChannel(
+    String channelId, {
+    void Function(ChannelDetail detail)? onUpdate,
+  }) async {
+    final body = await CdnJsonCache.instance.getMutable(
+      CdnConfig.channelUrl(channelId),
+      onUpdate: onUpdate == null ? null : (b) => onUpdate(_parseChannel(b)),
     );
+    return _parseChannel(body);
+  }
+
+  static ChannelDetail _parseChannel(String body) =>
+      ChannelDetail.fromJson(jsonDecode(body) as Map<String, dynamic>);
+
+  /// `home.json` — `null` kad ga nema (404 dok ga pipeline ne generira),
+  /// kad je nepoznate verzije ili kad dohvat padne. Nikad ne baca: naslovnica
+  /// tada ide starim putem preko svih listinga.
+  static Future<HomeSnapshot?> loadHomeSnapshot({
+    void Function(HomeSnapshot snapshot)? onUpdate,
+  }) async {
+    try {
+      final body = await CdnJsonCache.instance.getMutable(
+        CdnConfig.homeSnapshotUrl(),
+        onUpdate: onUpdate == null
+            ? null
+            : (b) {
+                final snap = _parseSnapshot(b);
+                if (snap != null) onUpdate(snap);
+              },
+      );
+      return _parseSnapshot(body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static HomeSnapshot? _parseSnapshot(String body) {
+    try {
+      return HomeSnapshot.tryParse(jsonDecode(body) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// `search.json` — `null` kad ga nema (listinzi su još v1 i tekst nose
+  /// sami), kad je nepoznate verzije ili kad dohvat padne. Nikad ne baca.
+  /// Bez `onUpdate`: pretraga u sesiji radi s verzijom koju je dobila.
+  static Future<SearchCorpus?> loadSearchCorpus() async {
+    try {
+      final body =
+          await CdnJsonCache.instance.getMutable(CdnConfig.searchCorpusUrl());
+      return SearchCorpus.tryParse(jsonDecode(body) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -78,10 +133,15 @@ class DataService {
   /// Cijena je jedan dodatni zahtjev po assetu koji ionako nedostaje; na
   /// uspješnom dohvatu nula. Probe putanje ([_exists], `EbookService.probe`)
   /// cache-buster nose oduvijek i ne trebaju retry.
-  Future<http.Response> _get(String url) async {
-    final first = await http.get(Uri.parse(url));
-    if (first.statusCode != 404) return first;
-    return http.get(Uri.parse(CdnConfig.bustCache(url)));
+  ///
+  /// Na nativeu ide kroz [CdnJsonCache.getImmutable]: jednom dohvaćena
+  /// datoteka čita se s diska (i offline). 404 se ne sprema.
+  Future<http.Response> _get(String url) {
+    return CdnJsonCache.instance.getImmutable(url, () async {
+      final first = await http.get(Uri.parse(url));
+      if (first.statusCode != 404) return first;
+      return http.get(Uri.parse(CdnConfig.bustCache(url)));
+    });
   }
 
   Future<String> _fetch(String url) async {

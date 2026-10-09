@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/channel_detail.dart';
+import '../../../services/cdn_config.dart';
 import '../../../services/locale_service.dart';
 import '../../../widgets/cached_thumbnail.dart';
 
@@ -128,19 +129,19 @@ class _EpisodePickerState extends State<EpisodePicker> {
                 title: Text(v.displayTitle,
                     maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: v.date != null ? Text(v.date!) : null,
-                secondary: v.thumbnail != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: CachedThumbnail(
-                          url: v.thumbnail!,
-                          width: 64,
-                          height: 36,
-                          fit: BoxFit.cover,
-                          errorFallbackBuilder: (_) => const SizedBox(
-                              width: 64, height: 36),
-                        ),
-                      )
-                    : null,
+                // Uvijek kanonski CDN URL iz ID-a: listing ga u v2 ne nosi,
+                // a i u v1 je znao biti `i.ytimg.com` (CORS na webu).
+                secondary: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: CachedThumbnail(
+                    url: CdnConfig.thumbnailUrl(v.id),
+                    width: 64,
+                    height: 36,
+                    fit: BoxFit.cover,
+                    errorFallbackBuilder: (_) =>
+                        const SizedBox(width: 64, height: 36),
+                  ),
+                ),
               );
             },
           ),

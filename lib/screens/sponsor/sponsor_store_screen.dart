@@ -52,7 +52,7 @@ class _SponsorStoreScreenState extends State<SponsorStoreScreen> {
 
   Future<(ChannelDetail, List<_Episode>)> _load(SponsorCampaign c) async {
     final results = await Future.wait([
-      channelCache.loadChannel(c.channelId),
+      channelCache.loadChannelWithText(c.channelId),
       SponsoredMomentsService.instance.loadOffers(c),
     ]);
     final detail = results[0] as ChannelDetail;
