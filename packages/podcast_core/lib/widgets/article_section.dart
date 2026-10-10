@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
+import '../models/sponsored_moment.dart';
 import '../models/sponsors_in_video.dart';
+import '../services/sponsored_moments_controller.dart';
 import '../services/cdn_config.dart';
 import '../services/episode_language.dart';
 import '../services/share_links.dart';
@@ -18,6 +20,7 @@ import '../services/clip_service.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
 import 'cached_thumbnail.dart';
+import 'sponsored_moment_widgets.dart';
 import 'sponsors_in_video_section.dart';
 
 class ArticleSection extends StatelessWidget {
@@ -48,6 +51,12 @@ class ArticleSection extends StatelessWidget {
   final Map<String, List<SponsorInVideoMark>> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// PLAĆENI trenuci po timestampu sekcije (vidi
+  /// [SponsoredMoments.marksBySection]) — zaseban sloj od [sponsorMarks].
+  final Map<String, List<SponsoredMoment>> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const ArticleSection({
     super.key,
     required this.article,
@@ -61,6 +70,9 @@ class ArticleSection extends StatelessWidget {
     this.highlightSpeaks = true,
     this.sponsorMarks = const {},
     this.onSponsorListen,
+    this.sponsoredMarks = const {},
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
@@ -95,6 +107,9 @@ class ArticleSection extends StatelessWidget {
             highlightSpeaks: highlightSpeaks,
             sponsorMarks: sponsorMarks,
             onSponsorListen: onSponsorListen,
+            sponsoredMarks: sponsoredMarks,
+            sponsoredMoments: sponsoredMoments,
+            onSponsoredListen: onSponsoredListen,
           ),
         ),
       ],
@@ -115,6 +130,12 @@ class _IterationBlock extends StatelessWidget {
   final Map<String, List<SponsorInVideoMark>> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// PLAĆENI trenuci po timestampu sekcije (vidi
+  /// [SponsoredMoments.marksBySection]) — zaseban sloj od [sponsorMarks].
+  final Map<String, List<SponsoredMoment>> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const _IterationBlock({
     required this.iteration,
     required this.youtubeId,
@@ -127,10 +148,17 @@ class _IterationBlock extends StatelessWidget {
     this.highlightSpeaks = true,
     this.sponsorMarks = const {},
     this.onSponsorListen,
+    this.sponsoredMarks = const {},
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Nizak ekran (mobitel u landscapeu, ~340 px visine): razmak od 80 + 56 px
+    // između sekcija pojede trećinu ekrana pa se vidi više praznine nego
+    // teksta. Tamo ga stišćemo.
+    final compact = MediaQuery.sizeOf(context).height < 500;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
@@ -153,7 +181,7 @@ class _IterationBlock extends StatelessWidget {
             // padding iznad njega — inace naslov sjedne ~80px prenisko (mobile).
             // Isti razlog kao paralelni desktop layout koji padding drzi izvan keya.
             return Padding(
-              padding: const EdgeInsets.only(top: 80),
+              padding: EdgeInsets.only(top: compact ? 32 : 80),
               child: KeyedSubtree(
                 key: sectionKeys[sec.screenshotTimestamp],
                 child: ArticleSectionCard(
@@ -163,7 +191,7 @@ class _IterationBlock extends StatelessWidget {
                   sectionMagisterium: magisterium?.forTimestamp(
                     sec.screenshotTimestamp,
                   ),
-                  padding: const EdgeInsets.only(bottom: 56),
+                  padding: EdgeInsets.only(bottom: compact ? 24 : 56),
                   showScreenshot: showScreenshot,
                   clipEndSec: showScreenshot ? endSec : null,
                   personHighlight: sec.screenshotTimestamp == highlightTimestamp
@@ -174,6 +202,10 @@ class _IterationBlock extends StatelessWidget {
                   sponsorMarks:
                       sponsorMarks[sec.screenshotTimestamp] ?? const [],
                   onSponsorListen: onSponsorListen,
+                  sponsoredMarks:
+                      sponsoredMarks[sec.screenshotTimestamp] ?? const [],
+                  sponsoredMoments: sponsoredMoments,
+                  onSponsoredListen: onSponsoredListen,
                 ),
               ),
             );
@@ -242,6 +274,9 @@ class ArticleIterationHeader extends StatelessWidget {
   }
 }
 
+/// Ispod ove širine kartice naslov sekcije ide u vlastiti red.
+const double _kTitleOwnLineBelow = 520;
+
 class ArticleSectionCard extends StatefulWidget {
   final PodcastSection section;
   final String youtubeId;
@@ -284,6 +319,11 @@ class ArticleSectionCard extends StatefulWidget {
   final List<SponsorInVideoMark> sponsorMarks;
   final void Function(SponsorInVideoSegment segment)? onSponsorListen;
 
+  /// Plaćeni trenuci koji počinju u ovoj sekciji (sidro je vrijeme).
+  final List<SponsoredMoment> sponsoredMarks;
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
+
   const ArticleSectionCard({
     super.key,
     required this.section,
@@ -299,6 +339,9 @@ class ArticleSectionCard extends StatefulWidget {
     this.personNeedle,
     this.sponsorMarks = const [],
     this.onSponsorListen,
+    this.sponsoredMarks = const [],
+    this.sponsoredMoments,
+    this.onSponsoredListen,
   });
 
   @override
@@ -408,123 +451,148 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
               marks: widget.sponsorMarks,
               onListen: widget.onSponsorListen,
             ),
-          // Timestamp badge + play button + score badge + subtitle
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withAlpha(25),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withAlpha(80),
-                    width: 1,
+          if (widget.sponsoredMarks.isNotEmpty)
+            SponsoredMomentSectionMark(
+              moments: widget.sponsoredMarks,
+              controller: widget.sponsoredMoments,
+              onListen: widget.onSponsoredListen,
+            ),
+          // Timestamp badge + play button + score badge + subtitle.
+          // Na uskom stupcu (mobitel, landscape uz player) naslov ide u svoj
+          // red preko cijele širine: stisnut uz ikone prelamao se u 3–4 retka,
+          // a ispod ikona je ostajala praznina.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final title = Text(
+                subtitle,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+              final controls = <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withAlpha(25),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withAlpha(80),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    section.screenshotTimestamp,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
-                child: Text(
-                  section.screenshotTimestamp,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
+                if (widget.onPlayTap != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: Icon(
+                          Icons.play_circle_outline,
+                          size: 20,
+                          color: theme.colorScheme.primary,
+                        ),
+                        tooltip: l.sectionPlayFrom(section.screenshotTimestamp),
+                        onPressed: () =>
+                            widget.onPlayTap!(section.screenshotTimestamp),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              if (widget.onPlayTap != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.only(left: 2),
                   child: SizedBox(
                     width: 28,
                     height: 28,
                     child: IconButton(
                       padding: EdgeInsets.zero,
                       icon: Icon(
-                        Icons.play_circle_outline,
-                        size: 20,
-                        color: theme.colorScheme.primary,
+                        Icons.link,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                      tooltip: l.sectionPlayFrom(section.screenshotTimestamp),
-                      onPressed: () =>
-                          widget.onPlayTap!(section.screenshotTimestamp),
+                      tooltip: l.sectionCopyLink,
+                      onPressed: () => _copyShareLink(context),
                     ),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.only(left: 2),
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: Icon(
-                      Icons.link,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
+                if (widget.clipEndSec != null &&
+                    widget.clipEndSec! >
+                        _tsToSeconds(section.screenshotTimestamp))
+                  ClipShareButton(
+                    videoId: widget.youtubeId,
+                    startSec: _tsToSeconds(section.screenshotTimestamp),
+                    endSec: widget.clipEndSec!,
+                    title: subtitle,
+                  ),
+                if (mag?.score != null) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
                     ),
-                    tooltip: l.sectionCopyLink,
-                    onPressed: () => _copyShareLink(context),
-                  ),
-                ),
-              ),
-              if (widget.clipEndSec != null &&
-                  widget.clipEndSec! >
-                      _tsToSeconds(section.screenshotTimestamp))
-                ClipShareButton(
-                  videoId: widget.youtubeId,
-                  startSec: _tsToSeconds(section.screenshotTimestamp),
-                  endSec: widget.clipEndSec!,
-                  title: subtitle,
-                ),
-              if (mag?.score != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MagisteriumSection.scoreColor(
-                      mag!.score,
-                    ).withAlpha(25),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
+                    decoration: BoxDecoration(
                       color: MagisteriumSection.scoreColor(
-                        mag.score,
-                      ).withAlpha(80),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.church,
-                        size: 12,
-                        color: MagisteriumSection.scoreColor(mag.score),
+                        mag!.score,
+                      ).withAlpha(25),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: MagisteriumSection.scoreColor(
+                          mag.score,
+                        ).withAlpha(80),
                       ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${mag.score}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.church,
+                          size: 12,
                           color: MagisteriumSection.scoreColor(mag.score),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Text(
+                          '${mag.score}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: MagisteriumSection.scoreColor(mag.score),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  subtitle,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+                ],
+              ];
+              if (constraints.maxWidth < _kTitleOwnLineBelow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: controls),
+                    const SizedBox(height: 6),
+                    title,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ...controls,
+                  const SizedBox(width: 6),
+                  Expanded(child: title),
+                ],
+              );
+            },
           ),
           // Screenshot — AspectRatio rezervira mjesto PRIJE async load-a slike.
           // Bez ovoga: section anchor scroll na page load promaši target jer

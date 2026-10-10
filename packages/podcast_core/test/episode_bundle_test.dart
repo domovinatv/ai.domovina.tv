@@ -1,0 +1,126 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+import 'package:podcast_core/models/episode_bundle.dart';
+import 'package:podcast_core/services/data_service.dart';
+
+/// Ugovor za `data/<id>/episode.json` ([EpisodeBundle]): s njim ekran epizode
+/// ne traži datoteke kojih nema i ne probe-a mediju. Vidi
+/// `docs/2026-10-08-brzina-ucitavanja-naslovnice.md` §8.
+void main() {
+  setUp(DataService.resetMemoryForTest);
+
+  const id = 'abc123';
+
+  String bundle({List<String> extraFiles = const []}) => jsonEncode({
+        'version': 1,
+        'generated_at': '2026-10-10T02:00:00Z',
+        'files': [
+          'info.json',
+          'summary.json',
+          'article.json',
+          'diarized.srt',
+          'audio.mp3',
+          ...extraFiles,
+        ],
+        'inline': {
+          'info.json': {'id': id, 'title': 'Naslov', 'duration': 60},
+          'summary.json': {
+            'summary': {'title_hr': 'Naslov HR'},
+          },
+          'article.json': {'iterations': []},
+        },
+      });
+
+  test('s bundleom se traže samo datoteke s popisa, bez probe-a', () async {
+    final log = <String>[];
+    final data = await http.runWithClient(
+      () => EpisodeData.load(youtubeId: id),
+      () => MockClient((req) async {
+        log.add('${req.method} ${req.url.path}');
+        if (req.url.path.endsWith('/episode.json')) {
+          return http.Response(bundle(), 200);
+        }
+        if (req.url.path.endsWith('/diarized.srt')) {
+          return http.Response(
+              '1\n00:00:01,000 --> 00:00:02,000\n[SPEAKER_00] Dobar dan\n',
+              200);
+        }
+        return http.Response('Not Found', 404);
+      }),
+    );
+
+    expect(data.info.title, 'Naslov');
+    expect(data.article, isNotNull);
+    expect(data.outline, isNull);
+    expect(data.isAudioOnly, isTrue);
+    expect(data.speakerTimeline, isNotNull);
+    expect(log, [
+      'GET /data/$id/episode.json',
+      'GET /data/$id/diarized.srt',
+    ]);
+  });
+
+  test('bez bundlea stari put (svaka datoteka + probe)', () async {
+    var requests = 0;
+    await http.runWithClient(
+      () => EpisodeData.load(youtubeId: id),
+      () => MockClient((req) async {
+        requests++;
+        if (req.url.path.endsWith('/info.json')) {
+          return http.Response('{"id":"$id","title":"t"}', 200);
+        }
+        return http.Response('Not Found', 404);
+      }),
+    );
+    expect(requests, greaterThan(20));
+  });
+
+  test('nepoznata verzija se ignorira', () {
+    expect(EpisodeBundle.tryParse('{"version":2,"files":[]}'), isNull);
+    expect(EpisodeBundle.tryParse('nije json'), isNull);
+  });
+
+  test('predučitavanje s bundleom je jedan zahtjev', () async {
+    final log = <String>[];
+    await http.runWithClient(
+      () => const DataService(youtubeId: id).prefetchFirstPaint(),
+      () => MockClient((req) async {
+        log.add(req.url.path);
+        return http.Response(bundle(), 200);
+      }),
+    );
+    expect(log, ['/data/$id/episode.json']);
+  });
+
+  test('članak se vraća prije titlova, titlovi stižu kroz onTimeline',
+      () async {
+    EpisodeData? full;
+    final first = await http.runWithClient(
+      () => EpisodeData.loadWithProgress(
+        youtubeId: id,
+        onProgress: (_, _, _) {},
+        onTimeline: (d) => full = d,
+      ),
+      () => MockClient((req) async {
+        if (req.url.path.endsWith('/episode.json')) {
+          return http.Response(bundle(), 200);
+        }
+        if (req.url.path.endsWith('/diarized.srt')) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          return http.Response(
+              '1\n00:00:01,000 --> 00:00:02,000\n[SPEAKER_00] Dobar dan\n',
+              200);
+        }
+        return http.Response('Not Found', 404);
+      }),
+    );
+    expect(first.article, isNotNull);
+    expect(first.speakerTimeline, isNull);
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    expect(full?.speakerTimeline, isNotNull);
+  });
+}

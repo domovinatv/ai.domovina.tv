@@ -304,8 +304,6 @@ class HomeFeed {
     double combinedFor(FeedVideo v) =>
         (qualityOf(v) ?? 0) * 0.6 + recencyScore(daysAgoFor(v.video.date)) * 0.4;
 
-    int byDateDesc(FeedVideo a, FeedVideo b) =>
-        (b.video.date ?? '').compareTo(a.video.date ?? '');
 
     // Tier 1 — Najbolji izbor, s dnevnom rotacijom kroz top N kandidata.
     final hiQualityRecent = all.where((v) {
@@ -317,7 +315,7 @@ class HomeFeed {
     if (hiQualityRecent.isNotEmpty) {
       hiQualityRecent.sort((a, b) {
         final cmp = combinedFor(b).compareTo(combinedFor(a));
-        return cmp != 0 ? cmp : byDateDesc(a, b);
+        return cmp != 0 ? cmp : newestFirst(a, b);
       });
       // Izvuci top N i seedaj početak po danu u godini. Karusel počinje od
       // današnjeg dnevnog picka pa nastavlja po rangu (i rotira natrag), tako
@@ -343,7 +341,7 @@ class HomeFeed {
     if (hiQuality.isNotEmpty) {
       hiQuality.sort((a, b) {
         final cmp = (qualityOf(b) ?? 0).compareTo(qualityOf(a) ?? 0);
-        return cmp != 0 ? cmp : byDateDesc(a, b);
+        return cmp != 0 ? cmp : newestFirst(a, b);
       });
       return hiQuality
           .take(limit)
@@ -360,7 +358,7 @@ class HomeFeed {
     // Tier 3 — bilo koja ocijenjena (ili, bez ocjene, djelomično obrađena).
     final scored = all.where((v) => qualityOf(v) != null).toList();
     if (scored.isNotEmpty) {
-      scored.sort(byDateDesc);
+      scored.sort(newestFirst);
       return scored
           .take(limit)
           .map((v) => FeaturedPick(
@@ -379,7 +377,7 @@ class HomeFeed {
     // da homepage ipak nije prazan.
     final readyPool = all.where(isReadyForHome).toList();
     final pool = readyPool.isNotEmpty ? readyPool : all;
-    final sorted = List<FeedVideo>.from(pool)..sort(byDateDesc);
+    final sorted = List<FeedVideo>.from(pool)..sort(newestFirst);
     return sorted
         .take(limit)
         .map((v) => FeaturedPick(
@@ -390,6 +388,19 @@ class HomeFeed {
               candidatePool: pool.length,
             ))
         .toList();
+  }
+
+  /// Najnovije prvo, uz deterministički tie-break.
+  ///
+  /// `date` je dan (`YYYY-MM-DD`), pa više epizoda istog dana ima jednak ključ.
+  /// Bazen ([ChannelCache.feedVideos]) je složen redom kojim su listinzi kanala
+  /// STIGLI, a taj je red na svakom učitavanju drukčiji — bez tie-breaka su se
+  /// kartice istog dana premetale sa svakim novim listingom i rail „Najnovije
+  /// epizode" je treperio (prijava 9.10.2026.). `id` nema značenje, ali je
+  /// stabilan: isti bazen uvijek daje isti redoslijed.
+  static int newestFirst(FeedVideo a, FeedVideo b) {
+    final byDate = (b.video.date ?? '').compareTo(a.video.date ?? '');
+    return byDate != 0 ? byDate : a.video.id.compareTo(b.video.id);
   }
 
   /// "Najnovije epizode" rail — cross-channel sortirano po datumu desc.
@@ -403,7 +414,7 @@ class HomeFeed {
             excludeFeatured == null || v.video.id != excludeFeatured.video.id)
         .toList();
     final sorted = List<FeedVideo>.from(filtered)
-      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      ..sort(newestFirst);
     return sorted.take(limit).toList();
   }
 
@@ -426,7 +437,7 @@ class HomeFeed {
                 excludeFeatured == null ||
                 v.video.id != excludeFeatured.video.id)
             .toList()
-          ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? '')),
+          ..sort(newestFirst),
     ];
     final out = <FeedVideo>[];
     for (var i = 0; out.length < limit; i++) {
@@ -471,12 +482,61 @@ class HomeFeed {
             excludeFeatured == null || v.video.id != excludeFeatured.video.id)
         .toList();
     final sorted = List<FeedVideo>.from(filtered)
-      ..sort((a, b) => (b.video.date ?? '').compareTo(a.video.date ?? ''));
+      ..sort(newestFirst);
     return sorted.take(limit).toList();
+  }
+
+  /// Prozor svježine za tier 1 hero izbora (dana).
+  static const int heroRecentDays = 14;
+
+  static bool _isHiQualityRecent(FeedVideo v, DateTime now) {
+    // Tier 1 bez domenske ocjene ide po potpunosti obrade, pa rani zaključak
+    // o konačnom bazenu ovdje ne vrijedi — takav brend čeka `done`.
+    if (!AppBrand.config.flags.domainScore) return false;
+    final score = v.video.magisteriumScore ?? 0;
+    final hasMag = v.video.pipeline?.hasMagisterium ?? false;
+    final date = DateTime.tryParse(v.video.date ?? '');
+    if (date == null) return false;
+    return hasMag && score >= 70 && now.difference(date).inDays <= heroRecentDays;
+  }
+
+  /// Je li bazen hero izbora **dokazivo konačan** prije nego je prefetch
+  /// svih kanala gotov.
+  ///
+  /// Najbrži put je `home.json` (`HomeSnapshot`), koji po ugovoru nosi sve
+  /// kandidate. Bez njega:
+  ///
+  /// `index.json` nosi datum zadnje epizode svakog kanala
+  /// (`latest_video.date`, izmjereno 9.10.2026.: na svih 50 kanala jednak
+  /// najnovijem datumu u listingu). Kanal čija je zadnja epizoda starija od
+  /// [heroRecentDays] ne može dati tier 1 kandidata, pa kad su učitani svi
+  /// kanali koji MOGU (tog dana 11 od 50), nijedan kanal koji stigne kasnije
+  /// više ne mijenja tier 1 — a samim tim ni izbor, jer se tier 2–4 koriste
+  /// samo kad je tier 1 prazan.
+  ///
+  /// Zato vrijedi samo uz neprazan tier 1. Prazan tier 1 znači pad na tier 2
+  /// („bilo koji datum"), koji traži cijeli katalog → čeka se `done`. Kanal
+  /// bez datuma ili s nečitljivim datumom tretira se kao „može" (ne
+  /// zaključujemo iz izostanka podatka). Kanal kojem dohvat padne nikad nije
+  /// učitan, pa i tada odlučuje `done`.
+  static bool heroPoolComplete(ChannelCache cache, {DateTime? now}) {
+    // `home.json` po ugovoru nosi sve tier 1/2 kandidate (`HomeSnapshot`).
+    if (cache.done || cache.homeSnapshot != null) return true;
+    final index = cache.index;
+    if (index == null) return false;
+    final at = now ?? DateTime.now();
+    for (final c in index.channels) {
+      if (cache.isLoaded(c.id)) continue;
+      final latest = DateTime.tryParse(c.latestVideo?.date ?? '');
+      if (latest == null) return false;
+      if (at.difference(latest).inDays <= heroRecentDays) return false;
+    }
+    return cache.allVideos.any((v) => _isHiQualityRecent(v, at));
   }
 
   /// Provjeri ima li dovoljno podataka da feed nije prazan/skeleton.
   static bool hasMinimumData(ChannelCache cache) {
+    if (cache.homeSnapshot != null) return true;
     if (cache.total == 0) return false;
     return cache.loaded >= (cache.total * 0.3).ceil() || cache.done;
   }

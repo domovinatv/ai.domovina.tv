@@ -67,6 +67,7 @@ dependencies:
   # lib/services/file_share.dart). share_plus 13 ovisi o `web: ^1.1.1`, ne o
   # `dart:html`, pa ne ruši --wasm build (ista provjera kao za passkeys).
   share_plus: ^13.3.0
+  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:

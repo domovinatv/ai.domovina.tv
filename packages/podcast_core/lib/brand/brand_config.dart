@@ -156,6 +156,8 @@ class FeatureFlags {
     this.tv = true,
     this.passkeys = false,
     this.plusInHeader = false,
+    this.homeSnapshot = false,
+    this.youtubeWatch = false,
   });
 
   /// Glasanje za podcaste (`/glasanje*`, rail na naslovnici).
@@ -189,4 +191,15 @@ class FeatureFlags {
   /// signed in or not. Without it the paywall is only reachable from the
   /// account screen, which App Review could not find (Guideline 2.1(b)).
   final bool plusInHeader;
+
+  /// Naslovnica iz `channels/data/home.json` (`HomeSnapshot`) prije
+  /// listinga. Datoteku slaže noćni pipeline za DOMOVINA-in izbor kanala i
+  /// ocjena, a korpus je dijeljen — brend s vlastitim istaknutim kanalima je
+  /// ne smije prikazati, nego gradi naslovnicu iz listinga kao prije.
+  final bool homeSnapshot;
+
+  /// Samostalni `/yt/:videoId` player za bilo koji YouTube video (službeni
+  /// nocookie embed). Eksperimentalno; brend ga pali tek kad to odluči
+  /// (App Review 5.2.3 — mediji treće strane).
+  final bool youtubeWatch;
 }

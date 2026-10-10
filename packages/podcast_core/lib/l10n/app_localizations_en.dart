@@ -2568,6 +2568,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your payment is confirmed on-chain.';
 
   @override
+  String get pinkaSepaReceivedProcessing =>
+      'Payment received. EURe is being issued.';
+
+  @override
+  String get pinkaSepaFirstPaymentReview =>
+      'The first payment from a new account can take a while to be checked. You don\'t need to do anything.';
+
+  @override
+  String get pinkaSepaMintedForwarding =>
+      'EURe issued, being forwarded to the campaign…';
+
+  @override
+  String pinkaIntentRejectedReason(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
   String get pinkaDonateAgain => 'Donate again';
 
   @override
@@ -3432,6 +3449,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pinkaSlotSignInRequired =>
+      'Sign in to reserve a spot on the wall. A regular donation works without signing in.';
+
+  @override
+  String get pinkaGuestRateLimited =>
+      'Too many payments from this network in the last hour. Try again a bit later or sign in.';
+
+  @override
   String get pinkaSlotTakenError =>
       'Someone was faster — that square has just been taken. Pick another one.';
 
@@ -4108,4 +4133,426 @@ class AppLocalizationsEn extends AppLocalizations {
   String sponsorsInVideoRubricAt(String time) {
     return 'Sponsored segment at $time';
   }
+
+  @override
+  String get ytWatchTitle => 'YouTube video';
+
+  @override
+  String get ytWatchOpenEpisode => 'Open processed episode';
+
+  @override
+  String get ytWatchInvalidId => 'Invalid YouTube link.';
+
+  @override
+  String get ytWatchEmbedUnsupported =>
+      'This browser cannot show the YouTube player inside the page, so the video opens on YouTube.';
+
+  @override
+  String get findInEpisodeTitle => 'Find in episode';
+
+  @override
+  String get findInEpisodeHint => 'Word, name or phrase';
+
+  @override
+  String get findInEpisodeClear => 'Clear';
+
+  @override
+  String get findInEpisodeNoHits => 'No matches in this episode.';
+
+  @override
+  String get findInEpisodeError =>
+      'Search is not working right now. Try again a little later.';
+
+  @override
+  String findInEpisodeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moments',
+      one: '$count moment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String findInEpisodeCountPartial(int shown, int total) {
+    return 'Showing $shown of $total moments';
+  }
+
+  @override
+  String get findInEpisodeApproximate => 'Approximate matches';
+
+  @override
+  String get sponsoredLabel => 'Sponsored';
+
+  @override
+  String sponsoredBy(String brand) {
+    return 'Sponsored · $brand';
+  }
+
+  @override
+  String sponsoredPaidBy(String brand) {
+    return 'Paid for by $brand';
+  }
+
+  @override
+  String get sponsoredWebsite => 'Website';
+
+  @override
+  String sponsoredAt(String time) {
+    return 'Sponsored moment at $time';
+  }
+
+  @override
+  String get sponsoredListen => 'Listen';
+
+  @override
+  String get sponsoredNow => 'Playing now';
+
+  @override
+  String get sponsorStoreEntry => 'Advertise';
+
+  @override
+  String sponsorStoreTitle(String channel) {
+    return 'Advertise on $channel';
+  }
+
+  @override
+  String get sponsorStoreIntro =>
+      'Pick a moment in an episode and your brand is shown as the sponsor of exactly that part. You pay once by SEPA transfer, and the ad goes live as soon as the payment arrives.';
+
+  @override
+  String get sponsorStoreEmpty =>
+      'This channel has no sponsor moments on offer right now.';
+
+  @override
+  String get sponsorStoreLoadFailed => 'The offer could not be loaded.';
+
+  @override
+  String sponsorStoreFreeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moments available',
+      one: '$count moment available',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sponsorStoreFromPrice(String price) {
+    return 'from €$price';
+  }
+
+  @override
+  String get sponsorStoreAvoidTitle => 'Don\'t show me next to…';
+
+  @override
+  String get sponsorStoreAvoidHint =>
+      'Brand safety is your call. Topic labels are a rough estimate, so every episode also lists its actual topics.';
+
+  @override
+  String get sponsorStoreAllFiltered =>
+      'No episode matches the selected filter.';
+
+  @override
+  String get sponsorTopicFaith => 'Faith';
+
+  @override
+  String get sponsorTopicPolitics => 'Politics';
+
+  @override
+  String get sponsorTopicBusiness => 'Business and tech';
+
+  @override
+  String get sponsorMapTitle => 'Sponsor moments';
+
+  @override
+  String get sponsorMapIntro =>
+      'Each moment is a part of the episode, shown with the article section that starts in it. Listen before you buy.';
+
+  @override
+  String get sponsorMapTopics => 'Episode topics';
+
+  @override
+  String get sponsorStateFree => 'Available';
+
+  @override
+  String get sponsorStateHeld => 'Being purchased';
+
+  @override
+  String get sponsorStateSold => 'Taken';
+
+  @override
+  String sponsorStateSoldUntil(String date) {
+    return 'Taken until $date';
+  }
+
+  @override
+  String get sponsorStateBlocked => 'Not on offer';
+
+  @override
+  String get sponsorZoneZatvaranje => 'Closing';
+
+  @override
+  String get sponsorZoneTijelo => 'Main part';
+
+  @override
+  String get sponsorZoneOtvaranje => 'Opening';
+
+  @override
+  String sponsorPriceGross(String price) {
+    return '€$price incl. VAT';
+  }
+
+  @override
+  String sponsorRunDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'live for $count days after payment',
+      one: 'live for $count day after payment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sponsorPick => 'Choose';
+
+  @override
+  String get sponsorLegend => 'The bar shows the whole episode.';
+
+  @override
+  String get sponsorCheckoutTitle => 'Order';
+
+  @override
+  String sponsorCheckoutMoment(String range, String zone) {
+    return 'Moment $range · $zone';
+  }
+
+  @override
+  String get sponsorCheckoutChange => 'Change moment';
+
+  @override
+  String get sponsorCreativeSection => 'Your ad';
+
+  @override
+  String get sponsorFieldBrand => 'Brand name';
+
+  @override
+  String get sponsorFieldBrandHelp =>
+      'Shown next to the “Sponsored” label and cannot be anonymous.';
+
+  @override
+  String get sponsorFieldTagline => 'One sentence (optional)';
+
+  @override
+  String get sponsorFieldLink => 'Link, https:// (optional)';
+
+  @override
+  String get sponsorFieldLogo =>
+      'Logo: PNG, JPG or WebP, up to 200 kB (optional)';
+
+  @override
+  String get sponsorLogoPick => 'Add logo';
+
+  @override
+  String get sponsorLogoRemove => 'Remove logo';
+
+  @override
+  String get sponsorLogoTooBig => 'The logo is larger than 200 kB.';
+
+  @override
+  String get sponsorLogoBadType => 'The logo must be PNG, JPG or WebP.';
+
+  @override
+  String get sponsorLogoUploadFailed =>
+      'The logo was not uploaded. Try again or continue without it.';
+
+  @override
+  String get sponsorCompanySection => 'Invoice details';
+
+  @override
+  String get sponsorFieldCompany => 'Company name';
+
+  @override
+  String get sponsorFieldOib => 'Croatian OIB (optional)';
+
+  @override
+  String get sponsorFieldVat => 'VAT ID (optional)';
+
+  @override
+  String get sponsorFieldStreet => 'Street address';
+
+  @override
+  String get sponsorFieldCity => 'City';
+
+  @override
+  String get sponsorFieldPostal => 'Postal code';
+
+  @override
+  String get sponsorFieldCountry => 'Country (HR, SI, DE…)';
+
+  @override
+  String get sponsorFieldEmail => 'Invoice email address';
+
+  @override
+  String get sponsorFieldReference => 'Purchase order number (optional)';
+
+  @override
+  String get sponsorPreviewTitle => 'This is how your ad will look';
+
+  @override
+  String get sponsorTermsAccept => 'I accept the advertising terms';
+
+  @override
+  String get sponsorTermsRead => 'Read the terms';
+
+  @override
+  String get sponsorTermsTitle => 'Advertising terms';
+
+  @override
+  String get sponsorTermsBody =>
+      'The ad is published automatically as soon as the payment arrives, without prior approval, and runs for the number of days shown with the moment.\n\nThe ad is labelled “Sponsored” together with your brand name, in line with Article 26 of Regulation (EU) 2022/2065.\n\nContent that is unlawful, misleading, offensive or discriminatory is not allowed, nor is advertising for tobacco products, weapons, gambling or prescription medicines.\n\nThe channel owner may withdraw an ad that breaches these terms. In that case, and when a payment arrives after the moment has been sold to someone else, we refund the amount manually.\n\nThe price includes VAT. The invoice is issued automatically and sent to the email address given in the order.';
+
+  @override
+  String get sponsorErrorRequired => 'Required';
+
+  @override
+  String get sponsorErrorOib => 'This OIB is not valid';
+
+  @override
+  String get sponsorErrorVat => 'This VAT ID is not valid (e.g. HR12345678903)';
+
+  @override
+  String get sponsorErrorEmail => 'This email address is not valid';
+
+  @override
+  String get sponsorErrorLink => 'The link must start with https://';
+
+  @override
+  String sponsorErrorTooLong(int max) {
+    return 'At most $max characters';
+  }
+
+  @override
+  String get sponsorErrorCountry => 'Two-letter country code, e.g. HR';
+
+  @override
+  String get sponsorErrorTerms => 'You need to accept the terms to order.';
+
+  @override
+  String get sponsorSubmit => 'Continue to payment';
+
+  @override
+  String get sponsorSlotTaken =>
+      'Someone just took that moment. The map has been refreshed, please pick another one.';
+
+  @override
+  String get sponsorTooManyHolds =>
+      'You already have three unpaid orders. Pay one or wait for it to expire.';
+
+  @override
+  String get sponsorSignInRequired =>
+      'Sign in to order a sponsored moment. What you entered stays in the form.';
+
+  @override
+  String get sponsorSignInHeadline => 'Sign in to order';
+
+  @override
+  String get sponsorSignInSubtitle =>
+      'The order, invoice and payment status are tied to your account.';
+
+  @override
+  String get sponsorCheckoutFailed =>
+      'The order could not be created. Please try again.';
+
+  @override
+  String sponsorCheckoutFieldRejected(String field) {
+    return 'Check the “$field” field.';
+  }
+
+  @override
+  String get sponsorPayTitle => 'Payment';
+
+  @override
+  String get sponsorMemoVerbatim =>
+      'Copy the payment reference exactly, without any changes. We match the payment to the order by it. If your accounts team shortens or retypes it, the payment will not be matched automatically.';
+
+  @override
+  String sponsorHoldUntil(String time) {
+    return 'The moment is reserved for you until $time.';
+  }
+
+  @override
+  String get sponsorHoldExpired =>
+      'The reservation has expired. If the payment still arrives and the moment is free, we assign it automatically.';
+
+  @override
+  String get sponsorWaitingPayment =>
+      'Waiting for the payment. This page updates itself when it arrives.';
+
+  @override
+  String get sponsorOrderLinkHint =>
+      'Save this link. It always shows the state of your order.';
+
+  @override
+  String get sponsorPaidTitle => 'Payment received, your ad is live';
+
+  @override
+  String sponsorPaidUntil(String date) {
+    return 'The moment is yours until $date';
+  }
+
+  @override
+  String get sponsorUnderpaid =>
+      'The payment is lower than the price of the moment, so it was not assigned. We will contact you about a refund or the difference.';
+
+  @override
+  String get sponsorSlotUnassigned =>
+      'The payment arrived after the reservation expired and the moment has since been sold. We will refund the amount manually.';
+
+  @override
+  String get sponsorHidden =>
+      'The channel owner has withdrawn the ad. We will refund the amount manually.';
+
+  @override
+  String get sponsorOrderExpired => 'The order expired without a payment.';
+
+  @override
+  String get sponsorOrderFailed => 'The payment did not go through.';
+
+  @override
+  String sponsorInvoiceSent(String number) {
+    return 'Invoice $number has been sent to the email address in the order.';
+  }
+
+  @override
+  String get sponsorInvoicePending =>
+      'The invoice will arrive by email once processed.';
+
+  @override
+  String get sponsorStatsPending =>
+      'View and click counts will appear here once measurement is switched on.';
+
+  @override
+  String get sponsorViewOnEpisode => 'See it on the episode';
+
+  @override
+  String get sponsorOrderNotFound => 'Order not found.';
+
+  @override
+  String sponsorLeaseEnded(String date) {
+    return 'The moment was live until $date';
+  }
+
+  @override
+  String get sponsorLeavePayTitle => 'Leave the payment?';
+
+  @override
+  String get sponsorLeavePayBody =>
+      'The moment stays reserved until it expires, but you will no longer see the QR code and payment reference. The order status stays at the link in the address bar.';
+
+  @override
+  String get sponsorLeavePayConfirm => 'Leave';
 }

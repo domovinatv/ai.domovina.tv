@@ -171,6 +171,7 @@ class _FollowedRailState extends State<FollowedRail> {
                 item.videoId,
                 lang: shareLanguageForVideo(item.videoId),
               ),
+              prefetchEpisodeId: item.videoId,
               onTap: () => unawaited(_open(item)),
             ),
         ],

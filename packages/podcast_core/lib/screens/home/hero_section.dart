@@ -10,6 +10,7 @@ import '../../theme/typography.dart';
 import '../../widgets/cached_thumbnail.dart';
 import 'home_feed.dart';
 import '../../router/nav.dart';
+import '../../widgets/prefetch_on_intent.dart';
 
 /// Editorial hero sekcija — split layout (slika lijevo, tekst desno) na desktop,
 /// stack na mobile. Compact dimenzije — slika je 16:9 ograničena na 480px wide
@@ -64,10 +65,13 @@ class HeroSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Material(
           color: theme.colorScheme.surfaceContainerLowest,
-          child: InkWell(
-            onTap: onPlay,
-            child:
-                isMobile ? _mobileLayout(theme, l) : _desktopLayout(theme, l),
+          child: PrefetchOnIntent(
+            episodeId: featured.video.video.id,
+            child: InkWell(
+              onTap: onPlay,
+              child:
+                  isMobile ? _mobileLayout(theme, l) : _desktopLayout(theme, l),
+            ),
           ),
         ),
       ),

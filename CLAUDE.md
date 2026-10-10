@@ -209,6 +209,21 @@ funkciju nad cijelim payloadom (95,8 kB za 217 kandidata) — nije napravljeno.
 > unatoč web-bolu, i kad bi Expo bio bolji: `docs/tech-stack-assessment-flutter-vs-expo.md`.
 > TL;DR: ne prepisivati; web zamke su omeđene i dokumentirane.
 
+### Boot splash — miče se SAMO na prvi frame (od 9.10.2026.)
+
+`#boot-intro` u `web/index.html` pokriva sve do `flutter-first-frame`. Fiksni
+timeout od 6 s ga je na Slow 4G micao 13 s prije Fluttera (bijela stranica s
+legal footerom). Pozadina `html` i splasha = `scaffoldBackgroundColor` teme
+(čita `localStorage['theme_mode']`). Mjerenja i odluke:
+`docs/2026-10-09-boot-splash.md`, reprodukcija `scripts/measure-boot.py`.
+
+**Rule**: splash se ne miče timeoutom koji ne zna je li Flutter tu; osigurač
+kreće tek kad je kod aplikacije preuzet. Mijenjaš li boje teme, mijenjaj i
+`--boot-bg` u `index.html`. Opis i linkovi u splashu ostaju u izvornom HTML-u
+(Google OAuth provjera). Citat u splashu je doslovna kopija TV skupa
+(`defaultBibleVerses` + Mt 10,26-27) — mijenja se samo uz fact-check na
+biblija.ks.hr, čuva `test/boot_splash_verses_test.dart`.
+
 ### SharedPreferences crashes on web release builds
 
 `SharedPreferences` throws `MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)` in dart2js release mode. The method channel plugin registration is stripped during minification.
@@ -325,6 +340,29 @@ donji `SafeArea` ide na zajednički Column — nikad na pojedinu traku. Inače j
 ili duplo (dvije sestre primijene isti inset) ili nula (sve se sakriju).
 
 Prolaz kroz auth UI/UX + otvoreni backlog: `docs/auth-ux-backlog.md`.
+
+### Bez anonimnih prijava — gost nema sesiju (LIVE od v2.0.172)
+
+Anonimne Supabase prijave su ugašene (99 % korisnika bilo je anonimno, 3
+konverzije). Bez sesije korisnik je **gost**: javno čita anon ključem, a
+donacija ide gostujućom granom `pinka-contribute` (Supabase klijent sam šalje
+anon ključ kao bearer; limit 30/sat/IP → `rate_limited`). Ugovor:
+`domovina-api/docs/sponzorski-trenuci-ugovor.md` §9. Postojeće anonimne
+sesije rade dok ne isteknu (`AuthService.isAnonymous` je `true` i za gosta).
+
+**Rule**: klijent NIKAD ne zove `signInAnonymously` — ni pri pokretanju, ni
+nakon odjave/brisanja računa, ni prije edge funkcije. Čuva
+`test/no_anonymous_sign_in_test.dart`. Što traži pravi račun (mjesto na zidu,
+sponzorski checkout, upload loga) dobiva `401 login_required` →
+`PinkaLoginRequired` i nudi prijavu (`onSignInRequested` / `showAuthSheet`),
+nikad generičku grešku. Sponzorski checkout traži prijavu PRIJE forme — web
+OAuth je full-page redirect i upisana forma ga ne bi preživjela.
+
+**Rule (redoslijed)**: ovaj frontend NE ide u produkciju prije koraka 1
+backendovog redoslijeda (`domovina-api` zaključak §7) — stari backend
+donaciju bez sesije odbija. Turnstile namjerno NIJE ugrađen (iframe pod našim
+COEP-om radi samo u Chromiumu, native nema SDK), pa `TURNSTILE_SECRET_KEY` na
+backendu mora ostati nepostavljen.
 
 ### Backend placement — Cloudflare Worker vs Supabase Edge Function
 
@@ -463,7 +501,7 @@ pojaviti na **tri** mjesta — video traka, `video_panel.dart` i `_PlayerTab` u
 epizode, gdje `EpisodeVideo` uopće ne postoji.
 
 **Rule (stanje kontrole ide kroz singleton, ne kroz propove)**: iste kontrole
-crtaju tri odvojena stabla, a na mobitelu je player u `endDraweru` — prop
+crtaju tri odvojena stabla, a na mobitelu je player u bočnom panelu — prop
 drilling se tu neizbježno negdje ispusti. `PlaybackSpeed`, `BackgroundPlayback`
 i `PlayerMute` su zato singletoni; `VideoPanel` nema parametre za njih.
 (Povijest: `mutedAutoplay`/`onUnmute` su bili propovi i **nedostajali su na
@@ -581,9 +619,15 @@ crne plohe. **Nova integracija treće strane ide preko API-ja, ne iframea** (kao
 **Rule**: embed se nudi samo dok kod nas NEMA što pustiti
 (`EpisodeStatus.needsExternalSource`) — inače bi na stranici bila dva playera.
 Kad medija JEST na CDN-u, primarna radnja je NAŠ player („Gledaj epizodu" →
-`endDrawer` na uskom ekranu), a YouTube pada na tihu tekstualnu poveznicu.
+bočni panel na uskom ekranu), a YouTube pada na tihu tekstualnu poveznicu.
 Sintetički ID-evi (X izvor, `_yt_matched:false`) nemaju YouTube video iza sebe
 i ne smiju se ugrađivati.
+
+**`/yt/:videoId` (od v2.0.169)**: samostalni ekran koji pušta BILO KOJI
+YouTube video kroz isti službeni embed (native: `webview_flutter` s `baseUrl`
+na domovina.ai zbog Referera) + gumb na obrađenu epizodu. Reklame ostaju.
+Varijanta bez reklama je zapisana i NIJE odobrena; native još nije isproban:
+`docs/plans/2026-10-06-youtube-bez-reklama-plan-b.md`.
 
 ### Cachiran 404 na CDN-u — web vidi 404, native 200 (isti URL)
 
@@ -619,6 +663,35 @@ otrovani zapis ostane 404 (provjereno). Varijantu čisti samo
 `{"files":[{"url":"…","headers":{"Origin":"https://domovina.ai"}}]}`.
 Isto pravilo kao kod verifikacije purgea: s `Vary: Origin` postoje dva zapisa,
 pa i provjera i purge moraju ići u obje varijante.
+
+### Naslovnica bez čekanja kataloga + disk cache (LIVE od v2.0.173, 9.10.2026.)
+
+Naslovnica je povlačila svih 50 listinga (6,9 MB sirovo / 1,3 MB preko žice)
+pri svakom otvaranju. Sada: listinzi bez `?v=` (304 umjesto punog downloada),
+prefetch po svježini kroz pool, hero se latcha čim je *dokazivo* konačan
+(`HomeFeed.heroPoolComplete`), `home.json` (~6 KB) kad ga pipeline isporuči, i
+stale-while-revalidate disk cache (`CdnJsonCache`). Mjerenja, ugovori za
+`home.json`/`search.json`/listing v2 i zašto ne Worker s podacima u memoriji:
+`docs/2026-10-08-brzina-ucitavanja-naslovnice.md`.
+
+**Rule (CDN JSON ide kroz `CdnJsonCache`)**: promjenjive datoteke
+(`channels/data/*`) kroz `getMutable` s `onUpdate`, per-epizoda kroz
+`DataService._get`. Novi channel-level fajl NE dobiva `?v=` — origin šalje
+`max-age=60` + ETag i edge to poštuje (izmjereno 9.10.2026.). U debug buildu i
+uz `?nocache=1` cache je ugašen.
+
+**Rule (ekran epizode čita `episode.json` prvi)**: `DataService._get` pita
+`data/<id>/episode.json` (`EpisodeBundle`) i datoteku koje NEMA na njegovom
+popisu ne traži — taj 404 je izmjeren na R2, pa mu se vjeruje (za razliku od
+404 s CDN-a). Pipeline ga zato mora regenerirati nakon SVAKOG uploada u
+`data/<id>/`. Predučitavanje ide samo kroz `EpisodePrefetch` (hover/dodir +
+hero/„Nastavi slušati" u mirovanju), nikad za sve klikabilne epizode. Vidi §8
+dokumenta gore.
+
+**Rule (listing v2 mora čitati i stari build)**: `version` ostaje **string**
+(stari build radi `as String?`), a v2 bez `pipeline` objekta ide tek kad stari
+native buildovi ispadnu iz upotrebe — inače im sve epizode izgledaju
+neobrađene.
 
 ### Thumbnail caching + WebP varijante — `CachedThumbnail`
 
@@ -722,11 +795,124 @@ s cache-busterom), izvan `EpisodeData.load`, bez memorije preko sesije i bez
 pollinga; 404/greška/nečitljiv JSON = sekcije nema. Zapis bez imena
 (`_unattributed`) se ne prikazuje.
 
-**Rule (otvaranje endDrawera pauzira web video)**: montiranje `Video` widgeta
-premjesti `<video>` u DOM-u i element se pauzira. Svaka radnja koja pusti
-reprodukciju pa otvori drawer mora ponoviti `play()` nakon animacije
-(`_revealPlayer`, 300/900 ms). Izmjereno 24.9.2026. na 390 px: seek je sjeo na
-5963 s, a poruka nije krenula.
+**Rule (radnja koja pusti reprodukciju pa otvori player ide kroz
+`_revealPlayer`)**: do v2.0.166 je player bio u `endDraweru`, čije je
+montiranje premještalo `<video>` u DOM-u i pauziralo ga (izmjereno 24.9.2026.
+na 390 px: seek je sjeo na 5963 s, a poruka nije krenula). Panel platna je sad
+uvijek montiran, ali `_revealPlayer` i dalje ponovi `play()` na 300/900 ms kao
+osigurač — osim ako je korisnik u međuvremenu pauzirao (`PlaybackIntent`).
+
+### Plaćeni sponzorski trenuci — `SponsoredMoment` (od 7.10.2026., nedeployano)
+
+Samoposlužni oglas na `domovina_tv`: izlog `/c/:slug/oglasi`, karta + checkout
+`/v/:id/sponzoriraj` (`?narudzba=<id>` = stanje narudžbe), prikaz
+„Sponzorirano · {brand}" na epizodi. Ugovor: `domovina-api/docs/sponzorski-trenuci-ugovor.md`;
+plan, stanje i otvoreno: `docs/plans/2026-10-06-mvp-sponzorski-trenuci-zakljucak.md`.
+
+**Rule (dva sloja, nikad jedan)**: `SponsoredMoment` (`public_live_moments`,
+kupljeno NAKON snimanja, „Sponzorirano · {brand}", DSA čl. 26) NIJE
+`SponsorsInVideo` (autorov partner u snimci, „Uz podršku"). Odvojen model,
+izvor i widgeti; boja je `AppTheme.sponsoredAccent` (zlatna), ne `tertiary`.
+
+**Rule (tri mjesta, jedan kontroler)**: traka ide u `EpisodeVideo` (kroz
+`controls:` builder, da postoji i u fullscreenu), `VideoPanel` i `_PlayerTab`.
+Sva tri slušaju isti `SponsoredMomentsController.active`, koji ekran hrani
+pozicijom. Bez `_PlayerTab` audio-only epizoda ne pokazuje tko je platio.
+
+**Rule (mjerenje)**: `impression` jednom po sesiji po trenutku, `play_through`
+samo bez skoka (ulazak skokom se ne računa), prag skoka kao `SeekUndo` (≥ 1 s).
+Ugovor v1 nema tablicu — `LogSponsoredMomentSink` je privremen; ništa se ne
+naplaćuje po prikazu.
+
+**Rule (`functions.invoke` baca, ne vraća)**: svaki ne-2xx je
+`FunctionException` s tijelom u `details`; greška u `res.data` stiže samo uz
+200. Kodove greške uspoređuj po prefiksu do prve dvotočke
+(`slot_taken:<key>`, `invalid_sponsor:<polje>`) — vidi
+`PinkaClient._invokeContribute`.
+
+**Rule (lokalni checkout ne šalji)**: lokalni edge runtime nema
+`PINKA_INTENTS_URL`, pa `pinka-contribute` stvara intent na PRODUKCIJSKOM
+`mpt.domovina.ai`. Lokalni e2e plaćanja ide kroz `create_sponsor_contribution`
+→ `attach_intent` → `mark_contribution_paid` nad lokalnom bazom.
+
+### Epizoda na uskom ekranu — tri stupca, ne draweri (od 5.10.2026.)
+
+Ispod 1100 px (`_kPlayerColumnMinWidth`) su sadržaj i player stupci na
+`EpisodePanelCanvas` (`widgets/episode_panel_canvas.dart`): kad uz panel ostane
+≥ 320 px, članak se suzi i oba se vide (iPhone landscape: 390 | 360); inače
+panel gura članak s ekrana. Mobitel u landscapeu skriva header i footer dok se
+čita. Odluke, mjerenja, zamke i otvoreno:
+`docs/2026-10-05-epizoda-tri-stupca.md`.
+
+**Rule (panel ostaje montiran)**: zatvoren panel se NE demontira ni `Offstage`-a —
+inače `<video>` putuje po DOM-u i pauzira se. Skrivanje ide kroz
+`ExcludeSemantics` + `ExcludeFocus` + `TickerMode`, omotače koji su uvijek u
+stablu.
+
+**Rule (programski skok na sekciju ide kroz `_scrollToSection`)**: on bilježi
+skok, pa ga sidro čitanja tijekom reflowa ne poništi nego ponovno pinna cilj.
+Izravan `jumpTo` na sekciju zaobilazi to i članak se vrati na staro mjesto.
+U landscapeu na mobitelu `_scrollToSection` MJERI koliko je floating headera na
+ekranu (`_floatingHeaderJumpDelta`) — fiksna „puna visina" je na skrivenom
+headeru ostavljala ~100 px praznine iznad naslova.
+
+**Rule (landscape na mobitelu = platforma I dimenzije)**: `_isPhoneLandscape`
+traži iOS/Android. Bez toga nizak desktop prozor gubi header. Footer se u tom
+načinu NE skriva dok je autoplay utišan (izlaz „Uključi zvuk").
+
+**Rule (titlovi se ne režu)**: titl nema `maxLines`/ellipsis — puni tekst je
+vrijedniji od slike koju prekrije. Kad ne stane, smanjuje se font
+(`fittingSubtitleFontSize`), mjeren istim `DefaultTextStyle` kojim se crta.
+
+### Pronađi u epizodi + članak klizi uz reprodukciju (od 7.10.2026.)
+
+Pretraga transkripta (Meili `segments`, `services/transcript_search.dart`) i
+„odjavna špica" (`_creditsScroll`: dok player svira, članak klizi kroz sekciju
+proporcionalno vremenu). Mjerenja, zamke i otvoreno:
+`docs/2026-10-07-pronadi-u-epizodi-i-odjavna-spica.md`.
+
+**Rule (Meili `sort` ne drži kronologiju)**: `sort` se primjenjuje iza
+`words`/`typo`, pa tipfeleri stižu zadnji — redoslijed po vremenu slaže klijent.
+
+**Rule (špica ide samo naprijed)**: nikad ne scrolla unatrag, staje 8 s nakon
+ručnog scrolla i ne vuče korisnika koji je više od ekrana daleko. Novi
+programski scroll članka postavlja `_scrollLock`, inače ga `_onScroll` pročita
+kao ručni i ugasi špicu.
+
+### Titlovi riječ po riječ + titl ispod playera (od 6.10.2026.)
+
+`data/<id>/words.json` (Speechmatics vrijeme po riječi, poravnato s Geminijevim
+tekstom iz `diarized.srt`) pali isticanje izgovorene riječi. Na mobitelu u
+portraitu titl crta `SubtitleStrip` ISPOD slike, a svugdje drugdje (i u svakom
+fullscreenu) overlay preko slike. Ugovor, mjerenja i pipeline dug:
+`docs/2026-10-06-titlovi-rijec-po-rijec.md`.
+
+**Rule (ugovor je SRT)**: `words.json` vrijedi za cue samo ako ima točno
+onoliko riječi koliko `text.split(/\s+/)` tog cue-a. Inače cue ostaje bez
+isticanja, nikad s pomaknutim.
+
+**Rule (isticanje = samo boja)**: debljina ili veličina aktivne riječi
+raširi redak i tekst se prelomi drukčije na svakoj riječi.
+
+**Rule (traka ispod playera ima fiksnu visinu)**: dugačak cue se lista po
+stranicama (`pageTokens`), ne raste. Inače seek bar skače sa svakim cue-om.
+
+### Pinka SEPA — uspjeh na ZAPRIMANJU, namira u pozadini (od 28.9.2026.)
+
+Rail stage `received_processing` stiže ~1 s nakon SEPA Instant uplate, a mint
+(→ RPC `paid`) kod prve uplate s novog IBAN-a zna trajati 1 min – 8 h. Panel
+zato slavi na zaprimanju, sam se zatvori nakon 4 s i namiru prati u pozadini.
+Tok, mjerenja i zamke: `docs/2026-09-28-pinka-sepa-instant-i-zid.md`.
+
+**Rule**: `onPaid` (zid, kvadratić) samo na RPC `paid` — doprinos je u bazi
+plaćen tek tada. Rano prikazivanje ide kroz `onReceived` + optimistični unos na
+zidu (isti contribution id). Nijedna petlja u SEPA toku nema vremenski limit;
+gase je `dispose` i terminalni stage (`settled`/`rejected`).
+
+**Rule (OG slike)**: zid i obrazac crtaju SAMO `link_preview.image_cached`
+(`api.domovina.ai`, bucket `pinka-og-cache`), NIKAD tuđi `og:image` — to bi
+posjetiteljev IP odalo vlasniku tog hosta. Preview u obrascu ide preko edge
+funkcije `pinka-link-preview`, ne dohvatom iz preglednika.
 
 ## Logging
 

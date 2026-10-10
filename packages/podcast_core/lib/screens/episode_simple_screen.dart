@@ -10,6 +10,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../l10n/app_localizations.dart';
 import '../brand/app_brand.dart';
 import '../models/person_hub.dart';
+import '../models/sponsored_moment.dart';
 import '../pinka_sdk/pinka_sdk.dart';
 import '../services/background_audio.dart';
 import '../services/background_playback.dart';
@@ -28,6 +29,8 @@ import '../services/player_mute.dart';
 import '../services/player_resume.dart';
 import '../services/page_meta.dart';
 import '../services/seek_undo.dart';
+import '../services/sponsored_moments_controller.dart';
+import '../services/sponsored_moments_service.dart';
 import '../services/url_sync.dart';
 import '../services/view_mode.dart';
 import '../services/watch_progress_service.dart';
@@ -37,6 +40,8 @@ import '../widgets/anonymous_signin_bar.dart';
 import '../widgets/audio_poster.dart';
 import '../widgets/clip_share_sheet.dart';
 import '../widgets/episode_video.dart';
+import '../widgets/sponsored_moment_widgets.dart';
+import '../widgets/subtitle_caption.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/language_toggle_chip.dart';
 import '../widgets/magisterium_v2_view.dart';
@@ -231,6 +236,11 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
   /// kritičnog puta učitavanja epizode.
   EbookAvailability _ebook = EbookAvailability.none;
 
+  /// PLAĆENI sponzorski trenuci — traka „Sponzorirano · {brand}" u
+  /// [_PlayerTab]. Na audio-only epizodi je to JEDINO mjesto gdje se vidi
+  /// tko je platio (oznake preko slike nema).
+  SponsoredMomentsController? _sponsored;
+
   @override
   void initState() {
     super.initState();
@@ -239,6 +249,12 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     EbookService.probe(widget.data.youtubeId).then((found) {
       if (!mounted || !found.any) return;
       setState(() => _ebook = found);
+    });
+    SponsoredMomentsService.instance.loadLive(widget.data.youtubeId).then((
+      found,
+    ) {
+      if (!mounted || found == null) return;
+      setState(() => _sponsored = SponsoredMomentsController(found));
     });
 
     if (widget.initialLanguageEn && widget.data.hasTranslationEn) {
@@ -317,6 +333,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
     MediaSession.clear();
     _intent?.dispose();
     _seekUndo?.dispose();
+    _sponsored?.dispose();
     final player = _player;
     if (player != null) {
       PlayerMute.instance.detach(player);
@@ -401,6 +418,7 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
       // izgubimo event i Play/Pause gumb ostaje u krivom stanju.
       _positionSub = player.stream.position.listen((pos) {
         if (mounted) setState(() => _position = pos);
+        _sponsored?.onPosition(pos);
         // URL sync: adresna traka prati player na 1Hz (sec granularity).
         // Stream fira ~5×/s — preskačemo update kad se sec nije promijenio.
         final sec = pos.inSeconds;
@@ -629,6 +647,8 @@ class _SimpleEpisodeContentState extends State<_SimpleEpisodeContent>
         hasMedia: data.hasMedia,
         posterUrl: _audioArtUrl,
         seekUndo: _seekUndo,
+        sponsoredMoments: _sponsored,
+        onSponsoredListen: (m) => _seekTo(m.start),
         onEnterYtMode: () {
           _player?.pause();
           setState(() => _ytMode = true);
@@ -1007,6 +1027,10 @@ class _PlayerTab extends StatelessWidget {
 
   /// Ponuda „vrati me gdje sam bio" nakon ručnog skoka. Vlasnik je ekran.
   final SeekUndo? seekUndo;
+
+  /// Plaćeni sponzorski trenuci (vlasnik je ekran) i „Poslušaj" za njih.
+  final SponsoredMomentsController? sponsoredMoments;
+  final void Function(SponsoredMoment moment)? onSponsoredListen;
   final VoidCallback onEnterYtMode;
   final VoidCallback onExitYtMode;
   final VoidCallback onPlayPause;
@@ -1025,6 +1049,8 @@ class _PlayerTab extends StatelessWidget {
     required this.hasMedia,
     required this.posterUrl,
     required this.seekUndo,
+    this.sponsoredMoments,
+    this.onSponsoredListen,
     required this.onEnterYtMode,
     required this.onExitYtMode,
     required this.onPlayPause,
@@ -1091,6 +1117,7 @@ class _PlayerTab extends StatelessWidget {
                     speakerTimeline: data.speakerTimeline,
                     speakers: summary?.speakers ?? const [],
                     seekUndo: seekUndo,
+                    sponsoredMoments: sponsoredMoments,
                     onYouTubeMode: youTubeEmbedSupported ? onEnterYtMode : null,
                   )
                 : !hasMedia
@@ -1151,6 +1178,15 @@ class _PlayerTab extends StatelessWidget {
           ),
 
           if (ytMode) YouTubeModeBar(onExit: onExitYtMode),
+
+          // Mobitel u portraitu: titl ispod slike (isto kao u `VideoPanel`).
+          if (videoReady &&
+              !ytMode &&
+              !audioOnly &&
+              player != null &&
+              data.speakerTimeline != null &&
+              subtitlesBelowPlayer(context))
+            SubtitleStrip(player: player!, timeline: data.speakerTimeline!),
 
           // Seek bar
           if (videoReady && !ytMode) ...[
@@ -1250,6 +1286,12 @@ class _PlayerTab extends StatelessWidget {
               ],
             ),
           ],
+
+          // Plaćeni trenuci — ispod kontrola, i na audio-only putanji.
+          SponsoredMomentsPlayerStrip(
+            controller: sponsoredMoments,
+            onListen: videoReady ? onSponsoredListen : null,
+          ),
 
           const SizedBox(height: 16),
 

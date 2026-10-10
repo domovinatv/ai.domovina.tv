@@ -35,8 +35,11 @@ import '../services/browser_fullscreen.dart';
 import '../services/player_mute.dart';
 import '../services/screen_orientation.dart';
 import '../services/seek_undo.dart';
+import '../services/sponsored_moments_controller.dart';
 import '../services/subtitle_prefs.dart';
 import 'playback_controls.dart';
+import 'sponsored_moment_widgets.dart';
+import 'subtitle_caption.dart';
 import 'rotated_fullscreen.dart';
 
 /// Boje govornika po redoslijedu iz speakers liste — dijeli se s
@@ -80,6 +83,11 @@ class EpisodeVideo extends StatefulWidget {
   /// (speaker badge gore). Vanjska instanca ovo NIKAD ne postavlja.
   final VoidCallback? onExitRotatedFullscreen;
 
+  /// Plaćeni sponzorski trenuci — oznaka „Sponzorirano · {brand}" preko slike
+  /// dok trenutak svira. Kroz `controls:` builder pa je vidljiva i u
+  /// fullscreenu, gdje panela i trake ispod slike nema.
+  final SponsoredMomentsController? sponsoredMoments;
+
   const EpisodeVideo({
     super.key,
     required this.player,
@@ -89,6 +97,7 @@ class EpisodeVideo extends StatefulWidget {
     this.onYouTubeMode,
     this.seekUndo,
     this.onExitRotatedFullscreen,
+    this.sponsoredMoments,
   });
 
   @override
@@ -97,10 +106,6 @@ class EpisodeVideo extends StatefulWidget {
 
 class _EpisodeVideoState extends State<EpisodeVideo> {
   final GlobalKey<VideoState> _videoKey = GlobalKey<VideoState>();
-
-  /// CC stanje — ValueNotifier da overlay i gumb (i njihove fullscreen
-  /// kopije u media_kit ruti) dijele stanje bez setState-a preko ruta.
-  final ValueNotifier<bool> _subtitlesOn = ValueNotifier<bool>(false);
 
   void Function()? _removeFsListener;
 
@@ -115,9 +120,6 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   @override
   void initState() {
     super.initState();
-    loadSubtitlesPref().then((saved) {
-      if (mounted && saved != null) _subtitlesOn.value = saved;
-    });
     _removeFsListener = addFullscreenChangeListener(_onBrowserFullscreenChange);
     _setupAutoPip();
   }
@@ -133,7 +135,6 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   @override
   void dispose() {
     _removeFsListener?.call();
-    _subtitlesOn.dispose();
     // Ekran se rastavlja s bravom orijentacije na sebi (npr. deep-link
     // navigacija iz fullscreena) — ne ostavljaj uređaj zaključan u landscapeu.
     if (_lockedOrientation) {
@@ -314,6 +315,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
           onYouTubeMode: widget.onYouTubeMode,
           seekUndo: widget.seekUndo,
           onExitRotatedFullscreen: exit,
+          sponsoredMoments: widget.sponsoredMoments,
         ),
         onClosed: _onRotatedFullscreenClosed,
       ),
@@ -360,10 +362,10 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
   /// flag (vidi `services/media_element_mute_web.dart`).
   void _toggleMute() => PlayerMute.instance.toggle();
 
-  void _toggleSubtitles() {
-    _subtitlesOn.value = !_subtitlesOn.value;
-    saveSubtitlesPref(_subtitlesOn.value);
-  }
+  /// CC stanje je singleton ([SubtitlesEnabled]): dijele ga overlay, gumb,
+  /// njihove kopije u media_kitovoj fullscreen ruti i [SubtitleStrip] ispod
+  /// playera, koji živi izvan ovog widgeta.
+  void _toggleSubtitles() => SubtitlesEnabled.instance.toggle();
 
   /// YouTube kratice: https://support.google.com/youtube/answer/7631406
   Map<ShortcutActivator, VoidCallback> get _keyboardShortcuts => {
@@ -396,7 +398,7 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
       };
 
   Widget _subtitleButton() => _SubtitleToggleButton(
-        enabled: _subtitlesOn,
+        enabled: SubtitlesEnabled.instance,
         onToggle: _toggleSubtitles,
       );
 
@@ -547,14 +549,26 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
               }
               return Stack(
                 children: [
+              // Na mobitelu u portraitu titl crta `SubtitleStrip` ISPOD slike
+              // (VideoPanel / jednostavni prikaz) — osim u fullscreenu, gdje
+              // ispod slike nema ničega. `isFullscreen` mora čitati kontekst
+              // ispod media_kitove rute, zato `Builder`.
               if (timeline != null)
                 Positioned.fill(
-                  child: IgnorePointer(
-                    child: _SubtitleOverlay(
-                      player: widget.player,
-                      timeline: timeline,
-                      enabled: _subtitlesOn,
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      final below = subtitlesBelowPlayer(context) &&
+                          !inRotated &&
+                          !isFullscreen(context);
+                      if (below) return const SizedBox.shrink();
+                      return IgnorePointer(
+                        child: _SubtitleOverlay(
+                          player: widget.player,
+                          timeline: timeline,
+                          enabled: SubtitlesEnabled.instance,
+                        ),
+                      );
+                    },
                   ),
                 ),
               AdaptiveVideoControls(state),
@@ -568,6 +582,23 @@ class _EpisodeVideoState extends State<EpisodeVideo> {
                   },
                 ),
               ),
+              // Oznaka plaćenog trenutka — iznad kontrola I iznad
+              // `UnmuteOverlay` (koji preko cijele slike hvata tap), inače bi
+              // tap na brand utišani autoplay pretvorio u „uključi zvuk". U
+              // fullscreenu je gornji lijevi kut `_SpeakerBadge`, pa ide niže.
+              if (widget.sponsoredMoments != null)
+                Builder(
+                  builder: (context) => Positioned(
+                    top: inRotated || isFullscreen(context) ? 56 : 8,
+                    left: 8,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 260),
+                      child: SponsoredMomentVideoBadge(
+                        controller: widget.sponsoredMoments!,
+                      ),
+                    ),
+                  ),
+                ),
               // Iznad kontrola u Z-osi jer mora primiti tap — media_kitov
               // control layer inače proguta klik (playAndPauseOnTap).
               // Kroz `controls:` builder pa pilula postoji i u fullscreen ruti.
@@ -659,6 +690,82 @@ class _SubtitleToggleButton extends StatelessWidget {
 // Renderira se kroz `controls` builder pa postoji i u fullscreen ruti.
 // ---------------------------------------------------------------------------
 
+TextStyle _subtitleStyle(double fontSize) =>
+    TextStyle(fontSize: fontSize, height: 1.3, fontWeight: FontWeight.w500);
+
+/// Najveći font ≤ [base] uz koji cijeli [text] stane u [maxWidth]×[maxHeight].
+/// Donja granica 9 px: ispod toga titl ionako nije čitljiv, pa radije pusti da
+/// prijeđe gornji rub nego da postane točkica.
+@visibleForTesting
+double fittingSubtitleFontSize(
+  String text,
+  double base, {
+  required double maxWidth,
+  required double maxHeight,
+  TextScaler textScaler = TextScaler.noScaling,
+}) => _fittingFontSize(
+  text,
+  base,
+  maxWidth: maxWidth,
+  maxHeight: maxHeight,
+  textScaler: textScaler,
+);
+
+/// Zadnji izračuni po (tekst, okvir, skala). Position stream fira ~5×/s, a
+/// isti cue traje sekundama — bez ovoga bi svaki tick ponovio do 15 layouta.
+final Map<String, double> _fitCache = {};
+
+double _fittingFontSize(
+  String text,
+  double base, {
+  required double maxWidth,
+  required double maxHeight,
+  TextScaler textScaler = TextScaler.noScaling,
+  TextStyle baseStyle = const TextStyle(),
+}) {
+  if (maxWidth <= 0 || maxHeight <= 0) return base;
+  final key =
+      '$base|${maxWidth.round()}|${maxHeight.round()}|'
+      '${textScaler.scale(10)}|${baseStyle.fontFamily}|$text';
+  final cached = _fitCache[key];
+  if (cached != null) return cached;
+  if (_fitCache.length > 64) _fitCache.clear();
+  return _fitCache[key] = _measureFit(
+    text,
+    base,
+    maxWidth: maxWidth,
+    maxHeight: maxHeight,
+    textScaler: textScaler,
+    baseStyle: baseStyle,
+  );
+}
+
+double _measureFit(
+  String text,
+  double base, {
+  required double maxWidth,
+  required double maxHeight,
+  required TextScaler textScaler,
+  required TextStyle baseStyle,
+}) {
+  var size = base;
+  while (size > 9) {
+    final tp = TextPainter(
+      // Isti stil kao `Text` u overlayu: on spaja DefaultTextStyle (Inter iz
+      // teme) s našim — mjerenje bez fonta teme daje krivi broj redaka.
+      text: TextSpan(text: text, style: baseStyle.merge(_subtitleStyle(size))),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+    )..layout(maxWidth: maxWidth);
+    final fits = tp.height <= maxHeight;
+    tp.dispose();
+    if (fits) return size;
+    size -= 1;
+  }
+  return 9;
+}
+
 class _SubtitleOverlay extends StatelessWidget {
   final Player player;
   final SpeakerTimeline timeline;
@@ -676,60 +783,95 @@ class _SubtitleOverlay extends StatelessWidget {
       valueListenable: enabled,
       builder: (context, on, _) {
         if (!on) return const SizedBox.shrink();
-        return StreamBuilder<Duration>(
-          stream: player.stream.position,
-          initialData: player.state.position,
-          builder: (context, snapshot) {
-            final cue = timeline.cueAt(snapshot.data ?? Duration.zero);
+        // Zatvoren bočni panel (TickerMode off): titl se ionako ne vidi,
+        // pa ne trošimo layout teksta.
+        if (!TickerMode.valuesOf(context).enabled) {
+          return const SizedBox.shrink();
+        }
+        return CaptionClock(
+          player: player,
+          keyOf: (ms) {
+            final cue = timeline.cueAt(Duration(milliseconds: ms));
+            return cue == null
+                ? null
+                : (identityHashCode(cue), cue.activeWordAt(ms));
+          },
+          builder: (context, ms) {
+            final cue = timeline.cueAt(Duration(milliseconds: ms));
             if (cue == null || cue.text.isEmpty) {
               return const SizedBox.shrink();
             }
-            return LayoutBuilder(builder: (context, constraints) {
-              // Font skalira s veličinom playera: mali panel ~13px,
-              // fullscreen 1080p ~24px — kao YouTube auto-size.
-              final fontSize =
-                  (constraints.maxWidth * 0.022).clamp(12.0, 24.0);
-              return Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  // Tik iznad bottom control bara — YouTube pozicija (~10%
-                  // od dna), skalira s visinom playera umjesto fiksnog 12%+36
-                  // koji je na malom side-panelu gurao titl u sredinu slike.
-                  padding: EdgeInsets.only(
-                    bottom: (constraints.maxHeight * 0.06).clamp(8.0, 54.0) + 30,
-                    left: 12,
-                    right: 12,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * 0.88,
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // Font skalira s veličinom playera: mali panel ~13px,
+                // fullscreen 1080p ~24px — kao YouTube auto-size.
+                final baseFont = (constraints.maxWidth * 0.022).clamp(
+                  12.0,
+                  24.0,
+                );
+                final bottomPad =
+                    (constraints.maxHeight * 0.06).clamp(8.0, 54.0) + 30;
+                final boxWidth = constraints.maxWidth * 0.88;
+                // Titl se NIKAD ne reže: korisnici čitaju dok slušaju, pa je
+                // puni tekst važniji od slike koju prekrije. Raste prema gore
+                // od istog sidra iznad trake; tek ako ni tako ne stane u
+                // player (mali panel, dugačak cue), smanjuje se font.
+                final fontSize = _fittingFontSize(
+                  cue.text,
+                  baseFont,
+                  maxWidth: boxWidth - 20,
+                  maxHeight: constraints.maxHeight - bottomPad - 8 - 10,
+                  textScaler: MediaQuery.textScalerOf(context),
+                  baseStyle: DefaultTextStyle.of(context).style,
+                );
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    // Tik iznad bottom control bara — YouTube pozicija (~10%
+                    // od dna), skalira s visinom playera umjesto fiksnog 12%+36
+                    // koji je na malom side-panelu gurao titl u sredinu slike.
+                    padding: EdgeInsets.only(
+                      bottom: bottomPad,
+                      left: 12,
+                      right: 12,
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withAlpha(190),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        cue.text,
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: fontSize,
-                          height: 1.3,
-                          fontWeight: FontWeight.w500,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: boxWidth),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(190),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        // Isticanje mijenja samo boju, pa izračun fonta nad
+                        // golim tekstom vrijedi i za obojeni.
+                        child: Text.rich(
+                          captionSpan(
+                            cue.tokens,
+                            from: 0,
+                            to: cue.tokens.length,
+                            active: cue.activeWordAt(ms),
+                            style: _subtitleStyle(fontSize),
+                            colors: CaptionColors(
+                              spoken: Colors.white,
+                              upcoming: Colors.white.withAlpha(170),
+                              activeText: Colors.white,
+                              activeFill: Theme.of(
+                                context,
+                              ).colorScheme.tertiary,
+                            ),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            });
+                );
+              },
+            );
           },
         );
       },

@@ -3305,6 +3305,27 @@
   "@pinkaPaymentConfirmedOnchain": {
     "description": "Potvrda da je uplata zabilježena na lancu."
   },
+  "pinkaSepaReceivedProcessing": "Uplata je zaprimljena. Izdavanje EURe-a je u tijeku.",
+  "@pinkaSepaReceivedProcessing": {
+    "description": "Ispod zahvale kad je Monerium zaprimio SEPA uplatu (rail stage=received_processing), a EURe još nije izdan. Bez obećanja trajanja."
+  },
+  "pinkaSepaFirstPaymentReview": "Kod prve uplate s novog računa provjera može potrajati. Ne moraš ništa raditi.",
+  "@pinkaSepaFirstPaymentReview": {
+    "description": "Smirujuća napomena uz received_processing; nakon ~60 s u toj fazi se ističe. Namjerno „provjera\", ne tehnički naziv."
+  },
+  "pinkaSepaMintedForwarding": "EURe izdan, prosljeđuje se kampanji…",
+  "@pinkaSepaMintedForwarding": {
+    "description": "Ispod zahvale kad je EURe izdan, a prosljeđivanje kampanji traje (rail stage=minted/forwarding)."
+  },
+  "pinkaIntentRejectedReason": "Razlog: {reason}",
+  "@pinkaIntentRejectedReason": {
+    "description": "Razlog odbijanja SEPA uplate s raila (status.rejected_reason), ispod pinkaIntentRejected.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "pinkaDonateAgain": "Doniraj još jednom",
   "@pinkaDonateAgain": {
     "description": "Gumb na ekranu zahvale koji vraća obrazac za novu donaciju."
@@ -4380,6 +4401,14 @@
       }
     }
   },
+  "pinkaSlotSignInRequired": "Za rezervaciju mjesta na zidu prijavi se. Običnu donaciju možeš poslati i bez prijave.",
+  "@pinkaSlotSignInRequired": {
+    "description": "Mjesto na zidu (kvadratić, sjedalo) traži račun; gost dobiva login_required."
+  },
+  "pinkaGuestRateLimited": "Previše uplata s ove mreže u zadnjih sat vremena. Pokušaj malo kasnije ili se prijavi.",
+  "@pinkaGuestRateLimited": {
+    "description": "Gostujuća donacija: backend vratio rate_limited (30 na sat po IP-u)."
+  },
   "pinkaSlotTakenError": "Netko je bio brži — taj je kvadratić upravo zauzet. Odaberi drugi.",
   "@pinkaSlotTakenError": {
     "description": "Pogreška kad server odbije rezervaciju jer je mjesto u međuvremenu zauzeto (409 slot_taken)."
@@ -5192,5 +5221,547 @@
         "type": "String"
       }
     }
+  },
+  "ytWatchTitle": "YouTube video",
+  "@ytWatchTitle": {
+    "description": "App bar title of the standalone YouTube watch screen (/yt/:id)."
+  },
+  "ytWatchOpenEpisode": "Otvori obrađenu epizodu",
+  "@ytWatchOpenEpisode": {
+    "description": "Button on /yt/:id shown when domovina.ai already has an AI-processed episode for this video."
+  },
+  "ytWatchInvalidId": "Neispravna YouTube poveznica.",
+  "@ytWatchInvalidId": {
+    "description": "Shown on /yt/:id when the id is not a valid 11-character YouTube video id."
+  },
+  "ytWatchEmbedUnsupported": "Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.",
+  "@ytWatchEmbedUnsupported": {
+    "description": "Shown on web browsers (Safari, Firefox) that cannot embed YouTube under our cross-origin isolation."
+  },
+  "findInEpisodeTitle": "Pronađi u epizodi",
+  "@findInEpisodeTitle": {
+    "description": "Heading of the in-episode transcript search on the episode screen."
+  },
+  "findInEpisodeHint": "Riječ, ime ili fraza",
+  "@findInEpisodeHint": {
+    "description": "Placeholder of the in-episode transcript search field."
+  },
+  "findInEpisodeClear": "Obriši",
+  "findInEpisodeNoHits": "Nema pogodaka u ovoj epizodi.",
+  "findInEpisodeError": "Pretraga trenutno ne radi. Pokušaj ponovno malo kasnije.",
+  "findInEpisodeCount": "{count, plural, one{{count} trenutak} few{{count} trenutka} other{{count} trenutaka}}",
+  "@findInEpisodeCount": {
+    "description": "Number of transcript moments matching the query.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "findInEpisodeCountPartial": "Prikazano {shown} od {total} trenutaka",
+  "@findInEpisodeCountPartial": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "findInEpisodeApproximate": "Približni pogoci",
+  "@findInEpisodeApproximate": {
+    "description": "Subheading above hits that matched only through typo tolerance."
+  },
+  "sponsoredLabel": "Sponzorirano",
+  "@sponsoredLabel": {
+    "description": "Label on a paid sponsored moment (DSA art. 26)."
+  },
+  "sponsoredBy": "Sponzorirano · {brand}",
+  "@sponsoredBy": {
+    "description": "Paid moment label with the paying brand.",
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsoredPaidBy": "Plaća: {brand}",
+  "@sponsoredPaidBy": {
+    "description": "Who paid for the sponsored moment.",
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsoredWebsite": "Web stranica",
+  "@sponsoredWebsite": {
+    "description": "Fallback label for the brand link."
+  },
+  "sponsoredAt": "Sponzorirani trenutak na {time}",
+  "@sponsoredAt": {
+    "description": "Article mark for a paid moment.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsoredListen": "Poslušaj",
+  "@sponsoredListen": {
+    "description": "Seek to the start of a sponsored moment."
+  },
+  "sponsoredNow": "Upravo svira",
+  "@sponsoredNow": {
+    "description": "Strip badge while the paid moment plays."
+  },
+  "sponsorStoreEntry": "Oglašavanje",
+  "@sponsorStoreEntry": {
+    "description": "Channel screen button to the sponsor store."
+  },
+  "sponsorStoreTitle": "Oglašavanje na kanalu {channel}",
+  "@sponsorStoreTitle": {
+    "description": "Sponsor store heading.",
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorStoreIntro": "Izaberi trenutak u epizodi i tvoj brand bit će označen kao sponzor upravo tog dijela. Plaćaš jednom, SEPA uplatom, a oglas ide uživo čim uplata stigne.",
+  "@sponsorStoreIntro": {
+    "description": "Sponsor store intro."
+  },
+  "sponsorStoreEmpty": "Ovaj kanal trenutno nema ponudu sponzorskih trenutaka.",
+  "@sponsorStoreEmpty": {
+    "description": "Store empty state."
+  },
+  "sponsorStoreLoadFailed": "Ponudu nije moguće učitati.",
+  "@sponsorStoreLoadFailed": {
+    "description": "Store load error."
+  },
+  "sponsorStoreFreeCount": "{count, plural, one{{count} slobodan trenutak} few{{count} slobodna trenutka} other{{count} slobodnih trenutaka}}",
+  "@sponsorStoreFreeCount": {
+    "description": "Free moments in an episode.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sponsorStoreFromPrice": "od {price} €",
+  "@sponsorStoreFromPrice": {
+    "description": "Lowest gross price in an episode.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorStoreAvoidTitle": "Ne prikazuj me uz…",
+  "@sponsorStoreAvoidTitle": {
+    "description": "Brand-safety filter heading."
+  },
+  "sponsorStoreAvoidHint": "Sigurnost branda biraš ti. Oznake tema su gruba procjena, pa uz svaku epizodu vidiš i njezine stvarne teme.",
+  "@sponsorStoreAvoidHint": {
+    "description": "Brand-safety filter hint."
+  },
+  "sponsorStoreAllFiltered": "Nijedna epizoda ne odgovara odabranom filtru.",
+  "@sponsorStoreAllFiltered": {
+    "description": "All episodes filtered out."
+  },
+  "sponsorTopicFaith": "Vjera",
+  "@sponsorTopicFaith": {
+    "description": "Episode topic label."
+  },
+  "sponsorTopicPolitics": "Politika",
+  "@sponsorTopicPolitics": {
+    "description": "Episode topic label."
+  },
+  "sponsorTopicBusiness": "Posao i tehnologija",
+  "@sponsorTopicBusiness": {
+    "description": "Episode topic label."
+  },
+  "sponsorMapTitle": "Sponzorski trenuci",
+  "@sponsorMapTitle": {
+    "description": "Episode map heading."
+  },
+  "sponsorMapIntro": "Svaki trenutak je dio epizode uz naslov sekcije članka koja u njemu počinje. Poslušaj ga prije kupnje.",
+  "@sponsorMapIntro": {
+    "description": "Episode map intro."
+  },
+  "sponsorMapTopics": "Teme epizode",
+  "@sponsorMapTopics": {
+    "description": "Heading above episode topics."
+  },
+  "sponsorStateFree": "Slobodno",
+  "@sponsorStateFree": {
+    "description": "Moment state."
+  },
+  "sponsorStateHeld": "Netko upravo plaća",
+  "@sponsorStateHeld": {
+    "description": "Moment state: held by an unpaid order."
+  },
+  "sponsorStateSold": "Zauzeto",
+  "@sponsorStateSold": {
+    "description": "Moment state."
+  },
+  "sponsorStateSoldUntil": "Zauzeto do {date}",
+  "@sponsorStateSoldUntil": {
+    "description": "Moment state with end date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorStateBlocked": "Nije u ponudi",
+  "@sponsorStateBlocked": {
+    "description": "Moment state."
+  },
+  "sponsorZoneZatvaranje": "Zatvaranje",
+  "@sponsorZoneZatvaranje": {
+    "description": "Price zone (contract key)."
+  },
+  "sponsorZoneTijelo": "Središnji dio",
+  "@sponsorZoneTijelo": {
+    "description": "Price zone (contract key)."
+  },
+  "sponsorZoneOtvaranje": "Otvaranje",
+  "@sponsorZoneOtvaranje": {
+    "description": "Price zone (contract key)."
+  },
+  "sponsorPriceGross": "{price} € s PDV-om",
+  "@sponsorPriceGross": {
+    "description": "Gross price.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorRunDays": "{count, plural, one{uživo {count} dan nakon uplate} few{uživo {count} dana nakon uplate} other{uživo {count} dana nakon uplate}}",
+  "@sponsorRunDays": {
+    "description": "How long a bought moment runs.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sponsorPick": "Izaberi",
+  "@sponsorPick": {
+    "description": "Pick a moment on the map."
+  },
+  "sponsorLegend": "Traka prikazuje cijelu epizodu.",
+  "@sponsorLegend": {
+    "description": "Timeline legend."
+  },
+  "sponsorCheckoutTitle": "Narudžba",
+  "@sponsorCheckoutTitle": {
+    "description": "Checkout heading."
+  },
+  "sponsorCheckoutMoment": "Trenutak {range} · {zone}",
+  "@sponsorCheckoutMoment": {
+    "description": "Selected moment summary.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorCheckoutChange": "Promijeni trenutak",
+  "@sponsorCheckoutChange": {
+    "description": "Back to the map."
+  },
+  "sponsorCreativeSection": "Oglas",
+  "@sponsorCreativeSection": {
+    "description": "Creative form section."
+  },
+  "sponsorFieldBrand": "Naziv branda",
+  "@sponsorFieldBrand": {
+    "description": "Form field."
+  },
+  "sponsorFieldBrandHelp": "Prikazuje se uz oznaku „Sponzorirano“ i ne može biti anoniman.",
+  "@sponsorFieldBrandHelp": {
+    "description": "Form field help."
+  },
+  "sponsorFieldTagline": "Jedna rečenica (neobavezno)",
+  "@sponsorFieldTagline": {
+    "description": "Form field."
+  },
+  "sponsorFieldLink": "Poveznica, https:// (neobavezno)",
+  "@sponsorFieldLink": {
+    "description": "Form field."
+  },
+  "sponsorFieldLogo": "Logo: PNG, JPG ili WebP, najviše 200 kB (neobavezno)",
+  "@sponsorFieldLogo": {
+    "description": "Logo picker hint."
+  },
+  "sponsorLogoPick": "Dodaj logo",
+  "@sponsorLogoPick": {
+    "description": "Logo picker button."
+  },
+  "sponsorLogoRemove": "Ukloni logo",
+  "@sponsorLogoRemove": {
+    "description": "Remove logo button."
+  },
+  "sponsorLogoTooBig": "Logo je veći od 200 kB.",
+  "@sponsorLogoTooBig": {
+    "description": "Logo validation."
+  },
+  "sponsorLogoBadType": "Logo mora biti PNG, JPG ili WebP.",
+  "@sponsorLogoBadType": {
+    "description": "Logo validation."
+  },
+  "sponsorLogoUploadFailed": "Logo nije učitan. Pokušaj ponovno ili nastavi bez njega.",
+  "@sponsorLogoUploadFailed": {
+    "description": "Logo upload error."
+  },
+  "sponsorCompanySection": "Podaci za račun",
+  "@sponsorCompanySection": {
+    "description": "Company form section."
+  },
+  "sponsorFieldCompany": "Naziv tvrtke",
+  "@sponsorFieldCompany": {
+    "description": "Form field."
+  },
+  "sponsorFieldOib": "OIB (neobavezno)",
+  "@sponsorFieldOib": {
+    "description": "Form field."
+  },
+  "sponsorFieldVat": "PDV ID (neobavezno)",
+  "@sponsorFieldVat": {
+    "description": "Form field."
+  },
+  "sponsorFieldStreet": "Ulica i kućni broj",
+  "@sponsorFieldStreet": {
+    "description": "Form field."
+  },
+  "sponsorFieldCity": "Grad",
+  "@sponsorFieldCity": {
+    "description": "Form field."
+  },
+  "sponsorFieldPostal": "Poštanski broj",
+  "@sponsorFieldPostal": {
+    "description": "Form field."
+  },
+  "sponsorFieldCountry": "Država (HR, SI, DE…)",
+  "@sponsorFieldCountry": {
+    "description": "Form field."
+  },
+  "sponsorFieldEmail": "Adresa e-pošte za račun",
+  "@sponsorFieldEmail": {
+    "description": "Form field."
+  },
+  "sponsorFieldReference": "Broj narudžbenice (neobavezno)",
+  "@sponsorFieldReference": {
+    "description": "Form field."
+  },
+  "sponsorPreviewTitle": "Ovako će oglas izgledati",
+  "@sponsorPreviewTitle": {
+    "description": "Preview heading."
+  },
+  "sponsorTermsAccept": "Prihvaćam uvjete oglašavanja",
+  "@sponsorTermsAccept": {
+    "description": "Terms checkbox."
+  },
+  "sponsorTermsRead": "Pročitaj uvjete",
+  "@sponsorTermsRead": {
+    "description": "Open terms dialog."
+  },
+  "sponsorTermsTitle": "Uvjeti oglašavanja",
+  "@sponsorTermsTitle": {
+    "description": "Terms dialog title."
+  },
+  "sponsorTermsBody": "Oglas se objavljuje automatski čim uplata stigne, bez prethodnog odobrenja, i traje onoliko dana koliko je navedeno uz trenutak.\n\nOglas je označen kao „Sponzorirano“ uz naziv Vašeg branda, sukladno članku 26. Uredbe (EU) 2022/2065.\n\nNije dopušten sadržaj koji je nezakonit, obmanjujući, uvredljiv ili diskriminirajući, kao ni oglašavanje duhanskih proizvoda, oružja, igara na sreću te lijekova na recept.\n\nVlasnik kanala može povući oglas koji krši ove uvjete. U tom slučaju, kao i kad uplata stigne nakon što je trenutak prodan drugome, iznos Vam vraćamo ručno.\n\nCijena uključuje PDV. Račun se izdaje automatski i šalje na adresu e-pošte navedenu u narudžbi.",
+  "@sponsorTermsBody": {
+    "description": "Advertising terms (formal register)."
+  },
+  "sponsorErrorRequired": "Obavezno polje",
+  "@sponsorErrorRequired": {
+    "description": "Validation."
+  },
+  "sponsorErrorOib": "OIB nije ispravan",
+  "@sponsorErrorOib": {
+    "description": "Validation."
+  },
+  "sponsorErrorVat": "PDV ID nije ispravan (npr. HR12345678903)",
+  "@sponsorErrorVat": {
+    "description": "Validation."
+  },
+  "sponsorErrorEmail": "Adresa e-pošte nije ispravna",
+  "@sponsorErrorEmail": {
+    "description": "Validation."
+  },
+  "sponsorErrorLink": "Poveznica mora počinjati s https://",
+  "@sponsorErrorLink": {
+    "description": "Validation."
+  },
+  "sponsorErrorTooLong": "Najviše {max} znakova",
+  "@sponsorErrorTooLong": {
+    "description": "Validation.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "sponsorErrorCountry": "Dvoslovna oznaka države, npr. HR",
+  "@sponsorErrorCountry": {
+    "description": "Validation."
+  },
+  "sponsorErrorTerms": "Za narudžbu je potrebno prihvatiti uvjete.",
+  "@sponsorErrorTerms": {
+    "description": "Validation."
+  },
+  "sponsorSubmit": "Nastavi na plaćanje",
+  "@sponsorSubmit": {
+    "description": "Checkout submit."
+  },
+  "sponsorSlotTaken": "Netko je upravo uzeo taj trenutak. Karta je osvježena, izaberi drugi.",
+  "@sponsorSlotTaken": {
+    "description": "409 slot_taken."
+  },
+  "sponsorTooManyHolds": "Već imaš tri neplaćene narudžbe. Plati jednu ili pričekaj da istekne.",
+  "@sponsorTooManyHolds": {
+    "description": "409 too_many_holds."
+  },
+  "sponsorSignInRequired": "Za narudžbu sponzorskog trenutka prijavi se. Upisani podaci ostaju u obrascu.",
+  "@sponsorSignInRequired": {
+    "description": "Sponzorski checkout traži račun; poruka kad prijava nije dovršena."
+  },
+  "sponsorSignInHeadline": "Prijavi se za narudžbu",
+  "@sponsorSignInHeadline": {
+    "description": "Naslov auth sheeta otvorenog iz sponzorskog checkouta."
+  },
+  "sponsorSignInSubtitle": "Narudžba, račun i stanje plaćanja vezani su uz tvoj račun.",
+  "@sponsorSignInSubtitle": {
+    "description": "Podnaslov auth sheeta iz sponzorskog checkouta."
+  },
+  "sponsorCheckoutFailed": "Narudžbu nije moguće kreirati. Pokušaj ponovno.",
+  "@sponsorCheckoutFailed": {
+    "description": "Checkout error."
+  },
+  "sponsorCheckoutFieldRejected": "Provjeri polje „{field}“.",
+  "@sponsorCheckoutFieldRejected": {
+    "description": "Server rejected a field.",
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorPayTitle": "Plaćanje",
+  "@sponsorPayTitle": {
+    "description": "Payment step heading."
+  },
+  "sponsorMemoVerbatim": "Opis plaćanja kopiraj doslovno, bez ijedne izmjene. Po njemu sparujemo uplatu s narudžbom. Ako ga knjigovodstvo skrati ili prepiše, uplata se neće spariti automatski.",
+  "@sponsorMemoVerbatim": {
+    "description": "Memo must be copied verbatim."
+  },
+  "sponsorHoldUntil": "Trenutak je rezerviran za tebe do {time}.",
+  "@sponsorHoldUntil": {
+    "description": "Hold expiry.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorHoldExpired": "Rezervacija je istekla. Ako uplata ipak stigne, a trenutak je još slobodan, dodjeljujemo ga automatski.",
+  "@sponsorHoldExpired": {
+    "description": "Hold expired."
+  },
+  "sponsorWaitingPayment": "Čekamo uplatu. Stranica se sama osvježi kad stigne.",
+  "@sponsorWaitingPayment": {
+    "description": "Waiting for payment."
+  },
+  "sponsorOrderLinkHint": "Spremi ovu poveznicu. Preko nje uvijek vidiš stanje narudžbe.",
+  "@sponsorOrderLinkHint": {
+    "description": "Order status link hint."
+  },
+  "sponsorPaidTitle": "Uplata je stigla, oglas je uživo",
+  "@sponsorPaidTitle": {
+    "description": "Confirmation heading."
+  },
+  "sponsorPaidUntil": "Trenutak je tvoj do {date}",
+  "@sponsorPaidUntil": {
+    "description": "Confirmation body. No final full stop: {date} already ends with one (6. 11. 2026.).",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorUnderpaid": "Uplata je manja od cijene trenutka, pa trenutak nije dodijeljen. Javit ćemo ti se radi povrata ili doplate.",
+  "@sponsorUnderpaid": {
+    "description": "Underpaid order."
+  },
+  "sponsorSlotUnassigned": "Uplata je stigla nakon isteka rezervacije, a trenutak je u međuvremenu prodan. Iznos vraćamo ručno.",
+  "@sponsorSlotUnassigned": {
+    "description": "Paid but slot sold to someone else."
+  },
+  "sponsorHidden": "Vlasnik kanala povukao je oglas. Iznos vraćamo ručno.",
+  "@sponsorHidden": {
+    "description": "Creative withdrawn."
+  },
+  "sponsorOrderExpired": "Narudžba je istekla bez uplate.",
+  "@sponsorOrderExpired": {
+    "description": "Expired order."
+  },
+  "sponsorOrderFailed": "Plaćanje nije uspjelo.",
+  "@sponsorOrderFailed": {
+    "description": "Failed order."
+  },
+  "sponsorInvoiceSent": "Račun {number} poslan je na adresu e-pošte iz narudžbe.",
+  "@sponsorInvoiceSent": {
+    "description": "Invoice issued.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorInvoicePending": "Račun stiže e-poštom nakon obrade.",
+  "@sponsorInvoicePending": {
+    "description": "Invoice pending."
+  },
+  "sponsorStatsPending": "Broj prikaza i klikova prikazat ćemo ovdje čim mjerenje bude uključeno.",
+  "@sponsorStatsPending": {
+    "description": "Stats placeholder until backend."
+  },
+  "sponsorViewOnEpisode": "Pogledaj na epizodi",
+  "@sponsorViewOnEpisode": {
+    "description": "Open the episode at the moment."
+  },
+  "sponsorOrderNotFound": "Narudžba nije pronađena.",
+  "@sponsorOrderNotFound": {
+    "description": "Unknown order id."
+  },
+  "sponsorLeaseEnded": "Trenutak je bio uživo do {date}",
+  "@sponsorLeaseEnded": {
+    "description": "Order status after the lease ended. No final full stop: {date} ends with one.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsorLeavePayTitle": "Napustiti plaćanje?",
+  "@sponsorLeavePayTitle": {
+    "description": "Leave-payment confirmation title."
+  },
+  "sponsorLeavePayBody": "Trenutak ostaje rezerviran do isteka, ali QR kod i opis plaćanja više nećeš vidjeti. Stanje narudžbe ostaje na poveznici iz adresne trake.",
+  "@sponsorLeavePayBody": {
+    "description": "Leave-payment confirmation body."
+  },
+  "sponsorLeavePayConfirm": "Napusti",
+  "@sponsorLeavePayConfirm": {
+    "description": "Confirm leaving the payment step."
   }
 }

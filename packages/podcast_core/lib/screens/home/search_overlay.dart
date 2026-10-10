@@ -148,7 +148,13 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     // `notifyListeners()` sinkrono — iz build()-a bi to srušilo frame.
     PersonChannelFlag.instance.addListener(_onFlagChanged);
     personIndexCache.addListener(_onPersonIndexChanged);
+    // Lokalni rezultati se računaju u buildu — rebuild kad stignu listinzi
+    // ili tekst za pretragu.
+    channelCache.addListener(_onPersonIndexChanged);
     unawaited(Future.microtask(_initPersons));
+    // Sažetak/teme/govornici za lokalnu pretragu — skraćeni listing (v2) ih
+    // ne nosi. Kad stignu, cache notificira i rezultati se osvježe.
+    unawaited(channelCache.ensureSearchText());
   }
 
   Future<void> _initPersons() async {
@@ -163,6 +169,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
     setState(() => _flagOn = on);
   }
 
+  /// Rebuild kad se promijeni indeks osoba ili `channelCache`.
   void _onPersonIndexChanged() {
     if (mounted) setState(() {});
   }
@@ -171,6 +178,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
   void dispose() {
     PersonChannelFlag.instance.removeListener(_onFlagChanged);
     personIndexCache.removeListener(_onPersonIndexChanged);
+    channelCache.removeListener(_onPersonIndexChanged);
     _debounce?.cancel();
     _semanticDebounce?.cancel();
     _leftScroll.dispose();

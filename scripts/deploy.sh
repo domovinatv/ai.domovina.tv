@@ -52,6 +52,11 @@ fi
 if [[ -n "${MEILI_SEARCH_KEY:-}" ]]; then
   SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=MEILI_SEARCH_KEY=${MEILI_SEARCH_KEY}"
 fi
+# Ključ samo za index `segments` („Pronađi u epizodi"); default je u
+# lib/services/transcript_search.dart.
+if [[ -n "${MEILI_SEGMENTS_SEARCH_KEY:-}" ]]; then
+  SUPABASE_DEFINES="${SUPABASE_DEFINES} --dart-define=MEILI_SEGMENTS_SEARCH_KEY=${MEILI_SEGMENTS_SEARCH_KEY}"
+fi
 # RevenueCat Web Billing hosted-checkout base URL (web nema SDK). Supabase UUID
 # se appenda kao customer id: <base>/<uuid>. Prazno dok Web Billing/Stripe nije
 # spojen u RC dashboardu — paywall tad pokaže "uskoro" umjesto checkout-a.

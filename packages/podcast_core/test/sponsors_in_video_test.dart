@@ -256,6 +256,14 @@ void main() {
 
   group('DataService.loadSponsorsInVideo', () {
     const svc = DataService(youtubeId: 'abc123');
+    setUp(DataService.resetMemoryForTest);
+
+    // `episode.json` (EpisodeBundle) se dohvaća prvi; ovdje ga nema, pa
+    // DataService ide na pojedinačne datoteke kao i bez objedinjene.
+    MockClient noBundle(Future<http.Response> Function(http.Request) fn) =>
+        MockClient((req) async => req.url.path.endsWith('/episode.json')
+            ? http.Response('', 404)
+            : fn(req));
 
     test('404 (i nakon retryja) → null, bez petlje', () async {
       final log = <String>[];
@@ -263,7 +271,7 @@ void main() {
         () async {
           expect(await svc.loadSponsorsInVideo(), isNull);
         },
-        () => MockClient((req) async {
+        () => noBundle((req) async {
           log.add(req.url.toString());
           return http.Response('Not Found', 404);
         }),
@@ -275,10 +283,10 @@ void main() {
     test('nečitljiv JSON ili mreža → null, nikad iznimka', () async {
       await http.runWithClient(() async {
         expect(await svc.loadSponsorsInVideo(), isNull);
-      }, () => MockClient((_) async => http.Response('<html>', 200)));
+      }, () => noBundle((_) async => http.Response('<html>', 200)));
       await http.runWithClient(() async {
         expect(await svc.loadSponsorsInVideo(), isNull);
-      }, () => MockClient((_) async => throw http.ClientException('offline')));
+      }, () => noBundle((_) async => throw http.ClientException('offline')));
     });
 
     test('200 → parsiran model', () async {
@@ -290,7 +298,7 @@ void main() {
             'e-Duhovne vježbe',
           ]);
         },
-        () => MockClient(
+        () => noBundle(
           (_) async => http.Response.bytes(
             utf8.encode(_iva),
             200,

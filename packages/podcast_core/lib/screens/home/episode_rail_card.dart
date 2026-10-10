@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cached_thumbnail.dart';
+import '../../widgets/prefetch_on_intent.dart';
 import '../../widgets/magisterium_section.dart';
 import '../../widgets/share_context_menu.dart';
 
@@ -31,6 +32,10 @@ class EpisodeRailCard extends StatelessWidget {
   /// kartica stoji živa ispod u navigacijskom stogu.
   final String Function()? shareUrl;
 
+  /// Epizoda koju kartica otvara. Kad je zadana, hover ili dodir je
+  /// predučitavaju ([EpisodePrefetch.intent]) — klik onda ne čeka mrežu.
+  final String? prefetchEpisodeId;
+
   const EpisodeRailCard({
     super.key,
     required this.title,
@@ -43,6 +48,7 @@ class EpisodeRailCard extends StatelessWidget {
     this.statusBadge,
     this.progress,
     this.shareUrl,
+    this.prefetchEpisodeId,
   });
 
   @override
@@ -128,8 +134,12 @@ class EpisodeRailCard extends StatelessWidget {
       ),
     );
 
-    if (shareUrl == null) return card;
-    return ShareContextMenu.lazy(urlBuilder: shareUrl!, child: card);
+    final id = prefetchEpisodeId;
+    final withIntent = id == null
+        ? card
+        : PrefetchOnIntent(episodeId: id, child: card);
+    if (shareUrl == null) return withIntent;
+    return ShareContextMenu.lazy(urlBuilder: shareUrl!, child: withIntent);
   }
 
   Widget _coverImage(ThemeData theme) {

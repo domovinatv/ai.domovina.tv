@@ -50,7 +50,7 @@
     "provjereno-zivo-27-08-2026": "svi gornji URL-ovi odgovaraju 2xx; mcp.domovina.link vraca 401 na goli GET (autorizacija, ne smrt)",
     "model_troska": "docs/marketing/model-troska-po-vertikali.md",
     "plan_kapaciteta": "privatni bizops repo, funding/plan-kapaciteta-2026-08.md (ne linka se odavde jer je repo privatan)",
-    "vidljivost": "UPOZORENJE: ovaj fajl je u JAVNOM repou domovinatv/ai.domovina.tv (provjereno 27.8.2026.). Ovdje ide samo ono sto brojku u decku cini provjerljivom: iznos, izvor, datum, izvod. GRANICA: izvodi iz vc-pitch-strategija.md §2 smiju ostati jer je §2 ionako javan na origin/main (npr. 264,55 EUR po inzenjer-danu = 200.000 / 2 / 18 / 21). NE SMIJE ovamo nista sto ide DALJE od §2: implicirana cijena rada po inzenjeru, nalaz da §2 podcjenjuje inzenjera, usporedba postava i budzeta, imena protustranaka, tekst potpisanih ugovora, putanje u privatni bizops repo. Taj materijal zivi u privatnom bizops repou: funding/plan-kapaciteta-2026-08.md i funding/podaci-kapacitet.json."
+    "vidljivost": "UPOZORENJE: ovaj fajl je u JAVNOM repou domovinatv/domovina.ai (provjereno 27.8.2026.). Ovdje ide samo ono sto brojku u decku cini provjerljivom: iznos, izvor, datum, izvod. GRANICA: izvodi iz vc-pitch-strategija.md §2 smiju ostati jer je §2 ionako javan na origin/main (npr. 264,55 EUR po inzenjer-danu = 200.000 / 2 / 18 / 21). NE SMIJE ovamo nista sto ide DALJE od §2: implicirana cijena rada po inzenjeru, nalaz da §2 podcjenjuje inzenjera, usporedba postava i budzeta, imena protustranaka, tekst potpisanih ugovora, putanje u privatni bizops repo. Taj materijal zivi u privatnom bizops repou: funding/plan-kapaciteta-2026-08.md i funding/podaci-kapacitet.json."
   },
   "podaci": {
     "primarna-prodaja-kreatoru": {

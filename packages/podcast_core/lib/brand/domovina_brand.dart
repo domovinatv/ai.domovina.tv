@@ -38,5 +38,7 @@ const BrandConfig domovinaBrand = BrandConfig(
     domainScore: true,
     calBooking: true,
     passkeys: true,
+    homeSnapshot: true,
+    youtubeWatch: true,
   ),
 );

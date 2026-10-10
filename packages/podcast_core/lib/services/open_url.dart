@@ -11,3 +11,6 @@ void openUrl(String url) {
     platform.openUrlImpl(url);
   }
 }
+
+/// Poveznica plaćenog sponzorskog trenutka — na webu nosi `rel="sponsored"`.
+void openSponsoredUrl(String url) => platform.openSponsoredUrlImpl(url);

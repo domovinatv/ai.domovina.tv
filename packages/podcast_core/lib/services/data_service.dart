@@ -1,19 +1,26 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import '../models/channel_index.dart';
 import '../models/channel_detail.dart';
+import '../models/home_snapshot.dart';
+import '../models/search_corpus.dart';
 import '../models/podcast_info.dart';
 import '../models/podcast_summary.dart';
 import '../models/podcast_outline.dart';
 import '../models/podcast_article.dart';
 import '../models/magisterium_data.dart';
 import '../models/magisterium_full_data.dart';
+import '../models/episode_bundle.dart';
 import '../models/episode_status.dart';
 import '../models/magisterium_full_v2_data.dart';
 import '../models/speaker_timeline.dart';
 import '../brand/app_brand.dart';
 import '../models/sponsors_in_video.dart';
 import 'cdn_config.dart';
+import 'cdn_json_cache.dart';
+import 'cdn_store.dart' show StoreBucket;
 
 /// Bačen kad info.json za dani YouTube ID ne postoji na CDN-u (HTTP 404).
 class VideoNotFoundException implements Exception {
@@ -25,26 +32,78 @@ class VideoNotFoundException implements Exception {
 }
 
 /// Učitava channel index i detail s CDN-a.
+///
+/// Sve ide kroz [CdnJsonCache.getMutable]: pri ponovnom otvaranju vraća se
+/// spremljena verzija odmah, a nova (ako je ima) stiže kroz `onUpdate`.
 class ChannelService {
-  static Future<ChannelIndex> loadIndex() async {
-    final response = await http.get(Uri.parse(CdnConfig.channelsIndexUrl()));
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: channels/index.json');
-    }
-    return ChannelIndex.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
+  static Future<ChannelIndex> loadIndex({
+    void Function(ChannelIndex index)? onUpdate,
+  }) async {
+    final body = await CdnJsonCache.instance.getMutable(
+      CdnConfig.channelsIndexUrl(),
+      onUpdate: onUpdate == null ? null : (b) => onUpdate(_parseIndex(b)),
     );
+    return _parseIndex(body);
   }
 
-  static Future<ChannelDetail> loadChannel(String channelId) async {
-    final url = CdnConfig.channelUrl(channelId);
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: $url');
-    }
-    return ChannelDetail.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
+  static ChannelIndex _parseIndex(String body) =>
+      ChannelIndex.fromJson(jsonDecode(body) as Map<String, dynamic>);
+
+  static Future<ChannelDetail> loadChannel(
+    String channelId, {
+    void Function(ChannelDetail detail)? onUpdate,
+  }) async {
+    final body = await CdnJsonCache.instance.getMutable(
+      CdnConfig.channelUrl(channelId),
+      onUpdate: onUpdate == null ? null : (b) => onUpdate(_parseChannel(b)),
     );
+    return _parseChannel(body);
+  }
+
+  static ChannelDetail _parseChannel(String body) =>
+      ChannelDetail.fromJson(jsonDecode(body) as Map<String, dynamic>);
+
+  /// `home.json` — `null` kad ga nema (404 dok ga pipeline ne generira),
+  /// kad je nepoznate verzije ili kad dohvat padne. Nikad ne baca: naslovnica
+  /// tada ide starim putem preko svih listinga.
+  static Future<HomeSnapshot?> loadHomeSnapshot({
+    void Function(HomeSnapshot snapshot)? onUpdate,
+  }) async {
+    try {
+      final body = await CdnJsonCache.instance.getMutable(
+        CdnConfig.homeSnapshotUrl(),
+        onUpdate: onUpdate == null
+            ? null
+            : (b) {
+                final snap = _parseSnapshot(b);
+                if (snap != null) onUpdate(snap);
+              },
+      );
+      return _parseSnapshot(body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static HomeSnapshot? _parseSnapshot(String body) {
+    try {
+      return HomeSnapshot.tryParse(jsonDecode(body) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// `search.json` — `null` kad ga nema (listinzi su još v1 i tekst nose
+  /// sami), kad je nepoznate verzije ili kad dohvat padne. Nikad ne baca.
+  /// Bez `onUpdate`: pretraga u sesiji radi s verzijom koju je dobila.
+  static Future<SearchCorpus?> loadSearchCorpus() async {
+    try {
+      final body =
+          await CdnJsonCache.instance.getMutable(CdnConfig.searchCorpusUrl());
+      return SearchCorpus.tryParse(jsonDecode(body) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -85,10 +144,116 @@ class DataService {
   /// Cijena je jedan dodatni zahtjev po assetu koji ionako nedostaje; na
   /// uspješnom dohvatu nula. Probe putanje ([_exists], `EbookService.probe`)
   /// cache-buster nose oduvijek i ne trebaju retry.
+  ///
+  /// Na nativeu ide kroz [CdnJsonCache.getImmutable]: jednom dohvaćena
+  /// datoteka čita se s diska (i offline). 404 se ne sprema.
+  ///
+  /// Isti URL koji je već u letu (predučitavanje pa klik, ili dva ekrana
+  /// odjednom) dijeli jedan zahtjev, a nedavni 200 odgovori ostaju u maloj
+  /// memoriji ([_recent]) — epizoda predučitana na naslovnici otvara se bez
+  /// mreže i u pregledniku koji HTTP cache cross-origin JSON-a ne drži
+  /// pouzdano. Vidi `EpisodePrefetch`.
   Future<http.Response> _get(String url) async {
-    final first = await http.get(Uri.parse(url));
-    if (first.statusCode != 404) return first;
-    return http.get(Uri.parse(CdnConfig.bustCache(url)));
+    final bundle = await _bundle();
+    if (bundle != null) {
+      final name = url.substring(url.lastIndexOf('/') + 1);
+      final body = bundle.inlineBody(name);
+      if (body != null) {
+        return http.Response.bytes(utf8.encode(body), 200,
+            headers: {'content-type': 'application/json; charset=utf-8'});
+      }
+      // Popis je izmjeren na R2, pa ovdje 404 bez mreže JEST istina — za
+      // razliku od 404 s CDN-a, koji je mogao biti cachiran prije uploada.
+      if (!bundle.has(name)) return http.Response('', 404);
+    }
+    return _network(url);
+  }
+
+  Future<http.Response> _network(String url) {
+    final hit = _recent.remove(url);
+    if (hit != null) {
+      _recent[url] = hit; // LRU: osvježi redoslijed
+      return Future.value(hit);
+    }
+    final inflight = _inflight[url];
+    if (inflight != null) return inflight;
+    final f = CdnJsonCache.instance.getImmutable(url, () async {
+      final first = await http.get(Uri.parse(url));
+      if (first.statusCode != 404) return first;
+      return http.get(Uri.parse(CdnConfig.bustCache(url)));
+    }).then((r) {
+      if (r.statusCode == 200 && r.bodyBytes.length <= _recentMaxBytes) {
+        _recent[url] = r;
+        while (_recent.length > _recentMaxEntries) {
+          _recent.remove(_recent.keys.first);
+        }
+      }
+      return r;
+    }).whenComplete(() {
+      // Blok, ne strelica: `remove` vraća baš ovaj future, a `whenComplete`
+      // čeka future koji callback vrati — strelica bi čekala samu sebe.
+      _inflight.remove(url);
+    });
+    _inflight[url] = f;
+    return f;
+  }
+
+  /// `data/<id>/episode.json` ([EpisodeBundle]) — jednom po epizodi i sesiji.
+  /// `null` (404, mreža, nepoznata verzija) znači stari put: datoteku po
+  /// datoteku, s retryjem na 404. Promjenjiv je (pipeline ga prepisuje kad
+  /// stigne nova datoteka), pa ide kroz [CdnJsonCache.getMutable] kao listinzi:
+  /// bez bustera, s diska na nativeu (offline), revalidacija u pozadini.
+  Future<EpisodeBundle?> _bundle() {
+    final cached = _bundles.remove(youtubeId);
+    if (cached != null) {
+      _bundles[youtubeId] = cached;
+      return cached;
+    }
+    final f = CdnJsonCache.instance
+        .getMutable(CdnConfig.episodeBundleUrl(youtubeId),
+            bucket: StoreBucket.episode)
+        .then(EpisodeBundle.tryParse, onError: (_) => null);
+    _bundles[youtubeId] = f;
+    while (_bundles.length > _bundlesMax) {
+      _bundles.remove(_bundles.keys.first);
+    }
+    return f;
+  }
+
+  static final Map<String, Future<EpisodeBundle?>> _bundles = {};
+  static const int _bundlesMax = 24;
+
+  static final Map<String, Future<http.Response>> _inflight = {};
+
+  /// Zadnji uspješni odgovori, LRU. ~7 datoteka po epizodi → desetak epizoda.
+  static final Map<String, http.Response> _recent = {};
+  static const int _recentMaxEntries = 80;
+  static const int _recentMaxBytes = 512 * 1024;
+
+  /// Samo za testove: memorija iz [_get] inače preživi između testova.
+  @visibleForTesting
+  static void resetMemoryForTest() {
+    _inflight.clear();
+    _recent.clear();
+    _bundles.clear();
+  }
+
+  /// Predučitava datoteke koje ekran epizode treba za PRVI prikaz (info,
+  /// sažetak, poglavlja, članak). Titlovi, vrijeme po riječi i Magisterium
+  /// varijante namjerno ne — oni su 2/3 bajtova, a trebaju tek kasnije.
+  /// Greške se gutaju: ovo je samo nagovještaj.
+  Future<void> prefetchFirstPaint() async {
+    // S objedinjenom datotekom je sve za prvi prikaz već u njoj.
+    if (await _bundle() != null) return;
+    await Future.wait([
+      for (final url in [
+        CdnConfig.infoUrl(youtubeId),
+        CdnConfig.summaryUrl(youtubeId),
+        CdnConfig.outlineUrl(youtubeId),
+        CdnConfig.articleUrl(youtubeId),
+      ])
+        _get(url).then((_) {}, onError: (_) {}),
+    ]);
   }
 
   Future<String> _fetch(String url) async {
@@ -317,7 +482,33 @@ class DataService {
   ///
   /// NB: oslanjamo se na CDN realnost (probe), NE na info.json `_sound_link`
   /// koji POSTOJI i na video epizodama (yt-matched) pa nije audio-only signal.
+  ///
+  /// S [EpisodeBundle] nema probe-a: njegov popis datoteka je izmjeren na R2,
+  /// pa vrijedi isti redoslijed nad popisom (tri HEAD-a manje, i oni idu
+  /// jedan za drugim).
   Future<({String uri, EpisodeMediaKind kind})> resolveMedia() async {
+    final bundle = await _bundle();
+    if (bundle != null) {
+      if (bundle.has('video_h264.mp4')) {
+        return (
+          uri: CdnConfig.videoH264Url(youtubeId),
+          kind: EpisodeMediaKind.video,
+        );
+      }
+      if (bundle.has('audio.mp3')) {
+        return (
+          uri: CdnConfig.audioUrl(youtubeId),
+          kind: EpisodeMediaKind.audio,
+        );
+      }
+      if (bundle.has('video.mp4')) {
+        return (
+          uri: CdnConfig.videoUrl(youtubeId),
+          kind: EpisodeMediaKind.video,
+        );
+      }
+      return (uri: '', kind: EpisodeMediaKind.none);
+    }
     if (await _exists(CdnConfig.videoH264ProbeUrl(youtubeId))) {
       return (
         uri: CdnConfig.videoH264Url(youtubeId),
@@ -335,12 +526,25 @@ class DataService {
 
   /// Ucitaj diariziran SRT i parsiraj u SpeakerTimeline.
   /// Vraća null ako fajl ne postoji (nije obavezan asset).
+  ///
+  /// Uz SRT paralelno vuče i `words.json` (vrijeme po riječi). Njega nema za
+  /// starije epizode, pa njegov izostanak ili kvar samo gasi isticanje riječi.
   Future<SpeakerTimeline?> loadSpeakerTimeline() async {
+    final wordsF = _loadWordTimings();
     try {
       final raw = await _fetch(CdnConfig.diarizedSrtUrl(youtubeId));
-      return _parseSrt(raw);
+      return _parseSrt(raw).withWordTimings(await wordsF);
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<Map<int, List<WordTiming>>> _loadWordTimings() async {
+    try {
+      final raw = await _fetch(CdnConfig.wordsUrl(youtubeId));
+      return parseWordTimings(json.decode(raw));
+    } catch (_) {
+      return const {};
     }
   }
 }
@@ -591,9 +795,16 @@ class EpisodeData {
 
   /// Progressive loader — reports per-asset status via [onProgress].
   /// Assets load in parallel; callback fires as each completes.
+  ///
+  /// [onTimeline] (opcionalno): epizoda s člankom vraća se čim stigne sve
+  /// OSIM titlova (`diarized.srt` + `words.json`, ~66 KB od ~106 KB brotli),
+  /// a puni podaci stižu kroz [onTimeline] kad i oni dođu. Titlovi trebaju tek
+  /// kad krene reprodukcija, a članak se može čitati odmah. Epizoda bez članka
+  /// čeka sve, jer bi joj kartica faze bez transkripta krivo rekla „u obradi".
   static Future<EpisodeData> loadWithProgress({
     required String youtubeId,
     required void Function(String asset, bool done, bool ok) onProgress,
+    void Function(EpisodeData full)? onTimeline,
   }) async {
     final svc = DataService(youtubeId: youtubeId);
 
@@ -654,6 +865,8 @@ class EpisodeData {
       svc.loadMagisteriumFullV2Prompt(),
     );
     final srtF = trackOptional('Transkript', svc.loadSpeakerTimeline());
+    var srtDone = false;
+    unawaited(srtF.whenComplete(() => srtDone = true));
     // EN overlays — kreni paralelno; 404 → null kad prijevod nije producran.
     final summaryEnF = trackOptional('Sažetak (EN)', svc.loadSummaryEn());
     final articleEnF = trackOptional('Članak (EN)', svc.loadArticleEn());
@@ -679,7 +892,6 @@ class EpisodeData {
     final magPrompt = await magPromptF;
     final magFullV2 = await magFullV2F;
     final magV2Prompt = await magV2PromptF;
-    final srt = await srtF;
     final summaryEn = await summaryEnF;
     final articleEn = await articleEnF;
     final magEn = await magEnF;
@@ -687,7 +899,7 @@ class EpisodeData {
     final magFullV2En = await magFullV2EnF;
     final media = await mediaF;
 
-    return EpisodeData(
+    EpisodeData build(SpeakerTimeline? srt) => EpisodeData(
       youtubeId: youtubeId,
       info: info,
       mediaKind: media.kind,
@@ -708,5 +920,15 @@ class EpisodeData {
       speakerTimeline: srt,
       videoUri: media.uri,
     );
+
+    if (onTimeline != null && article != null && !srtDone) {
+      // Odgoda za jedan event-loop krug: pozivatelj mora stići postaviti
+      // prvi rezultat prije nego mu javimo zamjenu.
+      unawaited(srtF.then((srt) => Future<void>.delayed(Duration.zero, () {
+            if (srt != null) onTimeline(build(srt));
+          })));
+      return build(null);
+    }
+    return build(await srtF);
   }
 }

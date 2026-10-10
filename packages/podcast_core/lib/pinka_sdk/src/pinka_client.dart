@@ -1,15 +1,18 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer' as dev;
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import 'models/pinka_campaign.dart';
 import 'models/pinka_contribution_intent.dart';
+import 'models/pinka_link_preview.dart';
 import 'models/pinka_onchain_confirm.dart';
 import 'models/pinka_public_contribution.dart';
 import 'models/pinka_slot.dart';
+import 'models/pinka_sponsor_order.dart';
 import 'models/pinka_yield_position.dart';
 import 'pinka_config.dart';
 
@@ -170,18 +173,12 @@ class PinkaClient {
     }
   }
 
-  /// Osiguraj barem anonimnu sesiju prije poziva edge fn-a.
-  Future<void> ensureSession() async {
-    final auth = _client.auth;
-    if (auth.currentSession != null) return;
-    try {
-      await auth.signInAnonymously();
-    } catch (e) {
-      _log('anon sign-in failed — $e');
-    }
-  }
-
   /// Kreira pending doprinos + payment intent na rail-u; vraća SEPA/EPC podatke.
+  ///
+  /// Gost (bez sesije) donira bez prijave — klijent tada sam šalje anon ključ
+  /// kao bearer, a backend vodi gostujuću granu (limit po IP-u). Anonimna
+  /// prijava se NE radi (ugovor v2 §9). Gost s [slotKeys] dobiva
+  /// [PinkaLoginRequired]: mjesto traži pravi račun.
   /// Ime/poruka/poveznica se šalju samo kad NIJE anonimno (zid skriva anonimne).
   ///
   /// [linkUrl] je MOST prema zasebnom stupcu `contributions.link_url`: edge
@@ -199,34 +196,115 @@ class PinkaClient {
     bool anonymous = false,
     List<String>? slotKeys,
   }) async {
-    await ensureSession();
-    final res = await _client.functions.invoke(
-      config.contributeFn,
-      body: {
-        'campaign_id': campaignId,
-        'amount_cents': amountCents,
-        'anonymous': anonymous,
-        if (slotKeys != null && slotKeys.isNotEmpty) 'slot_keys': slotKeys,
-        if (!anonymous && displayName != null && displayName.trim().isNotEmpty)
-          'display_name': displayName.trim(),
-        if (!anonymous && message != null && message.trim().isNotEmpty)
-          'message': message.trim(),
-        if (!anonymous && linkUrl != null && linkUrl.trim().isNotEmpty)
-          'link_url': linkUrl.trim(),
-      },
-    );
-    final data = (res.data as Map).cast<String, dynamic>();
-    if (data['error'] != null) {
-      final err = data['error'].toString();
-      // Backend vraća 409 za sudar oko mjesta. Tipiziramo ga da panel može
-      // osvježiti mapu i tražiti novi odabir umjesto da prikaže sirovu poruku.
-      if (err.contains('slot_taken')) {
-        final m = RegExp(r'slot_taken:(\S+)').firstMatch(err);
-        throw PinkaSlotTaken(m?.group(1));
-      }
-      throw PinkaFailure(err);
-    }
+    final data = await _invokeContribute({
+      'campaign_id': campaignId,
+      'amount_cents': amountCents,
+      'anonymous': anonymous,
+      if (slotKeys != null && slotKeys.isNotEmpty) 'slot_keys': slotKeys,
+      if (!anonymous && displayName != null && displayName.trim().isNotEmpty)
+        'display_name': displayName.trim(),
+      if (!anonymous && message != null && message.trim().isNotEmpty)
+        'message': message.trim(),
+      if (!anonymous && linkUrl != null && linkUrl.trim().isNotEmpty)
+        'link_url': linkUrl.trim(),
+    });
     return PinkaContributionIntent.fromJson(data);
+  }
+
+  /// Kupnja sponzorskog trenutka — grana `sponsor` iste edge funkcije.
+  /// Odgovor je isti kao za donaciju, pa ga prikazuje isti SEPA blok
+  /// ([PinkaSepaQr]); `holdExpiresAt` kaže do kada je trenutak zaključan.
+  ///
+  /// Baca [PinkaSlotTaken] (409 `slot_taken`, netko je bio brži),
+  /// [PinkaLoginRequired] (401 — gost ili anonimna sesija; checkout traži
+  /// pravi račun) ili [PinkaSponsorRejected] (validacija, `too_many_holds`,
+  /// rail nedostupan).
+  Future<PinkaContributionIntent> contributeSponsor({
+    required String campaignId,
+    required List<String> slotKeys,
+    required PinkaSponsorOrder order,
+  }) async {
+    final data = await _invokeContribute({
+      'campaign_id': campaignId,
+      'slot_keys': slotKeys,
+      'sponsor': order.toJson(),
+    }, sponsor: true);
+    return PinkaContributionIntent.fromJson(data);
+  }
+
+  /// `pinka-contribute` uz tipizirane greške.
+  ///
+  /// `functions.invoke` za svaki ne-2xx BACA `FunctionException` (s tijelom
+  /// u `details`) — do 7.10.2026. se 409 ovdje tražio u `res.data`, gdje
+  /// nikad ne stigne, pa je sudar oko kvadratića na zidu završavao kao
+  /// generička „uplata nije kreirana" umjesto ponovnog odabira mjesta.
+  Future<Map<String, dynamic>> _invokeContribute(
+    Map<String, dynamic> body, {
+    bool sponsor = false,
+  }) async {
+    Map<String, dynamic> data;
+    int? status;
+    try {
+      final res = await _client.functions.invoke(
+        config.contributeFn,
+        body: body,
+      );
+      data = (res.data as Map).cast<String, dynamic>();
+      status = res.status;
+    } on sb.FunctionException catch (e) {
+      var details = e.details;
+      // Tijelo bez JSON content-typea stiže kao String — bez parsiranja bi
+      // cijeli `{"error":…}` postao kod greške i nijedna grana ne bi pogodila.
+      if (details is String) {
+        try {
+          details = jsonDecode(details);
+        } catch (_) {}
+      }
+      data = details is Map
+          ? details.cast<String, dynamic>()
+          : {'error': details?.toString() ?? 'http_${e.status}'};
+      data['error'] ??= 'http_${e.status}';
+      status = e.status;
+    }
+    final err = data['error']?.toString();
+    if (err == null) return data;
+    _log('contribute rejected ($status) — $err');
+    // Ugovor: uspoređuje se PREFIKS do prve dvotočke; baza zna dodati sufiks.
+    final colon = err.indexOf(':');
+    final code = colon < 0 ? err : err.substring(0, colon);
+    final detail = colon < 0 ? null : err.substring(colon + 1).trim();
+    if (code == 'slot_taken') {
+      final m = RegExp(r'slot_taken:(\S+)').firstMatch(err);
+      throw PinkaSlotTaken(m?.group(1));
+    }
+    if (code == 'login_required') throw const PinkaLoginRequired();
+    if (sponsor) {
+      throw PinkaSponsorRejected(
+        code,
+        detail: (detail == null || detail.isEmpty) ? null : detail,
+        status: status,
+      );
+    }
+    throw PinkaFailure(err);
+  }
+
+  /// OG preview poveznice za živi pregled kartice u obrascu (prije plaćanja).
+  /// Server vadi metapodatke i kešira sliku kod nas — klijent nikad ne
+  /// dohvaća tuđi URL. `null` na bilo što (nema previewa, greška, limit).
+  Future<PinkaLinkPreview?> linkPreview(String url) async {
+    try {
+      final res = await _client.functions.invoke(
+        config.linkPreviewFn,
+        body: {'url': url},
+      );
+      final data = res.data;
+      if (data is! Map) return null;
+      final p = PinkaLinkPreview.fromJson(data['preview']);
+      return (p != null && p.hasContent) ? p : null;
+    } catch (e) {
+      _log('linkPreview failed — $e');
+      return null;
+    }
   }
 
   /// Stanje doprinosa preko guest-pollable SECURITY DEFINER RPC-a (anon ne može
@@ -247,12 +325,18 @@ class PinkaClient {
   }
 
   /// Poll dok doprinos ne postane 'paid' (ili istek). Default ~5 min.
+  ///
+  /// `maxAttempts: null` polla bez limita — SEPA panel tako čeka prvu uplatu
+  /// s novog IBAN-a, koju Monerium zna držati na provjeri satima. Tada je
+  /// [isCancelled] obavezan: jedini kraj petlje osim `paid`/`failed`/`expired`.
   Future<bool> waitForPaid(
     String contributionId, {
     Duration interval = const Duration(seconds: 3),
-    int maxAttempts = 100,
+    int? maxAttempts = 100,
+    bool Function()? isCancelled,
   }) async {
-    for (var i = 0; i < maxAttempts; i++) {
+    for (var i = 0; maxAttempts == null || i < maxAttempts; i++) {
+      if (isCancelled?.call() ?? false) return false;
       final state = await contributionStatus(contributionId);
       if (state == 'paid') return true;
       if (state == 'failed' || state == 'expired') return false;
@@ -285,6 +369,15 @@ class PinkaClient {
     if (data['error'] != null) throw PinkaFailure(data['error'].toString());
     return PinkaOnchainConfirm.fromJson(data);
   }
+}
+
+/// `401 login_required` — gost (bez sesije) je tražio nešto što traži pravi
+/// račun: rezervaciju mjesta (`slot_keys`: kvadratić, sjedalo) ili sponzorski
+/// checkout. UI tu nudi prijavu, ne generičku grešku.
+class PinkaLoginRequired implements Exception {
+  const PinkaLoginRequired();
+  @override
+  String toString() => 'PinkaLoginRequired';
 }
 
 class PinkaFailure implements Exception {

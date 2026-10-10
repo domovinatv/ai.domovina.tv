@@ -12,8 +12,14 @@ import 'support/test_brands.dart';
 /// svakome vraća prazan JSON objekt (200).
 Future<List<String>> _recordRequests(Future<void> Function() body) async {
   final paths = <String>[];
+  DataService.resetMemoryForTest();
   await http.runWithClient(body, () {
     return MockClient((req) async {
+      // `episode.json` (EpisodeBundle) je jedan dohvat po epizodi, ne
+      // Magisterium asset — ovdje se broje samo pojedinačne datoteke.
+      if (req.url.path.endsWith('/episode.json')) {
+        return http.Response('', 404);
+      }
       paths.add(req.url.path);
       return http.Response('{}', 200);
     });

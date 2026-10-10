@@ -25,6 +25,12 @@ const VIDEO_IDS = [
 // data/podcasts_registry.json); test ne ovisi o tome je li već u bazi.
 const VOTING_SLUG = 'podcast-inkubator';
 
+// Izlog sponzorskih trenutaka: kanal s kampanjom i jedna njegova epizoda.
+// Obje rute zna lib/router/app_router.dart; ako ih worker ne zna, crawler
+// dobije generički OG naslovnice (pravilo iz CLAUDE.md, „Social sharing").
+const SPONSOR_CHANNEL_SLUG = 'domovina-tv';
+const SPONSOR_VIDEO_ID = 'WRE248YCIeI';
+
 const BASE = (process.argv[2] || 'https://domovina.ai').replace(/\/$/, '');
 
 const GREEN  = '\x1b[32m';
@@ -435,6 +441,54 @@ async function testVoting(slug) {
 }
 
 /**
+ * Testira OG izloga sponzorskih trenutaka: `/c/<slug>/oglasi` i
+ * `/v/<id>/sponzoriraj`. Bez matchera u workeru obje padaju na SPA fallback i
+ * dobiju generički OG naslovnice — tiho, jer se stranica otvori ispravno.
+ */
+async function testSponsorRoute(path, mustInclude) {
+  const url = `${BASE}${path}`;
+  console.log(`\n${BOLD}── ${path}${RESET}  ${url}`);
+  let html;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'text/html', 'User-Agent': 'DominovinaBot/1.0 (social-tag-tester)' },
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      console.log(`  ${fail(`HTTP ${res.status}`)}`);
+      return { ytId: path, passed: 0, failed: 1 };
+    }
+    html = await res.text();
+  } catch (e) {
+    console.log(`  ${fail(`Network error: ${e.message}`)}`);
+    return { ytId: path, passed: 0, failed: 1 };
+  }
+
+  let passed = 0;
+  let failed = 0;
+  const check = (label, value, expected) => {
+    const lab = label.padEnd(26);
+    if (value === null || value.trim() === '') { console.log(`  ${fail(lab)} NEDOSTAJE`); failed++; return; }
+    const p = value.length > 70 ? value.slice(0, 67) + '…' : value;
+    if (expected !== undefined && !expected(value)) { console.log(`  ${fail(lab)} "${p}"`); failed++; return; }
+    console.log(`  ${ok(lab)} "${p}"`); passed++;
+  };
+
+  const ogTitle = extractMeta(html, 'property', 'og:title');
+  check('<title>',        extractTitle(html), (v) => v.includes('– DOMOVINA.ai') && v.includes(mustInclude));
+  check('og:title',       ogTitle,  (v) => v !== 'DOMOVINA.ai' && v.includes(mustInclude));
+  check('og:description', extractMeta(html, 'property', 'og:description'), (v) => v.length > 40 && !/€|EUR/.test(v));
+  check('og:url',         extractMeta(html, 'property', 'og:url'), (v) => v === `https://domovina.ai${path}`);
+  check('canonical',      extractCanonical(html), (v) => v === `https://domovina.ai${path}`);
+  check('og:image',       extractMeta(html, 'property', 'og:image'), (v) => v.startsWith('https://'));
+  check('twitter:card',   extractMeta(html, 'name', 'twitter:card'), (v) => v === 'summary_large_image');
+  const n = countMeta(html, 'property', 'og:title');
+  if (n > 1) console.log(`  ${warn(`og:title (duplicat!)`)}       pronađeno ${n}x — provjeri Worker stripanje`);
+
+  return { ytId: path, passed, failed };
+}
+
+/**
  * Testira engleski share URL `/v/<id>/t/<sec>/en`.
  *
  * Do 15.9.2026. worker NIJE poznavao `/en` sufiks — nijedan matcher ga nije
@@ -509,7 +563,7 @@ async function testEnglishShare(ytId, tSec) {
 async function main() {
   console.log(`${BOLD}DOMOVINA.ai — Social Tag Tester${RESET}`);
   console.log(`Target: ${BOLD}${BASE}${RESET}`);
-  console.log(`Testira: homepage + ${VIDEO_IDS.length} epizoda + timestamp shareovi + /glasanje\n`);
+  console.log(`Testira: homepage + ${VIDEO_IDS.length} epizoda + timestamp shareovi + /glasanje + izlog oglasa\n`);
 
   const results = [];
   results.push(await testHomepage());
@@ -527,6 +581,9 @@ async function main() {
   // „Izborni dan" — javna ruta glasanja + deep-link na kandidata.
   results.push(await testVoting(null));
   results.push(await testVoting(VOTING_SLUG));
+  // Izlog sponzorskih trenutaka — kanal i karta epizode.
+  results.push(await testSponsorRoute(`/c/${SPONSOR_CHANNEL_SLUG}/oglasi`, 'Oglašavanje'));
+  results.push(await testSponsorRoute(`/v/${SPONSOR_VIDEO_ID}/sponzoriraj`, 'Sponzorirajte'));
 
   const totalPassed = results.reduce((s, r) => s + r.passed, 0);
   const totalFailed = results.reduce((s, r) => s + r.failed, 0);

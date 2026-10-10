@@ -1,84 +1,143 @@
-# Domovina.ai
+# DOMOVINA.ai
 
-Flutter web app za vizualizaciju AI-obradjenih podcast epizoda s hrvatskih YouTube kanala.
+Aplikacija za hrvatske podcaste koje je obradio AI. Svaka epizoda dobiva
+članak po sekcijama, sažetak, poglavlja, govornike, titlove (i riječ po riječ),
+spominjane osobe i teološku provjeru (Magisterium AI). Uz to: pretraga kroz cijeli
+korpus, profil osobe kroz sve epizode u kojima govori ili se spominje, e-knjiga
+epizode, glasanje za sljedeći podcast i zid podrške (Pinka).
 
-**Produkcija:** https://domovina.ai
+**Produkcija:** <https://domovina.ai> · iOS (App Store) · Android (Google Play)
+
+Ovaj repo je **samo klijent**. Obradu radi pipeline, podaci stižu s CDN-a, a
+prijava i korisnički podaci žive u zasebnom backendu (vidi [Povezani repoi](#povezani-repoi)).
+
+## Platforme
+
+| Platforma | Status | Napomena |
+|---|---|---|
+| Web | primarna | Flutter `--wasm` (skwasm), Cloudflare Pages + edge worker |
+| iOS | u App Storeu | TestFlight svaku noć iz `main` |
+| Android | na Google Playu | |
+| Android TV | isti APK kao Android | Leanback se prepozna sam; zaseban UI u `lib/screens/tv/`, D-pad navigacija |
+| macOS | razvojni | |
 
 ## Arhitektura
 
-- **Flutter Web (Skwasm/WASM)** — Material 3, responsive layout (desktop/mobile)
-- **CDN:** https://cdn.domovina.ai — svi podaci (JSON, slike, video) loadaju se u runtimeu
-- **Cloudflare Pages** — hosting + edge worker za server-side OG tagove
-- **Magisterium AI** — teoloska analiza uskladenosti s katolickim naukom
+```mermaid
+flowchart LR
+  YT[YouTube kanali] --> P[fetch.domovina.tv<br/>pipeline]
+  P -->|JSON, slike, video, SRT| CDN[(cdn.domovina.ai<br/>Cloudflare R2)]
+  P -->|chunkovi| RAG[domovina-rag<br/>pretraga + MCP]
+  CDN --> APP[domovina.ai<br/>ovaj repo]
+  RAG --> APP
+  API[domovina-api<br/>Supabase] <--> APP
+  APP --> W[web/_worker.js<br/>OG tagovi, rute, AASA]
+```
+
+- **Sadržaj epizode** se čita izravno s CDN-a u runtimeu
+  (`data/<id>/info.json`, `article.json`, `summary.json`, `diarized.srt`…).
+  Klijent ne vjeruje zastavicama iz listinga, nego mjeri što stvarno postoji
+  (`lib/models/episode_status.dart`).
+- **Korisnički podaci** (prijava, favoriti, napredak slušanja, glasanje,
+  pretplata) idu u Supabase na `api.domovina.ai`.
+- **Edge worker** (`web/_worker.js`) ubacuje OG tagove i JSON-LD za share
+  poveznice, servira AASA za iOS Universal Links i radi SPA ruting.
+- **Ruting** je go_router (`lib/router/app_router.dart`), a prijelazi idu kroz
+  helpere u `lib/router/nav.dart`.
+- **Sučelje** je na hrvatskom i engleskom (gen-l10n, `lib/l10n/`), a jezik
+  sadržaja epizode bira se zasebno.
 
 ## Struktura
 
 ```
 lib/
-  main.dart                  — routing, tema, update notifikacija
-  models/                    — Dart modeli za sve JSON formate
-    channel_index.dart       — /channels/index.json
-    channel_detail.dart      — /channels/{id}.json
-    podcast_info.dart        — info.json (yt-dlp metadata)
-    podcast_summary.dart     — summary.json (Gemini sazretak)
-    podcast_outline.dart     — outline.json (poglavlja)
-    podcast_article.dart     — article.json (clanak po sekcijama)
-    magisterium_data.dart    — article.magisterium.json / _batch.json
-    speaker_timeline.dart    — diarized.srt (govornici)
-  services/
-    cdn_config.dart          — CDN URL builder
-    data_service.dart        — HTTP fetch + progressive loader
-    open_url.dart            — cross-platform URL opener (web/native)
-    update_notifier.dart     — Service Worker update detekcija
-  screens/
-    home_screen.dart         — odabir kanala → video lista → epizoda
-    episode_screen.dart      — glavni viewer s video sync
-  widgets/
-    hero_section.dart        — thumbnail, naslov, statistike
-    summary_section.dart     — sazretak, teme, govornici
-    chapters_section.dart    — poglavlja s timestampovima
-    article_section.dart     — clanak + inline Magisterium enrichment
-    magisterium_section.dart — overall score kartica
-    magisterium_article_section.dart — standalone teoloska analiza
-    magisterium_panel.dart   — tabbed panel (po sekciji / po bloku)
-    citation_helpers.dart    — citation bottom sheet + cleanup
-    entities_section.dart    — osobe, mjesta, organizacije
-    table_of_contents.dart   — sidebar TOC
-    video_panel.dart         — video player, seek bar, speaker timeline
-web/
-  index.html                 — SW update detekcija
-  _worker.js                 — Cloudflare Pages Function (OG tagovi)
-  _headers                   — cache control (no-cache za index/SW)
+  screens/       ekrani (epizoda, kanal, osoba, pretraga, račun, TV…)
+  widgets/       dijeljeni widgeti (player, članak, titlovi, kartice…)
+  services/      CDN, Supabase, reprodukcija, jezik, dijeljenje…
+  models/        modeli za JSON s CDN-a i iz backenda
+  router/        go_router + navigacijski helperi
+  l10n/          ARB prijevodi (HR je izvorni jezik)
+  pinka_sdk/     zid podrške i SEPA / on-chain doprinosi
+web/             index.html, _worker.js (Cloudflare Pages Function)
+android/ ios/ macos/
+scripts/         deploy, nightly build, store upload, alati
+docs/            odluke, mjerenja i planovi (vidi niže)
+test/            unit i widget testovi
+e2e/             Playwright testovi weba
 ```
 
-## Development
+## Pokretanje
+
+Treba Flutter (stable, Dart `^3.11`).
 
 ```bash
-flutter run -d chrome
+flutter pub get
+flutter run -d chrome                 # protiv produkcijskog CDN-a, bez prijave
+./scripts/run-local.sh                # web protiv lokalnog domovina-api stacka (port 5173)
+flutter test
 ```
 
-## Build & Deploy
+Za prijavu protiv produkcije build treba `SUPABASE_URL` i `SUPABASE_ANON_KEY`
+kroz `--dart-define`. `.env.example` popisuje sve varijable.
+
+## Deploy
 
 ```bash
-# Build Skwasm (WASM)
-flutter build web --wasm --release
-
-# Deploy na Cloudflare Pages
-npx wrangler pages deploy build/web --project-name=domovina-ai
-
-# Purge CDN cache (potreban .env s CLOUDFLARE_PURGE_TOKEN)
-source .env && curl -s -X POST \
-  "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
-  -H "Authorization: Bearer ${CLOUDFLARE_PURGE_TOKEN}" \
-  -H "Content-Type: application/json" \
-  --data '{"purge_everything":true}'
+./scripts/deploy.sh           # release build → Cloudflare Pages → purge CDN-a → provjera
+./scripts/deploy.sh --debug   # isto, s neminificiranim buildom
 ```
 
-## Environment (.env)
+Produkcija ide **samo s grane `main`**. Deploy s druge grane završi kao
+Cloudflare Preview, a `domovina.ai` ostane na staroj verziji. Provjerava se
+verzija, ne HTTP status:
 
-Kopiraj `.env.example` u `.env` i popuni:
-
+```bash
+curl -s https://domovina.ai/main.dart.js | grep -o 'DOMOVINA v[0-9.]*' | head -1
 ```
-CLOUDFLARE_PURGE_TOKEN=   # API token s Zone > Cache Purge > Purge permisijom
-CLOUDFLARE_ZONE_ID=       # Zone ID za domovina.ai
+
+Mobilni buildovi idu svaku noć na TestFlight i Play internal
+(`scripts/nightly-build.sh`, launchd u 03:00), a testovi su vrata za upload.
+Detalji: `docs/nightly-build-pipeline.md`, `docs/mobile-release-pipeline.md`.
+
+## Dokumentacija
+
+`CLAUDE.md` je glavni popis pravila i poznatih zamki (piše se za AI agente, ali
+vrijedi i za ljude). Dublje teme:
+
+| Tema | Dokument |
+|---|---|
+| Web isporuka, cache, rendering | `docs/web-delivery-and-rendering.md` |
+| Navigacija i vraćanje scrolla | `docs/2026-09-04-navigacija-i-scroll-restoration.md` |
+| Faze obrade epizode | `docs/2026-08-26-episode-processing-status.md` |
+| Lokalizacija | `docs/i18n-and-localization.md` |
+| Android TV | `docs/android-tv.md`, `docs/android-tv-performance.md` |
+| iOS pozadinska reprodukcija | `docs/ios-background-playback.md` |
+| Prijava i baza | `docs/auth-and-database-plan-v3.md`, `docs/auth-ux-backlog.md` |
+| E2E testovi | `docs/e2e-testing.md` |
+| Zašto Flutter, a ne Expo | `docs/tech-stack-assessment-flutter-vs-expo.md` |
+
+Datirani dokumenti (`docs/2026-…`) bilježe jednu odluku: što je izmjereno, što je
+odbačeno i što je ostalo otvoreno.
+
+## Povezani repoi
+
+| Repo | Uloga |
+|---|---|
+| [fetch.domovina.tv](https://github.com/domovinatv/fetch.domovina.tv) | pipeline: preuzimanje, transkripcija, AI obrada, upload na CDN |
+| [domovina-rag](https://github.com/domovinatv/domovina-rag) | semantička pretraga, profil osobe, MCP server |
+| [domovina-api](https://github.com/domovinatv/domovina-api) | Supabase (shema, RLS, edge funkcije) za cijeli ekosustav |
+| [domovina-cutter](https://github.com/domovinatv/domovina-cutter) | rezanje poglavlja u MP4 za dijeljenje |
+| [pipeline.domovina.ai](https://github.com/domovinatv/pipeline.domovina.ai) | red za ad-hoc obradu pojedinačnih videa |
+| [podcast.domovina.ai](https://github.com/domovinatv/podcast.domovina.ai) | katalog hrvatskih podcasta |
+| [dataset.domovina.tv](https://github.com/domovinatv/dataset.domovina.tv) | javni dataset transkripata |
+
+Pregled cijele organizacije: <https://github.com/domovinatv>.
+
+## Ime repoa
+
+Do 6.10.2026. repo se zvao `ai.domovina.tv`. GitHub stare adrese i git remote
+preusmjerava ovamo, ali je bolje ažurirati remote:
+
+```bash
+git remote set-url origin git@github.com:domovinatv/domovina.ai.git
 ```

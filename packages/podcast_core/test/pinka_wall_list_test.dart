@@ -16,6 +16,7 @@ import 'package:podcast_core/pinka_sdk/src/models/pinka_link_preview.dart';
 import 'package:podcast_core/pinka_sdk/src/models/pinka_public_contribution.dart';
 import 'package:podcast_core/pinka_sdk/src/widgets/pinka_common.dart';
 import 'package:podcast_core/pinka_sdk/src/widgets/pinka_wall_list.dart';
+import 'package:podcast_core/widgets/cached_thumbnail.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       locale: const Locale('hr'),
@@ -256,5 +257,108 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(l.pinkaWallOpenLink), findsOneWidget);
     expect(find.text('Opis koji se vidi samo u sheetu.'), findsOneWidget);
+  });
+
+  group('OG slika previewa', () {
+    const cached = 'https://api.domovina.ai/storage/v1/render/image/public/'
+        'pinka-og-cache/abc.jpg?width=600&quality=80';
+
+    test('image_cached se prihvaća SAMO s našeg hosta', () {
+      PinkaLinkPreview? parse(Object? cachedUrl) => PinkaLinkPreview.fromJson({
+            'url': 'https://ff.hr/',
+            'title': 'FF',
+            'image': 'https://ff.hr/assets/og.png',
+            'image_cached': cachedUrl,
+          });
+      expect(parse(cached)!.imageCached, cached);
+      expect(parse('https://ff.hr/assets/og.png')!.imageCached, isNull);
+      expect(parse('http://api.domovina.ai/x.jpg')!.imageCached, isNull);
+      expect(parse(null)!.imageCached, isNull);
+    });
+
+    testWidgets('zid crta samo keširanu kopiju, nikad tuđi og:image',
+        (tester) async {
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 'bez-kopije',
+          preview: const PinkaLinkPreview(
+            url: 'https://ff.hr/',
+            title: 'Samo tuđa slika',
+            image: 'https://ff.hr/assets/og.png',
+          ),
+        ),
+      ])));
+      await tester.pump();
+      expect(find.byType(CachedThumbnail), findsNothing);
+
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 's-kopijom',
+          preview: const PinkaLinkPreview(
+            url: 'https://ff.hr/',
+            title: 'Keširana slika',
+            image: 'https://ff.hr/assets/og.png',
+            imageCached: cached,
+          ),
+        ),
+      ])));
+      await tester.pump();
+      final thumb = tester.widget<CachedThumbnail>(find.byType(CachedThumbnail));
+      expect(thumb.url, cached);
+      // Slika ide ISPOD teksta u OG omjeru 1,91 : 1, pa je pločica viša od
+      // obične s previewom za točno visinu slike (+ razmak).
+      final tile = tester.widget<StaggeredGridTile>(find.byType(StaggeredGridTile));
+      expect(tile.mainAxisExtent, greaterThan(kPinkaWallTallTile));
+      final box = tester.getSize(find.byType(CachedThumbnail));
+      expect(box.width / box.height, closeTo(kPinkaOgAspect, 0.01));
+      final textY = tester.getBottomLeft(find.text('Keširana slika')).dy;
+      expect(tester.getTopLeft(find.byType(CachedThumbnail)).dy,
+          greaterThan(textY));
+      expect(tester.takeException(), isNull); // bez overflowa
+    });
+    testWidgets('portret ide LIJEVO od teksta, landscape ISPOD, u svom omjeru',
+        (tester) async {
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 'portret',
+          message: 'Hvala!',
+          preview: const PinkaLinkPreview(
+            url: 'https://c.ff.hr/',
+            title: 'NK Lomnica',
+            imageCached: cached,
+            imageWidth: 211,
+            imageHeight: 256,
+          ),
+        ),
+      ])));
+      await tester.pump();
+      final img = find.byType(CachedThumbnail);
+      final title = find.text('NK Lomnica');
+      expect(tester.getTopRight(img).dx,
+          lessThan(tester.getTopLeft(title).dx));
+      final size = tester.getSize(img);
+      expect(size.width / size.height, closeTo(211 / 256, 0.02));
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(_wrap(PinkaWallList(contributions: [
+        _contribution(
+          id: 'panorama',
+          message: 'Hvala!',
+          preview: const PinkaLinkPreview(
+            url: 'https://lumidea.hr/',
+            title: 'Lumidea',
+            imageCached: cached,
+            imageWidth: 1920,
+            imageHeight: 711,
+          ),
+        ),
+      ])));
+      await tester.pump();
+      final wide = tester.getSize(find.byType(CachedThumbnail));
+      expect(wide.width / wide.height, closeTo(1920 / 711, 0.02));
+      expect(tester.getTopLeft(find.byType(CachedThumbnail)).dy,
+          greaterThan(tester.getBottomLeft(find.text('Lumidea')).dy));
+      expect(tester.takeException(), isNull);
+    });
   });
 }

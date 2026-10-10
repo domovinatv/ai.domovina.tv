@@ -4232,6 +4232,30 @@ abstract class AppLocalizations {
   /// **'Plaćanje je potvrđeno na lancu.'**
   String get pinkaPaymentConfirmedOnchain;
 
+  /// Ispod zahvale kad je Monerium zaprimio SEPA uplatu (rail stage=received_processing), a EURe još nije izdan. Bez obećanja trajanja.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je zaprimljena. Izdavanje EURe-a je u tijeku.'**
+  String get pinkaSepaReceivedProcessing;
+
+  /// Smirujuća napomena uz received_processing; nakon ~60 s u toj fazi se ističe. Namjerno „provjera", ne tehnički naziv.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod prve uplate s novog računa provjera može potrajati. Ne moraš ništa raditi.'**
+  String get pinkaSepaFirstPaymentReview;
+
+  /// Ispod zahvale kad je EURe izdan, a prosljeđivanje kampanji traje (rail stage=minted/forwarding).
+  ///
+  /// In hr, this message translates to:
+  /// **'EURe izdan, prosljeđuje se kampanji…'**
+  String get pinkaSepaMintedForwarding;
+
+  /// Razlog odbijanja SEPA uplate s raila (status.rejected_reason), ispod pinkaIntentRejected.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razlog: {reason}'**
+  String pinkaIntentRejectedReason(String reason);
+
   /// Gumb na ekranu zahvale koji vraća obrazac za novu donaciju.
   ///
   /// In hr, this message translates to:
@@ -5540,6 +5564,18 @@ abstract class AppLocalizations {
   /// **'Iznos ne smije biti manji od cijene mjesta ({price} €).'**
   String pinkaSlotBelowPrice(String price);
 
+  /// Mjesto na zidu (kvadratić, sjedalo) traži račun; gost dobiva login_required.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za rezervaciju mjesta na zidu prijavi se. Običnu donaciju možeš poslati i bez prijave.'**
+  String get pinkaSlotSignInRequired;
+
+  /// Gostujuća donacija: backend vratio rate_limited (30 na sat po IP-u).
+  ///
+  /// In hr, this message translates to:
+  /// **'Previše uplata s ove mreže u zadnjih sat vremena. Pokušaj malo kasnije ili se prijavi.'**
+  String get pinkaGuestRateLimited;
+
   /// Pogreška kad server odbije rezervaciju jer je mjesto u međuvremenu zauzeto (409 slot_taken).
   ///
   /// In hr, this message translates to:
@@ -6472,6 +6508,690 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Sponzorirana rubrika na {time}'**
   String sponsorsInVideoRubricAt(String time);
+
+  /// App bar title of the standalone YouTube watch screen (/yt/:id).
+  ///
+  /// In hr, this message translates to:
+  /// **'YouTube video'**
+  String get ytWatchTitle;
+
+  /// Button on /yt/:id shown when domovina.ai already has an AI-processed episode for this video.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvori obrađenu epizodu'**
+  String get ytWatchOpenEpisode;
+
+  /// Shown on /yt/:id when the id is not a valid 11-character YouTube video id.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neispravna YouTube poveznica.'**
+  String get ytWatchInvalidId;
+
+  /// Shown on web browsers (Safari, Firefox) that cannot embed YouTube under our cross-origin isolation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj preglednik ne može prikazati YouTube player unutar stranice, pa se video otvara na YouTubeu.'**
+  String get ytWatchEmbedUnsupported;
+
+  /// Heading of the in-episode transcript search on the episode screen.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pronađi u epizodi'**
+  String get findInEpisodeTitle;
+
+  /// Placeholder of the in-episode transcript search field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Riječ, ime ili fraza'**
+  String get findInEpisodeHint;
+
+  /// No description provided for @findInEpisodeClear.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obriši'**
+  String get findInEpisodeClear;
+
+  /// No description provided for @findInEpisodeNoHits.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema pogodaka u ovoj epizodi.'**
+  String get findInEpisodeNoHits;
+
+  /// No description provided for @findInEpisodeError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraga trenutno ne radi. Pokušaj ponovno malo kasnije.'**
+  String get findInEpisodeError;
+
+  /// Number of transcript moments matching the query.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} trenutak} few{{count} trenutka} other{{count} trenutaka}}'**
+  String findInEpisodeCount(int count);
+
+  /// No description provided for @findInEpisodeCountPartial.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikazano {shown} od {total} trenutaka'**
+  String findInEpisodeCountPartial(int shown, int total);
+
+  /// Subheading above hits that matched only through typo tolerance.
+  ///
+  /// In hr, this message translates to:
+  /// **'Približni pogoci'**
+  String get findInEpisodeApproximate;
+
+  /// Label on a paid sponsored moment (DSA art. 26).
+  ///
+  /// In hr, this message translates to:
+  /// **'Sponzorirano'**
+  String get sponsoredLabel;
+
+  /// Paid moment label with the paying brand.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sponzorirano · {brand}'**
+  String sponsoredBy(String brand);
+
+  /// Who paid for the sponsored moment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaća: {brand}'**
+  String sponsoredPaidBy(String brand);
+
+  /// Fallback label for the brand link.
+  ///
+  /// In hr, this message translates to:
+  /// **'Web stranica'**
+  String get sponsoredWebsite;
+
+  /// Article mark for a paid moment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sponzorirani trenutak na {time}'**
+  String sponsoredAt(String time);
+
+  /// Seek to the start of a sponsored moment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poslušaj'**
+  String get sponsoredListen;
+
+  /// Strip badge while the paid moment plays.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravo svira'**
+  String get sponsoredNow;
+
+  /// Channel screen button to the sponsor store.
+  ///
+  /// In hr, this message translates to:
+  /// **'Oglašavanje'**
+  String get sponsorStoreEntry;
+
+  /// Sponsor store heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Oglašavanje na kanalu {channel}'**
+  String sponsorStoreTitle(String channel);
+
+  /// Sponsor store intro.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izaberi trenutak u epizodi i tvoj brand bit će označen kao sponzor upravo tog dijela. Plaćaš jednom, SEPA uplatom, a oglas ide uživo čim uplata stigne.'**
+  String get sponsorStoreIntro;
+
+  /// Store empty state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj kanal trenutno nema ponudu sponzorskih trenutaka.'**
+  String get sponsorStoreEmpty;
+
+  /// Store load error.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ponudu nije moguće učitati.'**
+  String get sponsorStoreLoadFailed;
+
+  /// Free moments in an episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{{count} slobodan trenutak} few{{count} slobodna trenutka} other{{count} slobodnih trenutaka}}'**
+  String sponsorStoreFreeCount(int count);
+
+  /// Lowest gross price in an episode.
+  ///
+  /// In hr, this message translates to:
+  /// **'od {price} €'**
+  String sponsorStoreFromPrice(String price);
+
+  /// Brand-safety filter heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ne prikazuj me uz…'**
+  String get sponsorStoreAvoidTitle;
+
+  /// Brand-safety filter hint.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sigurnost branda biraš ti. Oznake tema su gruba procjena, pa uz svaku epizodu vidiš i njezine stvarne teme.'**
+  String get sponsorStoreAvoidHint;
+
+  /// All episodes filtered out.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nijedna epizoda ne odgovara odabranom filtru.'**
+  String get sponsorStoreAllFiltered;
+
+  /// Episode topic label.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vjera'**
+  String get sponsorTopicFaith;
+
+  /// Episode topic label.
+  ///
+  /// In hr, this message translates to:
+  /// **'Politika'**
+  String get sponsorTopicPolitics;
+
+  /// Episode topic label.
+  ///
+  /// In hr, this message translates to:
+  /// **'Posao i tehnologija'**
+  String get sponsorTopicBusiness;
+
+  /// Episode map heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sponzorski trenuci'**
+  String get sponsorMapTitle;
+
+  /// Episode map intro.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svaki trenutak je dio epizode uz naslov sekcije članka koja u njemu počinje. Poslušaj ga prije kupnje.'**
+  String get sponsorMapIntro;
+
+  /// Heading above episode topics.
+  ///
+  /// In hr, this message translates to:
+  /// **'Teme epizode'**
+  String get sponsorMapTopics;
+
+  /// Moment state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slobodno'**
+  String get sponsorStateFree;
+
+  /// Moment state: held by an unpaid order.
+  ///
+  /// In hr, this message translates to:
+  /// **'Netko upravo plaća'**
+  String get sponsorStateHeld;
+
+  /// Moment state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zauzeto'**
+  String get sponsorStateSold;
+
+  /// Moment state with end date.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zauzeto do {date}'**
+  String sponsorStateSoldUntil(String date);
+
+  /// Moment state.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije u ponudi'**
+  String get sponsorStateBlocked;
+
+  /// Price zone (contract key).
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatvaranje'**
+  String get sponsorZoneZatvaranje;
+
+  /// Price zone (contract key).
+  ///
+  /// In hr, this message translates to:
+  /// **'Središnji dio'**
+  String get sponsorZoneTijelo;
+
+  /// Price zone (contract key).
+  ///
+  /// In hr, this message translates to:
+  /// **'Otvaranje'**
+  String get sponsorZoneOtvaranje;
+
+  /// Gross price.
+  ///
+  /// In hr, this message translates to:
+  /// **'{price} € s PDV-om'**
+  String sponsorPriceGross(String price);
+
+  /// How long a bought moment runs.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, one{uživo {count} dan nakon uplate} few{uživo {count} dana nakon uplate} other{uživo {count} dana nakon uplate}}'**
+  String sponsorRunDays(int count);
+
+  /// Pick a moment on the map.
+  ///
+  /// In hr, this message translates to:
+  /// **'Izaberi'**
+  String get sponsorPick;
+
+  /// Timeline legend.
+  ///
+  /// In hr, this message translates to:
+  /// **'Traka prikazuje cijelu epizodu.'**
+  String get sponsorLegend;
+
+  /// Checkout heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Narudžba'**
+  String get sponsorCheckoutTitle;
+
+  /// Selected moment summary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutak {range} · {zone}'**
+  String sponsorCheckoutMoment(String range, String zone);
+
+  /// Back to the map.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promijeni trenutak'**
+  String get sponsorCheckoutChange;
+
+  /// Creative form section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Oglas'**
+  String get sponsorCreativeSection;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naziv branda'**
+  String get sponsorFieldBrand;
+
+  /// Form field help.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikazuje se uz oznaku „Sponzorirano“ i ne može biti anoniman.'**
+  String get sponsorFieldBrandHelp;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jedna rečenica (neobavezno)'**
+  String get sponsorFieldTagline;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica, https:// (neobavezno)'**
+  String get sponsorFieldLink;
+
+  /// Logo picker hint.
+  ///
+  /// In hr, this message translates to:
+  /// **'Logo: PNG, JPG ili WebP, najviše 200 kB (neobavezno)'**
+  String get sponsorFieldLogo;
+
+  /// Logo picker button.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj logo'**
+  String get sponsorLogoPick;
+
+  /// Remove logo button.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni logo'**
+  String get sponsorLogoRemove;
+
+  /// Logo validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Logo je veći od 200 kB.'**
+  String get sponsorLogoTooBig;
+
+  /// Logo validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Logo mora biti PNG, JPG ili WebP.'**
+  String get sponsorLogoBadType;
+
+  /// Logo upload error.
+  ///
+  /// In hr, this message translates to:
+  /// **'Logo nije učitan. Pokušaj ponovno ili nastavi bez njega.'**
+  String get sponsorLogoUploadFailed;
+
+  /// Company form section.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podaci za račun'**
+  String get sponsorCompanySection;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naziv tvrtke'**
+  String get sponsorFieldCompany;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'OIB (neobavezno)'**
+  String get sponsorFieldOib;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'PDV ID (neobavezno)'**
+  String get sponsorFieldVat;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ulica i kućni broj'**
+  String get sponsorFieldStreet;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Grad'**
+  String get sponsorFieldCity;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poštanski broj'**
+  String get sponsorFieldPostal;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Država (HR, SI, DE…)'**
+  String get sponsorFieldCountry;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Adresa e-pošte za račun'**
+  String get sponsorFieldEmail;
+
+  /// Form field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Broj narudžbenice (neobavezno)'**
+  String get sponsorFieldReference;
+
+  /// Preview heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovako će oglas izgledati'**
+  String get sponsorPreviewTitle;
+
+  /// Terms checkbox.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prihvaćam uvjete oglašavanja'**
+  String get sponsorTermsAccept;
+
+  /// Open terms dialog.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pročitaj uvjete'**
+  String get sponsorTermsRead;
+
+  /// Terms dialog title.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uvjeti oglašavanja'**
+  String get sponsorTermsTitle;
+
+  /// Advertising terms (formal register).
+  ///
+  /// In hr, this message translates to:
+  /// **'Oglas se objavljuje automatski čim uplata stigne, bez prethodnog odobrenja, i traje onoliko dana koliko je navedeno uz trenutak.\n\nOglas je označen kao „Sponzorirano“ uz naziv Vašeg branda, sukladno članku 26. Uredbe (EU) 2022/2065.\n\nNije dopušten sadržaj koji je nezakonit, obmanjujući, uvredljiv ili diskriminirajući, kao ni oglašavanje duhanskih proizvoda, oružja, igara na sreću te lijekova na recept.\n\nVlasnik kanala može povući oglas koji krši ove uvjete. U tom slučaju, kao i kad uplata stigne nakon što je trenutak prodan drugome, iznos Vam vraćamo ručno.\n\nCijena uključuje PDV. Račun se izdaje automatski i šalje na adresu e-pošte navedenu u narudžbi.'**
+  String get sponsorTermsBody;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obavezno polje'**
+  String get sponsorErrorRequired;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'OIB nije ispravan'**
+  String get sponsorErrorOib;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'PDV ID nije ispravan (npr. HR12345678903)'**
+  String get sponsorErrorVat;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Adresa e-pošte nije ispravna'**
+  String get sponsorErrorEmail;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poveznica mora počinjati s https://'**
+  String get sponsorErrorLink;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najviše {max} znakova'**
+  String sponsorErrorTooLong(int max);
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dvoslovna oznaka države, npr. HR'**
+  String get sponsorErrorCountry;
+
+  /// Validation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za narudžbu je potrebno prihvatiti uvjete.'**
+  String get sponsorErrorTerms;
+
+  /// Checkout submit.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi na plaćanje'**
+  String get sponsorSubmit;
+
+  /// 409 slot_taken.
+  ///
+  /// In hr, this message translates to:
+  /// **'Netko je upravo uzeo taj trenutak. Karta je osvježena, izaberi drugi.'**
+  String get sponsorSlotTaken;
+
+  /// 409 too_many_holds.
+  ///
+  /// In hr, this message translates to:
+  /// **'Već imaš tri neplaćene narudžbe. Plati jednu ili pričekaj da istekne.'**
+  String get sponsorTooManyHolds;
+
+  /// Sponzorski checkout traži račun; poruka kad prijava nije dovršena.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za narudžbu sponzorskog trenutka prijavi se. Upisani podaci ostaju u obrascu.'**
+  String get sponsorSignInRequired;
+
+  /// Naslov auth sheeta otvorenog iz sponzorskog checkouta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se za narudžbu'**
+  String get sponsorSignInHeadline;
+
+  /// Podnaslov auth sheeta iz sponzorskog checkouta.
+  ///
+  /// In hr, this message translates to:
+  /// **'Narudžba, račun i stanje plaćanja vezani su uz tvoj račun.'**
+  String get sponsorSignInSubtitle;
+
+  /// Checkout error.
+  ///
+  /// In hr, this message translates to:
+  /// **'Narudžbu nije moguće kreirati. Pokušaj ponovno.'**
+  String get sponsorCheckoutFailed;
+
+  /// Server rejected a field.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjeri polje „{field}“.'**
+  String sponsorCheckoutFieldRejected(String field);
+
+  /// Payment step heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaćanje'**
+  String get sponsorPayTitle;
+
+  /// Memo must be copied verbatim.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis plaćanja kopiraj doslovno, bez ijedne izmjene. Po njemu sparujemo uplatu s narudžbom. Ako ga knjigovodstvo skrati ili prepiše, uplata se neće spariti automatski.'**
+  String get sponsorMemoVerbatim;
+
+  /// Hold expiry.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutak je rezerviran za tebe do {time}.'**
+  String sponsorHoldUntil(String time);
+
+  /// Hold expired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervacija je istekla. Ako uplata ipak stigne, a trenutak je još slobodan, dodjeljujemo ga automatski.'**
+  String get sponsorHoldExpired;
+
+  /// Waiting for payment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Čekamo uplatu. Stranica se sama osvježi kad stigne.'**
+  String get sponsorWaitingPayment;
+
+  /// Order status link hint.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi ovu poveznicu. Preko nje uvijek vidiš stanje narudžbe.'**
+  String get sponsorOrderLinkHint;
+
+  /// Confirmation heading.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je stigla, oglas je uživo'**
+  String get sponsorPaidTitle;
+
+  /// Confirmation body. No final full stop: {date} already ends with one (6. 11. 2026.).
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutak je tvoj do {date}'**
+  String sponsorPaidUntil(String date);
+
+  /// Underpaid order.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je manja od cijene trenutka, pa trenutak nije dodijeljen. Javit ćemo ti se radi povrata ili doplate.'**
+  String get sponsorUnderpaid;
+
+  /// Paid but slot sold to someone else.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplata je stigla nakon isteka rezervacije, a trenutak je u međuvremenu prodan. Iznos vraćamo ručno.'**
+  String get sponsorSlotUnassigned;
+
+  /// Creative withdrawn.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vlasnik kanala povukao je oglas. Iznos vraćamo ručno.'**
+  String get sponsorHidden;
+
+  /// Expired order.
+  ///
+  /// In hr, this message translates to:
+  /// **'Narudžba je istekla bez uplate.'**
+  String get sponsorOrderExpired;
+
+  /// Failed order.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaćanje nije uspjelo.'**
+  String get sponsorOrderFailed;
+
+  /// Invoice issued.
+  ///
+  /// In hr, this message translates to:
+  /// **'Račun {number} poslan je na adresu e-pošte iz narudžbe.'**
+  String sponsorInvoiceSent(String number);
+
+  /// Invoice pending.
+  ///
+  /// In hr, this message translates to:
+  /// **'Račun stiže e-poštom nakon obrade.'**
+  String get sponsorInvoicePending;
+
+  /// Stats placeholder until backend.
+  ///
+  /// In hr, this message translates to:
+  /// **'Broj prikaza i klikova prikazat ćemo ovdje čim mjerenje bude uključeno.'**
+  String get sponsorStatsPending;
+
+  /// Open the episode at the moment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pogledaj na epizodi'**
+  String get sponsorViewOnEpisode;
+
+  /// Unknown order id.
+  ///
+  /// In hr, this message translates to:
+  /// **'Narudžba nije pronađena.'**
+  String get sponsorOrderNotFound;
+
+  /// Order status after the lease ended. No final full stop: {date} ends with one.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutak je bio uživo do {date}'**
+  String sponsorLeaseEnded(String date);
+
+  /// Leave-payment confirmation title.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napustiti plaćanje?'**
+  String get sponsorLeavePayTitle;
+
+  /// Leave-payment confirmation body.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutak ostaje rezerviran do isteka, ali QR kod i opis plaćanja više nećeš vidjeti. Stanje narudžbe ostaje na poveznici iz adresne trake.'**
+  String get sponsorLeavePayBody;
+
+  /// Confirm leaving the payment step.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napusti'**
+  String get sponsorLeavePayConfirm;
 }
 
 class _AppLocalizationsDelegate

@@ -45,6 +45,27 @@
        snackbar u lib/services/app_install_banner.dart. -->
   <meta name="apple-itunes-app" content="app-id=6781716801">
 
+  <!-- Boja prije prvog Flutter framea. Splash i <body> nose pozadinu teme koju
+       će Flutter nacrtati (ThemeController: localStorage 'theme_mode', default
+       tamna), pa prijelaz splash → aplikacija nema bljeska, a ni u jednom
+       trenutku nije vidljiva bijela stranica. Boje = AppTheme.dark()/light()
+       scaffoldBackgroundColor. -->
+  <script>
+    try {
+      if (localStorage.getItem('theme_mode') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch (_) {}
+  </script>
+  <style>
+    :root{--boot-bg:#111318;--boot-fg:#e2e2e9;--boot-mark:#fff;--boot-dim:rgba(226,226,233,.62);--boot-track:rgba(255,255,255,.12);}
+    :root[data-theme="light"]{--boot-bg:#faf7f2;--boot-fg:#1a1b20;--boot-mark:#002F6C;--boot-dim:rgba(26,27,32,.62);--boot-track:rgba(0,47,108,.12);}
+    /* Samo html (canvas), ne body: body bi prekrio #legal-footer (z-index:-1). */
+    html{background:var(--boot-bg);}
+    /* Prazan/još nenacrtan Flutter frame ne smije otkriti #legal-footer. */
+    flutter-view{background:var(--boot-bg);}
+  </style>
+
   <!-- Theme -->
   <meta name="theme-color" content="#002F6C">
 
@@ -59,8 +80,8 @@
        Preconnect usput ugrije gstatic za google_fonts. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap">
 
   <!-- Corbado passkeys Web SDK (bundle.js, pinned 2.5.0 — najnoviji objavljeni).
        Mora se učitati SINKRONO prije flutter_bootstrap.js jer passkeys_web
@@ -97,23 +118,186 @@
   <!-- Statički uvod / splash: čitljiv ljudima I crawlerima opis svrhe aplikacije.
        Google OAuth branding verification traži da home page jasno objasni što app
        radi; Flutter SPA inače renderira prazan <body> pa crawler/reviewer ne vidi
-       nikakav tekst. Ovaj blok je u izvornom HTML-u (uvijek vidljiv, bez JS-a) i
-       miče se na 'flutter-first-frame' kad Flutter oboji prvi frame. -->
-  <div id="boot-intro" role="main" aria-label="DOMOVINA.ai">
+       nikakav tekst. Opis i linkovi zato MORAJU ostati u izvornom HTML-u (bez
+       JS-a); vizualno su sekundarni, ispod wordmarka i indikatora.
+       Splash se miče ISKLJUČIVO na 'flutter-first-frame' — ispod njega nema
+       ničega što bi korisnik mogao gledati. Mjerenje i odluke:
+       docs/2026-10-09-boot-splash.md. -->
+  <div id="boot-intro" role="main" aria-label="DOMOVINA.ai" aria-busy="true">
     <style>
-      #boot-intro{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:#002F6C;color:#fff;font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;padding:28px;overflow:auto;}
-      #boot-intro .bi-wrap{max-width:660px;text-align:center;}
-      #boot-intro h1{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:clamp(34px,6vw,54px);margin:0 0 6px;letter-spacing:.5px;}
-      #boot-intro .bi-tag{font-size:clamp(15px,2.4vw,19px);opacity:.92;margin:0 0 22px;font-weight:500;}
-      #boot-intro p{font-size:15px;line-height:1.62;opacity:.92;margin:0 0 14px;}
-      #boot-intro a{color:#fff;}
-      #boot-intro .bi-links{margin-top:20px;font-size:14px;opacity:.85;}
+      #boot-intro{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;background:var(--boot-bg);color:var(--boot-fg);font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;padding:0 24px;overflow:auto;transition:opacity .4s ease;}
+      #boot-intro .bi-main{flex:1 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px 0 32px;}
+      #boot-intro h1{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:clamp(34px,7vw,52px);margin:0;letter-spacing:.3px;color:var(--boot-mark);}
+      #boot-intro h1 span{color:#FF0000;}
+      #boot-intro .bi-tag{font-size:clamp(15px,2.4vw,18px);margin:8px 0 0;font-weight:500;opacity:.9;}
+      #boot-intro .bi-verse{margin:32px auto 0;max-width:560px;width:100%;display:flex;flex-direction:column;justify-content:center;transition:opacity .45s ease;}
+      #boot-intro .bi-verse blockquote{margin:0;font-family:'Lora',Georgia,serif;font-style:italic;font-weight:400;font-size:clamp(17px,2.6vw,21px);line-height:1.55;}
+      #boot-intro .bi-verse figcaption{margin-top:14px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--boot-dim);}
+      #boot-intro .bi-verse figcaption::before{content:"";display:inline-block;width:20px;height:2px;margin:0 10px 3px 0;background:#FF0000;vertical-align:middle;}
+      #boot-intro .bi-progress{width:min(240px,60vw);height:3px;margin:32px auto 0;border-radius:3px;background:var(--boot-track);overflow:hidden;position:relative;}
+      #boot-intro .bi-progress i{position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:3px;background:#FF0000;animation:bi-slide 1.4s ease-in-out infinite;}
+      @keyframes bi-slide{0%{transform:translateX(-100%)}100%{transform:translateX(290%)}}
+      @media (prefers-reduced-motion:reduce){#boot-intro .bi-progress i{animation:none;width:100%;opacity:.5;}}
+      #boot-intro .bi-load{margin:12px 0 0;font-size:13px;color:var(--boot-dim);min-height:1.5em;}
+      #boot-intro .bi-note{margin:6px auto 0;max-width:340px;font-size:13px;line-height:1.5;color:var(--boot-dim);}
+      #boot-intro .bi-note[hidden]{display:block;visibility:hidden;} /* mjesto ostaje rezervirano: bez skoka wordmarka */
+      #boot-intro button{margin-top:14px;font:600 14px 'Inter',system-ui,sans-serif;color:#fff;background:#002F6C;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;}
+      #boot-intro button[hidden]{display:none;}
+      #boot-intro .bi-about{flex:0 0 auto;max-width:620px;padding:0 0 88px;text-align:center;color:var(--boot-dim);}
+      #boot-intro .bi-about p{font-size:13px;line-height:1.6;margin:0 0 10px;}
+      #boot-intro a{color:inherit;}
+      #boot-intro .bi-links{font-size:13px;margin-top:12px;}
       #boot-intro .bi-links a{margin:0 6px;white-space:nowrap;}
-      #boot-intro .bi-load{margin-top:24px;font-size:13px;opacity:.55;}
     </style>
-    <div class="bi-wrap">
-      <h1>DOMOVINA.ai</h1>
+    <div class="bi-main">
+      <h1>DOMOVINA<span>.ai</span></h1>
       <p class="bi-tag">AI-obrađeni hrvatski katolički podcasti</p>
+      <!-- Citat za čitanje dok se čeka — isti skup kao TV splash (KS Jeruzalemska
+           Biblija, provjereno na biblija.ks.hr: docs/splash-bible-citations-factcheck.md).
+           U HTML-u stoji Mt 10,26-27 (native TV splash) za preglednik bez JS-a;
+           skripta ispod ga odmah, prije prvog iscrtavanja, zamijeni nasumičnim
+           (različitim od prošlog) i zatim vrti promiješani krug dok se aplikacija
+           ne učita; svaki citat stoji prema duljini. Popis MORA biti doslovno [Mt 10,26-27] +
+           defaultBibleVerses iz lib/screens/tv/widgets/tv_loading_tips.dart —
+           čuva test/boot_splash_verses_test.dart. -->
+      <figure class="bi-verse">
+        <blockquote id="bi-verse-text">Ne bojte ih se dakle. Ta ništa nije skriveno što se neće otkriti ni tajno što se neće doznati. Što vam govorim u tami, recite na svjetlu; i što na uho čujete, propovijedajte na krovovima.</blockquote>
+        <figcaption id="bi-verse-ref">Matej 10,26-27</figcaption>
+      </figure>
+      <script>
+        (function () {
+          var verses = [
+        [
+        "Ne bojte ih se dakle. Ta ništa nije skriveno što se neće otkriti ni tajno što se neće doznati. Što vam govorim u tami, recite na svjetlu; i što na uho čujete, propovijedajte na krovovima.",
+        "Matej 10,26-27"
+        ],
+        [
+        "Ta ništa nije zastrto, osim zato da se očituje; i ništa skriveno, osim zato da dođe na vidjelo!",
+        "Marko 4,22"
+        ],
+        [
+        "Ta ništa nije tajno što se neće očitovati; ništa skriveno što se neće saznati i na vidjelo doći.",
+        "Luka 8,17"
+        ],
+        [
+        "Ništa nije skriveno što se neće otkriti ni tajno što se neće saznati.",
+        "Luka 12,2"
+        ],
+        [
+        "Naša je pak domovina na nebesima, odakle iščekujemo Spasitelja, Gospodina našega Isusa Krista.",
+        "Filipljanima 3,20"
+        ],
+        [
+        "Upoznat ćete istinu i istina će vas osloboditi.",
+        "Ivan 8,32"
+        ],
+        [
+        "Vaša riječ neka bude: ‘Da, da, – ne, ne!’ Što je više od toga, od Zloga je.",
+        "Matej 5,37"
+        ],
+        [
+        "U svijetu imate muku, ali hrabri budite – ja sam pobijedio svijet!",
+        "Ivan 16,33"
+        ],
+        [
+        "Doista, gdje ti je blago, ondje će ti biti i srce.",
+        "Matej 6,21"
+        ],
+        [
+        "Tražite stoga najprije Kraljevstvo i pravednost njegovu, a sve će vam se ostalo dodati.",
+        "Matej 6,33"
+        ],
+        [
+        "Ja sam Put i Istina i Život: nitko ne dolazi Ocu osim po meni.",
+        "Ivan 14,6"
+        ],
+        [
+        "Podajte dakle caru carevo, a Bogu Božje.",
+        "Matej 22,21"
+        ],
+        [
+        "Žetve je mnogo, a radnikâ malo.",
+        "Matej 9,37"
+        ],
+        [
+        "Ta iz obilja srca usta mu govore.",
+        "Luka 6,45"
+        ]
+        ];
+          var text = document.getElementById('bi-verse-text');
+          var ref = document.getElementById('bi-verse-ref');
+          var fig = text.parentNode;
+
+          // Redoslijed: nasumičan početak različit od prošlog učitavanja, pa
+          // svi citati promiješani bez ponavljanja, pa ispočetka.
+          var last = -1;
+          try { last = parseInt(localStorage.getItem('boot_verse'), 10); } catch (_) {}
+          function shuffled(avoidFirst) {
+            var a = [], j, k, t;
+            for (j = 0; j < verses.length; j++) a.push(j);
+            for (j = a.length - 1; j > 0; j--) { k = Math.floor(Math.random() * (j + 1)); t = a[j]; a[j] = a[k]; a[k] = t; }
+            if (a.length > 1 && a[0] === avoidFirst) { t = a[0]; a[0] = a[1]; a[1] = t; }
+            return a;
+          }
+          var order = shuffled(last), pos = 0;
+
+          function show(i) {
+            text.textContent = verses[i][0];
+            ref.textContent = verses[i][1];
+            try { localStorage.setItem('boot_verse', String(i)); } catch (_) {}
+          }
+
+          // Koliko citat stoji: ~350 ms po riječi (sabrano čitanje) + 2,5 s
+          // da oko uđe u tekst; 5–15 s. Mt 22,21 (8 riječi) ≈ 5,3 s,
+          // Mt 10,26-27 (33 riječi) ≈ 14 s.
+          function dwell(i) {
+            var words = verses[i][0].split(/\s+/).length;
+            return Math.max(5000, Math.min(15000, 2500 + words * 350));
+          }
+
+          // Okvir (citat + izvor) visok kao najdulji citat u trenutnoj širini —
+          // inače bi wordmark i traka napretka skakali sa svakom promjenom.
+          // Kraći citat je centriran u okviru, izvor ostaje odmah ispod njega.
+          function reserve() {
+            var probe = text.cloneNode(false), max = 0, j;
+            fig.style.minHeight = ''; // inače bi svako mjerenje dodalo prošlu rezervu
+            probe.removeAttribute('id');
+            probe.style.cssText = 'position:absolute;visibility:hidden;width:' + text.clientWidth + 'px';
+            fig.appendChild(probe);
+            for (j = 0; j < verses.length; j++) { probe.textContent = verses[j][0]; max = Math.max(max, probe.offsetHeight); }
+            fig.removeChild(probe);
+            fig.style.minHeight = (max + fig.offsetHeight - text.offsetHeight) + 'px';
+          }
+
+          show(order[0]);
+          reserve();
+          window.addEventListener('resize', reserve);
+          // Lora stiže asinkrono; prvo mjerenje je fallback fontom.
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserve);
+
+          var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          function next() {
+            if (!document.getElementById('boot-intro')) return; // aplikacija je tu
+            pos++;
+            if (pos >= order.length) { order = shuffled(order[order.length - 1]); pos = 0; }
+            var i = order[pos];
+            if (still) { show(i); setTimeout(next, dwell(i)); return; }
+            fig.style.opacity = '0';
+            setTimeout(function () {
+              show(i);
+              fig.style.opacity = '1';
+              setTimeout(next, dwell(i));
+            }, 450);
+          }
+          setTimeout(next, dwell(order[0]));
+        })();
+      </script>
+      <div class="bi-progress" aria-hidden="true"><i></i></div>
+      <p class="bi-load" id="bi-load" aria-live="polite">Preuzimanje aplikacije…</p>
+      <p class="bi-note" id="bi-note" hidden>Veza je spora. Aplikacija se preuzima samo prvi put; sljedeće otvaranje bit će brzo.</p>
+      <button type="button" id="bi-retry" hidden onclick="location.reload()">Pokušaj ponovno</button>
+    </div>
+    <div class="bi-about">
       <p>DOMOVINA.ai transkribira, sažima i analizira hrvatske katoličke podcaste pomoću umjetne inteligencije te provjerava njihovu usklađenost s katoličkim naukom (Magisterium AI). Korisnici mogu pretraživati epizode, čitati transkripte i sažetke te slušati obrađeni sadržaj.</p>
       <p>Vlasnici YouTube kanala mogu potvrditi vlasništvo svojega kanala kako bi upravljali svojim sadržajem i isplatama. Za tu potvrdu aplikacija traži isključivo pristup za čitanje (<em>youtube.readonly</em>): provjerava da prijavljeni korisnik upravlja kanalom i pritom ništa ne objavljuje niti mijenja na YouTubeu.</p>
       <div class="bi-links">
@@ -121,7 +305,6 @@
         <a href="/terms">Uvjeti korištenja</a> ·
         <a href="mailto:stepanic.matija@gmail.com">Kontakt</a>
       </div>
-      <p class="bi-load">Učitavanje aplikacije…</p>
     </div>
   </div>
 
@@ -147,18 +330,92 @@
   </footer>
 
   <script>
-    // Makni statički uvod kad Flutter oboji prvi frame; fallback timeout da
-    // nikad trajno ne blokira aplikaciju ako event izostane.
+    // Splash živi dok Flutter ne nacrta prvi frame. Do 9.10.2026. ga je micao
+    // i fiksni timeout od 6 s, a na Slow 4G prvi frame stiže na ~20 s — 13 s
+    // bijele stranice s legal footerom (docs/2026-10-09-boot-splash.md §1).
     (function () {
+      var intro = document.getElementById('boot-intro');
+      if (!intro) return;
+      var load = document.getElementById('bi-load');
+      var note = document.getElementById('bi-note');
+      var retry = document.getElementById('bi-retry');
+      var done = false;
       function hideIntro() {
-        var el = document.getElementById('boot-intro');
-        if (!el) return;
-        el.style.transition = 'opacity .4s ease';
-        el.style.opacity = '0';
-        setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); }, 450);
+        if (done) return;
+        done = true;
+        intro.setAttribute('aria-busy', 'false');
+        intro.style.opacity = '0';
+        setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 450);
       }
-      window.addEventListener('flutter-first-frame', hideIntro, { once: true });
-      setTimeout(hideIntro, 6000);
+      // 'flutter-first-frame' znači da je frame SLOŽEN; skwasm ga rasterizira u
+      // workeru i na platno stigne kasnije. Ni postojanje <canvas> elementa nije
+      // dovoljno: na sporijem stroju (otvoren DevTools) platno je 2–3 s stajalo
+      // prazno (prijava 9.10.2026.). Zato platno presnimimo u sličicu 8×8 i
+      // čekamo neprozirne piksele — naslovnica uvijek crta neprozirnu pozadinu.
+      // Osigurač: 8 s nakon eventa.
+      function painted(c, cb) {
+        if (!window.createImageBitmap || !c || !c.width) return cb(false);
+        createImageBitmap(c, { resizeWidth: 8, resizeHeight: 8 }).then(function (bmp) {
+          var o = document.createElement('canvas');
+          o.width = o.height = 8;
+          var g = o.getContext('2d', { willReadFrequently: true });
+          g.drawImage(bmp, 0, 0);
+          var d = g.getImageData(0, 0, 8, 8).data, opaque = 0, j;
+          for (j = 3; j < d.length; j += 4) if (d[j] > 200) opaque++;
+          cb(opaque > 32);
+        }, function () { cb(false); });
+      }
+      function hideWhenPainted() {
+        var started = Date.now();
+        (function poll() {
+          if (done) return;
+          var gp = document.querySelector('flt-glass-pane');
+          var c = gp && gp.shadowRoot && gp.shadowRoot.querySelector('canvas');
+          painted(c, function (ok) {
+            if (ok || Date.now() - started > 8000) {
+              requestAnimationFrame(function () { requestAnimationFrame(hideIntro); });
+            } else {
+              setTimeout(poll, 100);
+            }
+          });
+        })();
+      }
+      window.addEventListener('flutter-first-frame', hideWhenPainted, { once: true });
+
+      // Istinite faze: preuzimanje traje dok ne stigne kod aplikacije
+      // (main.dart.wasm, ili main.dart.js na pregledniku bez WasmGC).
+      try {
+        new PerformanceObserver(function (list) {
+          list.getEntries().forEach(function (e) {
+            if (!done && /\/main\.dart\.(wasm|js)(\?|$)/.test(e.name)) {
+              load.textContent = 'Pokretanje…';
+              note.hidden = true;
+              // Osigurač ako event izostane (promjena enginea): kod je stigao,
+              // main() do runApp traje ≤ ~3 s, pa 20 s nikad ne otkrije prazninu.
+              setTimeout(hideIntro, 20000);
+            }
+          });
+        }).observe({ type: 'resource', buffered: true });
+      } catch (_) {}
+
+      setTimeout(function () { if (!done && load.textContent !== 'Pokretanje…') note.hidden = false; }, 8000);
+
+      // Kod koji se nije dao učitati (mreža pukla, skripta 404) → ponudi
+      // ponovni pokušaj umjesto vječnog vrtuljka. Samo do prvog framea.
+      function failed() {
+        if (done) return;
+        load.textContent = 'Učitavanje je zapelo.';
+        note.hidden = true;
+        retry.hidden = false;
+      }
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t.tagName === 'SCRIPT' && /flutter_bootstrap|passkeys_bundle|main\.dart|skwasm|canvaskit/.test(t.src || '')) failed();
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = String((e.reason && (e.reason.message || e.reason)) || '');
+        if (/failed to fetch|networkerror|load failed|wasm|compile|instantiate/i.test(r)) failed();
+      });
     })();
   </script>
 

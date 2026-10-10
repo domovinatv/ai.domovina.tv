@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../../widgets/cached_thumbnail.dart';
 import '../models/pinka_link_preview.dart';
 import '../models/pinka_public_contribution.dart';
 import '../util/pinka_money.dart';
@@ -27,6 +28,52 @@ const double kPinkaWallShortTile = 84;
 /// raspored nema rupa. Ako mijenjaš visine, drži ovaj odnos.
 const double kPinkaWallTallTile =
     2 * kPinkaWallShortTile + kPinkaWallSpacing; // 178
+
+/// OG standard (1200×630) — omjer kad dimenzije slike nisu poznate.
+const double kPinkaOgAspect = 1.91;
+
+/// Ispod ovog omjera (portret, kvadrat) slika ide LIJEVO od teksta; šira ide
+/// ISPOD teksta preko cijele širine kartice.
+const double kPinkaSideImageMaxAspect = 1.2;
+
+/// Koliko je pločica sa slikom sa strane viša od obične s previewom — toliko
+/// slika naraste (≈ 140 px visine umjesto ~80).
+const double kPinkaSideImageExtra = 60;
+
+/// Raspored slike u preview kartici.
+enum PinkaPreviewImageLayout { none, side, below }
+
+PinkaPreviewImageLayout pinkaPreviewImageLayout(PinkaLinkPreview p) {
+  if (p.imageCached == null) return PinkaPreviewImageLayout.none;
+  final a = p.imageAspect;
+  return a != null && a < kPinkaSideImageMaxAspect
+      ? PinkaPreviewImageLayout.side
+      : PinkaPreviewImageLayout.below;
+}
+
+/// Omjer slike ispod teksta: stvarni, ali ograničen — panorama 4 : 1 bi bila
+/// traka, pa se krajnosti blago obrežu (BoxFit.cover).
+double _belowAspect(PinkaLinkPreview p) =>
+    (p.imageAspect ?? kPinkaOgAspect).clamp(kPinkaSideImageMaxAspect, 3.0);
+
+/// Omjer slike sa strane (portret do kvadrata).
+double _sideAspect(PinkaLinkPreview p) =>
+    (p.imageAspect ?? 1).clamp(0.5, kPinkaSideImageMaxAspect);
+
+/// Visina pločice s previewom. Slika ispod teksta ovisi o širini stupca, pa se
+/// računa ovdje — samo tako drži točan omjer. 14 = padding kartice, 10 =
+/// padding preview kartice, 1 = njen obrub; 8 = razmak tekst → slika.
+double pinkaWallPreviewTileExtent(PinkaLinkPreview p, double columnWidth) {
+  switch (pinkaPreviewImageLayout(p)) {
+    case PinkaPreviewImageLayout.none:
+      return kPinkaWallTallTile;
+    case PinkaPreviewImageLayout.side:
+      return kPinkaWallTallTile + kPinkaSideImageExtra;
+    case PinkaPreviewImageLayout.below:
+      final imageWidth = columnWidth - 2 * 14 - 2 * 10 - 2 * 1;
+      return kPinkaWallTallTile + 8 + imageWidth / _belowAspect(p);
+  }
+}
 
 /// Ciljna širina kartice — broj stupaca je `(maxWidth / ovo).floor()`.
 const double kPinkaWallTargetCardWidth = 340;
@@ -62,6 +109,9 @@ class PinkaWallList extends StatelessWidget {
           final columns = (w.isFinite && w > 0)
               ? (w / kPinkaWallTargetCardWidth).floor().clamp(1, 4)
               : 1;
+          final columnWidth = (w.isFinite && w > 0)
+              ? (w - kPinkaWallSpacing * (columns - 1)) / columns
+              : kPinkaWallTargetCardWidth;
           return StaggeredGrid.count(
             crossAxisCount: columns,
             mainAxisSpacing: kPinkaWallSpacing,
@@ -71,7 +121,7 @@ class PinkaWallList extends StatelessWidget {
                 StaggeredGridTile.extent(
                   crossAxisCellCount: 1,
                   mainAxisExtent: _hasPreview(c)
-                      ? kPinkaWallTallTile
+                      ? pinkaWallPreviewTileExtent(c.linkPreview!, columnWidth)
                       : kPinkaWallShortTile,
                   child: _WallEntry(
                     contribution: c,
@@ -198,7 +248,7 @@ class _WallEntry extends StatelessWidget {
                 header,
                 ...messageLine,
                 const SizedBox(height: 8),
-                Expanded(child: _LinkPreviewCard(preview: preview)),
+                Expanded(child: PinkaLinkPreviewCard(preview: preview)),
               ],
             )
           : OverflowBox(
@@ -324,7 +374,7 @@ class _WallDetailsSheet extends StatelessWidget {
               ],
               if (preview != null) ...[
                 const SizedBox(height: 16),
-                _LinkPreviewCard(preview: preview, detailed: true),
+                PinkaLinkPreviewCard(preview: preview, detailed: true),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
                   onPressed: () => pinkaLaunch(preview.url),
@@ -348,14 +398,25 @@ class _WallDetailsSheet extends StatelessWidget {
   }
 }
 
-class _LinkPreviewCard extends StatelessWidget {
+/// Preview poveznice (izvor, naslov, OG slika iz NAŠEG storagea) — u pločici
+/// zida, u detaljnom sheetu i u živom pregledu obrasca podrške.
+class PinkaLinkPreviewCard extends StatelessWidget {
   final PinkaLinkPreview preview;
 
   /// U kartici zida (false) preview je samo prikaz — tap pripada kartici i
   /// otvara detaljni sheet. U sheetu (true) prikazuje i opis.
   final bool detailed;
 
-  const _LinkPreviewCard({required this.preview, this.detailed = false});
+  /// Opis ispod naslova — default samo u detaljnom sheetu. Pregled u obrascu
+  /// koristi `detailed` raspored (neograničena visina) bez opisa.
+  final bool? showDescription;
+
+  const PinkaLinkPreviewCard({
+    super.key,
+    required this.preview,
+    this.detailed = false,
+    this.showDescription,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -367,6 +428,42 @@ class _LinkPreviewCard extends StatelessWidget {
         ? p.siteName!.trim()
         : (host.isNotEmpty ? host : l.pinkaLink);
 
+    final image = p.imageCached;
+    final text = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$source ↗',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+        if (p.title?.isNotEmpty ?? false) ...[
+          const SizedBox(height: 2),
+          Text(
+            p.title!,
+            maxLines: detailed ? 3 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+        if ((showDescription ?? detailed) &&
+            (p.description?.isNotEmpty ?? false)) ...[
+          const SizedBox(height: 4),
+          Text(
+            p.description!,
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -374,39 +471,70 @@ class _LinkPreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$source ↗',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
+      child: switch (pinkaPreviewImageLayout(p)) {
+        PinkaPreviewImageLayout.none => text,
+        // Portret/kvadrat LIJEVO: na zidu slika popuni visinu kartice (širina
+        // iz omjera), u sheetu (neograničena visina) ima fiksnu širinu.
+        PinkaPreviewImageLayout.side => detailed
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: _framed(AspectRatio(
+                        aspectRatio: _sideAspect(p),
+                        child: _PreviewImage(url: image!))),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: text),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _framed(AspectRatio(
+                      aspectRatio: _sideAspect(p),
+                      child: _PreviewImage(url: image!))),
+                  const SizedBox(width: 10),
+                  Expanded(child: text),
+                ],
+              ),
+        // Landscape ISPOD izvora i naslova, preko cijele širine, u stvarnom
+        // omjeru. Pločica ima zadanu visinu, a naslov 1–2 retka: višak ide
+        // IZMEĐU teksta i slike, pa slika sjedne na dno neobrezana. U sheetu
+        // (neograničena visina) Spacer ne smije postojati.
+        PinkaPreviewImageLayout.below => Column(
+            mainAxisSize: detailed ? MainAxisSize.min : MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              text,
+              const SizedBox(height: 8),
+              if (!detailed) const Spacer(),
+              _framed(AspectRatio(
+                  aspectRatio: _belowAspect(p),
+                  child: _PreviewImage(url: image!))),
+            ],
           ),
-          if (p.title?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 2),
-            Text(
-              p.title!,
-              maxLines: detailed ? 3 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-          if (detailed && (p.description?.isNotEmpty ?? false)) ...[
-            const SizedBox(height: 4),
-            Text(
-              p.description!,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ],
-      ),
+      },
     );
   }
+}
+
+Widget _framed(Widget child) =>
+    ClipRRect(borderRadius: BorderRadius.circular(6), child: child);
+
+/// Slika previewa iz NAŠEG storagea. Pad dohvata = mirna ploha iste boje kao
+/// placeholder (bez ikone slomljene slike na javnom zidu); pločica zadrži
+/// visinu, pa raspored ne skače.
+class _PreviewImage extends StatelessWidget {
+  final String url;
+
+  const _PreviewImage({required this.url});
+
+  @override
+  Widget build(BuildContext context) => CachedThumbnail(
+        url: url,
+        errorFallbackBuilder: (ctx) => ColoredBox(
+            color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+      );
 }
