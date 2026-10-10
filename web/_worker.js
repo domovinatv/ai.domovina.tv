@@ -1684,16 +1684,16 @@ function injectSponsorTags(indexHtml, { title, desc, url, image, name }) {
     name: title,
     description: desc,
     url,
-    publisher: { '@type': 'Organization', name: 'DOMOVINA.ai', url: SITE },
+    publisher: { '@type': 'Organization', name: APP_NAME, url: SITE },
   }, null, 2);
   const tags = `
-  <title>${x(title)} – DOMOVINA.ai</title>
+  <title>${x(title)} – ${x(APP_NAME)}</title>
   <meta name="description" content="${x(desc)}">
   <link rel="canonical" href="${url}">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="hr_HR">
-  <meta property="og:site_name" content="DOMOVINA.ai">
+  <meta property="og:site_name" content="${x(APP_NAME)}">
   <meta property="og:logo" content="${SITE}/og-image-square.png">
   <meta property="og:title" content="${x(title)}">
   <meta property="og:description" content="${x(desc)}">
