@@ -400,6 +400,13 @@ backfilla. Mjerenja i reprodukcija: `docs/2026-10-11-brzi-start-videa-fmp4.md`.
 ostaje na `video_h264.mp4` dok se fmp4 ne isproba na iPhoneu. Native (libmpv) i
 Chromium su izmjereni.
 
+**Rule (screenshotovi: PNG je original, WebP je prikaz)**: od 10.10.2026.
+pipeline (KORAK 12.65) uz PNG 1920×1080 uploada `{ts}-960.webp` i oznaku
+`data/{id}/screenshots_webp.json`; app bira WebP samo kad je bundle navodi.
+PNG se nikad ne briše ni ne prepisuje — trajni full-HD originali. Do prvog
+`playing` vidi se samo screenshot prve sekcije i one iz `/t/<sec>`
+(`DeferredScreenshots`), a titl se ne crta prije stvarne pozicije > 0.
+
 **Rule (fmp4 bez `sidx` ne radi)**: Chrome ga skenira fragment po fragment i ne
 krene ni u 2 min. Pipelineov `verifyFmp4` odbija takav izlaz — ne zaobilaziti.
 

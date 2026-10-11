@@ -75,6 +75,21 @@ await runTest('http://127.0.0.1:8791/frag_sidx.mp4', 'video', 0)      # 3. arg =
   PNG → 3,3 MB WebP (`node generate_webp_screenshots.js --dry-run` pokazuje
   opseg).
 
+## Titl prije videa (isti dan, v2.0.182)
+
+Kad se player počeo pokazivati odmah, titl je isticao riječi prvog cue-a preko
+crne plohe: media_kit javlja `playing = true` čim je `play()` pozvan, a
+`CaptionClock` je između događaja ekstrapolirao vrijeme. Sat sad crta titl tek
+kad player javi poziciju > 0 i ne ekstrapolira dok je `buffering`.
+
+## Provjera (lokalni build u Chromeu, ne Playwright)
+
+`flutter build web --release --wasm` (~40 s) → `build/web` poslužen lokalno sa
+SPA fallbackom i COOP/COEP zaglavljima → ruta u Chromeu uz DevTools Slow 4G.
+Network panel pokazuje `video_h264_fmp4.mp4` i `-960.webp`, screenshot pokazuje
+player sa spinnerom bez titla. Instalacija Playwright WebKita za provjeru Safarija
+dvaput je zapela pa je odbačena — Safari ostaje za ručni test na iPhoneu.
+
 ## Što nije napravljeno (opcije za kasnije)
 
 - **WebKit**: isprobati `/v/PPXbSP14H4Y` na iPhoneu u Safariju s maknutom ogradom
@@ -83,5 +98,6 @@ await runTest('http://127.0.0.1:8791/frag_sidx.mp4', 'video', 0)      # 3. arg =
   epizode: audio je 65 % bajtova, keyframe je prosječno svakih 9,3 s.
 - **Audio prvi** (MP3 za 0,8 s, video kasnije): dva media elementa koja treba
   sinkronizirati; uz fmp4 dobitak je ~1,8 s. Nije vrijedno sada.
+- **WebP za TV reader** (`tv_episode_reader_screen.dart`) još crta PNG.
 - Video se u aplikaciji otvara tek nakon `episode.json`; hladni share link je
   izmjeren na ~26 s do zahtjeva za video (od toga ~19 s boot wasma).
