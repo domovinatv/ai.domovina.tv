@@ -42,6 +42,11 @@ bool subtitlesBelowPlayer(BuildContext context) {
 /// samo kad se promijeni [keyOf] (npr. aktivna riječ), ne na svaki frame.
 ///
 /// Ticker poštuje `TickerMode`, pa zatvoren bočni panel ne troši ništa.
+///
+/// Titl se ne crta dok player ne javi STVARNU poziciju veću od nule: player se
+/// pokazuje prije nego je video učitan, a `playing` je `true` čim je `play()`
+/// pozvan, pa je sat dotad isticao riječi preko crne plohe. Dok player puni
+/// buffer, sat ne ekstrapolira.
 class CaptionClock extends StatefulWidget {
   final Player player;
   final Object? Function(int ms) keyOf;
@@ -67,6 +72,7 @@ class _CaptionClockState extends State<CaptionClock>
   int _anchorMs = 0;
   int _ms = 0;
   Object? _key;
+  bool _started = false;
 
   /// Najviše koliko smijemo ekstrapolirati bez potvrde streama — ako player
   /// zapne (buffering), titl ne smije pobjeći naprijed.
@@ -92,8 +98,12 @@ class _CaptionClockState extends State<CaptionClock>
     _anchor(p.state.position.inMilliseconds);
     _ms = _anchorMs;
     _key = widget.keyOf(_ms);
+    _started = _ms > 0 && !p.state.buffering;
     _posSub = p.stream.position.listen((d) {
       _anchor(d.inMilliseconds);
+      if (!_started && d > Duration.zero && mounted) {
+        setState(() => _started = true);
+      }
       _update(_anchorMs);
     });
     _playSub = p.stream.playing.listen(_setRunning);
@@ -123,6 +133,7 @@ class _CaptionClockState extends State<CaptionClock>
   }
 
   void _onTick(Duration _) {
+    if (widget.player.state.buffering) return;
     final elapsed = _sinceAnchor.elapsedMilliseconds.clamp(
       0,
       _maxExtrapolationMs,
@@ -147,7 +158,8 @@ class _CaptionClockState extends State<CaptionClock>
   }
 
   @override
-  Widget build(BuildContext context) => widget.builder(context, _ms);
+  Widget build(BuildContext context) =>
+      _started ? widget.builder(context, _ms) : const SizedBox.shrink();
 }
 
 // ---------------------------------------------------------------------------
