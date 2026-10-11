@@ -136,6 +136,15 @@ class CdnConfig {
   /// koji probe-a postojanje i fallback-a na [videoUrl] ako 404.
   static String videoH264Url(String ytId) => '$base/data/$ytId/video_h264.mp4';
 
+  /// Iste H.264/AAC struje kao [videoH264Url], prepakirane u fragmentirani MP4
+  /// sa `sidx` indeksom: zaglavlje ~11 KB umjesto ~2,7 MB `moov`-a za sat
+  /// epizode, pa prvi frame na „Slow 4G" stigne za ~2,6 s umjesto ~16 s.
+  /// Postoji samo za epizode od 11.10.2026. i bira se SAMO kad ga
+  /// `episode.json` navodi (bez probe-a). Vidi
+  /// `docs/2026-10-11-brzi-start-videa-fmp4.md`.
+  static String videoH264FragmentedUrl(String ytId) =>
+      '$base/data/$ytId/video_h264_fmp4.mp4';
+
   /// Probe URL za H.264 postojanje — s cache-busterom da stale 404 (od prije
   /// nego je transcode završio) ne zaglavi fallback na izvorni video.
   /// Playback i dalje koristi čisti [videoH264Url] (immutable cache OK).

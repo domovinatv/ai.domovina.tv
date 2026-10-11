@@ -3,3 +3,5 @@
 String mobileWebOs() => '';
 bool isStandalonePwa() => false;
 bool isIosSafari() => false;
+
+bool isWebKitBrowser() => false;

@@ -1,0 +1,14 @@
+<!doctype html><meta charset=utf-8><body><script>
+window.runTest=(src,kind,startAt)=>new Promise(res=>{
+  document.querySelectorAll('video,audio').forEach(e=>{e.pause();e.removeAttribute('src');e.load();e.remove()});
+  performance.clearResourceTimings();
+  const el=document.createElement(kind); el.muted=true; el.preload='auto'; el.playsInline=true; document.body.appendChild(el);
+  const t0=performance.now(), r={src,kind,startAt}; const mark=n=>{ if(!(n in r)) r[n]=Math.round(performance.now()-t0)};
+  ['loadedmetadata','loadeddata','canplay','playing'].forEach(e=>el.addEventListener(e,()=>mark(e)));
+  el.addEventListener('loadedmetadata',()=>{ if(startAt) el.currentTime=startAt; });
+  el.addEventListener('playing',()=>{ if(kind==='video'&&el.requestVideoFrameCallback) el.requestVideoFrameCallback(()=>{mark('firstFrame');fin()}); else fin(); });
+  let done=false; const fin=()=>{ if(done) return; done=true; setTimeout(()=>{ const rs=performance.getEntriesByType('resource').filter(x=>x.name.includes(src.split('/').pop().split('?')[0])); r.bytesBeforeStart=rs.reduce((a,x)=>a+x.encodedBodySize,0); r.requests=rs.length; res(r)},50) };
+  setTimeout(()=>{r.timeout=true;fin()},120000);
+  el.src=src; el.play().catch(e=>r.playErr=String(e));
+});
+</script>

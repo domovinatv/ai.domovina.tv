@@ -388,6 +388,21 @@ Cloudflare auto-strips `.html` extensions (`/social-test.html` → `/social-test
 
 Cloudflare CDN caches aggressively. Always purge cache after deploy (the deploy script does this automatically). Without purge, users may see stale versions.
 
+### Brzi start videa — `video_h264_fmp4.mp4` (od 11.10.2026.)
+
+`moov` u `video_h264.mp4` indeksira svaki uzorak (2,7 MB za sat epizode), pa je
+prvi frame na Slow 4G stizao za 15,9 s. Pipeline (KORAK 12.5) za NOVE epizode
+uploada i iste struje kao fragmentirani MP4 + `sidx` (zaglavlje ~11 KB → 2,6 s).
+`resolveMedia` ga bira SAMO kad ga `episode.json` navodi; stari katalog se ne
+backfilla. Mjerenja i reprodukcija: `docs/2026-10-11-brzi-start-videa-fmp4.md`.
+
+**Rule (WebKit ograđen)**: `isWebKitBrowser()` (Safari, svi iOS preglednici)
+ostaje na `video_h264.mp4` dok se fmp4 ne isproba na iPhoneu. Native (libmpv) i
+Chromium su izmjereni.
+
+**Rule (fmp4 bez `sidx` ne radi)**: Chrome ga skenira fragment po fragment i ne
+krene ni u 2 min. Pipelineov `verifyFmp4` odbija takav izlaz — ne zaobilaziti.
+
 ### Android TV — AV1 codec ne-radi u hardware decoder-u
 
 EON SDSTB02 (Amlogic, Android 11) i većina Android TV box-ova prije ~2024.

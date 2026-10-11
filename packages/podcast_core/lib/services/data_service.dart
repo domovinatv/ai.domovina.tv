@@ -19,6 +19,7 @@ import '../models/speaker_timeline.dart';
 import '../brand/app_brand.dart';
 import '../models/sponsors_in_video.dart';
 import 'cdn_config.dart';
+import 'mobile_web_detect.dart' show isWebKitBrowser;
 import 'cdn_json_cache.dart';
 import 'cdn_store.dart' show StoreBucket;
 
@@ -485,10 +486,21 @@ class DataService {
   ///
   /// S [EpisodeBundle] nema probe-a: njegov popis datoteka je izmjeren na R2,
   /// pa vrijedi isti redoslijed nad popisom (tri HEAD-a manje, i oni idu
-  /// jedan za drugim).
+  /// jedan za drugim). Ispred svega ide `video_h264_fmp4.mp4` (isti video,
+  /// brži start — [CdnConfig.videoH264FragmentedUrl]); njega bira samo bundle,
+  /// put s probe-ovima ostaje na `video_h264.mp4`.
   Future<({String uri, EpisodeMediaKind kind})> resolveMedia() async {
     final bundle = await _bundle();
     if (bundle != null) {
+      // WebKit (Safari, svi iOS preglednici) fmp4 još nije isproban na pravom
+      // uređaju — dok ne bude, ostaje na video_h264.mp4. Native (libmpv) i
+      // Chromium su izmjereni.
+      if (bundle.has('video_h264_fmp4.mp4') && !isWebKitBrowser()) {
+        return (
+          uri: CdnConfig.videoH264FragmentedUrl(youtubeId),
+          kind: EpisodeMediaKind.video,
+        );
+      }
       if (bundle.has('video_h264.mp4')) {
         return (
           uri: CdnConfig.videoH264Url(youtubeId),

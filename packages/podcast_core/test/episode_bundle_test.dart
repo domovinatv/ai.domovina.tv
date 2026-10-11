@@ -79,6 +79,31 @@ void main() {
     expect(requests, greaterThan(20));
   });
 
+  group('video iz bundlea', () {
+    Future<EpisodeData> loadWith(List<String> files) => http.runWithClient(
+          () => EpisodeData.load(youtubeId: id),
+          () => MockClient((req) async {
+            if (req.url.path.endsWith('/episode.json')) {
+              final b = jsonDecode(bundle()) as Map<String, dynamic>;
+              b['files'] = ['info.json', 'summary.json', 'article.json', ...files];
+              return http.Response(jsonEncode(b), 200);
+            }
+            return http.Response('Not Found', 404);
+          }),
+        );
+
+    test('fmp4 ima prednost pred video_h264.mp4', () async {
+      final data = await loadWith(['video_h264.mp4', 'video_h264_fmp4.mp4']);
+      expect(data.videoUri, endsWith('/data/$id/video_h264_fmp4.mp4'));
+      expect(data.isAudioOnly, isFalse);
+    });
+
+    test('bez fmp4 ostaje video_h264.mp4', () async {
+      final data = await loadWith(['video_h264.mp4', 'audio.mp3']);
+      expect(data.videoUri, endsWith('/data/$id/video_h264.mp4'));
+    });
+  });
+
   test('nepoznata verzija se ignorira', () {
     expect(EpisodeBundle.tryParse('{"version":2,"files":[]}'), isNull);
     expect(EpisodeBundle.tryParse('nije json'), isNull);

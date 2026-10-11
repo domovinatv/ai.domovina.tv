@@ -34,3 +34,8 @@ bool isIosSafari() {
       RegExp(r'CriOS|FxiOS|EdgiOS|OPiOS|GSA').hasMatch(ua);
   return ua.contains('Safari') && !isOtherBrowser;
 }
+
+/// `navigator.vendor` je „Apple Computer, Inc." u Safariju i u svim iOS
+/// preglednicima (CriOS/FxiOS su WebKit ispod), a „Google Inc." u Chromiumu.
+bool isWebKitBrowser() =>
+    web.window.navigator.vendor.startsWith('Apple') || mobileWebOs() == 'ios';

@@ -15,3 +15,7 @@ bool isStandalonePwa() => platform.isStandalonePwa();
 
 /// True za Safari na iOS-u (gdje Apple Smart App Banner već pokriva promociju).
 bool isIosSafari() => platform.isIosSafari();
+
+/// True kad web radi na WebKitu: Safari na macOS-u i SVAKI preglednik na iOS-u
+/// (Apple ih sve tjera na WebKit). Native build: false.
+bool isWebKitBrowser() => platform.isWebKitBrowser();
