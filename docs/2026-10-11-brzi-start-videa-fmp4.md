@@ -59,6 +59,22 @@ cp scripts/video-start/test.html <dir-s-datotekama>/
 await runTest('http://127.0.0.1:8791/frag_sidx.mp4', 'video', 0)      # 3. arg = startAt (s)
 ```
 
+## Screenshotovi (isti dan)
+
+Članak gradi sve sekcije odjednom, pa su svi screenshotovi kretali s videom:
+`PPXbSP14H4Y` ima 26 PNG-ova 1920×1080 = **33,3 MB**, prikazanih na najviše
+480×270. Dva popravka:
+
+- `DeferredScreenshots`: odmah samo prva sekcija i ona iz `/t/<sec>`, ostali
+  kad player javi `playing` (ili najkasnije 8 s). Player se pokazuje odmah, ne
+  tek nakon `open()`.
+- Pipeline KORAK 12.65 (`generate_webp_screenshots.js`) uz PNG uploada
+  `{ts}-960.webp` (q80) i oznaku `data/{id}/screenshots_webp.json`; aplikacija
+  bira WebP samo kad ga `episode.json` navodi, kadar bez WebP-a pada na PNG.
+  PNG ostaje kao trajni original. Samo od 10. 10. 2026. — 5 epizoda: 141 MB
+  PNG → 3,3 MB WebP (`node generate_webp_screenshots.js --dry-run` pokazuje
+  opseg).
+
 ## Što nije napravljeno (opcije za kasnije)
 
 - **WebKit**: isprobati `/v/PPXbSP14H4Y` na iPhoneu u Safariju s maknutom ogradom

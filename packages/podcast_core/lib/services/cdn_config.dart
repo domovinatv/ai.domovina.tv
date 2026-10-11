@@ -212,4 +212,18 @@ class CdnConfig {
     final ts = timestamp.replaceAll(':', '-');
     return '$base/images/$ytId/screenshots/$ts.png';
   }
+
+  /// Epizode kojima `episode.json` navodi `screenshots_webp.json` — pipeline
+  /// je uz svaki PNG (1920×1080, ~1,3 MB) uploadao `{ts}-960.webp` (~20 KB).
+  /// Puni ga [DataService] pri učitavanju bundlea; stari katalog ga nema.
+  static final Set<String> _screenshotWebp = {};
+  static void markScreenshotWebp(String ytId) => _screenshotWebp.add(ytId);
+
+  /// WebP varijanta screenshota ili `null` kad je epizoda nema. Pojedini kadar
+  /// koji ipak fali pokriva [CachedThumbnail] padom na [screenshotUrl].
+  static String? screenshotWebpUrl(String ytId, String timestamp) {
+    if (!_screenshotWebp.contains(ytId)) return null;
+    final ts = timestamp.replaceAll(':', '-');
+    return '$base/images/$ytId/screenshots/$ts-960.webp';
+  }
 }

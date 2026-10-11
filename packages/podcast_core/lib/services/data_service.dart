@@ -213,7 +213,13 @@ class DataService {
     final f = CdnJsonCache.instance
         .getMutable(CdnConfig.episodeBundleUrl(youtubeId),
             bucket: StoreBucket.episode)
-        .then(EpisodeBundle.tryParse, onError: (_) => null);
+        .then(EpisodeBundle.tryParse, onError: (_) => null)
+        .then((b) {
+      if (b != null && b.has('screenshots_webp.json')) {
+        CdnConfig.markScreenshotWebp(youtubeId);
+      }
+      return b;
+    });
     _bundles[youtubeId] = f;
     while (_bundles.length > _bundlesMax) {
       _bundles.remove(_bundles.keys.first);

@@ -79,6 +79,10 @@ class CachedThumbnail extends StatefulWidget {
   /// Koristi samo ako ti stvarno treba baš original (npr. share/export flow).
   final bool useVariants;
 
+  /// Izričita varijanta koja se pokušava PRIJE [url] (npr. WebP screenshota);
+  /// kad padne, render ide na [url] istim putem kao automatska thumb varijanta.
+  final String? variantUrl;
+
   /// Poziva se kad slika KONAČNO ne uspije — dakle tek nakon što je i fallback
   /// na originalni PNG pao, ne na neuspjeh same WebP varijante. Za call-siteove
   /// koji na nepostojeću sliku ne crtaju placeholder nego kolabiraju cijeli
@@ -103,6 +107,7 @@ class CachedThumbnail extends StatefulWidget {
     this.errorIconSize = 32,
     this.fadeInDuration = const Duration(milliseconds: 200),
     this.useVariants = true,
+    this.variantUrl,
     this.onFailed,
     this.errorFallbackBuilder,
   });
@@ -136,6 +141,7 @@ class _CachedThumbnailState extends State<CachedThumbnail> {
   /// inače originalni [widget.url].
   String _resolveUrl(BuildContext context, double dpr) {
     if (!widget.useVariants || _variantFailed) return widget.url;
+    if (widget.variantUrl != null) return widget.variantUrl!;
 
     final match = CdnConfig.thumbnailUrlPattern.firstMatch(widget.url);
     if (match == null) return widget.url;

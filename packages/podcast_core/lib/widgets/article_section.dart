@@ -633,6 +633,10 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                                   widget.youtubeId,
                                   section.screenshotTimestamp,
                                 ),
+                                variantUrl: CdnConfig.screenshotWebpUrl(
+                                  widget.youtubeId,
+                                  section.screenshotTimestamp,
+                                ),
                                 fit: BoxFit.cover,
                                 // Nema screenshota → kolabiraj blok (post-frame
                                 // da se setState ne dogodi tijekom build/paint
