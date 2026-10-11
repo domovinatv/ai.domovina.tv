@@ -21,6 +21,8 @@ import '../models/sponsors_in_video.dart';
 import '../services/sponsored_moments_controller.dart';
 import '../services/sponsored_moments_service.dart';
 import '../services/background_audio.dart';
+import '../services/clip_service.dart' show ClipService;
+import '../services/deferred_screenshots.dart';
 import '../services/background_playback.dart';
 import '../services/episode_language.dart';
 import '../services/share_links.dart';
@@ -1095,6 +1097,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
     _playbackIntent?.dispose();
     _seekUndo?.dispose();
     _sponsored?.dispose();
+    DeferredScreenshots.instance.release();
     final player = _player;
     if (player != null) {
       PlayerMute.instance.detach(player);
@@ -1454,6 +1457,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
         resumedFromSaved = true;
       }
     }
+    _holdScreenshots(startAt);
     debugPrint(
       'Video: opening $videoUri'
       '${startAt != null ? ' @${startAt}s' : ''}'
@@ -1477,6 +1481,26 @@ class _EpisodeContentState extends State<_EpisodeContent>
       // na iOS odbaci seek pa video kreće od 0). Ako je browser odbio unmuted
       // autoplay, helper padne na muted fallback i to zapiše u `PlayerMute`
       // singleton — odatle ga čitaju gumb za zvuk i „Uključi zvuk" CTA.
+      // Player se pokazuje ODMAH, ne tek kad je video otvoren: `open` na
+      // sporoj vezi traje sekundama (moov + prvi frame), a bez stupca playera
+      // ekran izgleda kao da je stao. `Video` do prvog framea crta crnu plohu.
+      if (mounted) {
+        setState(() {
+          _player = player;
+          _videoController = controller;
+          _videoReady = true;
+        });
+        _autoOpenPlayerPanel();
+      }
+      // Ostali screenshotovi kreću tek kad video zasvira (DeferredScreenshots).
+      unawaited(
+        player.stream.playing
+            .firstWhere((p) => p)
+            .timeout(const Duration(seconds: 30))
+            .then((_) => DeferredScreenshots.instance.release())
+            .catchError((Object _) => DeferredScreenshots.instance.release()),
+      );
+
       await openAndResume(player, uri: videoUri, startAtSeconds: startAt);
       if (mounted) {
         // Otvaranje je gotovo → skrati prozor natrag na normalnu duljinu.
@@ -1502,11 +1526,7 @@ class _EpisodeContentState extends State<_EpisodeContent>
           isPlayingNow: () => player.state.playing,
           initiallyWants: player.state.playing,
         );
-        setState(() {
-          _player = player;
-          _videoController = controller;
-          _videoReady = true;
-        });
+        setState(() {});
         debugPrint('Video: ready');
 
         if (resumedFromSaved && startAt != null) {
@@ -1571,27 +1591,51 @@ class _EpisodeContentState extends State<_EpisodeContent>
           _setInitialChapter(Duration(seconds: startAt));
         }
 
-        // Uži ekran (≤ 1100, player je desni stupac platna): otvori player
-        // čim je spreman. Video je autoplay (na webu možda muted zbog browser
-        // policy-a, ali user vidi vizual), korisnik odmah ima video u fokusu.
-        // U landscapeu stoji uz članak; u portretu ga gura s ekrana, a
-        // swipe-right ili tap na rub članka ga zatvara. Šire (> 1100) je
-        // player stalni stupac pa auto-open nije primjenjiv.
-        // `?video=0` preskače auto-open, `?video=1` ga forsira i na tabletu.
-        if (!_playerAutoOpened && widget.openVideo != false) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            if (MediaQuery.sizeOf(context).width <= _kPlayerColumnMinWidth ||
-                widget.openVideo == true) {
-              _openPlayerPanel();
-              _playerAutoOpened = true;
-            }
-          });
-        }
       }
     } catch (e) {
       debugPrint('Video: init failed — $e');
+      DeferredScreenshots.instance.release();
     }
+  }
+
+  /// Do prvog `playing` vide se samo screenshot prve sekcije i sekcije na
+  /// koju vodi [startAt]; ostali čekaju (vidi [DeferredScreenshots]).
+  void _holdScreenshots(int? startAt) {
+    final sections = <PodcastSection>[
+      for (final it in widget.data.article?.iterations ?? const [])
+        ...it.sections,
+    ].where((s) => s.screenshotTimestamp.isNotEmpty).toList();
+    if (sections.isEmpty) return;
+    final priority = <String>{sections.first.screenshotTimestamp};
+    if (startAt != null) {
+      String? at;
+      for (final s in sections) {
+        if (ClipService.hmsToSeconds(s.screenshotTimestamp) <= startAt) {
+          at = s.screenshotTimestamp;
+        }
+      }
+      if (at != null) priority.add(at);
+    }
+    DeferredScreenshots.instance.hold(priority: priority);
+  }
+
+  /// Uži ekran (≤ 1100, player je desni stupac platna): otvori player čim
+  /// postoji. Video je autoplay (na webu možda muted zbog browser policy-a,
+  /// ali user vidi vizual), korisnik odmah ima video u fokusu. U landscapeu
+  /// stoji uz članak; u portretu ga gura s ekrana, a swipe-right ili tap na
+  /// rub članka ga zatvara. Šire (> 1100) je player stalni stupac pa
+  /// auto-open nije primjenjiv. `?video=0` preskače auto-open, `?video=1` ga
+  /// forsira i na tabletu.
+  void _autoOpenPlayerPanel() {
+    if (_playerAutoOpened || widget.openVideo == false) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (MediaQuery.sizeOf(context).width <= _kPlayerColumnMinWidth ||
+          widget.openVideo == true) {
+        _openPlayerPanel();
+        _playerAutoOpened = true;
+      }
+    });
   }
 
   /// Postavi activeTimestamp + scrollTimestamp za inicijalnu poziciju.

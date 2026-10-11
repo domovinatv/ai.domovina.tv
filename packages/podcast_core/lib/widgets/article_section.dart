@@ -19,6 +19,7 @@ import 'clip_share_sheet.dart';
 import '../services/clip_service.dart';
 import '../services/open_url.dart';
 import '../l10n/app_localizations.dart';
+import '../services/deferred_screenshots.dart';
 import 'cached_thumbnail.dart';
 import 'sponsored_moment_widgets.dart';
 import 'sponsors_in_video_section.dart';
@@ -620,20 +621,30 @@ class _ArticleSectionCardState extends State<ArticleSectionCard> {
                       // Screenshotovi nemaju WebP varijante (drugi URL prostor
                       // od thumbnaila) — dobitak je disk cache: povratak na
                       // pročitanu epizodu više ne povlači slike ponovno.
-                      child: CachedThumbnail(
-                        url: CdnConfig.screenshotUrl(
-                          widget.youtubeId,
-                          section.screenshotTimestamp,
-                        ),
-                        fit: BoxFit.cover,
-                        // Nema screenshota → kolabiraj blok (post-frame da se
-                        // setState ne dogodi tijekom build/paint faze).
-                        onFailed: () {
-                          if (!_screenshotFailed) {
-                            setState(() => _screenshotFailed = true);
-                          }
-                        },
-                        errorFallbackBuilder: (_) => const SizedBox.shrink(),
+                      // Dok video ne krene, ostaje sivi okvir (isti layout,
+                      // bez zahtjeva) — vidi DeferredScreenshots.
+                      child: ListenableBuilder(
+                        listenable: DeferredScreenshots.instance,
+                        builder: (context, _) => !DeferredScreenshots.instance
+                                .allows(section.screenshotTimestamp)
+                            ? const SizedBox.expand()
+                            : CachedThumbnail(
+                                url: CdnConfig.screenshotUrl(
+                                  widget.youtubeId,
+                                  section.screenshotTimestamp,
+                                ),
+                                fit: BoxFit.cover,
+                                // Nema screenshota → kolabiraj blok (post-frame
+                                // da se setState ne dogodi tijekom build/paint
+                                // faze).
+                                onFailed: () {
+                                  if (!_screenshotFailed) {
+                                    setState(() => _screenshotFailed = true);
+                                  }
+                                },
+                                errorFallbackBuilder: (_) =>
+                                    const SizedBox.shrink(),
+                              ),
                       ),
                     ),
                   ),
